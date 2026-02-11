@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -8,4 +5,154 @@ generator client {
 
 datasource db {
   provider = "sqlite"
+}
+
+// ============ AUTH ============
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("SALES_REP") // ADMIN, MANAGER, SALES_REP, NEGOTIATOR
+  avatar       String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  leads         Lead[]
+  calls         Call[]
+  campaigns     CampaignAgent[]
+  callFeedbacks CallFeedback[]
+}
+
+// ============ LEADS ============
+
+model Lead {
+  id              String   @id @default(cuid())
+  businessName    String
+  contactName     String
+  phone           String
+  email           String?
+  ein             String?  @unique
+  industry        String?
+  annualRevenue   Float?
+  totalDebtEst    Float?
+  source          String   @default("OTHER") // WEBSITE, REFERRAL, MAILER, PURCHASED_LIST, COLD_CALL, SOCIAL, OTHER
+  status          String   @default("NEW") // NEW, CONTACTED, QUALIFIED, UNQUALIFIED, CALLBACK, ENROLLED, LOST, DNC
+  score           Int?
+  scoreReason     String?
+  notes           String?
+  lastContactedAt DateTime?
+  nextFollowUpAt  DateTime?
+  assignedToId    String?
+  assignedTo      User?    @relation(fields: [assignedToId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  calls            Call[]
+  campaignContacts CampaignContact[]
+}
+
+// ============ CAMPAIGNS ============
+
+model Campaign {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  dialerMode  String   @default("POWER") // POWER, PREVIEW, MANUAL
+  status      String   @default("DRAFT") // DRAFT, ACTIVE, PAUSED, COMPLETED
+  script      String?
+  startTime   String?  // "09:00"
+  endTime     String?  // "20:00"
+  timezone    String   @default("America/New_York")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contacts CampaignContact[]
+  agents   CampaignAgent[]
+  calls    Call[]
+}
+
+model CampaignContact {
+  id          String    @id @default(cuid())
+  campaignId  String
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  leadId      String
+  lead        Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  status      String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, SKIPPED, MAX_ATTEMPTS
+  priority    Int       @default(0)
+  attempts    Int       @default(0)
+  lastAttempt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([campaignId, leadId])
+}
+
+model CampaignAgent {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([campaignId, userId])
+}
+
+// ============ CALLS ============
+
+model Call {
+  id          String    @id @default(cuid())
+  direction   String    @default("OUTBOUND") // INBOUND, OUTBOUND
+  status      String    @default("INITIATED") // INITIATED, RINGING, IN_PROGRESS, COMPLETED, NO_ANSWER, BUSY, FAILED, VOICEMAIL
+  disposition String?   // INTERESTED, NOT_INTERESTED, CALLBACK, NOT_QUALIFIED, WRONG_NUMBER, VOICEMAIL, NO_ANSWER, DNC, ENROLLED
+  leadId      String?
+  lead        Lead?     @relation(fields: [leadId], references: [id])
+  agentId     String
+  agent       User      @relation(fields: [agentId], references: [id])
+  campaignId  String?
+  campaign    Campaign? @relation(fields: [campaignId], references: [id])
+  phoneNumber String
+  duration    Int?      // seconds
+  recordingUrl String?
+  startedAt   DateTime  @default(now())
+  answeredAt  DateTime?
+  endedAt     DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  transcript Transcript?
+  feedback   CallFeedback?
+}
+
+// ============ AI: TRANSCRIPTION ============
+
+model Transcript {
+  id        String   @id @default(cuid())
+  callId    String   @unique
+  call      Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+  content   String   // JSON array of { speaker, text, timestamp }
+  summary   String?
+  keywords  String?  // JSON array of strings
+  sentiment String?  // positive, negative, neutral
+  createdAt DateTime @default(now())
+}
+
+// ============ AI: CALL FEEDBACK ============
+
+model CallFeedback {
+  id                String   @id @default(cuid())
+  callId            String   @unique
+  call              Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+  agentId           String
+  agent             User     @relation(fields: [agentId], references: [id])
+  overallScore      Int      // 0-100
+  talkRatio         Float?
+  objectionHandling Int?     // 0-100
+  closingAttempt    Boolean?
+  keyMoments        String?  // JSON array
+  improvements      String?  // JSON array
+  strengths         String?  // JSON array
+  createdAt         DateTime @default(now())
 }
