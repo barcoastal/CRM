@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
+  Briefcase,
   Phone,
   Megaphone,
   PhoneCall,
@@ -24,6 +25,7 @@ import { useState } from "react";
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Leads", href: "/leads", icon: Users },
+  { label: "Clients", href: "/clients", icon: Briefcase },
   { label: "Dialer", href: "/dialer", icon: Phone },
   { label: "Campaigns", href: "/campaigns", icon: Megaphone },
   { label: "Calls", href: "/calls", icon: PhoneCall },

@@ -10,7 +10,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, PhoneCall, Megaphone, UserCheck } from "lucide-react";
+import { Users, PhoneCall, Megaphone, UserCheck, Briefcase, DollarSign, TrendingDown, AlertTriangle } from "lucide-react";
+import Link from "next/link";
 
 const STATUS_COLORS: Record<string, string> = {
   NEW: "bg-blue-500",
@@ -90,6 +91,9 @@ export default async function DashboardPage() {
     leadsByStatusRaw,
     recentCalls,
     agentLeaderboardRaw,
+    activeClientsCount,
+    settledDebtsData,
+    atRiskClientsCount,
   ] = await Promise.all([
     prisma.lead.count({ where: leadFilter }),
     prisma.call.count({
@@ -121,7 +125,21 @@ export default async function DashboardPage() {
       orderBy: { _count: { id: "desc" } },
       take: 10,
     }),
+    prisma.client.count({ where: { status: "ACTIVE" } }),
+    prisma.debt.findMany({
+      where: { status: "SETTLED" },
+      select: { settledAmount: true, enrolledBalance: true, savingsPercent: true },
+    }),
+    prisma.client.count({ where: { status: { in: ["DROPPED", "ON_HOLD"] } } }),
   ]);
+
+  const totalSettledAmount = settledDebtsData.reduce(
+    (sum, d) => sum + (d.settledAmount ?? 0), 0
+  );
+  const avgSavingsPercent =
+    settledDebtsData.length > 0
+      ? settledDebtsData.reduce((sum, d) => sum + (d.savingsPercent ?? 0), 0) / settledDebtsData.length
+      : 0;
 
   // Format leads by status for pipeline
   const leadsByStatus = leadsByStatusRaw.map((item) => ({
@@ -252,6 +270,69 @@ export default async function DashboardPage() {
             <p className="text-xs text-muted-foreground">
               Leads converted to enrolled
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Client Stats */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Active Clients
+            </CardTitle>
+            <Briefcase className="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activeClientsCount}</div>
+            <Link href="/clients" className="text-xs text-primary hover:underline">
+              View all clients
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Settled
+            </CardTitle>
+            <DollarSign className="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(totalSettledAmount)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {settledDebtsData.length} debt{settledDebtsData.length !== 1 ? "s" : ""} settled
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Avg Savings %
+            </CardTitle>
+            <TrendingDown className="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {avgSavingsPercent > 0 ? `${avgSavingsPercent.toFixed(1)}%` : "--"}
+            </div>
+            <p className="text-xs text-muted-foreground">Across settled debts</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              At-Risk Clients
+            </CardTitle>
+            <AlertTriangle className="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{atRiskClientsCount}</div>
+            <p className="text-xs text-muted-foreground">Dropped or on hold</p>
           </CardContent>
         </Card>
       </div>

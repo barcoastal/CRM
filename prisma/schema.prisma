@@ -20,10 +20,13 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  leads         Lead[]
-  calls         Call[]
-  campaigns     CampaignAgent[]
-  callFeedbacks CallFeedback[]
+  leads              Lead[]
+  calls              Call[]
+  campaigns          CampaignAgent[]
+  callFeedbacks      CallFeedback[]
+  assignedClients    Client[]       @relation("ClientNegotiator")
+  negotiations       Negotiation[]
+  uploadedDocuments  Document[]
 }
 
 // ============ LEADS ============
@@ -52,6 +55,7 @@ model Lead {
 
   calls            Call[]
   campaignContacts CampaignContact[]
+  client           Client?
 }
 
 // ============ CAMPAIGNS ============
@@ -155,4 +159,98 @@ model CallFeedback {
   improvements      String?  // JSON array
   strengths         String?  // JSON array
   createdAt         DateTime @default(now())
+}
+
+// ============ CLIENTS (Post-Enrollment) ============
+
+model Client {
+  id                  String   @id @default(cuid())
+  leadId              String   @unique
+  lead                Lead     @relation(fields: [leadId], references: [id])
+  programStartDate    DateTime
+  programLength       Int      // months
+  monthlyPayment      Float
+  totalEnrolledDebt   Float
+  totalSettled        Float    @default(0)
+  totalFees           Float    @default(0)
+  status              String   @default("ACTIVE") // ACTIVE, GRADUATED, DROPPED, ON_HOLD
+  assignedNegotiatorId String?
+  assignedNegotiator  User?    @relation("ClientNegotiator", fields: [assignedNegotiatorId], references: [id])
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  debts     Debt[]
+  payments  Payment[]
+  documents Document[]
+}
+
+model Debt {
+  id              String    @id @default(cuid())
+  clientId        String
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  creditorName    String
+  creditorPhone   String?
+  creditorEmail   String?
+  accountNumber   String?
+  originalBalance Float
+  currentBalance  Float
+  enrolledBalance Float
+  status          String    @default("ENROLLED") // ENROLLED, NEGOTIATING, SETTLED, PAID, DISPUTED, WRITTEN_OFF
+  settledAmount   Float?
+  settledDate     DateTime?
+  savingsAmount   Float?
+  savingsPercent  Float?
+  lastPaymentDate DateTime?
+  isDelinquent    Boolean   @default(false)
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  negotiations Negotiation[]
+  payments     Payment[]
+}
+
+model Negotiation {
+  id            String   @id @default(cuid())
+  debtId        String
+  debt          Debt     @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  negotiatorId  String
+  negotiator    User     @relation(fields: [negotiatorId], references: [id])
+  type          String   // CALL, EMAIL, LETTER, FAX
+  date          DateTime
+  offerAmount   Float?
+  offerPercent  Float?
+  response      String   @default("PENDING") // PENDING, ACCEPTED, REJECTED, COUNTERED
+  counterAmount Float?
+  notes         String?
+  createdAt     DateTime @default(now())
+}
+
+model Payment {
+  id            String    @id @default(cuid())
+  clientId      String
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  debtId        String?
+  debt          Debt?     @relation(fields: [debtId], references: [id])
+  type          String    // CLIENT_PAYMENT, SETTLEMENT_PAYOUT, FEE
+  amount        Float
+  scheduledDate DateTime
+  paidDate      DateTime?
+  status        String    @default("SCHEDULED") // SCHEDULED, COMPLETED, MISSED, CANCELLED
+  reference     String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+}
+
+model Document {
+  id           String   @id @default(cuid())
+  clientId     String
+  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name         String
+  type         String   // ENGAGEMENT_AGREEMENT, HARDSHIP_LETTER, AUTHORIZATION, SETTLEMENT_OFFER, BANK_STATEMENT, TAX_RETURN, OTHER
+  filePath     String
+  fileSize     Int?
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
 }

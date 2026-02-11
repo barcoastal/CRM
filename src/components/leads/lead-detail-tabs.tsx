@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { ScoreBadge, StatusBadge, formatCurrency, formatPhone, formatSourceLabel } from "@/components/leads/lead-table";
 import { LEAD_STATUSES } from "@/lib/validations/lead";
+import { EnrollmentDialog } from "@/components/clients/enrollment-dialog";
 import Link from "next/link";
 
 interface CallData {
@@ -112,6 +113,7 @@ function InfoField({ label, value }: { label: string; value: string }) {
 export function LeadDetailTabs({ lead }: LeadDetailTabsProps) {
   const router = useRouter();
   const [updating, setUpdating] = useState(false);
+  const [enrollOpen, setEnrollOpen] = useState(false);
 
   const handleStatusChange = async (newStatus: string) => {
     setUpdating(true);
@@ -170,6 +172,14 @@ export function LeadDetailTabs({ lead }: LeadDetailTabsProps) {
               Edit
             </Link>
           </Button>
+          {lead.status !== "ENROLLED" && (
+            <Button
+              size="sm"
+              onClick={() => setEnrollOpen(true)}
+            >
+              Enroll Client
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" disabled={updating}>
@@ -456,6 +466,14 @@ export function LeadDetailTabs({ lead }: LeadDetailTabsProps) {
           </div>
         </TabsContent>
       </Tabs>
+
+      <EnrollmentDialog
+        open={enrollOpen}
+        onOpenChange={setEnrollOpen}
+        leadId={lead.id}
+        businessName={lead.businessName}
+        totalDebtEst={lead.totalDebtEst}
+      />
     </div>
   );
 }

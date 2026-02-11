@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { updateLeadSchema } from "@/lib/validations/lead";
+import { enrollClientSchema } from "@/lib/validations/client";
 
 export async function GET(
   _request: NextRequest,
@@ -58,6 +59,73 @@ export async function PATCH(
   }
 
   const body = await request.json();
+
+  // Handle enrollment flow: status=ENROLLED + enrollmentData
+  if (body.status === "ENROLLED" && body.enrollmentData) {
+    const enrollParsed = enrollClientSchema.safeParse(body.enrollmentData);
+    if (!enrollParsed.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: enrollParsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    // Check if client already exists for this lead
+    const existingClient = await prisma.client.findUnique({
+      where: { leadId: id },
+    });
+    if (existingClient) {
+      return NextResponse.json(
+        { error: "Client already exists for this lead" },
+        { status: 409 }
+      );
+    }
+
+    const enrollData = enrollParsed.data;
+    const programStart = new Date(enrollData.programStartDate);
+
+    // Update lead status and create client in a transaction
+    const [lead, client] = await Promise.all([
+      prisma.lead.update({
+        where: { id },
+        data: { status: "ENROLLED" },
+        include: {
+          assignedTo: { select: { id: true, name: true, email: true } },
+        },
+      }),
+      prisma.client.create({
+        data: {
+          leadId: id,
+          programStartDate: programStart,
+          programLength: enrollData.programLength,
+          monthlyPayment: enrollData.monthlyPayment,
+          totalEnrolledDebt: enrollData.totalEnrolledDebt,
+          assignedNegotiatorId: enrollData.assignedNegotiatorId || null,
+        },
+      }),
+    ]);
+
+    // Auto-generate payment schedule
+    const payments = [];
+    for (let i = 0; i < enrollData.programLength; i++) {
+      const scheduledDate = new Date(programStart);
+      scheduledDate.setMonth(scheduledDate.getMonth() + i);
+      payments.push({
+        clientId: client.id,
+        type: "CLIENT_PAYMENT",
+        amount: enrollData.monthlyPayment,
+        scheduledDate,
+        status: "SCHEDULED",
+      });
+    }
+    if (payments.length > 0) {
+      await prisma.payment.createMany({ data: payments });
+    }
+
+    return NextResponse.json({ ...lead, clientId: client.id });
+  }
+
+  // Standard lead update
   const parsed = updateLeadSchema.safeParse(body);
 
   if (!parsed.success) {
