@@ -25,7 +25,100 @@ import {
 import { ScoreBadge, StatusBadge, formatCurrency, formatPhone, formatSourceLabel } from "@/components/leads/lead-table";
 import { LEAD_STATUSES } from "@/lib/validations/lead";
 import { EnrollmentDialog } from "@/components/clients/enrollment-dialog";
+import { ConvertToOpportunityDialog } from "@/components/opportunities/convert-to-opportunity-dialog";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
+
+const PIPELINE_STEPS = ["NEW", "CONTACTED", "QUALIFIED", "OPPORTUNITY", "ENROLLED"] as const;
+const EXIT_STATUSES = ["UNQUALIFIED", "LOST", "DNC", "CALLBACK"];
+
+function LeadPath({ status }: { status: string }) {
+  const isExit = EXIT_STATUSES.includes(status);
+  const currentIndex = PIPELINE_STEPS.indexOf(status as typeof PIPELINE_STEPS[number]);
+
+  return (
+    <div className="w-full">
+      <div className="flex items-stretch h-10">
+        {PIPELINE_STEPS.map((step, i) => {
+          const isCompleted = !isExit && currentIndex > i;
+          const isCurrent = !isExit && currentIndex === i;
+          const isFirst = i === 0;
+          const isLast = i === PIPELINE_STEPS.length - 1;
+
+          return (
+            <div key={step} className="relative flex-1 flex items-center justify-center min-w-0">
+              {/* Arrow shape via SVG */}
+              <svg
+                className="absolute inset-0 w-full h-full"
+                preserveAspectRatio="none"
+                viewBox="0 0 120 40"
+              >
+                <path
+                  d={
+                    isFirst && isLast
+                      ? "M0,0 L110,0 L120,20 L110,40 L0,40 Z"
+                      : isFirst
+                        ? "M0,0 L110,0 L120,20 L110,40 L0,40 Z"
+                        : isLast
+                          ? "M0,0 L120,0 L120,40 L0,40 L10,20 Z"
+                          : "M0,0 L110,0 L120,20 L110,40 L0,40 L10,20 Z"
+                  }
+                  className={cn(
+                    isCurrent
+                      ? "fill-primary"
+                      : isCompleted
+                        ? "fill-primary/70"
+                        : "fill-muted"
+                  )}
+                />
+                {/* Right edge separator line */}
+                {!isLast && (
+                  <path
+                    d="M110,0 L120,20 L110,40"
+                    fill="none"
+                    className={cn(
+                      "stroke-background",
+                    )}
+                    strokeWidth="2"
+                  />
+                )}
+                {/* Left edge separator line */}
+                {!isFirst && (
+                  <path
+                    d="M0,0 L10,20 L0,40"
+                    fill="none"
+                    className="stroke-background"
+                    strokeWidth="2"
+                  />
+                )}
+              </svg>
+              <span
+                className={cn(
+                  "relative z-10 text-xs font-semibold truncate px-3",
+                  isCurrent || isCompleted
+                    ? "text-primary-foreground"
+                    : "text-muted-foreground"
+                )}
+              >
+                {step.replace(/_/g, " ")}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {isExit && (
+        <div className="mt-2 flex items-center gap-2">
+          <Badge variant="destructive" className="text-xs">
+            {status.replace(/_/g, " ")}
+          </Badge>
+          <span className="text-xs text-muted-foreground">
+            This lead exited the pipeline
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface CallData {
   id: string;
@@ -114,6 +207,7 @@ export function LeadDetailTabs({ lead }: LeadDetailTabsProps) {
   const router = useRouter();
   const [updating, setUpdating] = useState(false);
   const [enrollOpen, setEnrollOpen] = useState(false);
+  const [convertOpen, setConvertOpen] = useState(false);
 
   const handleStatusChange = async (newStatus: string) => {
     setUpdating(true);
@@ -172,9 +266,18 @@ export function LeadDetailTabs({ lead }: LeadDetailTabsProps) {
               Edit
             </Link>
           </Button>
-          {lead.status !== "ENROLLED" && (
+          {lead.status !== "ENROLLED" && lead.status !== "OPPORTUNITY" && (
             <Button
               size="sm"
+              onClick={() => setConvertOpen(true)}
+            >
+              Convert to Opportunity
+            </Button>
+          )}
+          {lead.status === "OPPORTUNITY" && (
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => setEnrollOpen(true)}
             >
               Enroll Client
@@ -201,6 +304,9 @@ export function LeadDetailTabs({ lead }: LeadDetailTabsProps) {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Pipeline Path */}
+      <LeadPath status={lead.status} />
 
       <Separator />
 
@@ -470,6 +576,14 @@ export function LeadDetailTabs({ lead }: LeadDetailTabsProps) {
       <EnrollmentDialog
         open={enrollOpen}
         onOpenChange={setEnrollOpen}
+        leadId={lead.id}
+        businessName={lead.businessName}
+        totalDebtEst={lead.totalDebtEst}
+      />
+
+      <ConvertToOpportunityDialog
+        open={convertOpen}
+        onOpenChange={setConvertOpen}
         leadId={lead.id}
         businessName={lead.businessName}
         totalDebtEst={lead.totalDebtEst}

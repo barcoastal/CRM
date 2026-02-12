@@ -1,173 +1,169 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+function getMonday(d: Date): Date {
+  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const day = date.getDay(); // 0=Sun, 1=Mon, ...
+  const diff = day === 0 ? 6 : day - 1; // Monday = 0 offset
+  date.setDate(date.getDate() - diff);
+  return date;
+}
+
+export async function GET(request: NextRequest) {
   const session = await auth();
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userRole = session.user.role;
+  const userRole = (session.user as { role?: string }).role;
   const userId = session.user.id;
   const isManagerOrAdmin = userRole === "MANAGER" || userRole === "ADMIN";
 
-  // Build agent filter for non-managers
   const agentFilter = isManagerOrAdmin ? {} : { agentId: userId };
   const leadFilter = isManagerOrAdmin ? {} : { assignedToId: userId };
 
+  // Parse date range for filtered section
+  const searchParams = request.nextUrl.searchParams;
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
+
   const now = new Date();
+  const rangeFrom = fromParam ? new Date(fromParam) : new Date(now.getFullYear(), now.getMonth(), 1);
+  const rangeTo = toParam ? new Date(new Date(toParam).getTime() + 86400000) : new Date(now.getTime() + 86400000); // end of day
+
+  // Fixed dates (always the same, not affected by date range)
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfWeek = new Date(startOfToday);
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+  const startOfWeek = getMonday(now); // Monday start
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   try {
+    // Fixed lead counts + filtered data in parallel
     const [
-      totalLeads,
-      newLeadsThisWeek,
+      leadsToday,
+      leadsThisWeek,
+      leadsThisMonth,
+      // Filtered data below
+      settledDebtsData,
+      activeClientsCount,
+      atRiskClientsCount,
       activeCampaigns,
-      callsToday,
-      callsThisWeek,
-      enrollmentsThisMonth,
-      completedCalls,
-      inProgressCalls,
-      totalCallsForRate,
-      leadsByStatus,
+      callsInRange,
+      enrollmentsInRange,
+      leadsByStatusRaw,
       recentCalls,
-      agentLeaderboardData,
+      agentLeaderboardRaw,
+      openOpportunities,
+      wonOpportunitiesInRange,
     ] = await Promise.all([
-      // Total leads
-      prisma.lead.count({ where: leadFilter }),
-
-      // New leads this week
+      // FIXED: Leads today
       prisma.lead.count({
-        where: {
-          ...leadFilter,
-          createdAt: { gte: startOfWeek },
-        },
+        where: { ...leadFilter, createdAt: { gte: startOfToday } },
+      }),
+      // FIXED: Leads this week (WTD, Monday start)
+      prisma.lead.count({
+        where: { ...leadFilter, createdAt: { gte: startOfWeek } },
+      }),
+      // FIXED: Leads this month (MTD)
+      prisma.lead.count({
+        where: { ...leadFilter, createdAt: { gte: startOfMonth } },
       }),
 
-      // Active campaigns
+      // FILTERED: Settled debts in range
+      prisma.debt.findMany({
+        where: {
+          status: "SETTLED",
+          updatedAt: { gte: rangeFrom, lt: rangeTo },
+        },
+        select: { settledAmount: true, enrolledBalance: true, savingsPercent: true },
+      }),
+      // FILTERED: Active clients (snapshot, not date-filtered but kept for dashboard)
+      prisma.client.count({ where: { status: "ACTIVE" } }),
+      // FILTERED: At-risk clients
+      prisma.client.count({ where: { status: { in: ["DROPPED", "ON_HOLD"] } } }),
+      // FILTERED: Active campaigns
       prisma.campaign.count({ where: { status: "ACTIVE" } }),
-
-      // Calls today
+      // FILTERED: Calls in range
       prisma.call.count({
-        where: {
-          ...agentFilter,
-          startedAt: { gte: startOfToday },
-        },
+        where: { ...agentFilter, startedAt: { gte: rangeFrom, lt: rangeTo } },
       }),
-
-      // Calls this week
-      prisma.call.count({
-        where: {
-          ...agentFilter,
-          startedAt: { gte: startOfWeek },
-        },
-      }),
-
-      // Enrollments this month
+      // FILTERED: Enrollments in range
       prisma.lead.count({
-        where: {
-          ...leadFilter,
-          status: "ENROLLED",
-          updatedAt: { gte: startOfMonth },
-        },
+        where: { ...leadFilter, status: "ENROLLED", updatedAt: { gte: rangeFrom, lt: rangeTo } },
       }),
-
-      // Completed calls for avg duration
-      prisma.call.findMany({
-        where: {
-          ...agentFilter,
-          status: "COMPLETED",
-          duration: { not: null },
-        },
-        select: { duration: true },
-      }),
-
-      // Calls that reached IN_PROGRESS
-      prisma.call.count({
-        where: {
-          ...agentFilter,
-          status: "IN_PROGRESS",
-        },
-      }),
-
-      // Total calls for connection rate
-      prisma.call.count({ where: agentFilter }),
-
-      // Leads by status
+      // FILTERED: Leads by status (pipeline — snapshot, all time)
       prisma.lead.groupBy({
         by: ["status"],
         _count: { id: true },
         where: leadFilter,
       }),
-
-      // Recent calls
+      // FILTERED: Recent calls in range
       prisma.call.findMany({
-        where: agentFilter,
+        where: { ...agentFilter, startedAt: { gte: rangeFrom, lt: rangeTo } },
         orderBy: { startedAt: "desc" },
         take: 10,
         include: {
-          lead: { select: { businessName: true, contactName: true } },
+          lead: { select: { businessName: true } },
           agent: { select: { name: true } },
           feedback: { select: { overallScore: true } },
         },
       }),
-
-      // Agent leaderboard - top agents by calls this week
+      // FILTERED: Agent leaderboard in range
       prisma.call.groupBy({
         by: ["agentId"],
         _count: { id: true },
-        where: {
-          startedAt: { gte: startOfWeek },
-        },
+        where: { startedAt: { gte: rangeFrom, lt: rangeTo } },
         orderBy: { _count: { id: "desc" } },
         take: 10,
       }),
+      // Open opportunities (not archived/closed/won)
+      prisma.opportunity.count({
+        where: {
+          stage: { notIn: ["ARCHIVED", "CLOSED", "CLOSED_WON_FIRST_PAYMENT"] },
+        },
+      }),
+      // Won opportunities in range
+      prisma.opportunity.count({
+        where: {
+          stage: "CLOSED_WON_FIRST_PAYMENT",
+          updatedAt: { gte: rangeFrom, lt: rangeTo },
+        },
+      }),
     ]);
 
-    // Calculate avg call duration
-    const totalDuration = completedCalls.reduce(
-      (sum, c) => sum + (c.duration || 0),
-      0
+    // Compute revenue stats
+    const totalRevenue = settledDebtsData.reduce(
+      (sum, d) => sum + (d.settledAmount ?? 0), 0
     );
-    const avgCallDuration =
-      completedCalls.length > 0
-        ? Math.round(totalDuration / completedCalls.length)
-        : 0;
-
-    // Calculate connection rate: calls that reached IN_PROGRESS or COMPLETED
-    const completedCount = completedCalls.length;
-    const connectedCalls = inProgressCalls + completedCount;
-    const connectionRate =
-      totalCallsForRate > 0
-        ? Math.round((connectedCalls / totalCallsForRate) * 100)
+    const avgSavingsPercent =
+      settledDebtsData.length > 0
+        ? settledDebtsData.reduce((sum, d) => sum + (d.savingsPercent ?? 0), 0) / settledDebtsData.length
         : 0;
 
     // Format leads by status
-    const formattedLeadsByStatus = leadsByStatus.map((item) => ({
+    const leadsByStatus = leadsByStatusRaw.map((item) => ({
       status: item.status,
       count: item._count.id,
     }));
 
     // Build agent leaderboard with details
-    const agentIds = agentLeaderboardData.map((a) => a.agentId);
-    const agents = await prisma.user.findMany({
-      where: { id: { in: agentIds } },
-      select: { id: true, name: true },
-    });
+    const agentIds = agentLeaderboardRaw.map((a) => a.agentId);
+    const agentUsers = agentIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: agentIds } },
+          select: { id: true, name: true },
+        })
+      : [];
 
     const agentLeaderboard = await Promise.all(
-      agentLeaderboardData.map(async (entry) => {
-        const agent = agents.find((a) => a.id === entry.agentId);
+      agentLeaderboardRaw.map(async (entry) => {
+        const agent = agentUsers.find((a) => a.id === entry.agentId);
         const [connections, enrollments, feedbackScores] = await Promise.all([
           prisma.call.count({
             where: {
               agentId: entry.agentId,
-              startedAt: { gte: startOfWeek },
+              startedAt: { gte: rangeFrom, lt: rangeTo },
               status: { in: ["IN_PROGRESS", "COMPLETED"] },
             },
           }),
@@ -175,13 +171,13 @@ export async function GET() {
             where: {
               assignedToId: entry.agentId,
               status: "ENROLLED",
-              updatedAt: { gte: startOfWeek },
+              updatedAt: { gte: rangeFrom, lt: rangeTo },
             },
           }),
           prisma.callFeedback.findMany({
             where: {
               agentId: entry.agentId,
-              createdAt: { gte: startOfWeek },
+              createdAt: { gte: rangeFrom, lt: rangeTo },
             },
             select: { overallScore: true },
           }),
@@ -206,17 +202,24 @@ export async function GET() {
     );
 
     return NextResponse.json({
-      totalLeads,
-      newLeadsThisWeek,
+      // Fixed stats
+      leadsToday,
+      leadsThisWeek,
+      leadsThisMonth,
+      // Filtered stats
+      totalRevenue,
+      settledCount: settledDebtsData.length,
+      avgSavingsPercent,
+      activeClients: activeClientsCount,
+      atRiskClients: atRiskClientsCount,
       activeCampaigns,
-      callsToday,
-      callsThisWeek,
-      enrollmentsThisMonth,
-      avgCallDuration,
-      connectionRate,
-      leadsByStatus: formattedLeadsByStatus,
+      callsInRange,
+      enrollmentsInRange,
+      leadsByStatus,
       recentCalls,
       agentLeaderboard,
+      openOpportunities,
+      wonOpportunitiesInRange,
     });
   } catch (error) {
     console.error("Dashboard stats error:", error);

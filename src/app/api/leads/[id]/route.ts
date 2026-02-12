@@ -84,8 +84,10 @@ export async function PATCH(
     const enrollData = enrollParsed.data;
     const programStart = new Date(enrollData.programStartDate);
 
+    const opportunityId = body.opportunityId || null;
+
     // Update lead status and create client in a transaction
-    const [lead, client] = await Promise.all([
+    const updatePromises: Promise<unknown>[] = [
       prisma.lead.update({
         where: { id },
         data: { status: "ENROLLED" },
@@ -96,6 +98,7 @@ export async function PATCH(
       prisma.client.create({
         data: {
           leadId: id,
+          opportunityId: opportunityId,
           programStartDate: programStart,
           programLength: enrollData.programLength,
           monthlyPayment: enrollData.monthlyPayment,
@@ -103,7 +106,21 @@ export async function PATCH(
           assignedNegotiatorId: enrollData.assignedNegotiatorId || null,
         },
       }),
-    ]);
+    ];
+
+    // If enrolling from an opportunity, update its stage
+    if (opportunityId) {
+      updatePromises.push(
+        prisma.opportunity.update({
+          where: { id: opportunityId },
+          data: { stage: "CLOSED_WON_FIRST_PAYMENT" },
+        })
+      );
+    }
+
+    const results = await Promise.all(updatePromises);
+    const lead = results[0] as Awaited<ReturnType<typeof prisma.lead.update>>;
+    const client = results[1] as { id: string };
 
     // Auto-generate payment schedule
     const payments = [];

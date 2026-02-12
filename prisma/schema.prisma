@@ -27,6 +27,7 @@ model User {
   assignedClients    Client[]       @relation("ClientNegotiator")
   negotiations       Negotiation[]
   uploadedDocuments  Document[]
+  opportunities      Opportunity[]  @relation("OpportunityAssignee")
 }
 
 // ============ LEADS ============
@@ -56,6 +57,7 @@ model Lead {
   calls            Call[]
   campaignContacts CampaignContact[]
   client           Client?
+  opportunity      Opportunity?
 }
 
 // ============ CAMPAIGNS ============
@@ -163,10 +165,27 @@ model CallFeedback {
 
 // ============ CLIENTS (Post-Enrollment) ============
 
+model Opportunity {
+  id                String    @id @default(cuid())
+  leadId            String    @unique
+  lead              Lead      @relation(fields: [leadId], references: [id])
+  stage             String    @default("WORKING_OPPORTUNITY")
+  estimatedValue    Float?
+  expectedCloseDate DateTime?
+  assignedToId      String?
+  assignedTo        User?     @relation("OpportunityAssignee", fields: [assignedToId], references: [id])
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  client            Client?
+}
+
 model Client {
-  id                  String   @id @default(cuid())
-  leadId              String   @unique
-  lead                Lead     @relation(fields: [leadId], references: [id])
+  id                  String       @id @default(cuid())
+  leadId              String       @unique
+  lead                Lead         @relation(fields: [leadId], references: [id])
+  opportunityId       String?      @unique
+  opportunity         Opportunity? @relation(fields: [opportunityId], references: [id])
   programStartDate    DateTime
   programLength       Int      // months
   monthlyPayment      Float

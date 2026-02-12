@@ -16,6 +16,7 @@ export const LEAD_STATUSES = [
   "QUALIFIED",
   "UNQUALIFIED",
   "CALLBACK",
+  "OPPORTUNITY",
   "ENROLLED",
   "LOST",
   "DNC",
