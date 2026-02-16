@@ -1,14 +1,13 @@
-const { PrismaLibSql } = require("@prisma/adapter-libsql");
-const { createClient } = require("@libsql/client");
-const { hash } = require("bcryptjs");
-const path = require("path");
+import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { hash } from "bcryptjs";
+import { fileURLToPath } from "node:url";
+import * as path from "node:path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function main() {
   const dbPath = path.resolve(__dirname, "..", "dev.db");
-  const libsql = createClient({ url: `file:${dbPath}` });
-  const adapter = new PrismaLibSql(libsql);
-
-  // Dynamic import for ESM-only Prisma client
+  const adapter = new PrismaLibSql({ url: `file:${dbPath}` });
   const { PrismaClient } = await import("../src/generated/prisma/client.js");
   const prisma = new PrismaClient({ adapter } as any);
 
@@ -205,7 +204,7 @@ Our fees are based on performance — we only get paid when we save you money. M
       startTime: "09:00",
       endTime: "18:00",
       contacts: {
-        create: leads.map((lead: any, index: number) => ({
+        create: leads.map((lead, index) => ({
           leadId: lead.id,
           priority: leads.length - index,
         })),
