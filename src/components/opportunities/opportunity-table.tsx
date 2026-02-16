@@ -26,7 +26,7 @@ import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
 interface Opportunity {
   id: string;
   stage: string;
-  estimatedValue: number | null;
+  totalDebt: number | null;
   expectedCloseDate: string | null;
   createdAt: string;
   lead: {
@@ -169,7 +169,7 @@ export function OpportunityTable({ opportunities, total, page, totalPages }: Opp
               <TableHead>Business Name</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Stage</TableHead>
-              <TableHead className="text-right">Est. Value</TableHead>
+              <TableHead className="text-right">Total Debt</TableHead>
               <TableHead>Expected Close</TableHead>
               <TableHead>Assigned To</TableHead>
               <TableHead>Created</TableHead>
@@ -195,7 +195,7 @@ export function OpportunityTable({ opportunities, total, page, totalPages }: Opp
                     <StageBadge stage={opp.stage} />
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(opp.estimatedValue)}
+                    {formatCurrency(opp.totalDebt)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {formatDate(opp.expectedCloseDate)}

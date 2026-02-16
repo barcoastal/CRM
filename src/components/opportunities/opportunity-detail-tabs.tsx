@@ -129,7 +129,7 @@ function OpportunityPath({ stage }: { stage: string }) {
 interface OpportunityData {
   id: string;
   stage: string;
-  estimatedValue: number | null;
+  totalDebt: number | null;
   expectedCloseDate: string | null;
   notes: string | null;
   createdAt: string;
@@ -397,8 +397,8 @@ export function OpportunityDetailTabs({ opportunity }: OpportunityDetailTabsProp
               </CardHeader>
               <CardContent className="grid gap-4 grid-cols-2">
                 <InfoField
-                  label="Estimated Value"
-                  value={formatCurrency(opportunity.estimatedValue)}
+                  label="Total Debt"
+                  value={formatCurrency(opportunity.totalDebt)}
                 />
                 <InfoField
                   label="Expected Close"

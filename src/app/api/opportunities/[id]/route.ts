@@ -90,8 +90,8 @@ export async function PATCH(
   const updateData: Record<string, unknown> = {};
 
   if (data.stage !== undefined) updateData.stage = data.stage;
-  if (data.estimatedValue !== undefined) {
-    updateData.estimatedValue = typeof data.estimatedValue === "number" ? data.estimatedValue : null;
+  if (data.totalDebt !== undefined) {
+    updateData.totalDebt = typeof data.totalDebt === "number" ? data.totalDebt : null;
   }
   if (data.expectedCloseDate !== undefined) {
     updateData.expectedCloseDate = data.expectedCloseDate ? new Date(data.expectedCloseDate) : null;

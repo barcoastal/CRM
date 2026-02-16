@@ -42,8 +42,8 @@ export function ConvertToOpportunityDialog({
     const formData = new FormData(e.currentTarget);
     const data = {
       leadId,
-      estimatedValue: formData.get("estimatedValue")
-        ? Number(formData.get("estimatedValue"))
+      totalDebt: formData.get("totalDebt")
+        ? Number(formData.get("totalDebt"))
         : undefined,
       expectedCloseDate: (formData.get("expectedCloseDate") as string) || undefined,
       notes: (formData.get("notes") as string) || undefined,
@@ -84,10 +84,10 @@ export function ConvertToOpportunityDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="estimatedValue">Estimated Value ($)</Label>
+            <Label htmlFor="totalDebt">Total Debt ($)</Label>
             <Input
-              id="estimatedValue"
-              name="estimatedValue"
+              id="totalDebt"
+              name="totalDebt"
               type="number"
               min={0}
               step="0.01"

@@ -25,7 +25,7 @@ interface UserOption {
 interface OpportunityEditFormProps {
   opportunity: {
     id: string;
-    estimatedValue: number | null;
+    totalDebt: number | null;
     expectedCloseDate: string | null;
     assignedToId: string | null;
     notes: string | null;
@@ -49,9 +49,9 @@ export function OpportunityEditForm({ opportunity, users }: OpportunityEditFormP
     const formData = new FormData(e.currentTarget);
     const data: Record<string, unknown> = {};
 
-    const estimatedValue = formData.get("estimatedValue") as string;
-    if (estimatedValue) data.estimatedValue = Number(estimatedValue);
-    else data.estimatedValue = "";
+    const totalDebt = formData.get("totalDebt") as string;
+    if (totalDebt) data.totalDebt = Number(totalDebt);
+    else data.totalDebt = "";
 
     const expectedCloseDate = formData.get("expectedCloseDate") as string;
     data.expectedCloseDate = expectedCloseDate || "";
@@ -114,14 +114,14 @@ export function OpportunityEditForm({ opportunity, users }: OpportunityEditFormP
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="estimatedValue">Estimated Value ($)</Label>
+                <Label htmlFor="totalDebt">Total Debt ($)</Label>
                 <Input
-                  id="estimatedValue"
-                  name="estimatedValue"
+                  id="totalDebt"
+                  name="totalDebt"
                   type="number"
                   min={0}
                   step="0.01"
-                  defaultValue={opportunity.estimatedValue ?? ""}
+                  defaultValue={opportunity.totalDebt ?? ""}
                 />
               </div>
 

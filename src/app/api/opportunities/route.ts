@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     prisma.opportunity.create({
       data: {
         leadId: data.leadId,
-        estimatedValue: typeof data.estimatedValue === "number" ? data.estimatedValue : null,
+        totalDebt: typeof data.totalDebt === "number" ? data.totalDebt : null,
         expectedCloseDate: data.expectedCloseDate ? new Date(data.expectedCloseDate) : null,
         assignedToId: data.assignedToId || lead.assignedToId || null,
         notes: data.notes || null,

@@ -31,7 +31,7 @@ export default async function OpportunityEditPage({ params }: OpportunityEditPag
 
   const serialized = {
     id: opportunity.id,
-    estimatedValue: opportunity.estimatedValue,
+    totalDebt: opportunity.totalDebt,
     expectedCloseDate: opportunity.expectedCloseDate?.toISOString() ?? null,
     assignedToId: opportunity.assignedToId,
     notes: opportunity.notes,

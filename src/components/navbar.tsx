@@ -11,6 +11,7 @@ import {
   Phone,
   Megaphone,
   PhoneCall,
+  Calculator,
   BarChart3,
   LogOut,
   ChevronDown,
@@ -44,6 +45,7 @@ const navItems = [
   { label: "Dialer", href: "/dialer", icon: Phone },
   { label: "Campaigns", href: "/campaigns", icon: Megaphone },
   { label: "Calls", href: "/calls", icon: PhoneCall },
+  { label: "Calculator", href: "/calculator", icon: Calculator },
   { label: "Reports", href: "/reports", icon: BarChart3 },
 ];
 

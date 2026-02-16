@@ -170,7 +170,7 @@ model Opportunity {
   leadId            String    @unique
   lead              Lead      @relation(fields: [leadId], references: [id])
   stage             String    @default("WORKING_OPPORTUNITY")
-  estimatedValue    Float?
+  totalDebt         Float?
   expectedCloseDate DateTime?
   assignedToId      String?
   assignedTo        User?     @relation("OpportunityAssignee", fields: [assignedToId], references: [id])
