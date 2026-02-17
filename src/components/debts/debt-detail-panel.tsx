@@ -33,7 +33,8 @@ interface DebtDetailPanelProps {
     notes: string | null;
     negotiations: NegotiationData[];
   };
-  clientId: string;
+  clientId?: string;
+  opportunityId?: string;
   onRefresh: () => void;
 }
 
@@ -50,6 +51,7 @@ function formatCurrency(value: number | null): string {
 export function DebtDetailPanel({
   debt,
   clientId,
+  opportunityId,
   onRefresh,
 }: DebtDetailPanelProps) {
   return (

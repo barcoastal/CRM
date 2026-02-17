@@ -50,6 +50,27 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
       client: {
         select: { id: true },
       },
+      debts: {
+        include: {
+          negotiations: {
+            include: {
+              negotiator: {
+                select: { id: true, name: true },
+              },
+            },
+            orderBy: { date: "desc" },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      },
+      documents: {
+        include: {
+          uploadedBy: {
+            select: { id: true, name: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
@@ -80,6 +101,22 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
         createdAt: cc.createdAt.toISOString(),
       })),
     },
+    debts: opportunity.debts.map((debt) => ({
+      ...debt,
+      settledDate: debt.settledDate?.toISOString() ?? null,
+      lastPaymentDate: debt.lastPaymentDate?.toISOString() ?? null,
+      createdAt: debt.createdAt.toISOString(),
+      updatedAt: debt.updatedAt.toISOString(),
+      negotiations: debt.negotiations.map((neg) => ({
+        ...neg,
+        date: neg.date.toISOString(),
+        createdAt: neg.createdAt.toISOString(),
+      })),
+    })),
+    documents: opportunity.documents.map((doc) => ({
+      ...doc,
+      createdAt: doc.createdAt.toISOString(),
+    })),
   };
 
   return <OpportunityDetailTabs opportunity={serialized} />;

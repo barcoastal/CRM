@@ -31,7 +31,7 @@ interface NegotiationData {
 
 interface NegotiationTimelineProps {
   negotiations: NegotiationData[];
-  clientId: string;
+  clientId?: string;
   debtId: string;
   onRefresh: () => void;
 }

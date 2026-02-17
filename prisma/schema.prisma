@@ -178,6 +178,8 @@ model Opportunity {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   client            Client?
+  debts             Debt[]
+  documents         Document[]
 }
 
 model Client {
@@ -204,9 +206,11 @@ model Client {
 }
 
 model Debt {
-  id              String    @id @default(cuid())
-  clientId        String
-  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  id              String       @id @default(cuid())
+  clientId        String?
+  client          Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  opportunityId   String?
+  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   creditorName    String
   creditorPhone   String?
   creditorEmail   String?
@@ -262,10 +266,12 @@ model Payment {
 }
 
 model Document {
-  id           String   @id @default(cuid())
-  clientId     String
-  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  name         String
+  id              String       @id @default(cuid())
+  clientId        String?
+  client          Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  opportunityId   String?
+  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  name            String
   type         String   // ENGAGEMENT_AGREEMENT, HARDSHIP_LETTER, AUTHORIZATION, SETTLEMENT_OFFER, BANK_STATEMENT, TAX_RETURN, OTHER
   filePath     String
   fileSize     Int?

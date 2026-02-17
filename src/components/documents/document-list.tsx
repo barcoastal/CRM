@@ -26,7 +26,8 @@ interface DocumentData {
 
 interface DocumentListProps {
   documents: DocumentData[];
-  clientId: string;
+  clientId?: string;
+  opportunityId?: string;
   onRefresh: () => void;
 }
 
@@ -65,7 +66,7 @@ function formatFileSize(bytes: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function DocumentList({ documents, clientId, onRefresh }: DocumentListProps) {
+export function DocumentList({ documents, clientId, opportunityId, onRefresh }: DocumentListProps) {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [filterType, setFilterType] = useState("ALL");
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -77,7 +78,10 @@ export function DocumentList({ documents, clientId, onRefresh }: DocumentListPro
   const handleDelete = async (docId: string) => {
     setDeleting(docId);
     try {
-      const res = await fetch(`/api/clients/${clientId}/documents/${docId}`, {
+      const deleteUrl = opportunityId
+        ? `/api/opportunities/${opportunityId}/documents/${docId}`
+        : `/api/clients/${clientId}/documents/${docId}`;
+      const res = await fetch(deleteUrl, {
         method: "DELETE",
       });
       if (res.ok) {
@@ -185,6 +189,7 @@ export function DocumentList({ documents, clientId, onRefresh }: DocumentListPro
         open={uploadOpen}
         onOpenChange={setUploadOpen}
         clientId={clientId}
+        opportunityId={opportunityId}
         onSuccess={onRefresh}
       />
     </div>

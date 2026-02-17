@@ -24,7 +24,8 @@ import { DOCUMENT_TYPES } from "@/lib/validations/payment";
 interface UploadDocumentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  clientId: string;
+  clientId?: string;
+  opportunityId?: string;
   onSuccess: () => void;
 }
 
@@ -42,6 +43,7 @@ export function UploadDocumentDialog({
   open,
   onOpenChange,
   clientId,
+  opportunityId,
   onSuccess,
 }: UploadDocumentDialogProps) {
   const [submitting, setSubmitting] = useState(false);
@@ -61,7 +63,10 @@ export function UploadDocumentDialog({
     };
 
     try {
-      const res = await fetch(`/api/clients/${clientId}/documents`, {
+      const apiUrl = opportunityId
+        ? `/api/opportunities/${opportunityId}/documents`
+        : `/api/clients/${clientId}/documents`;
+      const res = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

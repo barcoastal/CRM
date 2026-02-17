@@ -17,7 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 interface AddDebtDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  clientId: string;
+  clientId?: string;
+  opportunityId?: string;
   onSuccess: () => void;
 }
 
@@ -25,6 +26,7 @@ export function AddDebtDialog({
   open,
   onOpenChange,
   clientId,
+  opportunityId,
   onSuccess,
 }: AddDebtDialogProps) {
   const [submitting, setSubmitting] = useState(false);
@@ -48,7 +50,10 @@ export function AddDebtDialog({
     };
 
     try {
-      const res = await fetch(`/api/clients/${clientId}/debts`, {
+      const apiUrl = opportunityId
+        ? `/api/opportunities/${opportunityId}/debts`
+        : `/api/clients/${clientId}/debts`;
+      const res = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

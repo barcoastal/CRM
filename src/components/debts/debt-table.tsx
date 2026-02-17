@@ -48,7 +48,8 @@ interface DebtData {
 
 interface DebtTableProps {
   debts: DebtData[];
-  clientId: string;
+  clientId?: string;
+  opportunityId?: string;
   onRefresh: () => void;
 }
 
@@ -71,7 +72,7 @@ function formatCurrency(value: number | null): string {
   }).format(value);
 }
 
-export function DebtTable({ debts, clientId, onRefresh }: DebtTableProps) {
+export function DebtTable({ debts, clientId, opportunityId, onRefresh }: DebtTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 
@@ -166,6 +167,7 @@ export function DebtTable({ debts, clientId, onRefresh }: DebtTableProps) {
                         <DebtDetailPanel
                           debt={debt}
                           clientId={clientId}
+                          opportunityId={opportunityId}
                           onRefresh={onRefresh}
                         />
                       </TableCell>
@@ -182,6 +184,7 @@ export function DebtTable({ debts, clientId, onRefresh }: DebtTableProps) {
         open={addOpen}
         onOpenChange={setAddOpen}
         clientId={clientId}
+        opportunityId={opportunityId}
         onSuccess={onRefresh}
       />
     </div>
