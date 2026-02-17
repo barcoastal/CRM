@@ -1,8 +1,23 @@
 const { createServer } = require("http");
 const { parse } = require("url");
+const { execSync } = require("child_process");
 const next = require("next");
 
 const port = parseInt(process.env.PORT || "3000", 10);
+
+// Push schema changes to DB at startup (runtime has DB access)
+try {
+  console.log("> Running prisma db push...");
+  execSync("npx prisma db push --skip-generate --accept-data-loss", {
+    stdio: "inherit",
+    env: process.env,
+  });
+  console.log("> Prisma schema synced successfully");
+} catch (err) {
+  console.error("> Warning: prisma db push failed:", err.message);
+  // Continue anyway — schema might already be up to date
+}
+
 const app = next({ dev: false });
 const handle = app.getRequestHandler();
 
