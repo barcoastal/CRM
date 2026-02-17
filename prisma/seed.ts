@@ -1,16 +1,11 @@
-import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaClient } from "../src/generated/prisma/client.js";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { hash } from "bcryptjs";
-import { fileURLToPath } from "node:url";
-import * as path from "node:path";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter } as any);
 
 async function main() {
-  const dbPath = path.resolve(__dirname, "..", "dev.db");
-  const adapter = new PrismaLibSql({ url: `file:${dbPath}` });
-  const { PrismaClient } = await import("../src/generated/prisma/client.js");
-  const prisma = new PrismaClient({ adapter } as any);
-
   // Create users
   const admin = await prisma.user.create({
     data: {
