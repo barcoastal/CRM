@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -19,6 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { toast } from "sonner";
+import { Copy, Send, FileText } from "lucide-react";
 
 interface CalculatorInputs {
   totalDebt: number;
@@ -92,10 +97,18 @@ function getFrequencyLabel(frequency: string): string {
 interface PaymentCalculatorProps {
   initialDebt?: number;
   businessName?: string;
+  contactEmail?: string;
   compact?: boolean;
 }
 
-export function PaymentCalculator({ initialDebt, businessName, compact }: PaymentCalculatorProps = {}) {
+export function PaymentCalculator({ initialDebt, businessName, contactEmail, compact }: PaymentCalculatorProps = {}) {
+  const [proposalEmail, setProposalEmail] = useState(contactEmail || "");
+  const [proposalSubject, setProposalSubject] = useState(
+    businessName ? `Payment Plan Proposal - ${businessName}` : "Payment Plan Proposal"
+  );
+  const [proposalMessage, setProposalMessage] = useState("");
+  const [sendingProposal, setSendingProposal] = useState(false);
+
   const [inputs, setInputs] = useState<CalculatorInputs>({
     totalDebt: initialDebt || 100000,
     paymentTerm: 7,
@@ -516,6 +529,166 @@ export function PaymentCalculator({ initialDebt, businessName, compact }: Paymen
                 ))}
               </TableBody>
             </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Send Proposal Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="size-5" />
+            Send Proposal
+          </CardTitle>
+          <CardDescription>
+            Compose and send a payment plan proposal to the client
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Email and Subject Fields */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="proposalEmail">Recipient Email</Label>
+              <Input
+                id="proposalEmail"
+                type="email"
+                placeholder="client@example.com"
+                value={proposalEmail}
+                onChange={(e) => setProposalEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="proposalSubject">Subject</Label>
+              <Input
+                id="proposalSubject"
+                type="text"
+                value={proposalSubject}
+                onChange={(e) => setProposalSubject(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Message textarea */}
+          <div className="space-y-1.5">
+            <Label htmlFor="proposalMessage">Message</Label>
+            <Textarea
+              id="proposalMessage"
+              placeholder="Write your personalized message to the client..."
+              value={proposalMessage}
+              onChange={(e) => setProposalMessage(e.target.value)}
+              rows={5}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Calculation Summary Preview */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Proposal Summary Preview</Label>
+            <div className="rounded-md border bg-muted/50 p-4 text-sm font-mono whitespace-pre-wrap">
+              {`PAYMENT PLAN PROPOSAL
+Business: ${businessName || "N/A"}
+Total Debt: ${formatCurrencyWhole(inputs.totalDebt)}
+Settlement Amount (${inputs.settlementPercent}%): ${formatCurrencyWhole(calculations.totalSettlement)}
+Program Fee (${inputs.programFeePercent}%): ${formatCurrencyWhole(calculations.totalProgramFee)}
+Total With Fees: ${formatCurrencyWhole(calculations.totalWithFees)}
+Estimated Savings: ${formatCurrencyWhole(calculations.estimatedSavings)} (${calculations.savingsPercent}%)
+
+Payment Schedule:
+${calculations.frequencyLabel} Payment: ${formatCurrency(calculations.periodicPayment)}
+First Payment (Retainer + Setup): ${formatCurrency(calculations.firstPeriodPayment)}
+Program Length: ${inputs.paymentTerm} months / ${calculations.totalPeriods} payments`}
+              {proposalMessage ? `\n\n${proposalMessage}` : ""}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const summaryText = `PAYMENT PLAN PROPOSAL
+Business: ${businessName || "N/A"}
+Total Debt: ${formatCurrencyWhole(inputs.totalDebt)}
+Settlement Amount (${inputs.settlementPercent}%): ${formatCurrencyWhole(calculations.totalSettlement)}
+Program Fee (${inputs.programFeePercent}%): ${formatCurrencyWhole(calculations.totalProgramFee)}
+Total With Fees: ${formatCurrencyWhole(calculations.totalWithFees)}
+Estimated Savings: ${formatCurrencyWhole(calculations.estimatedSavings)} (${calculations.savingsPercent}%)
+
+Payment Schedule:
+${calculations.frequencyLabel} Payment: ${formatCurrency(calculations.periodicPayment)}
+First Payment (Retainer + Setup): ${formatCurrency(calculations.firstPeriodPayment)}
+Program Length: ${inputs.paymentTerm} months / ${calculations.totalPeriods} payments${proposalMessage ? `\n\n${proposalMessage}` : ""}`;
+
+                navigator.clipboard.writeText(summaryText).then(() => {
+                  toast.success("Proposal copied to clipboard");
+                }).catch(() => {
+                  toast.error("Failed to copy to clipboard");
+                });
+              }}
+            >
+              <Copy className="size-4 mr-2" />
+              Copy to Clipboard
+            </Button>
+
+            <Button
+              disabled={sendingProposal || !proposalEmail}
+              onClick={async () => {
+                if (!proposalEmail) {
+                  toast.error("Please enter a recipient email address");
+                  return;
+                }
+                if (!proposalSubject) {
+                  toast.error("Please enter a subject");
+                  return;
+                }
+
+                setSendingProposal(true);
+                try {
+                  const calculationSummary = {
+                    businessName: businessName || "N/A",
+                    totalDebt: inputs.totalDebt,
+                    settlementPercent: inputs.settlementPercent,
+                    settlementAmount: calculations.totalSettlement,
+                    programFeePercent: inputs.programFeePercent,
+                    programFee: calculations.totalProgramFee,
+                    totalWithFees: calculations.totalWithFees,
+                    estimatedSavings: calculations.estimatedSavings,
+                    savingsPercent: calculations.savingsPercent,
+                    frequency: calculations.frequencyLabel,
+                    periodicPayment: calculations.periodicPayment,
+                    firstPayment: calculations.firstPeriodPayment,
+                    programLengthMonths: inputs.paymentTerm,
+                    totalPayments: calculations.totalPeriods,
+                  };
+
+                  const res = await fetch("/api/proposals/send", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      email: proposalEmail,
+                      subject: proposalSubject,
+                      message: proposalMessage,
+                      calculationSummary,
+                    }),
+                  });
+
+                  if (res.ok) {
+                    toast.success("Proposal sent successfully");
+                  } else {
+                    const data = await res.json();
+                    toast.error(data.error || "Failed to send proposal");
+                  }
+                } catch {
+                  toast.error("Failed to send proposal");
+                } finally {
+                  setSendingProposal(false);
+                }
+              }}
+            >
+              <Send className="size-4 mr-2" />
+              {sendingProposal ? "Sending..." : "Send Email"}
+            </Button>
           </div>
         </CardContent>
       </Card>

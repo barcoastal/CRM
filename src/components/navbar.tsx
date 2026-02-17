@@ -13,6 +13,7 @@ import {
   PhoneCall,
   Calculator,
   BarChart3,
+  Settings,
   LogOut,
   ChevronDown,
   Menu,
@@ -47,6 +48,7 @@ const navItems = [
   { label: "Calls", href: "/calls", icon: PhoneCall },
   { label: "Calculator", href: "/calculator", icon: Calculator },
   { label: "Reports", href: "/reports", icon: BarChart3 },
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 function getInitials(name: string): string {

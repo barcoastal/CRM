@@ -512,6 +512,7 @@ export function OpportunityDetailTabs({ opportunity }: OpportunityDetailTabsProp
           <PaymentCalculator
             initialDebt={opportunity.totalDebt || opportunity.lead.totalDebtEst || 0}
             businessName={opportunity.lead.businessName}
+            contactEmail={opportunity.lead.email || ""}
             compact
           />
         </TabsContent>

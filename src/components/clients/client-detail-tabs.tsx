@@ -369,6 +369,7 @@ export function ClientDetailTabs({ client }: ClientDetailTabsProps) {
           <PaymentCalculator
             initialDebt={client.totalEnrolledDebt}
             businessName={client.lead.businessName}
+            contactEmail={client.lead.email || ""}
             compact
           />
         </TabsContent>
