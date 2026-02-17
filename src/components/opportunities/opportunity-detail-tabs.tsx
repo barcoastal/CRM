@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
 import { EnrollmentDialog } from "@/components/clients/enrollment-dialog";
+import { PaymentCalculator } from "@/components/calculator/payment-calculator";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -353,6 +354,7 @@ export function OpportunityDetailTabs({ opportunity }: OpportunityDetailTabsProp
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="calculator">Calculator</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
@@ -478,6 +480,14 @@ export function OpportunityDetailTabs({ opportunity }: OpportunityDetailTabsProp
               </Card>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="calculator" className="mt-4">
+          <PaymentCalculator
+            initialDebt={opportunity.totalDebt || opportunity.lead.totalDebtEst || 0}
+            businessName={opportunity.lead.businessName}
+            compact
+          />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-4">

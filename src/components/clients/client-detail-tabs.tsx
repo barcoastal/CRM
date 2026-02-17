@@ -19,6 +19,7 @@ import { ProgramSummaryCard } from "@/components/clients/program-summary-card";
 import { DebtTable } from "@/components/debts/debt-table";
 import { PaymentTable } from "@/components/payments/payment-table";
 import { DocumentList } from "@/components/documents/document-list";
+import { PaymentCalculator } from "@/components/calculator/payment-calculator";
 import Link from "next/link";
 
 interface NegotiationData {
@@ -249,6 +250,7 @@ export function ClientDetailTabs({ client }: ClientDetailTabsProps) {
           <TabsTrigger value="documents">
             Documents ({client.documents.length})
           </TabsTrigger>
+          <TabsTrigger value="calculator">Calculator</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
@@ -333,6 +335,14 @@ export function ClientDetailTabs({ client }: ClientDetailTabsProps) {
             documents={client.documents}
             clientId={client.id}
             onRefresh={handleRefresh}
+          />
+        </TabsContent>
+
+        <TabsContent value="calculator" className="mt-4">
+          <PaymentCalculator
+            initialDebt={client.totalEnrolledDebt}
+            businessName={client.lead.businessName}
+            compact
           />
         </TabsContent>
 

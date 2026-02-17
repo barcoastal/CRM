@@ -89,9 +89,15 @@ function getFrequencyLabel(frequency: string): string {
   }
 }
 
-export function PaymentCalculator() {
+interface PaymentCalculatorProps {
+  initialDebt?: number;
+  businessName?: string;
+  compact?: boolean;
+}
+
+export function PaymentCalculator({ initialDebt, businessName, compact }: PaymentCalculatorProps = {}) {
   const [inputs, setInputs] = useState<CalculatorInputs>({
-    totalDebt: 100000,
+    totalDebt: initialDebt || 100000,
     paymentTerm: 7,
     serviceFee: 55,
     monthlyBankFee: 10,
@@ -231,12 +237,16 @@ export function PaymentCalculator() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Payment Calculator</h2>
-        <p className="text-muted-foreground">
-          Calculate debt settlement payment schedules
-        </p>
-      </div>
+      {!compact && (
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Payment Calculator</h2>
+          <p className="text-muted-foreground">
+            {businessName
+              ? `Payment schedule for ${businessName}`
+              : "Calculate debt settlement payment schedules"}
+          </p>
+        </div>
+      )}
 
       {/* Input Fields */}
       <Card>
