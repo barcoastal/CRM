@@ -4,7 +4,7 @@ import { execSync } from "child_process";
 export async function GET() {
   try {
     const output = execSync(
-      "npx prisma db push --skip-generate --accept-data-loss 2>&1",
+      "npx prisma db push --accept-data-loss 2>&1",
       {
         env: process.env,
         timeout: 30000,

@@ -8,7 +8,7 @@ const port = parseInt(process.env.PORT || "3000", 10);
 // Push schema changes to DB at startup (runtime has DB access)
 try {
   console.log("> Running prisma db push...");
-  execSync("npx prisma db push --skip-generate --accept-data-loss", {
+  execSync("npx prisma db push --accept-data-loss", {
     stdio: "inherit",
     env: process.env,
   });
