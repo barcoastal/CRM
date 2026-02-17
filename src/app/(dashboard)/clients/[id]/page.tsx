@@ -24,6 +24,21 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
           annualRevenue: true,
           totalDebtEst: true,
           source: true,
+          lastContactedAt: true,
+          nextFollowUpAt: true,
+          createdAt: true,
+          calls: {
+            include: {
+              agent: { select: { id: true, name: true } },
+              campaign: { select: { id: true, name: true } },
+            },
+            orderBy: { startedAt: "desc" },
+          },
+          campaignContacts: {
+            include: {
+              campaign: { select: { id: true, name: true, status: true } },
+            },
+          },
         },
       },
       debts: {
@@ -71,6 +86,24 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
     programStartDate: client.programStartDate.toISOString(),
     createdAt: client.createdAt.toISOString(),
     updatedAt: client.updatedAt.toISOString(),
+    lead: {
+      ...client.lead,
+      lastContactedAt: client.lead.lastContactedAt?.toISOString() ?? null,
+      nextFollowUpAt: client.lead.nextFollowUpAt?.toISOString() ?? null,
+      createdAt: client.lead.createdAt.toISOString(),
+      calls: client.lead.calls.map((call) => ({
+        ...call,
+        startedAt: call.startedAt.toISOString(),
+        answeredAt: call.answeredAt?.toISOString() ?? null,
+        endedAt: call.endedAt?.toISOString() ?? null,
+        createdAt: call.createdAt.toISOString(),
+      })),
+      campaignContacts: client.lead.campaignContacts.map((cc) => ({
+        ...cc,
+        lastAttempt: cc.lastAttempt?.toISOString() ?? null,
+        createdAt: cc.createdAt.toISOString(),
+      })),
+    },
     debts: client.debts.map((debt) => ({
       ...debt,
       settledDate: debt.settledDate?.toISOString() ?? null,

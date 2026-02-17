@@ -23,6 +23,7 @@ import {
 import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
 import { EnrollmentDialog } from "@/components/clients/enrollment-dialog";
 import { PaymentCalculator } from "@/components/calculator/payment-calculator";
+import { ContactActivityLog } from "@/components/shared/contact-activity-log";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -127,6 +128,27 @@ function OpportunityPath({ stage }: { stage: string }) {
   );
 }
 
+interface CallData {
+  id: string;
+  direction: string;
+  status: string;
+  disposition: string | null;
+  phoneNumber: string;
+  duration: number | null;
+  startedAt: string;
+  notes: string | null;
+  agent: { id: string; name: string };
+  campaign: { id: string; name: string } | null;
+}
+
+interface CampaignContactData {
+  id: string;
+  attempts: number;
+  status: string;
+  lastAttempt: string | null;
+  campaign: { id: string; name: string; status: string };
+}
+
 interface OpportunityData {
   id: string;
   stage: string;
@@ -149,7 +171,11 @@ interface OpportunityData {
     status: string;
     score: number | null;
     notes: string | null;
+    lastContactedAt: string | null;
+    nextFollowUpAt: string | null;
     createdAt: string;
+    calls: CallData[];
+    campaignContacts: CampaignContactData[];
   };
   assignedTo: { id: string; name: string; email: string } | null;
   client: { id: string } | null;
@@ -491,68 +517,13 @@ export function OpportunityDetailTabs({ opportunity }: OpportunityDetailTabsProp
         </TabsContent>
 
         <TabsContent value="activity" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className="size-2 rounded-full bg-primary" />
-                    <div className="flex-1 w-px bg-border" />
-                  </div>
-                  <div className="pb-4">
-                    <p className="text-sm font-medium">Opportunity Created</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDateTime(opportunity.createdAt)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className="size-2 rounded-full bg-primary" />
-                    <div className="flex-1 w-px bg-border" />
-                  </div>
-                  <div className="pb-4">
-                    <p className="text-sm font-medium">
-                      Current Stage: {opportunity.stage.replace(/_/g, " ")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Last updated {formatDateTime(opportunity.updatedAt)}
-                    </p>
-                  </div>
-                </div>
-                {opportunity.client && (
-                  <div className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className="size-2 rounded-full bg-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-green-600">
-                        Client Enrolled
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Enrolled as client
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {!opportunity.client && (
-                  <div className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className="size-2 rounded-full bg-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Awaiting enrollment
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ContactActivityLog
+            calls={opportunity.lead.calls}
+            campaignContacts={opportunity.lead.campaignContacts}
+            leadCreatedAt={opportunity.lead.createdAt}
+            lastContactedAt={opportunity.lead.lastContactedAt}
+            nextFollowUpAt={opportunity.lead.nextFollowUpAt}
+          />
         </TabsContent>
       </Tabs>
 

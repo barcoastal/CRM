@@ -20,6 +20,7 @@ import { DebtTable } from "@/components/debts/debt-table";
 import { PaymentTable } from "@/components/payments/payment-table";
 import { DocumentList } from "@/components/documents/document-list";
 import { PaymentCalculator } from "@/components/calculator/payment-calculator";
+import { ContactActivityLog } from "@/components/shared/contact-activity-log";
 import Link from "next/link";
 
 interface NegotiationData {
@@ -78,6 +79,27 @@ interface DocumentData {
   createdAt: string;
 }
 
+interface CallData {
+  id: string;
+  direction: string;
+  status: string;
+  disposition: string | null;
+  phoneNumber: string;
+  duration: number | null;
+  startedAt: string;
+  notes: string | null;
+  agent: { id: string; name: string };
+  campaign: { id: string; name: string } | null;
+}
+
+interface CampaignContactData {
+  id: string;
+  attempts: number;
+  status: string;
+  lastAttempt: string | null;
+  campaign: { id: string; name: string; status: string };
+}
+
 interface ClientData {
   id: string;
   leadId: string;
@@ -101,6 +123,11 @@ interface ClientData {
     annualRevenue?: number | null;
     totalDebtEst?: number | null;
     source?: string;
+    lastContactedAt?: string | null;
+    nextFollowUpAt?: string | null;
+    createdAt: string;
+    calls: CallData[];
+    campaignContacts: CampaignContactData[];
   };
   assignedNegotiator: { id: string; name: string; email: string } | null;
   debts: DebtData[];
@@ -347,84 +374,13 @@ export function ClientDetailTabs({ client }: ClientDetailTabsProps) {
         </TabsContent>
 
         <TabsContent value="activity" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Activity Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className="size-2 rounded-full bg-primary" />
-                    <div className="flex-1 w-px bg-border" />
-                  </div>
-                  <div className="pb-4">
-                    <p className="text-sm font-medium">Client Enrolled</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDate(client.createdAt)}
-                    </p>
-                  </div>
-                </div>
-
-                {client.debts.length > 0 && (
-                  <div className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className="size-2 rounded-full bg-primary" />
-                      <div className="flex-1 w-px bg-border" />
-                    </div>
-                    <div className="pb-4">
-                      <p className="text-sm font-medium">
-                        {client.debts.length} Debt{client.debts.length !== 1 ? "s" : ""} Enrolled
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Total: {formatCurrency(client.totalEnrolledDebt)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {client.debts
-                  .filter((d) => d.status === "SETTLED")
-                  .map((debt) => (
-                    <div key={debt.id} className="flex gap-3">
-                      <div className="flex flex-col items-center">
-                        <div className="size-2 rounded-full bg-green-500" />
-                        <div className="flex-1 w-px bg-border" />
-                      </div>
-                      <div className="pb-4">
-                        <p className="text-sm font-medium">
-                          {debt.creditorName} Settled
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatCurrency(debt.settledAmount)} ({debt.savingsPercent?.toFixed(1)}% savings)
-                          {debt.settledDate && ` - ${formatDate(debt.settledDate)}`}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-
-                {client.payments.filter((p) => p.status === "COMPLETED").length > 0 && (
-                  <div className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className="size-2 rounded-full bg-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {client.payments.filter((p) => p.status === "COMPLETED").length} Payment{client.payments.filter((p) => p.status === "COMPLETED").length !== 1 ? "s" : ""} Completed
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Total: {formatCurrency(
-                          client.payments
-                            .filter((p) => p.status === "COMPLETED")
-                            .reduce((sum, p) => sum + p.amount, 0)
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ContactActivityLog
+            calls={client.lead.calls}
+            campaignContacts={client.lead.campaignContacts}
+            leadCreatedAt={client.lead.createdAt}
+            lastContactedAt={client.lead.lastContactedAt}
+            nextFollowUpAt={client.lead.nextFollowUpAt}
+          />
         </TabsContent>
       </Tabs>
     </div>

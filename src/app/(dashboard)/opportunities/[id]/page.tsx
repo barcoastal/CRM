@@ -27,7 +27,21 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
           status: true,
           score: true,
           notes: true,
+          lastContactedAt: true,
+          nextFollowUpAt: true,
           createdAt: true,
+          calls: {
+            include: {
+              agent: { select: { id: true, name: true } },
+              campaign: { select: { id: true, name: true } },
+            },
+            orderBy: { startedAt: "desc" },
+          },
+          campaignContacts: {
+            include: {
+              campaign: { select: { id: true, name: true, status: true } },
+            },
+          },
         },
       },
       assignedTo: {
@@ -50,7 +64,21 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
     updatedAt: opportunity.updatedAt.toISOString(),
     lead: {
       ...opportunity.lead,
+      lastContactedAt: opportunity.lead.lastContactedAt?.toISOString() ?? null,
+      nextFollowUpAt: opportunity.lead.nextFollowUpAt?.toISOString() ?? null,
       createdAt: opportunity.lead.createdAt.toISOString(),
+      calls: opportunity.lead.calls.map((call) => ({
+        ...call,
+        startedAt: call.startedAt.toISOString(),
+        answeredAt: call.answeredAt?.toISOString() ?? null,
+        endedAt: call.endedAt?.toISOString() ?? null,
+        createdAt: call.createdAt.toISOString(),
+      })),
+      campaignContacts: opportunity.lead.campaignContacts.map((cc) => ({
+        ...cc,
+        lastAttempt: cc.lastAttempt?.toISOString() ?? null,
+        createdAt: cc.createdAt.toISOString(),
+      })),
     },
   };
 
