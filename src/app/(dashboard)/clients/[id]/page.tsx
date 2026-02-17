@@ -9,72 +9,80 @@ interface ClientDetailPageProps {
 export default async function ClientDetailPage({ params }: ClientDetailPageProps) {
   const { id } = await params;
 
-  const client = await prisma.client.findUnique({
-    where: { id },
-    include: {
-      lead: {
-        select: {
-          id: true,
-          businessName: true,
-          contactName: true,
-          phone: true,
-          email: true,
-          ein: true,
-          industry: true,
-          annualRevenue: true,
-          totalDebtEst: true,
-          source: true,
-          lastContactedAt: true,
-          nextFollowUpAt: true,
-          createdAt: true,
-          calls: {
-            include: {
-              agent: { select: { id: true, name: true } },
-              campaign: { select: { id: true, name: true } },
+  let client;
+  try {
+    client = await prisma.client.findUnique({
+      where: { id },
+      include: {
+        lead: {
+          select: {
+            id: true,
+            businessName: true,
+            contactName: true,
+            phone: true,
+            email: true,
+            ein: true,
+            industry: true,
+            annualRevenue: true,
+            totalDebtEst: true,
+            source: true,
+            lastContactedAt: true,
+            nextFollowUpAt: true,
+            createdAt: true,
+            calls: {
+              include: {
+                agent: { select: { id: true, name: true } },
+                campaign: { select: { id: true, name: true } },
+              },
+              orderBy: { startedAt: "desc" },
             },
-            orderBy: { startedAt: "desc" },
-          },
-          campaignContacts: {
-            include: {
-              campaign: { select: { id: true, name: true, status: true } },
-            },
-          },
-        },
-      },
-      debts: {
-        include: {
-          negotiations: {
-            include: {
-              negotiator: {
-                select: { id: true, name: true },
+            campaignContacts: {
+              include: {
+                campaign: { select: { id: true, name: true, status: true } },
               },
             },
-            orderBy: { date: "desc" },
           },
         },
-        orderBy: { createdAt: "desc" },
-      },
-      payments: {
-        include: {
-          debt: {
-            select: { creditorName: true },
+        debts: {
+          include: {
+            negotiations: {
+              include: {
+                negotiator: {
+                  select: { id: true, name: true },
+                },
+              },
+              orderBy: { date: "desc" },
+            },
           },
+          orderBy: { createdAt: "desc" },
         },
-        orderBy: { scheduledDate: "desc" },
-      },
-      documents: {
-        include: {
-          uploadedBy: {
-            select: { id: true, name: true },
+        payments: {
+          include: {
+            debt: {
+              select: { creditorName: true },
+            },
           },
+          orderBy: { scheduledDate: "desc" },
         },
-        orderBy: { createdAt: "desc" },
+        documents: {
+          include: {
+            uploadedBy: {
+              select: { id: true, name: true },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        assignedNegotiator: {
+          select: { id: true, name: true, email: true },
+        },
       },
-      assignedNegotiator: {
-        select: { id: true, name: true, email: true },
-      },
-    },
-  });
+    });
+  } catch (err) {
+    console.error("Client detail query failed:", err);
+    throw new Error(
+      `Failed to load client: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
 
   if (!client) {
     notFound();
