@@ -1,53 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { toast } from "sonner";
-import { Copy, Send, FileText } from "lucide-react";
 
-interface CalculatorInputs {
-  totalDebt: number;
-  paymentTerm: number;
-  serviceFee: number;
-  monthlyBankFee: number;
-  bankSetupFee: number;
-  paymentFrequency: "Weekly" | "Bi-Weekly" | "Monthly";
-  setupFee: number;
-  settlementPercent: number;
-  downPayment: number;
-  programFeePercent: number;
-  retainerPercentage: number;
-}
-
-interface ScheduleRow {
-  period: number;
-  paymentAmount: number;
-  setupFee: number;
-  programFee: number;
-  serviceFee: number;
-  bankFee: number;
-  savings: number;
-}
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -94,42 +50,94 @@ function getFrequencyLabel(frequency: string): string {
   }
 }
 
-interface PaymentCalculatorProps {
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface CalculatorInputs {
+  totalDebt: number;
+  numCreditors: number;
+  interestRate: number;
+  settlementPercent: number; // 30–70, default 50
+  programDuration: number;   // months: 12–48
+  monthlyFee: number;
+  // preserved internal fields (used by legacy calculations)
+  paymentTerm: number;
+  serviceFee: number;
+  monthlyBankFee: number;
+  bankSetupFee: number;
+  paymentFrequency: "Weekly" | "Bi-Weekly" | "Monthly";
+  setupFee: number;
+  downPayment: number;
+  programFeePercent: number;
+  retainerPercentage: number;
+}
+
+interface ScheduleRow {
+  period: number;
+  paymentAmount: number;
+  setupFee: number;
+  programFee: number;
+  serviceFee: number;
+  bankFee: number;
+  savings: number;
+}
+
+interface AmortRow {
+  month: number;
+  payment: number;
+  accumulated: number;
+  remaining: number;
+}
+
+export interface PaymentCalculatorProps {
   initialDebt?: number;
   businessName?: string;
   contactEmail?: string;
   compact?: boolean;
 }
 
-export function PaymentCalculator({ initialDebt, businessName, contactEmail, compact }: PaymentCalculatorProps = {}) {
-  const [proposalEmail, setProposalEmail] = useState(contactEmail || "");
-  const [proposalSubject, setProposalSubject] = useState(
-    businessName ? `Payment Plan Proposal - ${businessName}` : "Payment Plan Proposal"
-  );
-  const [proposalMessage, setProposalMessage] = useState("");
-  const [sendingProposal, setSendingProposal] = useState(false);
+// ─── Component ───────────────────────────────────────────────────────────────
 
+export function PaymentCalculator({
+  initialDebt,
+  businessName,
+  contactEmail,
+  compact,
+}: PaymentCalculatorProps = {}) {
+  // ── State ────────────────────────────────────────────────────────────────
   const [inputs, setInputs] = useState<CalculatorInputs>({
     totalDebt: initialDebt || 100000,
+    numCreditors: 5,
+    interestRate: 22.5,
+    settlementPercent: 50,
+    programDuration: 36,
+    monthlyFee: 500,
+    // legacy/internal
     paymentTerm: 7,
     serviceFee: 55,
     monthlyBankFee: 10,
     bankSetupFee: 15,
-    paymentFrequency: "Weekly",
+    paymentFrequency: "Monthly",
     setupFee: 850,
-    settlementPercent: 43,
     downPayment: 0,
     programFeePercent: 20,
     retainerPercentage: 10,
   });
 
+  // keep programDuration and paymentTerm in sync so legacy calc works
   const updateInput = <K extends keyof CalculatorInputs>(
     key: K,
     value: CalculatorInputs[K]
   ) => {
-    setInputs((prev) => ({ ...prev, [key]: value }));
+    setInputs((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "programDuration") {
+        next.paymentTerm = value as number;
+      }
+      return next;
+    });
   };
 
+  // ── Calculations (all original logic preserved) ──────────────────────────
   const calculations = useMemo(() => {
     const {
       totalDebt,
@@ -143,6 +151,8 @@ export function PaymentCalculator({ initialDebt, businessName, contactEmail, com
       downPayment,
       programFeePercent,
       retainerPercentage,
+      programDuration,
+      monthlyFee,
     } = inputs;
 
     const totalSettlement = totalDebt * (settlementPercent / 100);
@@ -155,12 +165,9 @@ export function PaymentCalculator({ initialDebt, businessName, contactEmail, com
     const savingsPercent = 100 - feesPercent;
 
     const periodsPerMonth = getPeriodsPerMonth(paymentFrequency);
-    const totalPeriods = paymentTerm * periodsPerMonth * 12 / 12; // paymentTerm is in months? No — from screenshot it's 7 with 28 weeks = 7 months
-    // paymentTerm = months, totalPeriods = paymentTerm * periodsPerMonth
     const totalPeriodsCalc = paymentTerm * periodsPerMonth;
-    const regularPeriods = totalPeriodsCalc - 1; // first period is retainer
+    const regularPeriods = totalPeriodsCalc - 1;
 
-    // Total to collect over regular periods
     const totalCollections =
       totalSettlement +
       totalProgramFee +
@@ -169,27 +176,19 @@ export function PaymentCalculator({ initialDebt, businessName, contactEmail, com
       bankSetupFee;
 
     const periodicPayment = regularPeriods > 0 ? totalCollections / regularPeriods : 0;
-
-    // Week 1 payment
     const firstPeriodPayment = retainerAmount + setupFee + downPayment;
 
-    // Schedule breakdown
     const periodicServiceFee = serviceFee;
-    // Bank fee is monthly — spread across periods
     const periodicBankFee = monthlyBankFee / periodsPerMonth;
 
-    // Program fee ratio for splitting available funds
     const programFeeRatio =
       totalDebt - retainerAmount > 0
         ? (totalSettlement + totalProgramFee) / (totalDebt - retainerAmount)
         : 0;
 
-    // Build schedule
     const schedule: ScheduleRow[] = [];
     let remainingProgramFee = totalProgramFee;
-    let remainingSavings = totalSettlement; // savings = settlement funds collected
 
-    // Period 1: retainer + setup fee + down payment
     schedule.push({
       period: 1,
       paymentAmount: firstPeriodPayment,
@@ -200,10 +199,8 @@ export function PaymentCalculator({ initialDebt, businessName, contactEmail, com
       savings: 0,
     });
 
-    // Periods 2 through totalPeriods
     for (let i = 2; i <= totalPeriodsCalc; i++) {
       const available = periodicPayment - periodicServiceFee - periodicBankFee;
-
       let periodProgramFee: number;
       let periodSavings: number;
 
@@ -216,10 +213,6 @@ export function PaymentCalculator({ initialDebt, businessName, contactEmail, com
       }
 
       remainingProgramFee -= periodProgramFee;
-      remainingSavings -= periodSavings;
-
-      // Bank fee: include setup fee on first bank charge (period 2), regular after
-      const bankFeeForPeriod = i === 2 ? periodicBankFee + bankSetupFee / periodsPerMonth : periodicBankFee;
 
       schedule.push({
         period: i,
@@ -230,6 +223,21 @@ export function PaymentCalculator({ initialDebt, businessName, contactEmail, com
         bankFee: periodicBankFee,
         savings: periodSavings,
       });
+    }
+
+    // ── Simple amortization for first 6 months (based on monthlyFee / settlement) ──
+    const monthlyPayment =
+      programDuration > 0 ? totalSettlement / programDuration : 0;
+    const displayMonthlyPayment = monthlyFee > 0 ? monthlyFee : monthlyPayment;
+
+    const amort: AmortRow[] = [];
+    let accumulated = 0;
+    let remaining = totalSettlement;
+    for (let m = 1; m <= Math.min(6, programDuration); m++) {
+      const payment = displayMonthlyPayment;
+      accumulated += payment;
+      remaining = Math.max(0, remaining - payment);
+      amort.push({ month: m, payment, accumulated, remaining });
     }
 
     return {
@@ -245,453 +253,299 @@ export function PaymentCalculator({ initialDebt, businessName, contactEmail, com
       totalPeriods: totalPeriodsCalc,
       schedule,
       frequencyLabel: getFrequencyLabel(paymentFrequency),
+      amort,
+      displayMonthlyPayment,
     };
   }, [inputs]);
 
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
+      {/* Page header */}
       {!compact && (
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Payment Calculator</h2>
-          <p className="text-muted-foreground">
-            {businessName
-              ? `Payment schedule for ${businessName}`
-              : "Calculate debt settlement payment schedules"}
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-[#131b2e]">
+            Settlement Calculator
+          </h1>
         </div>
       )}
 
-      {/* Input Fields */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Program Parameters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      {/* Split layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+        {/* ── Left: Input form ──────────────────────────────────────────── */}
+        <div className="bg-white rounded-xl shadow-coastal p-7">
+          <h2 className="font-bold text-[17px] text-[#131b2e] mb-6">Debt Information</h2>
+
+          <div className="space-y-5">
+
+            {/* Total Debt */}
             <div className="space-y-1.5">
-              <Label htmlFor="totalDebt">Total Debt ($)</Label>
-              <Input
-                id="totalDebt"
-                type="number"
-                min={0}
-                value={inputs.totalDebt}
-                onChange={(e) => updateInput("totalDebt", Number(e.target.value))}
-              />
+              <label className="block text-xs font-semibold text-[#444656] uppercase tracking-wide">
+                Total Debt ($)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[#444656] font-medium pointer-events-none">
+                  $
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  value={inputs.totalDebt}
+                  onChange={(e) => updateInput("totalDebt", Number(e.target.value))}
+                  className="w-full pl-7 pr-3.5 py-2.5 bg-[#f2f3ff] rounded text-[#131b2e] text-lg font-bold focus:outline-none"
+                />
+              </div>
             </div>
 
+            {/* Number of Creditors */}
             <div className="space-y-1.5">
-              <Label htmlFor="paymentTerm">Payment Term (Months)</Label>
-              <Input
-                id="paymentTerm"
+              <label className="block text-xs font-semibold text-[#444656] uppercase tracking-wide">
+                Number of Creditors
+              </label>
+              <input
                 type="number"
                 min={1}
-                value={inputs.paymentTerm}
-                onChange={(e) => updateInput("paymentTerm", Number(e.target.value))}
+                value={inputs.numCreditors}
+                onChange={(e) => updateInput("numCreditors", Number(e.target.value))}
+                className="w-full px-3.5 py-2.5 bg-[#f2f3ff] rounded text-[#131b2e] text-sm focus:outline-none"
               />
             </div>
 
+            {/* Average Interest Rate */}
             <div className="space-y-1.5">
-              <Label htmlFor="serviceFee">Service Fee ($)</Label>
-              <Input
-                id="serviceFee"
-                type="number"
-                min={0}
-                value={inputs.serviceFee}
-                onChange={(e) => updateInput("serviceFee", Number(e.target.value))}
-              />
+              <label className="block text-xs font-semibold text-[#444656] uppercase tracking-wide">
+                Average Interest Rate
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  value={inputs.interestRate}
+                  onChange={(e) => updateInput("interestRate", Number(e.target.value))}
+                  className="w-full pl-3.5 pr-8 py-2.5 bg-[#f2f3ff] rounded text-[#131b2e] text-sm focus:outline-none"
+                />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-[#444656] font-medium pointer-events-none">
+                  %
+                </span>
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="monthlyBankFee">Monthly Bank Fee ($)</Label>
-              <Input
-                id="monthlyBankFee"
-                type="number"
-                min={0}
-                value={inputs.monthlyBankFee}
-                onChange={(e) => updateInput("monthlyBankFee", Number(e.target.value))}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="bankSetupFee">Bank Setup Fee ($)</Label>
-              <Input
-                id="bankSetupFee"
-                type="number"
-                min={0}
-                value={inputs.bankSetupFee}
-                onChange={(e) => updateInput("bankSetupFee", Number(e.target.value))}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="paymentFrequency">Payment Frequency</Label>
-              <Select
-                value={inputs.paymentFrequency}
-                onValueChange={(v) =>
-                  updateInput("paymentFrequency", v as CalculatorInputs["paymentFrequency"])
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Weekly">Weekly</SelectItem>
-                  <SelectItem value="Bi-Weekly">Bi-Weekly</SelectItem>
-                  <SelectItem value="Monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="setupFee">Setup Fee ($)</Label>
-              <Input
-                id="setupFee"
-                type="number"
-                min={0}
-                value={inputs.setupFee}
-                onChange={(e) => updateInput("setupFee", Number(e.target.value))}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="settlementPercent">Settlement Percent (%)</Label>
-              <Input
-                id="settlementPercent"
-                type="number"
-                min={0}
-                max={100}
+            {/* Settlement Target (range slider) */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-[#444656] uppercase tracking-wide">
+                Settlement Target
+              </label>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-[#444656]">Settlement %</span>
+                <span className="font-extrabold text-xl text-[#3052ff]">
+                  {inputs.settlementPercent}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min={30}
+                max={70}
+                step={1}
                 value={inputs.settlementPercent}
                 onChange={(e) => updateInput("settlementPercent", Number(e.target.value))}
+                className="w-full h-2 rounded-full appearance-none outline-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #3052ff ${((inputs.settlementPercent - 30) / 40) * 100}%, #eaedff ${((inputs.settlementPercent - 30) / 40) * 100}%)`,
+                }}
               />
+              <div className="flex justify-between text-[11px] text-[#444656]">
+                <span>30%</span>
+                <span>70%</span>
+              </div>
             </div>
 
+            {/* Program Duration */}
             <div className="space-y-1.5">
-              <Label htmlFor="downPayment">Down Payment ($)</Label>
-              <Input
-                id="downPayment"
-                type="number"
-                min={0}
-                value={inputs.downPayment}
-                onChange={(e) => updateInput("downPayment", Number(e.target.value))}
-              />
+              <label className="block text-xs font-semibold text-[#444656] uppercase tracking-wide">
+                Program Duration
+              </label>
+              <select
+                value={inputs.programDuration}
+                onChange={(e) => updateInput("programDuration", Number(e.target.value))}
+                className="w-full px-3.5 py-2.5 bg-[#f2f3ff] rounded text-[#131b2e] text-sm focus:outline-none"
+              >
+                {[12, 18, 24, 30, 36, 42, 48].map((m) => (
+                  <option key={m} value={m}>
+                    {m} months
+                  </option>
+                ))}
+              </select>
             </div>
 
+            {/* Monthly Fee */}
             <div className="space-y-1.5">
-              <Label htmlFor="programFeePercent">Program Fee Percent (%)</Label>
-              <Input
-                id="programFeePercent"
-                type="number"
-                min={0}
-                max={100}
-                value={inputs.programFeePercent}
-                onChange={(e) => updateInput("programFeePercent", Number(e.target.value))}
-              />
+              <label className="block text-xs font-semibold text-[#444656] uppercase tracking-wide">
+                Monthly Fee ($)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[#444656] font-medium pointer-events-none">
+                  $
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  value={inputs.monthlyFee}
+                  onChange={(e) => updateInput("monthlyFee", Number(e.target.value))}
+                  className="w-full pl-7 pr-3.5 py-2.5 bg-[#f2f3ff] rounded text-[#131b2e] text-sm focus:outline-none"
+                />
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="retainerPercentage">Retainer Percentage (%)</Label>
-              <Input
-                id="retainerPercentage"
-                type="number"
-                min={0}
-                max={100}
-                value={inputs.retainerPercentage}
-                onChange={(e) => updateInput("retainerPercentage", Number(e.target.value))}
-              />
+            {/* Calculate button */}
+            <button
+              type="button"
+              className="gradient-primary w-full py-3.5 rounded text-white text-sm font-semibold mt-2 cursor-pointer"
+              style={{ boxShadow: "0 4px 16px rgba(48,82,255,0.3)" }}
+              onClick={() => toast.success("Results updated")}
+            >
+              Calculate Settlement
+            </button>
+          </div>
+        </div>
+
+        {/* ── Right: Results ────────────────────────────────────────────── */}
+        <div className="space-y-5">
+
+          {/* Results card */}
+          <div className="bg-white rounded-xl shadow-coastal p-7">
+            <h2 className="font-bold text-[17px] text-[#131b2e] mb-1">Settlement Results</h2>
+
+            {/* Hero: Total Debt */}
+            <div className="text-center py-6 border-b border-[#f2f3ff]">
+              <p className="text-sm text-[#444656] mb-1">Total Debt</p>
+              <p className="text-[38px] font-extrabold text-[#131b2e] leading-none">
+                {formatCurrencyWhole(inputs.totalDebt)}
+              </p>
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Retainer Amount</Label>
-              <div className="flex h-9 items-center rounded-md border bg-muted px-3 text-sm font-medium">
-                {formatCurrencyWhole(calculations.retainerAmount)}
+            {/* Result grid */}
+            <div className="grid grid-cols-2 gap-3.5 mt-5 mb-6">
+              <div className="bg-[#f2f3ff] rounded-lg p-4">
+                <p className="text-xs text-[#444656] mb-1">Estimated Settlement</p>
+                <p className="font-bold text-[20px] text-[#131b2e]">
+                  {formatCurrencyWhole(calculations.totalSettlement)}
+                </p>
+              </div>
+              <div className="bg-[#f2f3ff] rounded-lg p-4">
+                <p className="text-xs text-[#444656] mb-1">Total Savings</p>
+                <p className="font-bold text-[20px] text-[#15803d]">
+                  {formatCurrencyWhole(calculations.estimatedSavings)}
+                </p>
+              </div>
+              <div className="bg-[#f2f3ff] rounded-lg p-4">
+                <p className="text-xs text-[#444656] mb-1">Savings Percentage</p>
+                <p className="font-bold text-[20px] text-[#3052ff]">
+                  {calculations.savingsPercent}%
+                </p>
+              </div>
+              <div className="bg-[#f2f3ff] rounded-lg p-4">
+                <p className="text-xs text-[#444656] mb-1">Monthly Payment</p>
+                <p className="font-bold text-[20px] text-[#131b2e]">
+                  {formatCurrencyWhole(calculations.displayMonthlyPayment)}
+                </p>
+              </div>
+              <div className="bg-[#f2f3ff] rounded-lg p-4 col-span-2">
+                <p className="text-xs text-[#444656] mb-1">Program Duration</p>
+                <p className="font-bold text-[20px] text-[#131b2e]">
+                  {inputs.programDuration} months
+                </p>
+              </div>
+            </div>
+
+            {/* Bar chart: Original vs Settlement */}
+            <div>
+              <h3 className="font-bold text-sm text-[#131b2e] mb-4">Debt Comparison</h3>
+              <div className="space-y-3">
+                {/* Original Debt bar */}
+                <div className="flex items-center gap-3.5">
+                  <span className="w-24 text-right text-[12.5px] text-[#444656] shrink-0">
+                    Original Debt
+                  </span>
+                  <div className="flex-1 h-8 bg-[#f2f3ff] rounded overflow-hidden relative">
+                    <div
+                      className="h-full w-full bg-[#c4c5d9] rounded flex items-center px-3"
+                    >
+                      <span className="text-xs font-semibold text-[#444656]">
+                        {formatCurrencyWhole(inputs.totalDebt)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {/* Settlement bar */}
+                <div className="flex items-center gap-3.5">
+                  <span className="w-24 text-right text-[12.5px] text-[#444656] shrink-0">
+                    Settlement
+                  </span>
+                  <div className="flex-1 h-8 bg-[#f2f3ff] rounded overflow-hidden relative">
+                    <div
+                      className="h-full gradient-primary rounded flex items-center px-3"
+                      style={{
+                        width: `${Math.min(100, inputs.settlementPercent)}%`,
+                      }}
+                    >
+                      <span className="text-xs font-semibold text-white whitespace-nowrap">
+                        {formatCurrencyWhole(calculations.totalSettlement)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Total Settlement Amt</p>
-            <p className="text-2xl font-bold">
-              {formatCurrencyWhole(calculations.totalSettlement)}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Total Program Fee</p>
-            <p className="text-2xl font-bold">
-              {formatCurrencyWhole(calculations.totalProgramFee)}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-blue-200 dark:border-blue-800">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">
-              Total Amount With Fees ({calculations.feesPercent}%)
-            </p>
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {formatCurrencyWhole(calculations.totalWithFees)}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-green-200 dark:border-green-800">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">
-              Estimated Amount You Save ({calculations.savingsPercent}%)
-            </p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {formatCurrencyWhole(calculations.estimatedSavings)}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Payment Amount */}
-      <Card className="border-primary">
-        <CardContent className="pt-6 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              {calculations.frequencyLabel} Payments
-            </p>
-            <p className="text-3xl font-bold">
-              {formatCurrency(calculations.periodicPayment)}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-muted-foreground">First Payment (Retainer + Setup)</p>
-            <p className="text-xl font-semibold">
-              {formatCurrency(calculations.firstPeriodPayment)}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Payment Schedule Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Schedule</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border max-h-[500px] overflow-y-auto">
-            <Table>
-              <TableHeader className="sticky top-0 bg-background z-10">
-                <TableRow>
-                  <TableHead className="w-16">#</TableHead>
-                  <TableHead className="text-right">
-                    {calculations.frequencyLabel} Payment
-                  </TableHead>
-                  <TableHead className="text-right">Setup Fee</TableHead>
-                  <TableHead className="text-right">
-                    {calculations.frequencyLabel} Program Fee
-                  </TableHead>
-                  <TableHead className="text-right">
-                    {calculations.frequencyLabel} Service Fee
-                  </TableHead>
-                  <TableHead className="text-right">Bank Fee</TableHead>
-                  <TableHead className="text-right">
-                    {calculations.frequencyLabel} Savings
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {calculations.schedule.map((row) => (
-                  <TableRow
-                    key={row.period}
-                    className={row.period === 1 ? "bg-muted/50 font-medium" : ""}
+          {/* Amortization table */}
+          <div className="bg-white rounded-xl shadow-coastal p-7">
+            <h3 className="font-bold text-sm text-[#131b2e] mb-4">
+              Payment Schedule (First 6 Months)
+            </h3>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-[#f2f3ff]">
+                  <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-[#444656] uppercase tracking-wide rounded-tl">
+                    Month
+                  </th>
+                  <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-[#444656] uppercase tracking-wide">
+                    Payment
+                  </th>
+                  <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-[#444656] uppercase tracking-wide">
+                    Accumulated
+                  </th>
+                  <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-[#444656] uppercase tracking-wide rounded-tr">
+                    Remaining
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {calculations.amort.map((row, i) => (
+                  <tr
+                    key={row.month}
+                    className={i % 2 === 1 ? "bg-[#faf8ff]" : "bg-white"}
                   >
-                    <TableCell>{row.period}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(row.paymentAmount)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.setupFee > 0 ? formatCurrency(row.setupFee) : "--"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.programFee > 0 ? formatCurrency(row.programFee) : "--"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.serviceFee > 0 ? formatCurrency(row.serviceFee) : "--"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.bankFee > 0 ? formatCurrency(row.bankFee) : "--"}
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-green-600 dark:text-green-400">
-                      {row.savings > 0 ? formatCurrency(row.savings) : "--"}
-                    </TableCell>
-                  </TableRow>
+                    <td className="px-3 py-2.5 text-sm text-[#131b2e]">{row.month}</td>
+                    <td className="px-3 py-2.5 text-sm text-[#131b2e]">
+                      {formatCurrencyWhole(row.payment)}
+                    </td>
+                    <td className="px-3 py-2.5 text-sm text-[#131b2e]">
+                      {formatCurrencyWhole(row.accumulated)}
+                    </td>
+                    <td className="px-3 py-2.5 text-sm text-[#131b2e]">
+                      {formatCurrencyWhole(row.remaining)}
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Send Proposal Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="size-5" />
-            Send Proposal
-          </CardTitle>
-          <CardDescription>
-            Compose and send a payment plan proposal to the client
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Email and Subject Fields */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="proposalEmail">Recipient Email</Label>
-              <Input
-                id="proposalEmail"
-                type="email"
-                placeholder="client@example.com"
-                value={proposalEmail}
-                onChange={(e) => setProposalEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="proposalSubject">Subject</Label>
-              <Input
-                id="proposalSubject"
-                type="text"
-                value={proposalSubject}
-                onChange={(e) => setProposalSubject(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Message textarea */}
-          <div className="space-y-1.5">
-            <Label htmlFor="proposalMessage">Message</Label>
-            <Textarea
-              id="proposalMessage"
-              placeholder="Write your personalized message to the client..."
-              value={proposalMessage}
-              onChange={(e) => setProposalMessage(e.target.value)}
-              rows={5}
-            />
-          </div>
-
-          <Separator />
-
-          {/* Calculation Summary Preview */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Proposal Summary Preview</Label>
-            <div className="rounded-md border bg-muted/50 p-4 text-sm font-mono whitespace-pre-wrap">
-              {`PAYMENT PLAN PROPOSAL
-Business: ${businessName || "N/A"}
-Total Debt: ${formatCurrencyWhole(inputs.totalDebt)}
-Settlement Amount (${inputs.settlementPercent}%): ${formatCurrencyWhole(calculations.totalSettlement)}
-Program Fee (${inputs.programFeePercent}%): ${formatCurrencyWhole(calculations.totalProgramFee)}
-Total With Fees: ${formatCurrencyWhole(calculations.totalWithFees)}
-Estimated Savings: ${formatCurrencyWhole(calculations.estimatedSavings)} (${calculations.savingsPercent}%)
-
-Payment Schedule:
-${calculations.frequencyLabel} Payment: ${formatCurrency(calculations.periodicPayment)}
-First Payment (Retainer + Setup): ${formatCurrency(calculations.firstPeriodPayment)}
-Program Length: ${inputs.paymentTerm} months / ${calculations.totalPeriods} payments`}
-              {proposalMessage ? `\n\n${proposalMessage}` : ""}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={() => {
-                const summaryText = `PAYMENT PLAN PROPOSAL
-Business: ${businessName || "N/A"}
-Total Debt: ${formatCurrencyWhole(inputs.totalDebt)}
-Settlement Amount (${inputs.settlementPercent}%): ${formatCurrencyWhole(calculations.totalSettlement)}
-Program Fee (${inputs.programFeePercent}%): ${formatCurrencyWhole(calculations.totalProgramFee)}
-Total With Fees: ${formatCurrencyWhole(calculations.totalWithFees)}
-Estimated Savings: ${formatCurrencyWhole(calculations.estimatedSavings)} (${calculations.savingsPercent}%)
-
-Payment Schedule:
-${calculations.frequencyLabel} Payment: ${formatCurrency(calculations.periodicPayment)}
-First Payment (Retainer + Setup): ${formatCurrency(calculations.firstPeriodPayment)}
-Program Length: ${inputs.paymentTerm} months / ${calculations.totalPeriods} payments${proposalMessage ? `\n\n${proposalMessage}` : ""}`;
-
-                navigator.clipboard.writeText(summaryText).then(() => {
-                  toast.success("Proposal copied to clipboard");
-                }).catch(() => {
-                  toast.error("Failed to copy to clipboard");
-                });
-              }}
-            >
-              <Copy className="size-4 mr-2" />
-              Copy to Clipboard
-            </Button>
-
-            <Button
-              disabled={sendingProposal || !proposalEmail}
-              onClick={async () => {
-                if (!proposalEmail) {
-                  toast.error("Please enter a recipient email address");
-                  return;
-                }
-                if (!proposalSubject) {
-                  toast.error("Please enter a subject");
-                  return;
-                }
-
-                setSendingProposal(true);
-                try {
-                  const calculationSummary = {
-                    businessName: businessName || "N/A",
-                    totalDebt: inputs.totalDebt,
-                    settlementPercent: inputs.settlementPercent,
-                    settlementAmount: calculations.totalSettlement,
-                    programFeePercent: inputs.programFeePercent,
-                    programFee: calculations.totalProgramFee,
-                    totalWithFees: calculations.totalWithFees,
-                    estimatedSavings: calculations.estimatedSavings,
-                    savingsPercent: calculations.savingsPercent,
-                    frequency: calculations.frequencyLabel,
-                    periodicPayment: calculations.periodicPayment,
-                    firstPayment: calculations.firstPeriodPayment,
-                    programLengthMonths: inputs.paymentTerm,
-                    totalPayments: calculations.totalPeriods,
-                  };
-
-                  const res = await fetch("/api/proposals/send", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      email: proposalEmail,
-                      subject: proposalSubject,
-                      message: proposalMessage,
-                      calculationSummary,
-                    }),
-                  });
-
-                  if (res.ok) {
-                    toast.success("Proposal sent successfully");
-                  } else {
-                    const data = await res.json();
-                    toast.error(data.error || "Failed to send proposal");
-                  }
-                } catch {
-                  toast.error("Failed to send proposal");
-                } finally {
-                  setSendingProposal(false);
-                }
-              }}
-            >
-              <Send className="size-4 mr-2" />
-              {sendingProposal ? "Sending..." : "Send Email"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
