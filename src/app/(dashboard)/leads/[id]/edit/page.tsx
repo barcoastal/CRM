@@ -36,6 +36,15 @@ export default async function LeadEditPage({ params }: LeadEditPageProps) {
     status: lead.status,
     notes: lead.notes,
     assignedToId: lead.assignedToId,
+    utmSource: lead.utmSource,
+    utmMedium: lead.utmMedium,
+    utmCampaign: lead.utmCampaign,
+    utmTerm: lead.utmTerm,
+    utmContent: lead.utmContent,
+    eliClickId: lead.eliClickId,
+    redtrackClickId: lead.redtrackClickId,
+    gclid: lead.gclid,
+    fbclid: lead.fbclid,
   };
 
   return <LeadEditForm lead={serializedLead} />;

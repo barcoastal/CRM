@@ -5,10 +5,6 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createLeadSchema, type CreateLeadInput, LEAD_SOURCES } from "@/lib/validations/lead";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -16,8 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 function formatSourceLabel(source: string): string {
@@ -26,6 +21,13 @@ function formatSourceLabel(source: string): string {
     .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
     .join(" ");
 }
+
+const inputClass =
+  "w-full px-4 py-[11px] rounded text-sm outline-none transition-shadow focus:ring-2 focus:ring-[#3052FF]/20 focus:bg-white";
+const inputStyle = { background: "#f2f3ff", border: "none", color: "#131b2e", fontFamily: "Inter, sans-serif" };
+
+const labelClass = "text-[12.5px] font-semibold uppercase tracking-wide mb-1.5 block";
+const labelStyle = { color: "#444656" };
 
 export function LeadForm() {
   const router = useRouter();
@@ -71,182 +73,361 @@ export function LeadForm() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" asChild>
-          <Link href="/leads">
+    <div style={{ color: "#131b2e" }}>
+      {/* Page Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/leads"
+            className="flex items-center justify-center rounded"
+            style={{ width: 36, height: 36, background: "#f2f3ff", color: "#131b2e" }}
+          >
             <ArrowLeft className="size-4" />
           </Link>
-        </Button>
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Add New Lead</h2>
-          <p className="text-muted-foreground">
-            Enter the details for the new business lead.
-          </p>
+          <div>
+            <h1
+              className="text-[26px] font-bold leading-tight"
+              style={{ fontFamily: "Manrope, sans-serif" }}
+            >
+              Add New Lead
+            </h1>
+            <p className="text-[13.5px] mt-0.5" style={{ color: "#444656" }}>
+              Enter the details for the new business lead.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <Link
+            href="/leads"
+            className="px-[18px] py-[9px] rounded text-[13.5px] font-medium"
+            style={{ background: "#f2f3ff", color: "#131b2e", textDecoration: "none" }}
+          >
+            Cancel
+          </Link>
+          <button
+            form="lead-new-form"
+            type="submit"
+            disabled={submitting}
+            className="flex items-center gap-2 px-5 py-[9px] rounded text-[13.5px] font-semibold text-white transition-opacity disabled:opacity-60"
+            style={{ background: "linear-gradient(135deg,#0034e4,#3052ff)", border: "none", cursor: "pointer" }}
+          >
+            {submitting ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+            {submitting ? "Creating..." : "Create Lead"}
+          </button>
         </div>
       </div>
 
       {serverError && (
-        <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
+        <div
+          className="rounded-lg px-4 py-3 text-sm mb-6"
+          style={{ background: "rgba(186,26,26,0.08)", color: "#ba1a1a" }}
+        >
           {serverError}
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Contact Information */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Contact Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="businessName">Business Name *</Label>
-                <Input
-                  id="businessName"
-                  placeholder="Acme Corp"
-                  {...register("businessName")}
-                  aria-invalid={!!errors.businessName}
-                />
-                {errors.businessName && (
-                  <p className="text-xs text-destructive">{errors.businessName.message}</p>
-                )}
-              </div>
+      <form id="lead-new-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        {/* Business & Contact Info */}
+        <div
+          className="rounded-xl p-7"
+          style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+        >
+          <h2
+            className="text-base font-bold mb-6"
+            style={{ fontFamily: "Manrope, sans-serif" }}
+          >
+            Business &amp; Contact Information
+          </h2>
 
-              <div className="space-y-2">
-                <Label htmlFor="contactName">Contact Name *</Label>
-                <Input
-                  id="contactName"
-                  placeholder="John Smith"
-                  {...register("contactName")}
-                  aria-invalid={!!errors.contactName}
-                />
-                {errors.contactName && (
-                  <p className="text-xs text-destructive">{errors.contactName.message}</p>
-                )}
-              </div>
+          <div className="grid gap-x-8 gap-y-5" style={{ gridTemplateColumns: "1fr 1fr" }}>
+            {/* Business Name — full width */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label className={labelClass} style={labelStyle}>Business Name *</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="Acme Corp"
+                {...register("businessName")}
+                aria-invalid={!!errors.businessName}
+              />
+              {errors.businessName && (
+                <p className="text-xs mt-1" style={{ color: "#ba1a1a" }}>{errors.businessName.message}</p>
+              )}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone *</Label>
-                <Input
-                  id="phone"
-                  placeholder="(555) 123-4567"
-                  {...register("phone")}
-                  aria-invalid={!!errors.phone}
-                />
-                {errors.phone && (
-                  <p className="text-xs text-destructive">{errors.phone.message}</p>
-                )}
-              </div>
+            {/* Contact Name */}
+            <div>
+              <label className={labelClass} style={labelStyle}>Contact Name *</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="John Smith"
+                {...register("contactName")}
+                aria-invalid={!!errors.contactName}
+              />
+              {errors.contactName && (
+                <p className="text-xs mt-1" style={{ color: "#ba1a1a" }}>{errors.contactName.message}</p>
+              )}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="john@acme.com"
-                  {...register("email")}
-                  aria-invalid={!!errors.email}
-                />
-                {errors.email && (
-                  <p className="text-xs text-destructive">{errors.email.message}</p>
-                )}
-              </div>
+            {/* Phone */}
+            <div>
+              <label className={labelClass} style={labelStyle}>Phone *</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="(555) 123-4567"
+                {...register("phone")}
+                aria-invalid={!!errors.phone}
+              />
+              {errors.phone && (
+                <p className="text-xs mt-1" style={{ color: "#ba1a1a" }}>{errors.phone.message}</p>
+              )}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="ein">EIN</Label>
-                <Input
-                  id="ein"
-                  placeholder="12-3456789"
-                  {...register("ein")}
-                />
-              </div>
-            </CardContent>
-          </Card>
+            {/* Email */}
+            <div>
+              <label className={labelClass} style={labelStyle}>Email</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                type="email"
+                placeholder="john@acme.com"
+                {...register("email")}
+                aria-invalid={!!errors.email}
+              />
+              {errors.email && (
+                <p className="text-xs mt-1" style={{ color: "#ba1a1a" }}>{errors.email.message}</p>
+              )}
+            </div>
 
-          {/* Business Details */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Business Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="industry">Industry</Label>
-                <Input
-                  id="industry"
-                  placeholder="e.g. Healthcare, Retail"
-                  {...register("industry")}
-                />
-              </div>
+            {/* EIN */}
+            <div>
+              <label className={labelClass} style={labelStyle}>EIN</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="12-3456789"
+                {...register("ein")}
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="annualRevenue">Annual Revenue</Label>
-                <Input
-                  id="annualRevenue"
-                  type="number"
-                  placeholder="500000"
-                  {...register("annualRevenue")}
-                  aria-invalid={!!errors.annualRevenue}
-                />
-                {errors.annualRevenue && (
-                  <p className="text-xs text-destructive">{errors.annualRevenue.message}</p>
-                )}
-              </div>
+            {/* Industry */}
+            <div>
+              <label className={labelClass} style={labelStyle}>Industry</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="e.g. Healthcare, Retail"
+                {...register("industry")}
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="totalDebtEst">Estimated Debt</Label>
-                <Input
-                  id="totalDebtEst"
-                  type="number"
-                  placeholder="150000"
-                  {...register("totalDebtEst")}
-                  aria-invalid={!!errors.totalDebtEst}
-                />
-                {errors.totalDebtEst && (
-                  <p className="text-xs text-destructive">{errors.totalDebtEst.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="source">Lead Source</Label>
-                <Select
-                  defaultValue="OTHER"
-                  onValueChange={(val) => setValue("source", val as CreateLeadInput["source"])}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LEAD_SOURCES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {formatSourceLabel(s)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Any additional information about the lead..."
-                  rows={4}
-                  {...register("notes")}
-                />
-              </div>
-            </CardContent>
-          </Card>
+            {/* Annual Revenue */}
+            <div>
+              <label className={labelClass} style={labelStyle}>Annual Revenue</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                type="number"
+                placeholder="500000"
+                {...register("annualRevenue")}
+                aria-invalid={!!errors.annualRevenue}
+              />
+              {errors.annualRevenue && (
+                <p className="text-xs mt-1" style={{ color: "#ba1a1a" }}>{errors.annualRevenue.message}</p>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" asChild>
-            <Link href="/leads">Cancel</Link>
-          </Button>
-          <Button type="submit" disabled={submitting}>
-            {submitting && <Loader2 className="size-4 animate-spin" />}
+        {/* Lead Management */}
+        <div
+          className="rounded-xl p-7"
+          style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+        >
+          <h2
+            className="text-base font-bold mb-6"
+            style={{ fontFamily: "Manrope, sans-serif" }}
+          >
+            Lead Management
+          </h2>
+
+          <div className="grid gap-x-8 gap-y-5" style={{ gridTemplateColumns: "1fr 1fr" }}>
+            {/* Estimated Debt */}
+            <div>
+              <label className={labelClass} style={labelStyle}>Estimated Debt</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                type="number"
+                placeholder="150000"
+                {...register("totalDebtEst")}
+                aria-invalid={!!errors.totalDebtEst}
+              />
+              {errors.totalDebtEst && (
+                <p className="text-xs mt-1" style={{ color: "#ba1a1a" }}>{errors.totalDebtEst.message}</p>
+              )}
+            </div>
+
+            {/* Source */}
+            <div>
+              <label className={labelClass} style={labelStyle}>Lead Source</label>
+              <Select
+                defaultValue="OTHER"
+                onValueChange={(val) => setValue("source", val as CreateLeadInput["source"])}
+              >
+                <SelectTrigger
+                  className="w-full px-4 py-[11px] h-auto text-sm rounded outline-none focus:ring-2 focus:ring-[#3052FF]/20"
+                  style={{ background: "#f2f3ff", border: "none", color: "#131b2e" }}
+                >
+                  <SelectValue placeholder="Select source" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LEAD_SOURCES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {formatSourceLabel(s)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Notes — full width */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label className={labelClass} style={labelStyle}>Notes</label>
+              <textarea
+                className={inputClass}
+                style={{ ...inputStyle, resize: "vertical", minHeight: 120, lineHeight: 1.6 }}
+                placeholder="Any additional information about the lead..."
+                rows={4}
+                {...register("notes")}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* UTM Parameters */}
+        <div
+          className="rounded-xl p-7"
+          style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+        >
+          <h2
+            className="text-base font-bold mb-6"
+            style={{ fontFamily: "Manrope, sans-serif" }}
+          >
+            UTM Parameters &amp; Tracking
+          </h2>
+
+          <div className="grid grid-cols-3 gap-x-8 gap-y-5 mb-6">
+            <div>
+              <label className={labelClass} style={labelStyle}>UTM Source</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="google, facebook, etc."
+                {...register("utmSource")}
+              />
+            </div>
+            <div>
+              <label className={labelClass} style={labelStyle}>UTM Medium</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="cpc, email, social"
+                {...register("utmMedium")}
+              />
+            </div>
+            <div>
+              <label className={labelClass} style={labelStyle}>UTM Campaign</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="spring_sale"
+                {...register("utmCampaign")}
+              />
+            </div>
+            <div>
+              <label className={labelClass} style={labelStyle}>UTM Term</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="debt+settlement"
+                {...register("utmTerm")}
+              />
+            </div>
+            <div>
+              <label className={labelClass} style={labelStyle}>UTM Content</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="banner_ad_1"
+                {...register("utmContent")}
+              />
+            </div>
+          </div>
+
+          <div
+            className="pt-6 grid grid-cols-2 gap-x-8 gap-y-5"
+            style={{ borderTop: "1px solid #f2f3ff" }}
+          >
+            <div>
+              <label className={labelClass} style={labelStyle}>Google Click ID (GCLID)</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="Google Ads click ID"
+                {...register("gclid")}
+              />
+            </div>
+            <div>
+              <label className={labelClass} style={labelStyle}>Facebook Click ID (FBCLID)</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="Facebook click ID"
+                {...register("fbclid")}
+              />
+            </div>
+            <div>
+              <label className={labelClass} style={labelStyle}>EliClick ID</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="EliClick tracking ID"
+                {...register("eliClickId")}
+              />
+            </div>
+            <div>
+              <label className={labelClass} style={labelStyle}>RedTrack Click ID</label>
+              <input
+                className={inputClass}
+                style={inputStyle}
+                placeholder="RedTrack click ID"
+                {...register("redtrackClickId")}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Actions */}
+        <div className="flex justify-end gap-2.5 pb-10">
+          <Link
+            href="/leads"
+            className="px-[18px] py-[9px] rounded text-[13.5px] font-medium"
+            style={{ background: "#f2f3ff", color: "#131b2e", textDecoration: "none" }}
+          >
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex items-center gap-2 px-5 py-[9px] rounded text-[13.5px] font-semibold text-white transition-opacity disabled:opacity-60"
+            style={{ background: "linear-gradient(135deg,#0034e4,#3052ff)", border: "none", cursor: "pointer" }}
+          >
+            {submitting ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
             {submitting ? "Creating..." : "Create Lead"}
-          </Button>
+          </button>
         </div>
       </form>
     </div>

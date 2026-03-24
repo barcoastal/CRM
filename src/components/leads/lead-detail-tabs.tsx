@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,113 +11,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
 import {
   Phone,
-  Calendar,
-  ChevronDown,
   Pencil,
-  ArrowLeft,
+  MoreHorizontal,
+  DollarSign,
+  TrendingUp,
   Clock,
+  PhoneCall,
   User,
+  Calendar,
+  ChevronRight,
+  Tag,
 } from "lucide-react";
-import { ScoreBadge, StatusBadge, formatCurrency, formatPhone, formatSourceLabel } from "@/components/leads/lead-table";
+import { StatusBadge, formatCurrency, formatPhone, formatSourceLabel } from "@/components/leads/lead-table";
 import { LEAD_STATUSES } from "@/lib/validations/lead";
 import { EnrollmentDialog } from "@/components/clients/enrollment-dialog";
 import { ConvertToOpportunityDialog } from "@/components/opportunities/convert-to-opportunity-dialog";
-import { cn } from "@/lib/utils";
 import Link from "next/link";
-
-const PIPELINE_STEPS = ["NEW", "CONTACTED", "QUALIFIED", "OPPORTUNITY", "ENROLLED"] as const;
-const EXIT_STATUSES = ["UNQUALIFIED", "LOST", "DNC", "CALLBACK"];
-
-function LeadPath({ status }: { status: string }) {
-  const isExit = EXIT_STATUSES.includes(status);
-  const currentIndex = PIPELINE_STEPS.indexOf(status as typeof PIPELINE_STEPS[number]);
-
-  return (
-    <div className="w-full">
-      <div className="flex items-stretch h-10">
-        {PIPELINE_STEPS.map((step, i) => {
-          const isCompleted = !isExit && currentIndex > i;
-          const isCurrent = !isExit && currentIndex === i;
-          const isFirst = i === 0;
-          const isLast = i === PIPELINE_STEPS.length - 1;
-
-          return (
-            <div key={step} className="relative flex-1 flex items-center justify-center min-w-0">
-              {/* Arrow shape via SVG */}
-              <svg
-                className="absolute inset-0 w-full h-full"
-                preserveAspectRatio="none"
-                viewBox="0 0 120 40"
-              >
-                <path
-                  d={
-                    isFirst && isLast
-                      ? "M0,0 L110,0 L120,20 L110,40 L0,40 Z"
-                      : isFirst
-                        ? "M0,0 L110,0 L120,20 L110,40 L0,40 Z"
-                        : isLast
-                          ? "M0,0 L120,0 L120,40 L0,40 L10,20 Z"
-                          : "M0,0 L110,0 L120,20 L110,40 L0,40 L10,20 Z"
-                  }
-                  className={cn(
-                    isCurrent
-                      ? "fill-primary"
-                      : isCompleted
-                        ? "fill-primary/70"
-                        : "fill-muted"
-                  )}
-                />
-                {/* Right edge separator line */}
-                {!isLast && (
-                  <path
-                    d="M110,0 L120,20 L110,40"
-                    fill="none"
-                    className={cn(
-                      "stroke-background",
-                    )}
-                    strokeWidth="2"
-                  />
-                )}
-                {/* Left edge separator line */}
-                {!isFirst && (
-                  <path
-                    d="M0,0 L10,20 L0,40"
-                    fill="none"
-                    className="stroke-background"
-                    strokeWidth="2"
-                  />
-                )}
-              </svg>
-              <span
-                className={cn(
-                  "relative z-10 text-xs font-semibold truncate px-3",
-                  isCurrent || isCompleted
-                    ? "text-primary-foreground"
-                    : "text-muted-foreground"
-                )}
-              >
-                {step.replace(/_/g, " ")}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      {isExit && (
-        <div className="mt-2 flex items-center gap-2">
-          <Badge variant="destructive" className="text-xs">
-            {status.replace(/_/g, " ")}
-          </Badge>
-          <span className="text-xs text-muted-foreground">
-            This lead exited the pipeline
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
 
 interface CallData {
   id: string;
@@ -161,6 +71,15 @@ interface LeadData {
   score: number | null;
   scoreReason: string | null;
   notes: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  utmTerm: string | null;
+  utmContent: string | null;
+  eliClickId: string | null;
+  redtrackClickId: string | null;
+  gclid: string | null;
+  fbclid: string | null;
   lastContactedAt: string | null;
   nextFollowUpAt: string | null;
   createdAt: string;
@@ -185,6 +104,15 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
+function formatDateShort(dateStr: string | null): string {
+  if (!dateStr) return "--";
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function formatDuration(seconds: number | null): string {
   if (!seconds) return "--";
   const mins = Math.floor(seconds / 60);
@@ -192,13 +120,97 @@ function formatDuration(seconds: number | null): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-function InfoField({ label, value }: { label: string; value: string }) {
+function getDaysInPipeline(createdAt: string): number {
+  const created = new Date(createdAt);
+  const now = new Date();
+  return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function getMonthlyRevenue(annualRevenue: number | null): string {
+  if (!annualRevenue) return "--";
+  return formatCurrency(annualRevenue / 12);
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function ScoreCircle({ score }: { score: number | null }) {
+  const val = score ?? 0;
+  const radius = 24;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (val / 100) * circumference;
+
+  let strokeColor = "#3052FF";
+  if (val >= 75) strokeColor = "#059669";
+  else if (val >= 50) strokeColor = "#b45309";
+  else if (val > 0) strokeColor = "#ba1a1a";
+
+  if (score === null) {
+    return (
+      <div
+        className="relative flex items-center justify-center"
+        style={{ width: 56, height: 56 }}
+      >
+        <svg width="56" height="56" viewBox="0 0 56 56" style={{ transform: "rotate(-90deg)" }}>
+          <circle cx="28" cy="28" r={radius} fill="none" stroke="#eaedff" strokeWidth="4" />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center text-xs font-bold" style={{ color: "#444656" }}>
+          N/A
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-1">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+    <div
+      className="relative flex items-center justify-center"
+      style={{ width: 56, height: 56 }}
+    >
+      <svg width="56" height="56" viewBox="0 0 56 56" style={{ transform: "rotate(-90deg)" }}>
+        <circle cx="28" cy="28" r={radius} fill="none" stroke="#eaedff" strokeWidth="4" />
+        <circle
+          cx="28"
+          cy="28"
+          r={radius}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="4"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+        />
+      </svg>
+      <div
+        className="absolute inset-0 flex items-center justify-center font-bold text-base"
+        style={{ fontFamily: "Manrope, sans-serif", color: "#131b2e" }}
+      >
+        {val}
+      </div>
+    </div>
+  );
+}
+
+function InfoField({ label, value, href }: { label: string; value: string; href?: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#444656" }}>
         {label}
       </p>
-      <p className="text-sm">{value}</p>
+      {href ? (
+        <a href={href} className="text-sm font-medium" style={{ color: "#3052FF" }}>
+          {value}
+        </a>
+      ) : (
+        <p className="text-sm font-medium" style={{ color: "#131b2e" }}>
+          {value}
+        </p>
+      )}
     </div>
   );
 }
@@ -226,78 +238,95 @@ export function LeadDetailTabs({ lead }: LeadDetailTabsProps) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon-sm" asChild>
-              <Link href="/leads">
-                <ArrowLeft className="size-4" />
-              </Link>
-            </Button>
-            <h2 className="text-2xl font-bold tracking-tight">
+    <div style={{ color: "#131b2e" }}>
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 mb-5 text-[13px]" style={{ color: "#444656" }}>
+        <Link href="/leads" className="font-medium hover:underline" style={{ color: "#3052FF" }}>
+          Leads
+        </Link>
+        <ChevronRight className="size-3.5" style={{ color: "#444656" }} />
+        <span>{lead.businessName}</span>
+      </nav>
+
+      {/* Detail Header */}
+      <div className="flex items-start justify-between mb-7">
+        <div className="flex items-center gap-5">
+          <div>
+            <h1
+              className="flex items-center gap-3 text-[26px] font-bold"
+              style={{ fontFamily: "Manrope, sans-serif" }}
+            >
               {lead.businessName}
-            </h2>
+              <StatusBadge status={lead.status} />
+            </h1>
+            <div className="mt-0.5 text-[15px]" style={{ color: "#444656" }}>
+              {lead.contactName}
+            </div>
           </div>
-          <div className="flex items-center gap-3 pl-10">
-            <StatusBadge status={lead.status} />
-            <ScoreBadge score={lead.score} />
-            {lead.assignedTo && (
-              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <User className="size-3.5" />
-                {lead.assignedTo.name}
-              </span>
-            )}
-          </div>
+          <ScoreCircle score={lead.score} />
         </div>
 
-        {/* Quick Actions */}
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/dialer?leadId=${lead.id}`}>
-              <Phone className="size-4" />
-              Call Now
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
+        {/* Header Actions */}
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="font-medium"
+            style={{ background: "#f2f3ff", color: "#131b2e", border: "none" }}
+            asChild
+          >
             <Link href={`/leads/${lead.id}/edit`}>
-              <Pencil className="size-4" />
+              <Pencil className="size-3.5" />
               Edit
             </Link>
           </Button>
-          {lead.status !== "ENROLLED" && lead.status !== "OPPORTUNITY" && (
-            <Button
-              size="sm"
-              onClick={() => setConvertOpen(true)}
-            >
-              Convert to Opportunity
-            </Button>
-          )}
-          {lead.status === "OPPORTUNITY" && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setEnrollOpen(true)}
-            >
-              Enroll Client
-            </Button>
-          )}
+
+          <Button
+            size="sm"
+            className="font-semibold text-white"
+            style={{ background: "linear-gradient(135deg,#0034e4,#3052ff)", border: "none" }}
+            asChild
+          >
+            <Link href={`/dialer?leadId=${lead.id}`}>
+              <Phone className="size-3.5" />
+              Call
+            </Link>
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" disabled={updating}>
-                Change Status
-                <ChevronDown className="size-3.5" />
-              </Button>
+              <button
+                className="flex items-center justify-center rounded"
+                style={{
+                  width: 40,
+                  height: 40,
+                  background: "#f2f3ff",
+                  border: "none",
+                  color: "#444656",
+                  cursor: "pointer",
+                }}
+              >
+                <MoreHorizontal className="size-5" />
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {lead.status !== "ENROLLED" && lead.status !== "OPPORTUNITY" && (
+                <DropdownMenuItem onClick={() => setConvertOpen(true)}>
+                  Convert to Opportunity
+                </DropdownMenuItem>
+              )}
+              {lead.status === "OPPORTUNITY" && (
+                <DropdownMenuItem onClick={() => setEnrollOpen(true)}>
+                  Enroll Client
+                </DropdownMenuItem>
+              )}
               {LEAD_STATUSES.map((s) => (
                 <DropdownMenuItem
                   key={s}
                   onClick={() => handleStatusChange(s)}
-                  disabled={s === lead.status}
+                  disabled={s === lead.status || updating}
                 >
-                  {s.replace(/_/g, " ")}
+                  Set: {s.replace(/_/g, " ")}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -305,270 +334,604 @@ export function LeadDetailTabs({ lead }: LeadDetailTabsProps) {
         </div>
       </div>
 
-      {/* Pipeline Path */}
-      <LeadPath status={lead.status} />
-
-      <Separator />
-
-      {/* Tabs */}
-      <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="calls">
-            Calls ({lead.calls.length})
-          </TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="mt-4">
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Contact Information */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 grid-cols-2">
-                <InfoField label="Contact Name" value={lead.contactName} />
-                <InfoField label="Phone" value={formatPhone(lead.phone)} />
-                <InfoField label="Email" value={lead.email || "--"} />
-                <InfoField label="EIN" value={lead.ein || "--"} />
-              </CardContent>
-            </Card>
-
-            {/* Business Information */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Business Information</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 grid-cols-2">
-                <InfoField label="Business Name" value={lead.businessName} />
-                <InfoField label="Industry" value={lead.industry || "--"} />
-                <InfoField
-                  label="Annual Revenue"
-                  value={formatCurrency(lead.annualRevenue)}
-                />
-                <InfoField
-                  label="Estimated Debt"
-                  value={formatCurrency(lead.totalDebtEst)}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Lead Details */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Lead Details</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 grid-cols-2">
-                <InfoField label="Source" value={formatSourceLabel(lead.source)} />
-                <InfoField label="Status" value={lead.status.replace(/_/g, " ")} />
-                <InfoField
-                  label="Score"
-                  value={lead.score !== null ? String(lead.score) : "--"}
-                />
-                <InfoField
-                  label="Score Reason"
-                  value={lead.scoreReason || "--"}
-                />
-                <InfoField
-                  label="Assigned To"
-                  value={lead.assignedTo?.name || "Unassigned"}
-                />
-                <InfoField label="Created" value={formatDate(lead.createdAt)} />
-              </CardContent>
-            </Card>
-
-            {/* Timeline */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Timeline</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 grid-cols-1">
-                <div className="flex items-center gap-3">
-                  <Clock className="size-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Last Contacted</p>
-                    <p className="text-sm">{formatDate(lead.lastContactedAt)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="size-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Next Follow-up</p>
-                    <p className="text-sm">{formatDate(lead.nextFollowUpAt)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="size-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Last Updated</p>
-                    <p className="text-sm">{formatDate(lead.updatedAt)}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Notes */}
-            {lead.notes && (
-              <Card className="md:col-span-2">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm whitespace-pre-wrap">{lead.notes}</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="calls" className="mt-4">
-          {lead.calls.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Phone className="size-8 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">No calls recorded yet.</p>
-                <Button variant="outline" size="sm" className="mt-3" asChild>
-                  <Link href={`/dialer?leadId=${lead.id}`}>
-                    Make First Call
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {lead.calls.map((call) => (
-                <Card key={call.id} className="py-4">
-                  <CardContent className="px-4 py-0">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`size-8 rounded-full flex items-center justify-center ${
-                          call.direction === "OUTBOUND"
-                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                            : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                        }`}>
-                          <Phone className="size-3.5" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">
-                            {call.direction === "OUTBOUND" ? "Outbound" : "Inbound"} Call
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {call.agent.name} - {formatDate(call.startedAt)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {call.disposition && (
-                          <Badge variant="secondary" className="text-xs">
-                            {call.disposition.replace(/_/g, " ")}
-                          </Badge>
-                        )}
-                        <Badge variant="outline" className="text-xs">
-                          {call.status.replace(/_/g, " ")}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDuration(call.duration)}
-                        </span>
-                      </div>
-                    </div>
-                    {call.notes && (
-                      <p className="mt-2 text-sm text-muted-foreground pl-11">
-                        {call.notes}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+      {/* Mini Stat Cards */}
+      <div className="grid grid-cols-4 gap-4 mb-7">
+        {[
+          {
+            label: "Total Debt",
+            value: formatCurrency(lead.totalDebtEst),
+            Icon: DollarSign,
+          },
+          {
+            label: "Monthly Revenue",
+            value: getMonthlyRevenue(lead.annualRevenue),
+            Icon: TrendingUp,
+          },
+          {
+            label: "Days in Pipeline",
+            value: String(getDaysInPipeline(lead.createdAt)),
+            Icon: Clock,
+          },
+          {
+            label: "Calls Made",
+            value: String(lead.calls.length),
+            Icon: PhoneCall,
+          },
+        ].map(({ label, value, Icon }) => (
+          <div
+            key={label}
+            className="rounded-xl p-5"
+            style={{
+              background: "#ffffff",
+              boxShadow: "0 12px 40px rgba(19,27,46,0.06)",
+            }}
+          >
+            <div className="flex items-center gap-2 mb-1.5">
+              <Icon className="size-4" style={{ color: "#3052FF" }} />
+              <p className="text-[12.5px] font-medium" style={{ color: "#444656" }}>
+                {label}
+              </p>
             </div>
-          )}
-        </TabsContent>
+            <p
+              className="text-[24px] font-extrabold tracking-tight"
+              style={{ fontFamily: "Manrope, sans-serif", color: "#131b2e" }}
+            >
+              {value}
+            </p>
+          </div>
+        ))}
+      </div>
 
-        <TabsContent value="activity" className="mt-4">
-          <div className="space-y-4">
-            {/* Campaign Activity */}
-            {lead.campaignContacts.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Campaign Activity</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {lead.campaignContacts.map((cc) => (
-                    <div
-                      key={cc.id}
-                      className="flex items-center justify-between rounded-md border p-3"
-                    >
-                      <div>
-                        <p className="text-sm font-medium">{cc.campaign.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {cc.attempts} attempt{cc.attempts !== 1 ? "s" : ""}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
-                          {cc.status.replace(/_/g, " ")}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {cc.campaign.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
+      {/* Tab Bar */}
+      <Tabs defaultValue="overview">
+        <div
+          className="flex rounded-xl overflow-hidden mb-6"
+          style={{
+            background: "#ffffff",
+            boxShadow: "0 12px 40px rgba(19,27,46,0.06)",
+          }}
+        >
+          <TabsList className="flex h-auto bg-transparent p-0 w-full">
+            {[
+              { value: "overview", label: "Overview" },
+              { value: "debts", label: "Debts" },
+              { value: "calls", label: `Calls (${lead.calls.length})` },
+              { value: "campaigns", label: "Campaigns" },
+              { value: "documents", label: "Documents" },
+              { value: "notes", label: "Notes" },
+            ].map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="relative flex-1 px-6 py-3.5 text-[13.5px] font-medium rounded-none border-0 data-[state=active]:shadow-none data-[state=active]:font-semibold"
+                style={{
+                  color: "#444656",
+                  background: "transparent",
+                }}
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
-            {/* Lead Timeline */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Timeline</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex gap-3">
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="mt-0">
+          <div className="grid gap-6" style={{ gridTemplateColumns: "1.5fr 1fr" }}>
+            {/* Left column */}
+            <div className="flex flex-col gap-5">
+              {/* Contact Info Card */}
+              <div
+                className="rounded-xl p-6"
+                style={{
+                  background: "#ffffff",
+                  boxShadow: "0 12px 40px rgba(19,27,46,0.06)",
+                }}
+              >
+                <h3
+                  className="text-base font-bold mb-5"
+                  style={{ fontFamily: "Manrope, sans-serif" }}
+                >
+                  Contact Information
+                </h3>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                  <InfoField label="Phone" value={formatPhone(lead.phone)} href={`tel:${lead.phone}`} />
+                  <InfoField label="Email" value={lead.email || "--"} href={lead.email ? `mailto:${lead.email}` : undefined} />
+                  <InfoField label="EIN" value={lead.ein || "--"} />
+                  <InfoField label="Industry" value={lead.industry || "--"} />
+                  <InfoField label="Annual Revenue" value={formatCurrency(lead.annualRevenue)} />
+                  <InfoField label="Source" value={formatSourceLabel(lead.source)} />
+                  {lead.utmCampaign && (
+                    <InfoField label="UTM Campaign" value={lead.utmCampaign} />
+                  )}
+                  {lead.scoreReason && (
+                    <InfoField label="Score Reason" value={lead.scoreReason} />
+                  )}
+                  <InfoField label="Created" value={formatDateShort(lead.createdAt)} />
+                  <InfoField label="Last Updated" value={formatDateShort(lead.updatedAt)} />
+                </div>
+              </div>
+
+              {/* Activity Timeline */}
+              <div
+                className="rounded-xl p-6"
+                style={{
+                  background: "#ffffff",
+                  boxShadow: "0 12px 40px rgba(19,27,46,0.06)",
+                }}
+              >
+                <h3
+                  className="text-base font-bold mb-5"
+                  style={{ fontFamily: "Manrope, sans-serif" }}
+                >
+                  Activity Timeline
+                </h3>
+                <div className="flex flex-col">
+                  {/* Lead created */}
+                  <div className="flex gap-4 pb-4 relative">
                     <div className="flex flex-col items-center">
-                      <div className="size-2 rounded-full bg-primary" />
-                      <div className="flex-1 w-px bg-border" />
+                      <div
+                        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: "rgba(48,82,255,0.08)", color: "#3052FF" }}
+                      >
+                        <User className="size-4" />
+                      </div>
+                      {(lead.lastContactedAt || lead.calls.length > 0) && (
+                        <div className="w-px flex-1 mt-2" style={{ background: "#eaedff" }} />
+                      )}
                     </div>
-                    <div className="pb-4">
-                      <p className="text-sm font-medium">Lead Created</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(lead.createdAt)}
+                    <div className="flex-1 pt-1.5 pb-2">
+                      <p className="text-[13.5px] font-medium" style={{ color: "#131b2e" }}>Lead created</p>
+                      <p className="text-[12.5px] mt-0.5" style={{ color: "#444656" }}>
+                        Added to the pipeline
                       </p>
                     </div>
+                    <div className="text-[12px] whitespace-nowrap pt-1.5" style={{ color: "#444656" }}>
+                      {formatDateShort(lead.createdAt)}
+                    </div>
                   </div>
+
                   {lead.lastContactedAt && (
-                    <div className="flex gap-3">
+                    <div className="flex gap-4 pb-4 relative">
                       <div className="flex flex-col items-center">
-                        <div className="size-2 rounded-full bg-primary" />
-                        <div className="flex-1 w-px bg-border" />
+                        <div
+                          className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: "rgba(5,150,105,0.08)", color: "#059669" }}
+                        >
+                          <Phone className="size-4" />
+                        </div>
+                        {lead.calls.length > 0 && (
+                          <div className="w-px flex-1 mt-2" style={{ background: "#eaedff" }} />
+                        )}
                       </div>
-                      <div className="pb-4">
-                        <p className="text-sm font-medium">Last Contacted</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(lead.lastContactedAt)}
-                        </p>
+                      <div className="flex-1 pt-1.5 pb-2">
+                        <p className="text-[13.5px] font-medium" style={{ color: "#131b2e" }}>Last contacted</p>
+                        <p className="text-[12.5px] mt-0.5" style={{ color: "#444656" }}>Phone or email contact made</p>
+                      </div>
+                      <div className="text-[12px] whitespace-nowrap pt-1.5" style={{ color: "#444656" }}>
+                        {formatDateShort(lead.lastContactedAt)}
                       </div>
                     </div>
                   )}
+
                   {lead.calls.length > 0 && (
-                    <div className="flex gap-3">
+                    <div className="flex gap-4">
                       <div className="flex flex-col items-center">
-                        <div className="size-2 rounded-full bg-muted-foreground" />
+                        <div
+                          className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: "rgba(48,82,255,0.08)", color: "#3052FF" }}
+                        >
+                          <PhoneCall className="size-4" />
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">
-                          {lead.calls.length} Call{lead.calls.length !== 1 ? "s" : ""} Recorded
+                      <div className="flex-1 pt-1.5">
+                        <p className="text-[13.5px] font-medium" style={{ color: "#131b2e" }}>
+                          {lead.calls.length} call{lead.calls.length !== 1 ? "s" : ""} recorded
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[12.5px] mt-0.5" style={{ color: "#444656" }}>
                           Latest: {formatDate(lead.calls[0]?.startedAt)}
                         </p>
                       </div>
                     </div>
                   )}
+
+                  {lead.calls.length === 0 && !lead.lastContactedAt && (
+                    <p className="text-[13px] text-center py-4" style={{ color: "#444656" }}>
+                      No activity yet
+                    </p>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Next follow-up */}
+                {lead.nextFollowUpAt && (
+                  <div
+                    className="mt-4 pt-4 flex items-center gap-3"
+                    style={{ borderTop: "1px solid #f2f3ff" }}
+                  >
+                    <Calendar className="size-4 flex-shrink-0" style={{ color: "#3052FF" }} />
+                    <div>
+                      <p className="text-[12px] font-medium uppercase tracking-wider" style={{ color: "#444656" }}>
+                        Next Follow-up
+                      </p>
+                      <p className="text-sm font-medium" style={{ color: "#131b2e" }}>
+                        {formatDate(lead.nextFollowUpAt)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Marketing Attribution (if present) */}
+              {(lead.utmSource || lead.utmMedium || lead.utmCampaign || lead.utmTerm || lead.utmContent || lead.gclid || lead.fbclid || lead.eliClickId || lead.redtrackClickId) && (
+                <div
+                  className="rounded-xl p-6"
+                  style={{
+                    background: "#ffffff",
+                    boxShadow: "0 12px 40px rgba(19,27,46,0.06)",
+                  }}
+                >
+                  <h3
+                    className="text-base font-bold mb-5"
+                    style={{ fontFamily: "Manrope, sans-serif" }}
+                  >
+                    Marketing Attribution
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
+                    <InfoField label="UTM Source" value={lead.utmSource || "--"} />
+                    <InfoField label="UTM Medium" value={lead.utmMedium || "--"} />
+                    <InfoField label="UTM Campaign" value={lead.utmCampaign || "--"} />
+                    <InfoField label="UTM Term" value={lead.utmTerm || "--"} />
+                    <InfoField label="UTM Content" value={lead.utmContent || "--"} />
+                    <InfoField label="GCLID" value={lead.gclid || "--"} />
+                    <InfoField label="FBCLID" value={lead.fbclid || "--"} />
+                    <InfoField label="EliClick ID" value={lead.eliClickId || "--"} />
+                    <InfoField label="RedTrack Click ID" value={lead.redtrackClickId || "--"} />
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {lead.notes && (
+                <div
+                  className="rounded-xl p-6"
+                  style={{
+                    background: "#ffffff",
+                    boxShadow: "0 12px 40px rgba(19,27,46,0.06)",
+                  }}
+                >
+                  <h3
+                    className="text-base font-bold mb-4"
+                    style={{ fontFamily: "Manrope, sans-serif" }}
+                  >
+                    Notes
+                  </h3>
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "#131b2e" }}>
+                    {lead.notes}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Right column */}
+            <div className="flex flex-col gap-5">
+              {/* Assigned Agent */}
+              <div
+                className="rounded-xl p-6"
+                style={{
+                  background: "#ffffff",
+                  boxShadow: "0 12px 40px rgba(19,27,46,0.06)",
+                }}
+              >
+                <h3
+                  className="text-base font-bold mb-5"
+                  style={{ fontFamily: "Manrope, sans-serif" }}
+                >
+                  Assigned Agent
+                </h3>
+                {lead.assignedTo ? (
+                  <>
+                    <div className="flex items-center gap-3.5 mb-3">
+                      <div
+                        className="flex items-center justify-center rounded-full text-white font-semibold text-[15px] flex-shrink-0"
+                        style={{
+                          width: 44,
+                          height: 44,
+                          background: "linear-gradient(135deg,#0034e4,#3052ff)",
+                        }}
+                      >
+                        {getInitials(lead.assignedTo.name)}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm" style={{ color: "#131b2e" }}>
+                          {lead.assignedTo.name}
+                        </p>
+                        <p className="text-[12.5px]" style={{ color: "#444656" }}>
+                          {lead.assignedTo.email}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex items-center justify-center rounded-full flex-shrink-0"
+                      style={{
+                        width: 44,
+                        height: 44,
+                        background: "#f2f3ff",
+                        color: "#444656",
+                      }}
+                    >
+                      <User className="size-5" />
+                    </div>
+                    <p className="text-sm" style={{ color: "#444656" }}>Unassigned</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Upcoming Tasks (next follow-up) */}
+              <div
+                className="rounded-xl p-6"
+                style={{
+                  background: "#ffffff",
+                  boxShadow: "0 12px 40px rgba(19,27,46,0.06)",
+                }}
+              >
+                <h3
+                  className="text-base font-bold mb-4"
+                  style={{ fontFamily: "Manrope, sans-serif" }}
+                >
+                  Upcoming Tasks
+                </h3>
+                {lead.nextFollowUpAt ? (
+                  <div
+                    className="flex items-center gap-3 py-3"
+                    style={{ borderBottom: "1px solid #f2f3ff" }}
+                  >
+                    <div
+                      className="w-5 h-5 rounded flex-shrink-0"
+                      style={{ background: "#f2f3ff" }}
+                    />
+                    <p className="flex-1 text-[13.5px]" style={{ color: "#131b2e" }}>
+                      Follow-up call
+                    </p>
+                    <p className="text-[12px]" style={{ color: "#444656" }}>
+                      {formatDateShort(lead.nextFollowUpAt)}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: "#444656" }}>No upcoming tasks</p>
+                )}
+              </div>
+
+              {/* Tags (source + industry as tags) */}
+              <div
+                className="rounded-xl p-6"
+                style={{
+                  background: "#ffffff",
+                  boxShadow: "0 12px 40px rgba(19,27,46,0.06)",
+                }}
+              >
+                <h3
+                  className="text-base font-bold mb-4"
+                  style={{ fontFamily: "Manrope, sans-serif" }}
+                >
+                  Tags
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    lead.industry,
+                    formatSourceLabel(lead.source),
+                    lead.status.replace(/_/g, " "),
+                  ]
+                    .filter(Boolean)
+                    .map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-3 py-1 rounded-full text-[12px] font-medium"
+                        style={{ background: "#f2f3ff", color: "#444656" }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                </div>
+              </div>
+
+              {/* Campaign Activity */}
+              {lead.campaignContacts.length > 0 && (
+                <div
+                  className="rounded-xl p-6"
+                  style={{
+                    background: "#ffffff",
+                    boxShadow: "0 12px 40px rgba(19,27,46,0.06)",
+                  }}
+                >
+                  <h3
+                    className="text-base font-bold mb-4"
+                    style={{ fontFamily: "Manrope, sans-serif" }}
+                  >
+                    Campaign Activity
+                  </h3>
+                  <div className="flex flex-col gap-2">
+                    {lead.campaignContacts.map((cc) => (
+                      <div
+                        key={cc.id}
+                        className="flex items-center justify-between rounded-lg p-3"
+                        style={{ background: "#f2f3ff" }}
+                      >
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: "#131b2e" }}>
+                            {cc.campaign.name}
+                          </p>
+                          <p className="text-[12px]" style={{ color: "#444656" }}>
+                            {cc.attempts} attempt{cc.attempts !== 1 ? "s" : ""}
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {cc.status.replace(/_/g, " ")}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Debts Tab */}
+        <TabsContent value="debts" className="mt-0">
+          <div
+            className="rounded-xl p-6"
+            style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+          >
+            <h3 className="text-base font-bold mb-4" style={{ fontFamily: "Manrope, sans-serif" }}>
+              Debt Summary
+            </h3>
+            <div className="grid grid-cols-2 gap-6">
+              <InfoField label="Estimated Total Debt" value={formatCurrency(lead.totalDebtEst)} />
+              <InfoField label="Annual Revenue" value={formatCurrency(lead.annualRevenue)} />
+              <InfoField label="Monthly Revenue" value={getMonthlyRevenue(lead.annualRevenue)} />
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Calls Tab */}
+        <TabsContent value="calls" className="mt-0">
+          {lead.calls.length === 0 ? (
+            <div
+              className="rounded-xl p-12 text-center"
+              style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+            >
+              <Phone className="size-8 mx-auto mb-3" style={{ color: "#444656" }} />
+              <p className="mb-3" style={{ color: "#444656" }}>No calls recorded yet.</p>
+              <Button
+                size="sm"
+                style={{ background: "linear-gradient(135deg,#0034e4,#3052ff)", color: "#fff", border: "none" }}
+                asChild
+              >
+                <Link href={`/dialer?leadId=${lead.id}`}>Make First Call</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {lead.calls.map((call) => (
+                <div
+                  key={call.id}
+                  className="rounded-xl p-4"
+                  style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="size-9 rounded-lg flex items-center justify-center"
+                        style={{
+                          background:
+                            call.direction === "OUTBOUND"
+                              ? "rgba(48,82,255,0.08)"
+                              : "rgba(5,150,105,0.08)",
+                          color: call.direction === "OUTBOUND" ? "#3052FF" : "#059669",
+                        }}
+                      >
+                        <Phone className="size-3.5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: "#131b2e" }}>
+                          {call.direction === "OUTBOUND" ? "Outbound" : "Inbound"} Call
+                        </p>
+                        <p className="text-[12.5px]" style={{ color: "#444656" }}>
+                          {call.agent.name} · {formatDate(call.startedAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {call.disposition && (
+                        <Badge variant="secondary" className="text-xs">
+                          {call.disposition.replace(/_/g, " ")}
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs">
+                        {call.status.replace(/_/g, " ")}
+                      </Badge>
+                      <span className="text-[12px]" style={{ color: "#444656" }}>
+                        {formatDuration(call.duration)}
+                      </span>
+                    </div>
+                  </div>
+                  {call.notes && (
+                    <p className="mt-2 text-sm pl-12" style={{ color: "#444656" }}>
+                      {call.notes}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Campaigns Tab */}
+        <TabsContent value="campaigns" className="mt-0">
+          {lead.campaignContacts.length === 0 ? (
+            <div
+              className="rounded-xl p-12 text-center"
+              style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+            >
+              <p style={{ color: "#444656" }}>No campaign activity.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {lead.campaignContacts.map((cc) => (
+                <div
+                  key={cc.id}
+                  className="rounded-xl p-4 flex items-center justify-between"
+                  style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+                >
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: "#131b2e" }}>{cc.campaign.name}</p>
+                    <p className="text-[12.5px]" style={{ color: "#444656" }}>
+                      {cc.attempts} attempt{cc.attempts !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {cc.status.replace(/_/g, " ")}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {cc.campaign.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Documents Tab */}
+        <TabsContent value="documents" className="mt-0">
+          <div
+            className="rounded-xl p-12 text-center"
+            style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+          >
+            <p style={{ color: "#444656" }}>No documents uploaded.</p>
+          </div>
+        </TabsContent>
+
+        {/* Notes Tab */}
+        <TabsContent value="notes" className="mt-0">
+          <div
+            className="rounded-xl p-6"
+            style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+          >
+            <h3 className="text-base font-bold mb-4" style={{ fontFamily: "Manrope, sans-serif" }}>
+              Notes
+            </h3>
+            {lead.notes ? (
+              <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: "#131b2e" }}>
+                {lead.notes}
+              </p>
+            ) : (
+              <p style={{ color: "#444656" }}>No notes added.</p>
+            )}
           </div>
         </TabsContent>
       </Tabs>
