@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { OpportunityTable } from "@/components/opportunities/opportunity-table";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 
 interface OpportunitiesPageProps {
   searchParams: Promise<{
@@ -73,16 +75,35 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* ── Page Header ─────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Opportunities</h2>
-          <p className="text-muted-foreground">
+          <h1
+            className="text-[1.5rem] font-bold tracking-tight"
+            style={{ fontFamily: "Manrope, sans-serif", color: "#131b2e" }}
+          >
+            Opportunities
+          </h1>
+          <p className="text-[13px] mt-0.5" style={{ color: "#444656" }}>
             Track and manage your sales pipeline.
           </p>
         </div>
+
+        <Link
+          href="/opportunities/new"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+          style={{
+            background: "linear-gradient(135deg, #0034e4, #3052ff)",
+            border: "none",
+          }}
+        >
+          <Plus className="size-4" />
+          New Opportunity
+        </Link>
       </div>
 
+      {/* ── Table / Kanban ──────────────────────────── */}
       <OpportunityTable
         opportunities={serialized}
         total={total}

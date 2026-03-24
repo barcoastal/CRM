@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +10,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
 import {
   ChevronDown,
   Pencil,
@@ -62,112 +59,28 @@ const STAGE_ORDER = [
   "CLOSED",
 ] as const;
 
-const STAGE_COLORS: Record<string, string> = {
-  WORKING_OPPORTUNITY: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  WAITING_FOR_AGREEMENTS: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
-  READY_TO_CLOSE: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  CONTRACT_SENT: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
-  CONTRACT_SIGNED: "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400",
-  ARCHIVED: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
-  CLOSED_WON_FIRST_PAYMENT: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  CLOSED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+const STAGE_BADGE_COLORS: Record<string, { bg: string; text: string }> = {
+  WORKING_OPPORTUNITY:      { bg: "#e0e7ff", text: "#4338ca" },
+  WAITING_FOR_AGREEMENTS:   { bg: "#e0e7ff", text: "#3730a3" },
+  READY_TO_CLOSE:           { bg: "#fef3c7", text: "#92400e" },
+  CONTRACT_SENT:            { bg: "#d1fae5", text: "#065f46" },
+  CONTRACT_SIGNED:          { bg: "#d1fae5", text: "#047857" },
+  ARCHIVED:                 { bg: "#f3f4f6", text: "#374151" },
+  CLOSED_WON_FIRST_PAYMENT: { bg: "#dcfce7", text: "#166534" },
+  CLOSED:                   { bg: "#fee2e2", text: "#991b1b" },
 };
 
 const DISPOSITION_COLORS: Record<string, string> = {
-  INTERESTED: "bg-green-100 text-green-800",
+  INTERESTED:     "bg-green-100 text-green-800",
   NOT_INTERESTED: "bg-red-100 text-red-800",
-  CALLBACK: "bg-blue-100 text-blue-800",
-  NOT_QUALIFIED: "bg-gray-100 text-gray-800",
-  WRONG_NUMBER: "bg-orange-100 text-orange-800",
-  VOICEMAIL: "bg-purple-100 text-purple-800",
-  NO_ANSWER: "bg-yellow-100 text-yellow-800",
-  DNC: "bg-red-200 text-red-900",
-  ENROLLED: "bg-emerald-100 text-emerald-800",
+  CALLBACK:       "bg-blue-100 text-blue-800",
+  NOT_QUALIFIED:  "bg-gray-100 text-gray-800",
+  WRONG_NUMBER:   "bg-orange-100 text-orange-800",
+  VOICEMAIL:      "bg-purple-100 text-purple-800",
+  NO_ANSWER:      "bg-yellow-100 text-yellow-800",
+  DNC:            "bg-red-200 text-red-900",
+  ENROLLED:       "bg-emerald-100 text-emerald-800",
 };
-
-// ─── Pipeline Path ────────────────────────────────────────────
-
-function OpportunityPath({ stage }: { stage: string }) {
-  const currentIndex = STAGE_ORDER.indexOf(stage as (typeof STAGE_ORDER)[number]);
-  const isArchived = stage === "ARCHIVED";
-  const isClosed = stage === "CLOSED";
-  const isClosedWon = stage === "CLOSED_WON_FIRST_PAYMENT";
-
-  return (
-    <div className="w-full">
-      <div className="flex items-stretch h-10">
-        {STAGE_ORDER.map((step, i) => {
-          const isCurrent = currentIndex === i;
-          const isCompleted = !isArchived && !isClosed && currentIndex > i && i < 5;
-          const isFirst = i === 0;
-          const isLast = i === STAGE_ORDER.length - 1;
-
-          let fillClass = "fill-muted";
-          if (isCurrent) {
-            if (isArchived) fillClass = "fill-gray-500";
-            else if (isClosed) fillClass = "fill-red-500";
-            else if (isClosedWon) fillClass = "fill-green-600";
-            else fillClass = "fill-primary";
-          } else if (isCompleted) {
-            fillClass = "fill-primary/70";
-          }
-
-          let textClass = "text-muted-foreground";
-          if (isCurrent || isCompleted) {
-            textClass = "text-white";
-          }
-
-          return (
-            <div key={step} className="relative flex-1 flex items-center justify-center min-w-0">
-              <svg
-                className="absolute inset-0 w-full h-full"
-                preserveAspectRatio="none"
-                viewBox="0 0 120 40"
-              >
-                <path
-                  d={
-                    isFirst
-                      ? "M0,0 L110,0 L120,20 L110,40 L0,40 Z"
-                      : isLast
-                        ? "M0,0 L120,0 L120,40 L0,40 L10,20 Z"
-                        : "M0,0 L110,0 L120,20 L110,40 L0,40 L10,20 Z"
-                  }
-                  className={fillClass}
-                />
-                {!isLast && (
-                  <path
-                    d="M110,0 L120,20 L110,40"
-                    fill="none"
-                    className="stroke-background"
-                    strokeWidth="2"
-                  />
-                )}
-                {!isFirst && (
-                  <path
-                    d="M0,0 L10,20 L0,40"
-                    fill="none"
-                    className="stroke-background"
-                    strokeWidth="2"
-                  />
-                )}
-              </svg>
-              <span
-                className={cn(
-                  "relative z-10 text-[10px] font-semibold truncate px-2 leading-tight text-center",
-                  textClass
-                )}
-              >
-                {step === "CLOSED_WON_FIRST_PAYMENT"
-                  ? "WON"
-                  : step.replace(/_/g, " ")}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -339,18 +252,103 @@ function getNextStage(current: string): string | null {
   return null;
 }
 
-// ─── Detail Field Component ──────────────────────────────────
+function getDaysInStage(createdAt: string): number {
+  return Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24));
+}
 
-function DetailField({ label, value, icon: Icon }: { label: string; value: string; icon?: typeof Phone }) {
+function getInitials(name: string): string {
+  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+}
+
+// ─── Sub-components ──────────────────────────────────────────
+
+function StatCard({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+}) {
   return (
-    <div className="flex items-start gap-3 py-2">
-      {Icon && <Icon className="size-4 text-muted-foreground mt-0.5 shrink-0" />}
-      <div className="min-w-0">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          {label}
+    <div
+      className="rounded-xl p-4"
+      style={{
+        background: "#ffffff",
+        boxShadow: "0 12px 40px rgba(19,27,46,0.06)",
+      }}
+    >
+      <p
+        className="text-[10.5px] font-semibold uppercase tracking-widest mb-1"
+        style={{ color: "#444656" }}
+      >
+        {label}
+      </p>
+      <p
+        className="text-[1.4rem] font-bold leading-none"
+        style={{ fontFamily: "Manrope, sans-serif", color: "#131b2e" }}
+      >
+        {value}
+      </p>
+      {sub && (
+        <p className="text-[11.5px] mt-1" style={{ color: "#444656" }}>
+          {sub}
         </p>
-        <p className="text-sm mt-0.5">{value}</p>
-      </div>
+      )}
+    </div>
+  );
+}
+
+function InfoRow({
+  label,
+  value,
+  href,
+}: {
+  label: string;
+  value: string;
+  href?: string;
+}) {
+  return (
+    <div
+      className="flex justify-between py-[9px] text-[12.5px]"
+      style={{ boxShadow: "0 1px 0 #eaedff" }}
+    >
+      <span style={{ color: "#444656" }}>{label}</span>
+      {href ? (
+        <a href={href} style={{ color: "#3052ff" }} className="font-medium hover:underline">
+          {value}
+        </a>
+      ) : (
+        <span className="font-medium" style={{ color: "#131b2e" }}>
+          {value}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function Panel({
+  title,
+  children,
+  className,
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("rounded-xl p-5", className)}
+      style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+    >
+      <p
+        className="text-[14px] font-bold mb-4"
+        style={{ fontFamily: "Manrope, sans-serif", color: "#131b2e" }}
+      >
+        {title}
+      </p>
+      {children}
     </div>
   );
 }
@@ -361,6 +359,7 @@ export function OpportunityDetailTabs({ opportunity }: OpportunityDetailTabsProp
   const router = useRouter();
   const [updating, setUpdating] = useState(false);
   const [enrollOpen, setEnrollOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const handleStageChange = async (newStage: string) => {
     setUpdating(true);
@@ -387,80 +386,129 @@ export function OpportunityDetailTabs({ opportunity }: OpportunityDetailTabsProp
     (opportunity.stage === "CONTRACT_SIGNED" || opportunity.stage === "CLOSED_WON_FIRST_PAYMENT") &&
     !opportunity.client;
 
-  const stageColorClass = STAGE_COLORS[opportunity.stage] || "";
+  const stageBadgeColors = STAGE_BADGE_COLORS[opportunity.stage] || { bg: "#f2f3ff", text: "#444656" };
 
-  // Compute total debt from debts array
+  // Computed values
   const totalDebtFromDebts = opportunity.debts.reduce((sum, d) => sum + d.currentBalance, 0);
   const displayDebt = opportunity.totalDebt || totalDebtFromDebts || opportunity.lead.totalDebtEst || 0;
+  const settlementTarget = displayDebt * 0.6;
+  const daysInStage = getDaysInStage(opportunity.createdAt);
 
-  // Get last call disposition info
   const lastCall = opportunity.lead.calls[0];
   const interestedCalls = opportunity.lead.calls.filter((c) => c.disposition === "INTERESTED").length;
   const totalCalls = opportunity.lead.calls.length;
 
-  // Settlement summary
   const settledDebts = opportunity.debts.filter((d) => d.status === "SETTLED" || d.status === "PAID");
   const totalSettled = settledDebts.reduce((sum, d) => sum + (d.settledAmount || 0), 0);
   const totalSavings = settledDebts.reduce((sum, d) => sum + (d.savingsAmount || 0), 0);
 
+  const assigneeName = opportunity.assignedTo?.name ?? "";
+  const assigneeInitials = assigneeName ? getInitials(assigneeName) : "?";
+
+  const TABS = [
+    { key: "overview", label: "Overview" },
+    { key: "lead", label: "Lead Info" },
+    { key: "debts", label: `Debts (${opportunity.debts.length})` },
+    { key: "negotiations", label: "Negotiations" },
+    { key: "documents", label: `Documents (${opportunity.documents.length})` },
+    { key: "activities", label: "Activities" },
+    { key: "calculator", label: "Calculator" },
+    { key: "marketing", label: "Marketing" },
+  ];
+
   return (
-    <div className="space-y-4">
-      {/* ─── Header Bar ──────────────────────────────────── */}
+    <div className="space-y-5">
+      {/* ── Breadcrumb ───────────────────────────────── */}
+      <div className="flex items-center gap-1.5 text-[12px]" style={{ color: "#444656" }}>
+        <Link href="/opportunities" style={{ color: "#3052ff" }} className="font-medium hover:underline">
+          Opportunities
+        </Link>
+        <span>&rsaquo;</span>
+        <span>{opportunity.lead.businessName}</span>
+      </div>
+
+      {/* ── Detail Header ────────────────────────────── */}
       <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon-sm" asChild>
-              <Link href="/opportunities">
-                <ArrowLeft className="size-4" />
-              </Link>
-            </Button>
-            <h2 className="text-2xl font-bold tracking-tight">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <h1
+              className="text-[1.5rem] font-bold tracking-tight"
+              style={{ fontFamily: "Manrope, sans-serif", color: "#131b2e" }}
+            >
               {opportunity.lead.businessName}
-            </h2>
-          </div>
-          <div className="flex items-center gap-3 pl-10">
-            <Badge variant="secondary" className={`text-xs ${stageColorClass}`}>
+            </h1>
+            <span
+              className="text-[11.5px] font-semibold px-2.5 py-1 rounded"
+              style={{ background: stageBadgeColors.bg, color: stageBadgeColors.text }}
+            >
               {opportunity.stage.replace(/_/g, " ")}
-            </Badge>
-            {opportunity.assignedTo && (
-              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <User className="size-3.5" />
-                {opportunity.assignedTo.name}
+            </span>
+          </div>
+          <div
+            className="flex gap-5 text-[12.5px]"
+            style={{ color: "#444656" }}
+          >
+            <span>
+              Total Debt:{" "}
+              <strong style={{ color: "#131b2e" }}>{formatCurrency(displayDebt)}</strong>
+            </span>
+            <span>
+              Expected Close:{" "}
+              <strong style={{ color: "#131b2e" }}>{formatDate(opportunity.expectedCloseDate)}</strong>
+            </span>
+            {opportunity.lead.contactName && (
+              <span>
+                Contact:{" "}
+                <strong style={{ color: "#131b2e" }}>{opportunity.lead.contactName}</strong>
               </span>
             )}
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/opportunities/${opportunity.id}/edit`}>
-              <Pencil className="size-4" />
-              Edit
-            </Link>
-          </Button>
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Link
+            href={`/opportunities/${opportunity.id}/edit`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded text-[12.5px] font-medium transition-opacity hover:opacity-80"
+            style={{ background: "#eaedff", color: "#131b2e", border: "none" }}
+          >
+            <Pencil className="size-3.5" />
+            Edit
+          </Link>
+
           {nextStage && (
-            <Button
-              size="sm"
-              variant="outline"
+            <button
               onClick={() => handleStageChange(nextStage)}
               disabled={updating}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded text-[12.5px] font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
+              style={{ background: "#eaedff", color: "#131b2e", border: "none" }}
             >
               Advance Stage
-              <ChevronRight className="size-4" />
-            </Button>
+              <ChevronRight className="size-3.5" />
+            </button>
           )}
-          {canEnroll && (
-            <Button size="sm" onClick={() => setEnrollOpen(true)}>
-              Enroll as Client
-            </Button>
+
+          {(canEnroll || opportunity.stage === "CONTRACT_SIGNED" || opportunity.stage === "CLOSED_WON_FIRST_PAYMENT") && (
+            <button
+              onClick={() => setEnrollOpen(true)}
+              disabled={!!opportunity.client}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded text-[12.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              style={{ background: opportunity.client ? "#6b7280" : "#059669", border: "none" }}
+            >
+              {opportunity.client ? "Already Enrolled" : "Convert to Client"}
+            </button>
           )}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" disabled={updating}>
+              <button
+                disabled={updating}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded text-[12.5px] font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
+                style={{ background: "#eaedff", color: "#131b2e", border: "none" }}
+              >
                 Set Stage
                 <ChevronDown className="size-3.5" />
-              </Button>
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {OPPORTUNITY_STAGES.map((s) => (
@@ -477,651 +525,679 @@ export function OpportunityDetailTabs({ opportunity }: OpportunityDetailTabsProp
         </div>
       </div>
 
-      {/* ─── Key Info Bar ────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 rounded-lg border p-3 bg-muted/30">
-        <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase">Account Name</p>
-          <p className="text-sm font-semibold truncate">{opportunity.lead.businessName}</p>
-        </div>
-        <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase">Current Total Debt</p>
-          <p className="text-sm font-semibold text-red-600">{formatCurrency(displayDebt)}</p>
-        </div>
-        <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase">Lead ID</p>
-          <p className="text-sm font-mono truncate">{opportunity.lead.id.slice(-8)}</p>
-        </div>
-        <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase">Opportunity Owner</p>
-          <p className="text-sm font-semibold">{opportunity.assignedTo?.name || "Unassigned"}</p>
-        </div>
-        <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase">Expected Close</p>
-          <p className="text-sm font-semibold">{formatDate(opportunity.expectedCloseDate)}</p>
-        </div>
+      {/* ── Stat Cards ───────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Debt"
+          value={formatCurrency(displayDebt)}
+          sub={`${opportunity.debts.length} creditor${opportunity.debts.length !== 1 ? "s" : ""}`}
+        />
+        <StatCard
+          label="Settlement Target"
+          value={formatCurrency(settlementTarget)}
+          sub="60% of total debt"
+        />
+        <StatCard
+          label="Monthly Payment"
+          value={displayDebt > 0 ? formatCurrency(Math.round(settlementTarget / 36)) : "--"}
+          sub="36 month program"
+        />
+        <StatCard
+          label="Days in Stage"
+          value={String(daysInStage)}
+          sub="Since created"
+        />
       </div>
 
-      {/* ─── Pipeline Path ───────────────────────────────── */}
-      <OpportunityPath stage={opportunity.stage} />
+      {/* ── Tab Nav ──────────────────────────────────── */}
+      <div
+        className="flex gap-0 border-b"
+        style={{ borderColor: "#eaedff" }}
+      >
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className="relative px-4 py-2.5 text-[12.5px] font-medium transition-colors"
+            style={{
+              color: activeTab === tab.key ? "#3052ff" : "#444656",
+              fontWeight: activeTab === tab.key ? 600 : 500,
+              background: "none",
+              border: "none",
+            }}
+          >
+            {tab.label}
+            {activeTab === tab.key && (
+              <span
+                className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t"
+                style={{ background: "#3052ff" }}
+              />
+            )}
+          </button>
+        ))}
+      </div>
 
-      <Separator />
-
-      {/* ─── Tabs ────────────────────────────────────────── */}
-      <Tabs defaultValue="details">
-        <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="activities">Activities</TabsTrigger>
-          <TabsTrigger value="debts">
-            Debt Info ({opportunity.debts.length})
-          </TabsTrigger>
-          <TabsTrigger value="calculator">Calculator</TabsTrigger>
-          <TabsTrigger value="settlements">Settlements</TabsTrigger>
-          <TabsTrigger value="documents">
-            Documents ({opportunity.documents.length})
-          </TabsTrigger>
-          <TabsTrigger value="related">Related</TabsTrigger>
-          <TabsTrigger value="marketing">Marketing</TabsTrigger>
-        </TabsList>
-
-        {/* ═══════════════════════════════════════════════════
-            TAB 1: DETAILS
-        ═══════════════════════════════════════════════════ */}
-        <TabsContent value="details" className="mt-4">
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Opportunity Information */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <DollarSign className="size-4" />
-                  Opportunity Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-                  <DetailField label="Account Name" value={opportunity.lead.businessName} icon={Building2} />
-                  <DetailField label="Lead ID" value={opportunity.lead.id.slice(-8)} />
-                  <DetailField label="Total Debt" value={formatCurrency(displayDebt)} icon={DollarSign} />
-                  <DetailField label="Expected Close" value={formatDate(opportunity.expectedCloseDate)} icon={Calendar} />
-                  <DetailField label="Source" value={formatSourceLabel(opportunity.lead.source)} />
-                  <DetailField label="Lead Score" value={opportunity.lead.score !== null ? String(opportunity.lead.score) : "--"} />
-                  <DetailField label="Stage" value={opportunity.stage.replace(/_/g, " ")} />
-                  <DetailField label="Created" value={formatDateTime(opportunity.createdAt)} icon={Clock} />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Contact Information */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <User className="size-4" />
-                  Contact Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-                  <DetailField label="Contact Name" value={opportunity.lead.contactName} icon={User} />
-                  <DetailField label="Phone" value={formatPhone(opportunity.lead.phone)} icon={Phone} />
-                  <DetailField label="Email" value={opportunity.lead.email || "--"} icon={Mail} />
-                  <DetailField label="EIN" value={opportunity.lead.ein || "--"} />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Business Information */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Building2 className="size-4" />
-                  Business Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-                  <DetailField label="Business Name" value={opportunity.lead.businessName} icon={Building2} />
-                  <DetailField label="Industry" value={opportunity.lead.industry || "--"} />
-                  <DetailField label="Annual Revenue" value={formatCurrency(opportunity.lead.annualRevenue)} icon={DollarSign} />
-                  <DetailField label="Estimated Debt" value={formatCurrency(opportunity.lead.totalDebtEst)} />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Call Disposition */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <PhoneCall className="size-4" />
-                  Call Disposition
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-                  <DetailField label="Total Calls" value={String(totalCalls)} icon={Phone} />
-                  <DetailField label="Interested" value={String(interestedCalls)} />
-                  {lastCall && (
-                    <>
-                      <DetailField
-                        label="Last Disposition"
-                        value={lastCall.disposition?.replace(/_/g, " ") || "None"}
-                      />
-                      <DetailField
-                        label="Last Agent"
-                        value={lastCall.agent.name}
-                        icon={User}
-                      />
-                      <DetailField
-                        label="Last Call Date"
-                        value={formatDateTime(lastCall.startedAt)}
-                        icon={Clock}
-                      />
-                      <DetailField
-                        label="Duration"
-                        value={formatDuration(lastCall.duration)}
-                      />
-                    </>
-                  )}
-                </div>
-                {/* Recent disposition badges */}
-                {totalCalls > 0 && (
-                  <div className="pt-2 border-t">
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Recent Dispositions</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {opportunity.lead.calls.slice(0, 5).map((call) => (
-                        <Badge
-                          key={call.id}
-                          variant="secondary"
-                          className={`text-[10px] ${DISPOSITION_COLORS[call.disposition || ""] || "bg-gray-100 text-gray-800"}`}
-                        >
-                          {call.disposition?.replace(/_/g, " ") || "N/A"}
-                        </Badge>
-                      ))}
-                    </div>
+      {/* ═══════════════════════════════════════════════════
+          TAB: OVERVIEW
+      ═══════════════════════════════════════════════════ */}
+      {activeTab === "overview" && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Left column — timeline + notes */}
+          <div className="md:col-span-2 space-y-4">
+            <Panel title="Deal Timeline">
+              <div className="relative pl-6">
+                {/* Vertical line */}
+                <div
+                  className="absolute left-[5px] top-1 bottom-1 w-[2px]"
+                  style={{ background: "#eaedff" }}
+                />
+                {[
+                  {
+                    label: "Lead Created",
+                    date: formatDateTime(opportunity.lead.createdAt),
+                    sub: `Source: ${formatSourceLabel(opportunity.lead.source)}`,
+                    done: true,
+                    current: false,
+                  },
+                  {
+                    label: "Opportunity Created",
+                    date: formatDateTime(opportunity.createdAt),
+                    sub: `Assigned to ${opportunity.assignedTo?.name || "Unassigned"}`,
+                    done: true,
+                    current: false,
+                  },
+                  ...STAGE_ORDER.filter((s) => s !== "CLOSED" && s !== "ARCHIVED").map((s, i) => {
+                    const currentIdx = STAGE_ORDER.indexOf(opportunity.stage as (typeof STAGE_ORDER)[number]);
+                    const stepIdx = STAGE_ORDER.indexOf(s);
+                    const isDone = stepIdx < currentIdx;
+                    const isCurrent = s === opportunity.stage;
+                    const isPending = stepIdx > currentIdx;
+                    return {
+                      label: s === "CLOSED_WON_FIRST_PAYMENT" ? "Won — First Payment" : s.replace(/_/g, " "),
+                      date: isCurrent
+                        ? `Since ${formatDate(opportunity.updatedAt)}`
+                        : isPending
+                          ? "Pending"
+                          : formatDate(opportunity.updatedAt),
+                      sub: isCurrent ? "Current stage" : undefined,
+                      done: isDone,
+                      current: isCurrent,
+                    };
+                  }),
+                  {
+                    label: "Expected Close",
+                    date: formatDate(opportunity.expectedCloseDate),
+                    sub: opportunity.expectedCloseDate ? undefined : "No date set",
+                    done: false,
+                    current: false,
+                  },
+                ].map((item, idx) => (
+                  <div key={idx} className="relative mb-4 last:mb-0">
+                    {/* Dot */}
+                    <div
+                      className="absolute left-[-1.4rem] top-[3px] w-3 h-3 rounded-full"
+                      style={{
+                        background: item.current
+                          ? "#3052ff"
+                          : item.done
+                            ? "#059669"
+                            : "#c4c5d9",
+                        boxShadow: item.current
+                          ? "0 0 0 4px rgba(48,82,255,0.15)"
+                          : undefined,
+                      }}
+                    />
+                    <p
+                      className="text-[13px] font-semibold"
+                      style={{ color: "#131b2e" }}
+                    >
+                      {item.label}
+                    </p>
+                    <p className="text-[11.5px] mt-0.5" style={{ color: "#444656" }}>
+                      {item.date}
+                      {item.sub && ` — ${item.sub}`}
+                    </p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                ))}
+              </div>
+            </Panel>
 
             {/* Notes */}
-            <Card className="md:col-span-2">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <FileText className="size-4" />
-                  Notes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {opportunity.notes ? (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Opportunity Notes</p>
-                    <p className="text-sm whitespace-pre-wrap rounded-md bg-muted/50 p-3">{opportunity.notes}</p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No opportunity notes.</p>
-                )}
-                {opportunity.lead.notes && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Lead Notes</p>
-                    <p className="text-sm whitespace-pre-wrap rounded-md bg-muted/50 p-3">{opportunity.lead.notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* ═══════════════════════════════════════════════════
-            TAB 2: ACTIVITIES
-        ═══════════════════════════════════════════════════ */}
-        <TabsContent value="activities" className="mt-4">
-          <ContactActivityLog
-            calls={opportunity.lead.calls}
-            campaignContacts={opportunity.lead.campaignContacts}
-            leadCreatedAt={opportunity.lead.createdAt}
-            lastContactedAt={opportunity.lead.lastContactedAt}
-            nextFollowUpAt={opportunity.lead.nextFollowUpAt}
-          />
-        </TabsContent>
-
-        {/* ═══════════════════════════════════════════════════
-            TAB 3: DEBT INFORMATION
-        ═══════════════════════════════════════════════════ */}
-        <TabsContent value="debts" className="mt-4">
-          <DebtTable
-            debts={opportunity.debts}
-            opportunityId={opportunity.id}
-            onRefresh={handleRefresh}
-          />
-        </TabsContent>
-
-        {/* ═══════════════════════════════════════════════════
-            TAB 4: PAYMENT CALCULATOR
-        ═══════════════════════════════════════════════════ */}
-        <TabsContent value="calculator" className="mt-4">
-          <PaymentCalculator
-            initialDebt={displayDebt}
-            businessName={opportunity.lead.businessName}
-            contactEmail={opportunity.lead.email || ""}
-            compact
-          />
-        </TabsContent>
-
-        {/* ═══════════════════════════════════════════════════
-            TAB 5: SETTLEMENTS
-        ═══════════════════════════════════════════════════ */}
-        <TabsContent value="settlements" className="mt-4">
-          <div className="space-y-6">
-            {/* Settlement Summary */}
-            <div className="grid gap-4 md:grid-cols-4">
-              <Card>
-                <CardContent className="py-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase">Total Debts</p>
-                  <p className="text-2xl font-bold mt-1">{opportunity.debts.length}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="py-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase">Settled</p>
-                  <p className="text-2xl font-bold mt-1 text-green-600">{settledDebts.length}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="py-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase">Total Settled For</p>
-                  <p className="text-2xl font-bold mt-1 text-green-600">{formatCurrency(totalSettled)}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="py-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase">Total Savings</p>
-                  <p className="text-2xl font-bold mt-1 text-green-600">{formatCurrency(totalSavings)}</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Settlement Details */}
-            {settledDebts.length > 0 ? (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Settlement Details</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {settledDebts.map((debt) => (
-                      <div key={debt.id} className="flex items-center justify-between rounded-md border p-3">
-                        <div>
-                          <p className="text-sm font-medium">{debt.creditorName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Original: {formatCurrency(debt.originalBalance)} | Settled: {formatCurrency(debt.settledAmount)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-semibold text-green-600">
-                            {debt.savingsPercent !== null ? `${debt.savingsPercent.toFixed(1)}% savings` : ""}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {debt.settledDate ? formatDate(debt.settledDate) : ""}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <DollarSign className="size-8 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">No settlements recorded yet.</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Add debts in the Debt Information tab, then track settlements after enrollment.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Negotiation Activity across all debts */}
-            {opportunity.debts.some((d) => d.negotiations.length > 0) && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Negotiation History</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {opportunity.debts.flatMap((debt) =>
-                      debt.negotiations.map((neg) => ({
-                        ...neg,
-                        creditorName: debt.creditorName,
-                      }))
-                    ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                    .slice(0, 10)
-                    .map((neg) => (
-                      <div key={neg.id} className="flex items-center justify-between rounded-md border p-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium">{neg.creditorName}</p>
-                            <Badge variant="secondary" className="text-[10px]">
-                              {neg.type}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {neg.offerAmount !== null && `Offer: ${formatCurrency(neg.offerAmount)}`}
-                            {neg.counterAmount !== null && ` | Counter: ${formatCurrency(neg.counterAmount)}`}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <Badge
-                            variant="secondary"
-                            className={`text-xs ${
-                              neg.response === "ACCEPTED" ? "bg-green-100 text-green-800" :
-                              neg.response === "REJECTED" ? "bg-red-100 text-red-800" :
-                              neg.response === "COUNTERED" ? "bg-yellow-100 text-yellow-800" :
-                              "bg-blue-100 text-blue-800"
-                            }`}
-                          >
-                            {neg.response}
-                          </Badge>
-                          <p className="text-xs text-muted-foreground mt-1">{formatDate(neg.date)}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </TabsContent>
-
-        {/* ═══════════════════════════════════════════════════
-            TAB 6: DOCUMENTS
-        ═══════════════════════════════════════════════════ */}
-        <TabsContent value="documents" className="mt-4">
-          <DocumentList
-            documents={opportunity.documents}
-            opportunityId={opportunity.id}
-            onRefresh={handleRefresh}
-          />
-        </TabsContent>
-
-        {/* ═══════════════════════════════════════════════════
-            TAB 7: RELATED
-        ═══════════════════════════════════════════════════ */}
-        <TabsContent value="related" className="mt-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Lead Record */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Link2 className="size-4" />
-                  Lead Record
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between rounded-md border p-3">
-                  <div>
-                    <p className="text-sm font-medium">{opportunity.lead.businessName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {opportunity.lead.contactName} | Created {formatDate(opportunity.lead.createdAt)}
-                    </p>
-                    <Badge variant="secondary" className="text-[10px] mt-1">
-                      {opportunity.lead.status.replace(/_/g, " ")}
-                    </Badge>
-                  </div>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/leads/${opportunity.lead.id}`}>
-                      View Lead
-                      <ArrowUpRight className="size-3.5" />
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Client Record */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Link2 className="size-4" />
-                  Client Record
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {opportunity.client ? (
-                  <div className="flex items-center justify-between rounded-md border p-3">
-                    <div>
-                      <p className="text-sm font-medium">{opportunity.lead.businessName}</p>
-                      <p className="text-xs text-muted-foreground">Enrolled as client</p>
-                      <Badge variant="secondary" className="text-[10px] mt-1 bg-green-100 text-green-800">
-                        ENROLLED
-                      </Badge>
+            <Panel title="Notes">
+              {opportunity.notes || opportunity.lead.notes ? (
+                <div className="space-y-3">
+                  {opportunity.notes && (
+                    <div
+                      className="rounded p-3"
+                      style={{ background: "#f2f3ff" }}
+                    >
+                      <p className="text-[11px] font-semibold mb-1" style={{ color: "#444656" }}>
+                        Opportunity Notes
+                      </p>
+                      <p className="text-[12.5px] leading-relaxed" style={{ color: "#131b2e" }}>
+                        {opportunity.notes}
+                      </p>
                     </div>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/clients/${opportunity.client.id}`}>
-                        View Client
-                        <ArrowUpRight className="size-3.5" />
-                      </Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="rounded-md border p-6 text-center">
-                    <p className="text-sm text-muted-foreground">Not yet enrolled as a client.</p>
-                    {canEnroll && (
-                      <Button size="sm" className="mt-3" onClick={() => setEnrollOpen(true)}>
-                        Enroll as Client
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Campaign History */}
-            <Card className="md:col-span-2">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Megaphone className="size-4" />
-                  Campaign History
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {opportunity.lead.campaignContacts.length > 0 ? (
-                  <div className="space-y-2">
-                    {opportunity.lead.campaignContacts.map((cc) => (
-                      <div key={cc.id} className="flex items-center justify-between rounded-md border p-3">
-                        <div>
-                          <p className="text-sm font-medium">{cc.campaign.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {cc.attempts} attempts | Last: {cc.lastAttempt ? formatDateTime(cc.lastAttempt) : "Never"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {cc.status}
-                          </Badge>
-                          <Badge variant="secondary" className="text-xs">
-                            {cc.campaign.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-md border p-6 text-center">
-                    <Megaphone className="size-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">No campaign history.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                  {opportunity.lead.notes && (
+                    <div
+                      className="rounded p-3"
+                      style={{ background: "#f2f3ff" }}
+                    >
+                      <p className="text-[11px] font-semibold mb-1" style={{ color: "#444656" }}>
+                        Lead Notes
+                      </p>
+                      <p className="text-[12.5px] leading-relaxed" style={{ color: "#131b2e" }}>
+                        {opportunity.lead.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[12.5px]" style={{ color: "#444656" }}>
+                  No notes recorded.
+                </p>
+              )}
+            </Panel>
           </div>
-        </TabsContent>
 
-        {/* ═══════════════════════════════════════════════════
-            TAB 8: MARKETING
-        ═══════════════════════════════════════════════════ */}
-        <TabsContent value="marketing" className="mt-4">
-          <div className="space-y-6">
-            {/* Engagement Summary */}
-            <div className="grid gap-4 md:grid-cols-4">
-              <Card>
-                <CardContent className="py-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase">Total Interactions</p>
-                  <p className="text-2xl font-bold mt-1">
-                    {opportunity.lead.calls.length + opportunity.lead.campaignContacts.reduce((sum, cc) => sum + cc.attempts, 0)}
+          {/* Right column — negotiator + details */}
+          <div className="space-y-4">
+            <Panel title="Assigned Negotiator">
+              <div className="flex items-center gap-3 mb-4">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[13px] font-bold flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg, #0034e4, #3052ff)" }}
+                >
+                  {assigneeInitials}
+                </div>
+                <div>
+                  <p className="text-[13.5px] font-semibold" style={{ color: "#131b2e" }}>
+                    {assigneeName || "Unassigned"}
                   </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="py-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase">Calls Made</p>
-                  <p className="text-2xl font-bold mt-1">{opportunity.lead.calls.length}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="py-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase">Campaigns</p>
-                  <p className="text-2xl font-bold mt-1">{opportunity.lead.campaignContacts.length}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="py-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase">Last Contact</p>
-                  <p className="text-sm font-bold mt-1">{formatDate(opportunity.lead.lastContactedAt)}</p>
-                </CardContent>
-              </Card>
-            </div>
+                  <p className="text-[11.5px]" style={{ color: "#444656" }}>
+                    Negotiator
+                  </p>
+                </div>
+              </div>
+              {opportunity.assignedTo && (
+                <>
+                  <InfoRow label="Email" value={opportunity.assignedTo.email} />
+                </>
+              )}
+            </Panel>
 
-            {/* Activity by Campaign */}
-            {opportunity.lead.campaignContacts.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Megaphone className="size-4" />
-                    Activity by Campaign
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {opportunity.lead.campaignContacts.map((cc) => {
-                      const campaignCalls = opportunity.lead.calls.filter(
-                        (c) => c.campaign?.id === cc.campaign.id
-                      );
-                      return (
-                        <div key={cc.id} className="rounded-md border p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div>
-                              <p className="text-sm font-semibold">{cc.campaign.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {cc.attempts} attempts | {campaignCalls.length} calls logged
-                              </p>
-                            </div>
-                            <Badge variant="secondary" className="text-xs">
-                              {cc.campaign.status}
-                            </Badge>
-                          </div>
-                          {campaignCalls.length > 0 && (
-                            <div className="space-y-1.5">
-                              {campaignCalls.slice(0, 5).map((call) => (
-                                <div key={call.id} className="flex items-center gap-3 text-sm py-1">
-                                  {call.direction === "OUTBOUND" ? (
-                                    <ArrowUpRight className="size-3.5 text-blue-500" />
-                                  ) : (
-                                    <ArrowDownLeft className="size-3.5 text-green-500" />
-                                  )}
-                                  <span className="text-xs text-muted-foreground w-32">
-                                    {formatDateTime(call.startedAt)}
-                                  </span>
-                                  <Badge
-                                    variant="secondary"
-                                    className={`text-[10px] ${DISPOSITION_COLORS[call.disposition || ""] || "bg-gray-100 text-gray-800"}`}
-                                  >
-                                    {call.disposition?.replace(/_/g, " ") || "N/A"}
-                                  </Badge>
-                                  <span className="text-xs text-muted-foreground">
-                                    {call.agent.name} | {formatDuration(call.duration)}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Engagement Timeline */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Clock className="size-4" />
-                  Engagement Timeline
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {opportunity.lead.calls.length > 0 ? (
-                  <div className="space-y-3">
-                    {opportunity.lead.calls.slice(0, 15).map((call) => (
-                      <div key={call.id} className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                          <div className={cn(
-                            "flex size-8 items-center justify-center rounded-full",
-                            call.direction === "OUTBOUND" ? "bg-blue-100" : "bg-green-100"
-                          )}>
-                            {call.direction === "OUTBOUND" ? (
-                              <ArrowUpRight className="size-3.5 text-blue-600" />
-                            ) : (
-                              <ArrowDownLeft className="size-3.5 text-green-600" />
-                            )}
-                          </div>
-                          <div className="flex-1 w-px bg-border" />
-                        </div>
-                        <div className="flex-1 pb-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">
-                                {call.direction === "OUTBOUND" ? "Outbound Call" : "Inbound Call"}
-                              </span>
-                              {call.disposition && (
-                                <Badge
-                                  variant="secondary"
-                                  className={`text-[10px] ${DISPOSITION_COLORS[call.disposition] || "bg-gray-100 text-gray-800"}`}
-                                >
-                                  {call.disposition.replace(/_/g, " ")}
-                                </Badge>
-                              )}
-                            </div>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDateTime(call.startedAt)}
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Agent: {call.agent.name}
-                            {call.campaign && ` | Campaign: ${call.campaign.name}`}
-                            {call.duration && ` | ${formatDuration(call.duration)}`}
-                          </p>
-                          {call.notes && (
-                            <p className="text-xs text-muted-foreground mt-1 italic">{call.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-8 text-center">
-                    <Mail className="size-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">No engagement history yet.</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Calls, emails, and campaign activity will appear here.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <Panel title="Details">
+              <InfoRow
+                label="Related Lead"
+                value={`LD-${opportunity.lead.id.slice(-8).toUpperCase()}`}
+                href={`/leads/${opportunity.lead.id}`}
+              />
+              <InfoRow label="Source" value={formatSourceLabel(opportunity.lead.source)} />
+              <InfoRow label="Industry" value={opportunity.lead.industry || "--"} />
+              <InfoRow label="Phone" value={formatPhone(opportunity.lead.phone)} />
+              <InfoRow label="Email" value={opportunity.lead.email || "--"} />
+              <InfoRow label="EIN" value={opportunity.lead.ein || "--"} />
+              <InfoRow label="Lead Score" value={opportunity.lead.score !== null ? String(opportunity.lead.score) : "--"} />
+              <InfoRow label="Created" value={formatDate(opportunity.createdAt)} />
+              {opportunity.client && (
+                <InfoRow
+                  label="Client Record"
+                  value="View Client"
+                  href={`/clients/${opportunity.client.id}`}
+                />
+              )}
+            </Panel>
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════
+          TAB: LEAD INFO
+      ═══════════════════════════════════════════════════ */}
+      {activeTab === "lead" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <Panel title="Contact Information">
+            <InfoRow label="Contact Name" value={opportunity.lead.contactName} />
+            <InfoRow label="Phone" value={formatPhone(opportunity.lead.phone)} />
+            <InfoRow label="Email" value={opportunity.lead.email || "--"} />
+            <InfoRow label="EIN" value={opportunity.lead.ein || "--"} />
+          </Panel>
+
+          <Panel title="Business Information">
+            <InfoRow label="Business Name" value={opportunity.lead.businessName} />
+            <InfoRow label="Industry" value={opportunity.lead.industry || "--"} />
+            <InfoRow label="Annual Revenue" value={formatCurrency(opportunity.lead.annualRevenue)} />
+            <InfoRow label="Estimated Debt" value={formatCurrency(opportunity.lead.totalDebtEst)} />
+            <InfoRow label="Source" value={formatSourceLabel(opportunity.lead.source)} />
+            <InfoRow label="Lead Status" value={opportunity.lead.status.replace(/_/g, " ")} />
+            <InfoRow label="Lead Score" value={opportunity.lead.score !== null ? String(opportunity.lead.score) : "--"} />
+          </Panel>
+
+          <Panel title="Call Disposition">
+            <InfoRow label="Total Calls" value={String(totalCalls)} />
+            <InfoRow label="Interested" value={String(interestedCalls)} />
+            {lastCall && (
+              <>
+                <InfoRow label="Last Disposition" value={lastCall.disposition?.replace(/_/g, " ") || "None"} />
+                <InfoRow label="Last Agent" value={lastCall.agent.name} />
+                <InfoRow label="Last Call Date" value={formatDateTime(lastCall.startedAt)} />
+                <InfoRow label="Duration" value={formatDuration(lastCall.duration)} />
+              </>
+            )}
+            {totalCalls > 0 && (
+              <div className="pt-3 mt-1" style={{ borderTop: "1px solid #eaedff" }}>
+                <p className="text-[11px] font-semibold mb-2" style={{ color: "#444656" }}>
+                  Recent Dispositions
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {opportunity.lead.calls.slice(0, 5).map((call) => (
+                    <span
+                      key={call.id}
+                      className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded ${DISPOSITION_COLORS[call.disposition || ""] || "bg-gray-100 text-gray-800"}`}
+                    >
+                      {call.disposition?.replace(/_/g, " ") || "N/A"}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Panel>
+
+          <Panel title="Follow-Up">
+            <InfoRow label="Last Contacted" value={formatDate(opportunity.lead.lastContactedAt)} />
+            <InfoRow label="Next Follow-Up" value={formatDate(opportunity.lead.nextFollowUpAt)} />
+            <InfoRow label="Lead Created" value={formatDate(opportunity.lead.createdAt)} />
+          </Panel>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════
+          TAB: DEBTS
+      ═══════════════════════════════════════════════════ */}
+      {activeTab === "debts" && (
+        <DebtTable
+          debts={opportunity.debts}
+          opportunityId={opportunity.id}
+          onRefresh={handleRefresh}
+        />
+      )}
+
+      {/* ═══════════════════════════════════════════════════
+          TAB: NEGOTIATIONS
+      ═══════════════════════════════════════════════════ */}
+      {activeTab === "negotiations" && (
+        <div className="space-y-5">
+          {/* Settlement summary */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="Total Debts" value={String(opportunity.debts.length)} />
+            <StatCard label="Settled" value={String(settledDebts.length)} />
+            <StatCard label="Total Settled For" value={formatCurrency(totalSettled)} />
+            <StatCard label="Total Savings" value={formatCurrency(totalSavings)} />
+          </div>
+
+          {settledDebts.length > 0 && (
+            <Panel title="Settlement Details">
+              <div className="space-y-2">
+                {settledDebts.map((debt) => (
+                  <div
+                    key={debt.id}
+                    className="flex items-center justify-between rounded-lg p-3"
+                    style={{ background: "#f2f3ff" }}
+                  >
+                    <div>
+                      <p className="text-[13px] font-semibold" style={{ color: "#131b2e" }}>
+                        {debt.creditorName}
+                      </p>
+                      <p className="text-[11.5px] mt-0.5" style={{ color: "#444656" }}>
+                        Original: {formatCurrency(debt.originalBalance)} | Settled: {formatCurrency(debt.settledAmount)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[12.5px] font-semibold" style={{ color: "#059669" }}>
+                        {debt.savingsPercent !== null ? `${debt.savingsPercent.toFixed(1)}% savings` : ""}
+                      </p>
+                      <p className="text-[11.5px]" style={{ color: "#444656" }}>
+                        {debt.settledDate ? formatDate(debt.settledDate) : ""}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          )}
+
+          {opportunity.debts.some((d) => d.negotiations.length > 0) && (
+            <Panel title="Negotiation History">
+              <div className="space-y-2">
+                {opportunity.debts
+                  .flatMap((debt) =>
+                    debt.negotiations.map((neg) => ({
+                      ...neg,
+                      creditorName: debt.creditorName,
+                    }))
+                  )
+                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  .slice(0, 15)
+                  .map((neg) => (
+                    <div
+                      key={neg.id}
+                      className="flex items-center justify-between rounded-lg p-3"
+                      style={{ background: "#f2f3ff" }}
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[13px] font-semibold" style={{ color: "#131b2e" }}>
+                            {neg.creditorName}
+                          </p>
+                          <span
+                            className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                            style={{ background: "#eaedff", color: "#444656" }}
+                          >
+                            {neg.type}
+                          </span>
+                        </div>
+                        <p className="text-[11.5px] mt-0.5" style={{ color: "#444656" }}>
+                          {neg.offerAmount !== null && `Offer: ${formatCurrency(neg.offerAmount)}`}
+                          {neg.counterAmount !== null && ` | Counter: ${formatCurrency(neg.counterAmount)}`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded ${
+                            neg.response === "ACCEPTED"
+                              ? "bg-green-100 text-green-800"
+                              : neg.response === "REJECTED"
+                                ? "bg-red-100 text-red-800"
+                                : neg.response === "COUNTERED"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {neg.response}
+                        </span>
+                        <p className="text-[11px] mt-1" style={{ color: "#444656" }}>
+                          {formatDate(neg.date)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </Panel>
+          )}
+
+          {!settledDebts.length && !opportunity.debts.some((d) => d.negotiations.length > 0) && (
+            <div
+              className="rounded-xl p-12 text-center"
+              style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+            >
+              <DollarSign className="size-8 mx-auto mb-3" style={{ color: "#c4c5d9" }} />
+              <p className="text-[13px]" style={{ color: "#444656" }}>
+                No negotiations recorded yet.
+              </p>
+              <p className="text-[12px] mt-1" style={{ color: "#c4c5d9" }}>
+                Add debts in the Debts tab to start tracking negotiations.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════
+          TAB: DOCUMENTS
+      ═══════════════════════════════════════════════════ */}
+      {activeTab === "documents" && (
+        <DocumentList
+          documents={opportunity.documents}
+          opportunityId={opportunity.id}
+          onRefresh={handleRefresh}
+        />
+      )}
+
+      {/* ═══════════════════════════════════════════════════
+          TAB: ACTIVITIES
+      ═══════════════════════════════════════════════════ */}
+      {activeTab === "activities" && (
+        <ContactActivityLog
+          calls={opportunity.lead.calls}
+          campaignContacts={opportunity.lead.campaignContacts}
+          leadCreatedAt={opportunity.lead.createdAt}
+          lastContactedAt={opportunity.lead.lastContactedAt}
+          nextFollowUpAt={opportunity.lead.nextFollowUpAt}
+        />
+      )}
+
+      {/* ═══════════════════════════════════════════════════
+          TAB: CALCULATOR
+      ═══════════════════════════════════════════════════ */}
+      {activeTab === "calculator" && (
+        <PaymentCalculator
+          initialDebt={displayDebt}
+          businessName={opportunity.lead.businessName}
+          contactEmail={opportunity.lead.email || ""}
+          compact
+        />
+      )}
+
+      {/* ═══════════════════════════════════════════════════
+          TAB: MARKETING
+      ═══════════════════════════════════════════════════ */}
+      {activeTab === "marketing" && (
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard
+              label="Total Interactions"
+              value={String(
+                opportunity.lead.calls.length +
+                  opportunity.lead.campaignContacts.reduce((sum, cc) => sum + cc.attempts, 0)
+              )}
+            />
+            <StatCard label="Calls Made" value={String(opportunity.lead.calls.length)} />
+            <StatCard label="Campaigns" value={String(opportunity.lead.campaignContacts.length)} />
+            <StatCard label="Last Contact" value={formatDate(opportunity.lead.lastContactedAt)} />
+          </div>
+
+          {/* Related */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <Panel title="Lead Record">
+              <div
+                className="flex items-center justify-between rounded-lg p-3"
+                style={{ background: "#f2f3ff" }}
+              >
+                <div>
+                  <p className="text-[13px] font-semibold" style={{ color: "#131b2e" }}>
+                    {opportunity.lead.businessName}
+                  </p>
+                  <p className="text-[11.5px] mt-0.5" style={{ color: "#444656" }}>
+                    {opportunity.lead.contactName} | Created {formatDate(opportunity.lead.createdAt)}
+                  </p>
+                  <span
+                    className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded mt-1"
+                    style={{ background: "#eaedff", color: "#444656" }}
+                  >
+                    {opportunity.lead.status.replace(/_/g, " ")}
+                  </span>
+                </div>
+                <Link
+                  href={`/leads/${opportunity.lead.id}`}
+                  className="inline-flex items-center gap-1 text-[12px] font-medium px-3 py-1.5 rounded transition-opacity hover:opacity-80"
+                  style={{ background: "#eaedff", color: "#131b2e" }}
+                >
+                  View Lead
+                  <ArrowUpRight className="size-3.5" />
+                </Link>
+              </div>
+            </Panel>
+
+            <Panel title="Client Record">
+              {opportunity.client ? (
+                <div
+                  className="flex items-center justify-between rounded-lg p-3"
+                  style={{ background: "#f2f3ff" }}
+                >
+                  <div>
+                    <p className="text-[13px] font-semibold" style={{ color: "#131b2e" }}>
+                      {opportunity.lead.businessName}
+                    </p>
+                    <span
+                      className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded mt-1 bg-green-100 text-green-800"
+                    >
+                      ENROLLED
+                    </span>
+                  </div>
+                  <Link
+                    href={`/clients/${opportunity.client.id}`}
+                    className="inline-flex items-center gap-1 text-[12px] font-medium px-3 py-1.5 rounded transition-opacity hover:opacity-80"
+                    style={{ background: "#eaedff", color: "#131b2e" }}
+                  >
+                    View Client
+                    <ArrowUpRight className="size-3.5" />
+                  </Link>
+                </div>
+              ) : (
+                <div className="rounded-lg p-6 text-center" style={{ background: "#f2f3ff" }}>
+                  <p className="text-[12.5px]" style={{ color: "#444656" }}>
+                    Not yet enrolled as a client.
+                  </p>
+                  {canEnroll && (
+                    <button
+                      onClick={() => setEnrollOpen(true)}
+                      className="mt-3 px-4 py-2 rounded text-[12.5px] font-semibold text-white"
+                      style={{ background: "#059669", border: "none" }}
+                    >
+                      Convert to Client
+                    </button>
+                  )}
+                </div>
+              )}
+            </Panel>
+          </div>
+
+          {/* Campaign History */}
+          {opportunity.lead.campaignContacts.length > 0 && (
+            <Panel title="Campaign History">
+              <div className="space-y-2">
+                {opportunity.lead.campaignContacts.map((cc) => {
+                  const campaignCalls = opportunity.lead.calls.filter(
+                    (c) => c.campaign?.id === cc.campaign.id
+                  );
+                  return (
+                    <div
+                      key={cc.id}
+                      className="rounded-lg p-4"
+                      style={{ background: "#f2f3ff" }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="text-[13px] font-semibold" style={{ color: "#131b2e" }}>
+                            {cc.campaign.name}
+                          </p>
+                          <p className="text-[11.5px]" style={{ color: "#444656" }}>
+                            {cc.attempts} attempts | {campaignCalls.length} calls logged
+                          </p>
+                        </div>
+                        <span
+                          className="text-[11px] font-semibold px-2 py-0.5 rounded"
+                          style={{ background: "#eaedff", color: "#444656" }}
+                        >
+                          {cc.campaign.status}
+                        </span>
+                      </div>
+                      {campaignCalls.length > 0 && (
+                        <div className="space-y-1.5">
+                          {campaignCalls.slice(0, 5).map((call) => (
+                            <div key={call.id} className="flex items-center gap-3 text-[12px]">
+                              {call.direction === "OUTBOUND" ? (
+                                <ArrowUpRight className="size-3.5 text-blue-500 flex-shrink-0" />
+                              ) : (
+                                <ArrowDownLeft className="size-3.5 text-green-500 flex-shrink-0" />
+                              )}
+                              <span style={{ color: "#444656" }} className="w-32 flex-shrink-0">
+                                {formatDateTime(call.startedAt)}
+                              </span>
+                              <span
+                                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${DISPOSITION_COLORS[call.disposition || ""] || "bg-gray-100 text-gray-800"}`}
+                              >
+                                {call.disposition?.replace(/_/g, " ") || "N/A"}
+                              </span>
+                              <span style={{ color: "#444656" }}>
+                                {call.agent.name} | {formatDuration(call.duration)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </Panel>
+          )}
+
+          {/* Engagement Timeline */}
+          <Panel title="Engagement Timeline">
+            {opportunity.lead.calls.length > 0 ? (
+              <div className="space-y-3">
+                {opportunity.lead.calls.slice(0, 15).map((call) => (
+                  <div key={call.id} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={cn(
+                          "flex size-8 items-center justify-center rounded-full flex-shrink-0",
+                          call.direction === "OUTBOUND" ? "bg-blue-100" : "bg-green-100"
+                        )}
+                      >
+                        {call.direction === "OUTBOUND" ? (
+                          <ArrowUpRight className="size-3.5 text-blue-600" />
+                        ) : (
+                          <ArrowDownLeft className="size-3.5 text-green-600" />
+                        )}
+                      </div>
+                      <div className="flex-1 w-px" style={{ background: "#eaedff" }} />
+                    </div>
+                    <div className="flex-1 pb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13px] font-medium" style={{ color: "#131b2e" }}>
+                            {call.direction === "OUTBOUND" ? "Outbound Call" : "Inbound Call"}
+                          </span>
+                          {call.disposition && (
+                            <span
+                              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${DISPOSITION_COLORS[call.disposition] || "bg-gray-100 text-gray-800"}`}
+                            >
+                              {call.disposition.replace(/_/g, " ")}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[11.5px]" style={{ color: "#444656" }}>
+                          {formatDateTime(call.startedAt)}
+                        </span>
+                      </div>
+                      <p className="text-[11.5px] mt-0.5" style={{ color: "#444656" }}>
+                        Agent: {call.agent.name}
+                        {call.campaign && ` | Campaign: ${call.campaign.name}`}
+                        {call.duration && ` | ${formatDuration(call.duration)}`}
+                      </p>
+                      {call.notes && (
+                        <p className="text-[11.5px] mt-1 italic" style={{ color: "#444656" }}>
+                          {call.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center">
+                <Mail className="size-8 mx-auto mb-2" style={{ color: "#c4c5d9" }} />
+                <p className="text-[13px]" style={{ color: "#444656" }}>
+                  No engagement history yet.
+                </p>
+              </div>
+            )}
+          </Panel>
+        </div>
+      )}
 
       <EnrollmentDialog
         open={enrollOpen}

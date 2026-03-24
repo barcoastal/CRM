@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Table,
   TableBody,
@@ -20,8 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, LayoutList, Kanban, SlidersHorizontal } from "lucide-react";
 import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
+import { OpportunityKanban } from "@/components/opportunities/opportunity-kanban";
 
 interface Opportunity {
   id: string;
@@ -47,7 +48,7 @@ interface OpportunityTableProps {
   totalPages: number;
 }
 
-function formatCurrency(value: number | null): string {
+export function formatCurrency(value: number | null): string {
   if (value === null || value === undefined) return "--";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -57,7 +58,7 @@ function formatCurrency(value: number | null): string {
   }).format(value);
 }
 
-function formatDate(dateStr: string | null): string {
+export function formatDate(dateStr: string | null): string {
   if (!dateStr) return "--";
   return new Date(dateStr).toLocaleDateString("en-US", {
     year: "numeric",
@@ -66,28 +67,31 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
-const STAGE_COLORS: Record<string, string> = {
-  WORKING_OPPORTUNITY: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  WAITING_FOR_AGREEMENTS: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
-  READY_TO_CLOSE: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  CONTRACT_SENT: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
-  CONTRACT_SIGNED: "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400",
-  ARCHIVED: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
-  CLOSED_WON_FIRST_PAYMENT: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  CLOSED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+function formatStageLabel(stage: string): string {
+  return stage.replace(/_/g, " ");
+}
+
+const STAGE_COLORS: Record<string, { bg: string; text: string }> = {
+  WORKING_OPPORTUNITY:       { bg: "#e0e7ff", text: "#4338ca" },
+  WAITING_FOR_AGREEMENTS:    { bg: "#e0e7ff", text: "#3730a3" },
+  READY_TO_CLOSE:            { bg: "#fef3c7", text: "#92400e" },
+  CONTRACT_SENT:             { bg: "#d1fae5", text: "#065f46" },
+  CONTRACT_SIGNED:           { bg: "#d1fae5", text: "#047857" },
+  ARCHIVED:                  { bg: "#f3f4f6", text: "#374151" },
+  CLOSED_WON_FIRST_PAYMENT:  { bg: "#dcfce7", text: "#166534" },
+  CLOSED:                    { bg: "#fee2e2", text: "#991b1b" },
 };
 
 export function StageBadge({ stage }: { stage: string }) {
-  const colorClass = STAGE_COLORS[stage] || "";
+  const colors = STAGE_COLORS[stage] || { bg: "#f2f3ff", text: "#444656" };
   return (
-    <Badge variant="secondary" className={`text-xs ${colorClass}`}>
-      {stage.replace(/_/g, " ")}
-    </Badge>
+    <span
+      className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded"
+      style={{ background: colors.bg, color: colors.text }}
+    >
+      {formatStageLabel(stage)}
+    </span>
   );
-}
-
-function formatStageLabel(stage: string): string {
-  return stage.replace(/_/g, " ");
 }
 
 export function OpportunityTable({ opportunities, total, page, totalPages }: OpportunityTableProps) {
@@ -95,6 +99,9 @@ export function OpportunityTable({ opportunities, total, page, totalPages }: Opp
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Default to kanban view
+  const [view, setView] = useState<"table" | "kanban">("kanban");
 
   const createQueryString = useCallback(
     (updates: Record<string, string>) => {
@@ -131,11 +138,15 @@ export function OpportunityTable({ opportunities, total, page, totalPages }: Opp
 
   return (
     <div className="space-y-4">
-      {/* Filter Bar */}
+      {/* ── Filter Bar ───────────────────────────────── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
+        {/* Search */}
+        <div
+          className="relative flex-1 max-w-xs flex items-center gap-2 rounded"
+          style={{ background: "#f2f3ff", padding: "0.45rem 0.85rem" }}
+        >
+          <Search className="size-4 flex-shrink-0" style={{ color: "#444656" }} />
+          <input
             placeholder="Search opportunities..."
             defaultValue={currentSearch}
             onChange={(e) => {
@@ -143,11 +154,17 @@ export function OpportunityTable({ opportunities, total, page, totalPages }: Opp
               if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
               searchTimerRef.current = setTimeout(() => handleSearch(value), 400);
             }}
-            className="pl-9"
+            className="bg-transparent border-none outline-none text-[13.5px] w-full placeholder:text-[#444656]"
+            style={{ color: "#131b2e" }}
           />
         </div>
+
+        {/* Stage filter */}
         <Select value={currentStage} onValueChange={handleStageFilter}>
-          <SelectTrigger className="w-[220px]">
+          <SelectTrigger
+            className="w-[200px] border-none shadow-none text-[13px]"
+            style={{ background: "#f2f3ff", color: "#131b2e" }}
+          >
             <SelectValue placeholder="All Stages" />
           </SelectTrigger>
           <SelectContent>
@@ -159,92 +176,166 @@ export function OpportunityTable({ opportunities, total, page, totalPages }: Opp
             ))}
           </SelectContent>
         </Select>
-      </div>
 
-      {/* Table */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Business Name</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Stage</TableHead>
-              <TableHead className="text-right">Total Debt</TableHead>
-              <TableHead>Expected Close</TableHead>
-              <TableHead>Assigned To</TableHead>
-              <TableHead>Created</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {opportunities.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                  No opportunities found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              opportunities.map((opp) => (
-                <TableRow
-                  key={opp.id}
-                  className="cursor-pointer"
-                  onClick={() => router.push(`/opportunities/${opp.id}`)}
-                >
-                  <TableCell className="font-medium">{opp.lead.businessName}</TableCell>
-                  <TableCell>{opp.lead.contactName}</TableCell>
-                  <TableCell>
-                    <StageBadge stage={opp.stage} />
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatCurrency(opp.totalDebt)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(opp.expectedCloseDate)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {opp.assignedTo?.name ?? "--"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(opp.createdAt)}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+        {/* Spacer */}
+        <div className="flex-1" />
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Showing {opportunities.length > 0 ? (page - 1) * 20 + 1 : 0} to{" "}
-          {Math.min(page * 20, total)} of {total} opportunities
-        </p>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(page - 1)}
-            disabled={page <= 1}
+        {/* Filter icon button */}
+        <button
+          className="flex items-center gap-1.5 rounded text-[13px] font-medium px-3 py-[7px] transition-opacity hover:opacity-80"
+          style={{ background: "#eaedff", color: "#444656", border: "none" }}
+        >
+          <SlidersHorizontal className="size-3.5" />
+          Filters
+        </button>
+
+        {/* View toggle */}
+        <div
+          className="flex rounded overflow-hidden"
+          style={{ background: "#eaedff" }}
+        >
+          <button
+            onClick={() => setView("table")}
+            className="flex items-center gap-1.5 px-3 py-[7px] text-[12px] font-medium transition-all"
+            style={{
+              background: view === "table" ? "#3052ff" : "transparent",
+              color: view === "table" ? "#fff" : "#444656",
+              border: "none",
+            }}
           >
-            <ChevronLeft className="size-4" />
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {page} of {totalPages || 1}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(page + 1)}
-            disabled={page >= totalPages}
+            <LayoutList className="size-3.5" />
+            Table
+          </button>
+          <button
+            onClick={() => setView("kanban")}
+            className="flex items-center gap-1.5 px-3 py-[7px] text-[12px] font-medium transition-all"
+            style={{
+              background: view === "kanban" ? "#3052ff" : "transparent",
+              color: view === "kanban" ? "#fff" : "#444656",
+              border: "none",
+            }}
           >
-            Next
-            <ChevronRight className="size-4" />
-          </Button>
+            <Kanban className="size-3.5" />
+            Kanban
+          </button>
         </div>
       </div>
+
+      {/* ── Kanban View ──────────────────────────────── */}
+      {view === "kanban" && (
+        <OpportunityKanban opportunities={opportunities} />
+      )}
+
+      {/* ── Table View ───────────────────────────────── */}
+      {view === "table" && (
+        <>
+          <div
+            className="rounded-xl overflow-hidden"
+            style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+          >
+            <Table>
+              <TableHeader>
+                <TableRow style={{ background: "#f2f3ff" }}>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#444656" }}>Business Name</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#444656" }}>Contact</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#444656" }}>Stage</TableHead>
+                  <TableHead className="text-right text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#444656" }}>Total Debt</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#444656" }}>Expected Close</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#444656" }}>Assigned To</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#444656" }}>Created</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {opportunities.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="h-32 text-center text-[13px]"
+                      style={{ color: "#444656" }}
+                    >
+                      No opportunities found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  opportunities.map((opp) => (
+                    <TableRow
+                      key={opp.id}
+                      className="cursor-pointer transition-colors"
+                      style={{ background: "#ffffff" }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLTableRowElement).style.background = "#faf8ff";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLTableRowElement).style.background = "#ffffff";
+                      }}
+                      onClick={() => router.push(`/opportunities/${opp.id}`)}
+                    >
+                      <TableCell
+                        className="font-semibold text-[13.5px]"
+                        style={{ color: "#131b2e", fontFamily: "Manrope, sans-serif" }}
+                      >
+                        {opp.lead.businessName}
+                      </TableCell>
+                      <TableCell className="text-[13px]" style={{ color: "#444656" }}>
+                        {opp.lead.contactName}
+                      </TableCell>
+                      <TableCell>
+                        <StageBadge stage={opp.stage} />
+                      </TableCell>
+                      <TableCell
+                        className="text-right font-semibold text-[13px]"
+                        style={{ color: "#131b2e" }}
+                      >
+                        {formatCurrency(opp.totalDebt ?? opp.lead.totalDebtEst)}
+                      </TableCell>
+                      <TableCell className="text-[13px]" style={{ color: "#444656" }}>
+                        {formatDate(opp.expectedCloseDate)}
+                      </TableCell>
+                      <TableCell className="text-[13px]" style={{ color: "#444656" }}>
+                        {opp.assignedTo?.name ?? "--"}
+                      </TableCell>
+                      <TableCell className="text-[13px]" style={{ color: "#444656" }}>
+                        {formatDate(opp.createdAt)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between">
+            <p className="text-[12px]" style={{ color: "#444656" }}>
+              Showing {opportunities.length > 0 ? (page - 1) * 20 + 1 : 0}–
+              {Math.min(page * 20, total)} of {total} opportunities
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(page - 1)}
+                disabled={page <= 1}
+                className="flex items-center gap-1 px-3 py-1.5 rounded text-[12px] font-medium disabled:opacity-40 transition-opacity"
+                style={{ background: "#eaedff", color: "#444656", border: "none" }}
+              >
+                <ChevronLeft className="size-3.5" />
+                Previous
+              </button>
+              <span className="text-[12px]" style={{ color: "#444656" }}>
+                Page {page} of {totalPages || 1}
+              </span>
+              <button
+                onClick={() => handlePageChange(page + 1)}
+                disabled={page >= totalPages}
+                className="flex items-center gap-1 px-3 py-1.5 rounded text-[12px] font-medium disabled:opacity-40 transition-opacity"
+                style={{ background: "#eaedff", color: "#444656", border: "none" }}
+              >
+                Next
+                <ChevronRight className="size-3.5" />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
-
-export { formatCurrency, formatDate };
