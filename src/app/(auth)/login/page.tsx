@@ -3,21 +3,12 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -47,64 +38,287 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-muted/40">
-      {/* Salesforce-style blue gradient header */}
-      <div className="bg-gradient-to-r from-[oklch(0.45_0.15_255)] to-[oklch(0.55_0.18_240)] px-6 py-12 text-center text-white shadow-lg">
-        <div className="mx-auto flex items-center justify-center gap-3 mb-3">
-          <span className="text-4xl">🌊</span>
-          <h1 className="text-3xl font-bold tracking-tight">Coastal CRM</h1>
+    <div className="flex h-screen w-screen overflow-hidden">
+      {/* LEFT PANEL — 55% dark navy */}
+      <div
+        className="relative hidden md:flex flex-col items-center justify-center overflow-hidden"
+        style={{ width: "55%", background: "#283044" }}
+      >
+        {/* Radial gradient orbs */}
+        <div
+          className="pointer-events-none absolute"
+          style={{
+            width: 600,
+            height: 600,
+            top: -120,
+            left: -100,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle, rgba(48,82,255,0.18) 0%, transparent 70%)",
+          }}
+        />
+        <div
+          className="pointer-events-none absolute"
+          style={{
+            width: 500,
+            height: 500,
+            bottom: -160,
+            right: -80,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle, rgba(48,82,255,0.12) 0%, transparent 70%)",
+          }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center text-center px-8">
+          {/* Geometric rings */}
+          <div className="relative mb-12" style={{ width: 200, height: 200 }}>
+            {/* Ring 1 */}
+            <div
+              className="absolute"
+              style={{
+                width: 200,
+                height: 200,
+                top: 0,
+                left: 0,
+                borderRadius: "50%",
+                border: "2px solid rgba(48,82,255,0.25)",
+              }}
+            />
+            {/* Ring 2 */}
+            <div
+              className="absolute"
+              style={{
+                width: 150,
+                height: 150,
+                top: 25,
+                left: 25,
+                borderRadius: "50%",
+                border: "2px solid rgba(48,82,255,0.35)",
+              }}
+            />
+            {/* Ring 3 */}
+            <div
+              className="absolute"
+              style={{
+                width: 100,
+                height: 100,
+                top: 50,
+                left: 50,
+                borderRadius: "50%",
+                border: "2px solid rgba(48,82,255,0.45)",
+              }}
+            />
+            {/* Center filled circle */}
+            <div
+              className="absolute gradient-primary"
+              style={{
+                width: 60,
+                height: 60,
+                top: 70,
+                left: 70,
+                borderRadius: "50%",
+              }}
+            />
+            {/* Dots */}
+            <div
+              className="absolute"
+              style={{
+                width: 8,
+                height: 8,
+                top: -4,
+                left: 96,
+                borderRadius: "50%",
+                background: "#3052ff",
+              }}
+            />
+            <div
+              className="absolute"
+              style={{
+                width: 8,
+                height: 8,
+                bottom: 20,
+                right: -4,
+                borderRadius: "50%",
+                background: "#3052ff",
+              }}
+            />
+            <div
+              className="absolute"
+              style={{
+                width: 8,
+                height: 8,
+                bottom: -4,
+                left: 60,
+                borderRadius: "50%",
+                background: "#3052ff",
+                opacity: 0.5,
+              }}
+            />
+          </div>
+
+          {/* Brand name */}
+          <h1
+            className="font-sans font-extrabold text-white"
+            style={{ fontSize: "2.5rem", letterSpacing: "-0.02em", marginBottom: "0.75rem" }}
+          >
+            Coastal CRM
+          </h1>
+
+          {/* Tagline */}
+          <p
+            className="font-body font-normal"
+            style={{ fontSize: "1.05rem", color: "#bbc3ff", letterSpacing: "0.01em" }}
+          >
+            Debt Settlement Intelligence Platform
+          </p>
+
+          {/* Wave bar */}
+          <div className="flex items-end gap-1 mt-10">
+            {[16, 28, 40, 32, 48, 36, 24, 44, 20, 32, 12].map((h, i) => (
+              <span
+                key={i}
+                style={{
+                  display: "block",
+                  width: 4,
+                  height: h,
+                  borderRadius: 2,
+                  background: i === 4 ? "rgba(48,82,255,0.55)" : "rgba(48,82,255,0.35)",
+                }}
+              />
+            ))}
+          </div>
         </div>
-        <p className="text-white/80 text-sm">
-          Debt Settlement Management Platform
-        </p>
       </div>
 
-      {/* Login card */}
-      <div className="flex flex-1 items-start justify-center px-4 -mt-8">
-        <Card className="w-full max-w-sm shadow-xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Sign in</CardTitle>
-            <CardDescription>
-              Enter your credentials to access the dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {error && (
-                <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {error}
-                </div>
-              )}
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
+      {/* RIGHT PANEL — 45% white */}
+      <div
+        className="flex flex-1 md:flex-none items-center justify-center bg-white"
+        style={{ width: "45%" }}
+      >
+        <div className="w-full px-8" style={{ maxWidth: 400 }}>
+          {/* Heading */}
+          <h2
+            className="font-sans font-bold"
+            style={{ fontSize: "1.85rem", color: "#131b2e", marginBottom: "0.5rem" }}
+          >
+            Welcome back
+          </h2>
+          <p
+            className="font-body"
+            style={{ fontSize: "0.95rem", color: "#444656", marginBottom: "2.25rem" }}
+          >
+            Sign in to your account
+          </p>
+
+          <form onSubmit={handleSubmit} className="flex flex-col">
+            {/* Error message */}
+            {error && (
+              <div
+                className="mb-4 rounded-md px-3 py-2 text-sm"
+                style={{ background: "rgba(186,26,26,0.08)", color: "#ba1a1a" }}
+              >
+                {error}
               </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
+            )}
+
+            {/* Email */}
+            <div style={{ marginBottom: "1.25rem" }}>
+              <label
+                htmlFor="email"
+                className="block font-body font-medium"
+                style={{ fontSize: "0.8rem", color: "#444656", marginBottom: "0.4rem" }}
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                placeholder="you@company.com"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg font-body transition-shadow outline-none focus:shadow-[0_0_0_2px_rgba(48,82,255,0.25)]"
+                style={{
+                  padding: "0.75rem 1rem",
+                  fontSize: "0.9rem",
+                  background: "#f2f3ff",
+                  color: "#131b2e",
+                  border: "none",
+                }}
+              />
+            </div>
+
+            {/* Password */}
+            <div style={{ marginBottom: "1.25rem" }}>
+              <label
+                htmlFor="password"
+                className="block font-body font-medium"
+                style={{ fontSize: "0.8rem", color: "#444656", marginBottom: "0.4rem" }}
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg font-body transition-shadow outline-none focus:shadow-[0_0_0_2px_rgba(48,82,255,0.25)]"
+                style={{
+                  padding: "0.75rem 1rem",
+                  fontSize: "0.9rem",
+                  background: "#f2f3ff",
+                  color: "#131b2e",
+                  border: "none",
+                }}
+              />
+            </div>
+
+            {/* Remember me */}
+            <div
+              className="flex items-center justify-between"
+              style={{ marginBottom: "1.75rem" }}
+            >
+              <label
+                className="flex items-center gap-2 font-body cursor-pointer"
+                style={{ fontSize: "0.85rem", color: "#444656" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="cursor-pointer"
+                  style={{ width: 16, height: 16, accentColor: "#3052ff" }}
                 />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing in..." : "Sign in"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                Remember me
+              </label>
+            </div>
+
+            {/* Sign In button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="gradient-primary w-full font-body font-semibold text-white rounded-lg transition-opacity hover:opacity-90 active:opacity-100 disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ padding: "0.8rem", fontSize: "0.95rem", border: "none" }}
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+
+            {/* Forgot password */}
+            <a
+              href="#"
+              className="block text-center font-body font-medium hover:underline"
+              style={{ marginTop: "1.25rem", fontSize: "0.85rem", color: "#3052ff" }}
+            >
+              Forgot password?
+            </a>
+          </form>
+        </div>
       </div>
     </div>
   );
