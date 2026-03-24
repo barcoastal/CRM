@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { Navbar } from "@/components/navbar";
+import { Sidebar } from "@/components/sidebar";
+import { Topbar } from "@/components/topbar";
 
 export default async function DashboardLayout({
   children,
@@ -14,9 +15,12 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
-      <main className="p-4 md:p-6">{children}</main>
+    <div className="min-h-screen bg-[#faf8ff]">
+      <Sidebar />
+      <div className="ml-[240px] transition-all duration-200">
+        <Topbar />
+        <main className="p-6">{children}</main>
+      </div>
     </div>
   );
 }
