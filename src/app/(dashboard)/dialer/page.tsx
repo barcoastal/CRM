@@ -35,18 +35,10 @@ export default async function DialerPage({ searchParams }: DialerPageProps) {
   }));
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Dialer</h2>
-        <p className="text-muted-foreground">
-          Power dial through your campaign contacts.
-        </p>
-      </div>
-      <DialerClient
-        campaigns={campaigns}
-        initialCampaignId={campaignId}
-        initialLeadId={leadId}
-      />
-    </div>
+    <DialerClient
+      campaigns={campaigns}
+      initialCampaignId={campaignId}
+      initialLeadId={leadId}
+    />
   );
 }
