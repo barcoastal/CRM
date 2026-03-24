@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { CLIENT_STATUSES } from "@/lib/validations/client";
 
 interface ClientLead {
@@ -79,19 +78,50 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  GRADUATED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  DROPPED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  ON_HOLD: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+function formatPhone(phone: string): string {
+  const cleaned = phone.replace(/\D/g, "");
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  }
+  if (cleaned.length === 11 && cleaned.startsWith("1")) {
+    return `(${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+  }
+  return phone;
+}
+
+function computeSavings(totalEnrolledDebt: number, totalSettled: number): string {
+  if (!totalEnrolledDebt || !totalSettled) return "--";
+  const pct = ((totalEnrolledDebt - totalSettled) / totalEnrolledDebt) * 100;
+  return `${pct.toFixed(0)}%`;
+}
+
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  ACTIVE: {
+    label: "Active",
+    className: "bg-green-100 text-green-800",
+  },
+  ON_HOLD: {
+    label: "On Hold",
+    className: "bg-yellow-100 text-yellow-800",
+  },
+  GRADUATED: {
+    label: "Completed",
+    className: "bg-blue-100 text-blue-800",
+  },
+  DROPPED: {
+    label: "Withdrawn",
+    className: "bg-red-100 text-red-800",
+  },
 };
 
-function ClientStatusBadge({ status }: { status: string }) {
-  const colorClass = STATUS_COLORS[status] || "";
+function StatusBadge({ status }: { status: string }) {
+  const config = STATUS_CONFIG[status] ?? { label: status.replace(/_/g, " "), className: "bg-muted text-muted-foreground" };
   return (
-    <Badge variant="secondary" className={`text-xs ${colorClass}`}>
-      {status.replace(/_/g, " ")}
-    </Badge>
+    <span
+      className={`inline-block text-[0.68rem] font-semibold px-[0.55rem] py-[0.18rem] rounded-sm ${config.className}`}
+    >
+      {config.label}
+    </span>
   );
 }
 
@@ -134,124 +164,195 @@ export function ClientTable({ clients, total, page, totalPages }: ClientTablePro
   const currentSearch = searchParams.get("search") || "";
   const currentStatus = searchParams.get("status") || "ALL";
 
+  const startItem = clients.length > 0 ? (page - 1) * 20 + 1 : 0;
+  const endItem = Math.min(page * 20, total);
+
   return (
     <div className="space-y-4">
       {/* Filter Bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search clients..."
-            defaultValue={currentSearch}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-              searchTimerRef.current = setTimeout(() => handleSearch(value), 400);
-            }}
-            className="pl-9"
-          />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-2 flex-1 flex-wrap">
+          {/* Status filter */}
+          <Select value={currentStatus} onValueChange={handleStatusFilter}>
+            <SelectTrigger className="w-[150px] h-8 text-xs bg-white shadow-coastal border-0 rounded-sm">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Statuses</SelectItem>
+              {CLIENT_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {STATUS_CONFIG[s]?.label ?? s.replace(/_/g, " ")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={currentStatus} onValueChange={handleStatusFilter}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="All Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">All Statuses</SelectItem>
-            {CLIENT_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s.replace(/_/g, " ")}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
+        <div className="flex items-center gap-2">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search clients..."
+              defaultValue={currentSearch}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+                searchTimerRef.current = setTimeout(() => handleSearch(value), 400);
+              }}
+              className="pl-8 h-8 text-xs w-52 bg-surface-container-low border-0 rounded-sm"
+            />
+          </div>
+
+          {/* Filter icon button */}
+          <button className="h-8 px-3 flex items-center gap-1.5 bg-surface-container border-0 rounded-sm text-xs font-medium text-muted-foreground hover:bg-surface-container-high transition-colors">
+            <SlidersHorizontal className="size-3.5" />
+            Filters
+          </button>
+        </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="bg-white rounded-xl shadow-coastal overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Business Name</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead className="text-right">Total Debt</TableHead>
-              <TableHead className="text-right">Settled</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Negotiator</TableHead>
-              <TableHead>Program Start</TableHead>
+            <TableRow className="border-0 hover:bg-transparent">
+              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
+                Client
+              </TableHead>
+              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
+                Phone
+              </TableHead>
+              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
+                Total Debt
+              </TableHead>
+              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
+                Settled
+              </TableHead>
+              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
+                Savings
+              </TableHead>
+              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
+                Program Start
+              </TableHead>
+              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
+                Status
+              </TableHead>
+              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
+                Negotiator
+              </TableHead>
+              <TableHead className="bg-surface-container-low py-[0.85rem] px-4 w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {clients.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+              <TableRow className="border-0">
+                <TableCell
+                  colSpan={9}
+                  className="h-28 text-center text-sm text-muted-foreground"
+                >
                   No clients found.
                 </TableCell>
               </TableRow>
             ) : (
-              clients.map((client) => (
+              clients.map((client, idx) => (
                 <TableRow
                   key={client.id}
-                  className="cursor-pointer"
+                  className={`border-0 cursor-pointer transition-colors hover:bg-surface-container ${
+                    idx % 2 === 1 ? "bg-surface-container-low" : "bg-white"
+                  }`}
                   onClick={() => router.push(`/clients/${client.id}`)}
                 >
-                  <TableCell className="font-medium">
-                    {client.lead.businessName}
+                  {/* Client Name — business + contact stacked */}
+                  <TableCell className="py-[0.7rem] px-4">
+                    <div className="flex flex-col">
+                      <span className="text-[0.82rem] font-semibold leading-tight">
+                        {client.lead.businessName}
+                      </span>
+                      <span className="text-[0.7rem] text-muted-foreground leading-tight mt-0.5">
+                        {client.lead.contactName}
+                      </span>
+                    </div>
                   </TableCell>
-                  <TableCell>{client.lead.contactName}</TableCell>
-                  <TableCell className="text-right font-medium">
+                  <TableCell className="py-[0.7rem] px-4 text-[0.8rem]">
+                    {formatPhone(client.lead.phone)}
+                  </TableCell>
+                  <TableCell className="py-[0.7rem] px-4 text-[0.8rem] font-semibold">
                     {formatCurrency(client.totalEnrolledDebt)}
                   </TableCell>
-                  <TableCell className="text-right font-medium">
+                  <TableCell className="py-[0.7rem] px-4 text-[0.8rem]">
                     {formatCurrency(client.totalSettled)}
                   </TableCell>
-                  <TableCell>
-                    <ClientStatusBadge status={client.status} />
+                  <TableCell className="py-[0.7rem] px-4 text-[0.8rem] font-semibold text-emerald-600">
+                    {computeSavings(client.totalEnrolledDebt, client.totalSettled)}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="py-[0.7rem] px-4 text-[0.8rem] text-muted-foreground">
+                    {formatDate(client.programStartDate)}
+                  </TableCell>
+                  <TableCell className="py-[0.7rem] px-4">
+                    <StatusBadge status={client.status} />
+                  </TableCell>
+                  <TableCell className="py-[0.7rem] px-4 text-[0.8rem] text-muted-foreground">
                     {client.assignedNegotiator?.name ?? "--"}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(client.programStartDate)}
+                  <TableCell className="py-[0.7rem] px-4" onClick={(e) => e.stopPropagation()}>
+                    <button className="p-1 rounded-sm text-muted-foreground hover:bg-surface-container transition-colors">
+                      <MoreHorizontal className="size-4" />
+                    </button>
                   </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
-      </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Showing {clients.length > 0 ? (page - 1) * 20 + 1 : 0} to{" "}
-          {Math.min(page * 20, total)} of {total} clients
-        </p>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(page - 1)}
-            disabled={page <= 1}
-          >
-            <ChevronLeft className="size-4" />
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {page} of {totalPages || 1}
+        {/* Pagination inside table card */}
+        <div className="flex items-center justify-between px-5 py-4 border-t border-surface-container-low">
+          <span className="text-[0.8rem] text-muted-foreground">
+            {clients.length > 0
+              ? `Showing ${startItem}–${endItem} of ${total} clients`
+              : "No clients"}
           </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(page + 1)}
-            disabled={page >= totalPages}
-          >
-            Next
-            <ChevronRight className="size-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 rounded-sm text-muted-foreground hover:bg-surface-container-low"
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page <= 1}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              const p = i + 1;
+              return (
+                <button
+                  key={p}
+                  onClick={() => handlePageChange(p)}
+                  className={`size-8 flex items-center justify-center rounded-sm text-[0.8rem] font-medium transition-colors ${
+                    p === page
+                      ? "gradient-primary text-white"
+                      : "bg-surface-container-low text-muted-foreground hover:bg-surface-container"
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 rounded-sm text-muted-foreground hover:bg-surface-container-low"
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page >= totalPages}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-export { ClientStatusBadge, formatCurrency, formatDate };
+export { StatusBadge as ClientStatusBadge, formatCurrency, formatDate };

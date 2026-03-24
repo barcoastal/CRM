@@ -74,14 +74,10 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Page Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Clients</h2>
-          <p className="text-muted-foreground">
-            Manage enrolled clients and their debt settlement programs.
-          </p>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight">Clients</h1>
       </div>
 
       <ClientTable
