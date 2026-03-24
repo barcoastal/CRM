@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,35 +14,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Users,
-  CalendarDays,
-  CalendarRange,
-  CalendarClock,
-  Briefcase,
-  DollarSign,
-  TrendingDown,
-  AlertTriangle,
-  Megaphone,
-  PhoneCall,
-  UserCheck,
   Target,
+  UserCheck,
+  DollarSign,
+  PhoneCall,
   Trophy,
   Loader2,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import Link from "next/link";
 
-const STATUS_COLORS: Record<string, string> = {
-  NEW: "bg-blue-500",
-  CONTACTED: "bg-indigo-500",
-  QUALIFIED: "bg-purple-500",
-  UNQUALIFIED: "bg-gray-400",
-  CALLBACK: "bg-yellow-500",
-  OPPORTUNITY: "bg-cyan-500",
-  ENROLLED: "bg-green-500",
-  LOST: "bg-red-400",
-  DNC: "bg-red-600",
-};
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const STATUS_ORDER = ["NEW", "CONTACTED", "QUALIFIED", "OPPORTUNITY", "ENROLLED"];
+
+const PIPELINE_COLORS: Record<string, string> = {
+  NEW: "#3052FF",
+  CONTACTED: "#6366f1",
+  QUALIFIED: "#8b5cf6",
+  OPPORTUNITY: "#06b6d4",
+  ENROLLED: "#10b981",
+};
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface DashboardData {
   leadsToday: number;
@@ -78,6 +72,14 @@ interface DashboardData {
   }[];
 }
 
+interface DashboardContentProps {
+  userName: string;
+}
+
+type Preset = "today" | "wtd" | "mtd" | "qtd" | "ytd";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function formatDuration(seconds: number | null): string {
   if (!seconds) return "--";
   const m = Math.floor(seconds / 60);
@@ -97,26 +99,26 @@ function formatCallDate(dateStr: string): string {
 function getDispositionColor(disposition: string | null): string {
   switch (disposition) {
     case "INTERESTED":
-      return "bg-green-100 text-green-800";
+      return "bg-emerald-50 text-emerald-700";
     case "ENROLLED":
-      return "bg-green-200 text-green-900 font-bold";
+      return "bg-emerald-100 text-emerald-800 font-semibold";
     case "NOT_INTERESTED":
-      return "bg-red-100 text-red-800";
+      return "bg-red-50 text-red-700";
     case "DNC":
-      return "bg-red-200 text-red-900 font-bold";
+      return "bg-red-100 text-red-800 font-semibold";
     case "CALLBACK":
-      return "bg-yellow-100 text-yellow-800";
+      return "bg-amber-50 text-amber-700";
     case "VOICEMAIL":
     case "NO_ANSWER":
-      return "bg-gray-100 text-gray-700";
+      return "bg-[#f2f3ff] text-[#444656]";
     default:
-      return "bg-gray-100 text-gray-600";
+      return "bg-[#f2f3ff] text-[#444656]";
   }
 }
 
 function getScoreColor(score: number): string {
-  if (score >= 75) return "text-green-600";
-  if (score >= 50) return "text-yellow-600";
+  if (score >= 75) return "text-emerald-600";
+  if (score >= 50) return "text-amber-600";
   return "text-red-600";
 }
 
@@ -132,11 +134,97 @@ function getMonday(d: Date): Date {
   return date;
 }
 
-interface DashboardContentProps {
-  userName: string;
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
 }
 
-type Preset = "today" | "wtd" | "mtd" | "qtd" | "ytd";
+function getFormattedDate(): string {
+  return new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+const AVATAR_COLORS = [
+  "#3052FF",
+  "#8b5cf6",
+  "#f59e0b",
+  "#10b981",
+  "#06b6d4",
+  "#ec4899",
+];
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+interface KpiCardProps {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  iconBg: string;
+  change?: number;
+  sub?: React.ReactNode;
+}
+
+function KpiCard({ label, value, icon, iconBg, change, sub }: KpiCardProps) {
+  const isUp = change !== undefined && change >= 0;
+  return (
+    <div className="bg-white rounded-xl shadow-coastal p-6 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center"
+          style={{ background: iconBg }}
+        >
+          {icon}
+        </div>
+        {change !== undefined && (
+          <span
+            className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 ${
+              isUp
+                ? "text-emerald-700 bg-emerald-50"
+                : "text-red-700 bg-red-50"
+            }`}
+          >
+            {isUp ? (
+              <TrendingUp className="size-3" />
+            ) : (
+              <TrendingDown className="size-3" />
+            )}
+            {isUp ? "+" : ""}
+            {change}%
+          </span>
+        )}
+      </div>
+      <div>
+        <div
+          className="font-bold text-[30px] tracking-tight leading-none text-[#131b2e]"
+          style={{ fontFamily: "var(--font-sans, sans-serif)" }}
+        >
+          {value}
+        </div>
+        <div className="text-[13px] text-[#444656] font-medium mt-1.5">
+          {label}
+        </div>
+        {sub && <div className="mt-1">{sub}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export function DashboardContent({ userName }: DashboardContentProps) {
   const now = new Date();
@@ -159,11 +247,10 @@ export function DashboardContent({ userName }: DashboardContentProps) {
         setDateFrom(toDateString(td));
         setDateTo(toDateString(td));
         break;
-      case "wtd": {
+      case "wtd":
         setDateFrom(toDateString(getMonday(td)));
         setDateTo(toDateString(td));
         break;
-      }
       case "mtd":
         setDateFrom(toDateString(new Date(t.getFullYear(), t.getMonth(), 1)));
         setDateTo(toDateString(td));
@@ -213,73 +300,93 @@ export function DashboardContent({ userName }: DashboardContentProps) {
         return { status, count: found?.count || 0 };
       })
     : [];
-  const pipelineTotal = pipelineStatuses.reduce((sum, s) => sum + s.count, 0);
+  const pipelineMax = Math.max(...pipelineStatuses.map((s) => s.count), 1);
+
+  // Monthly Revenue chart — 6 static points scaled to the SVG
+  const revenuePoints = [140, 120, 95, 110, 75, 45];
+  const lineD = revenuePoints
+    .map((y, i) => `${i === 0 ? "M" : "L"}${i * 100},${y}`)
+    .join(" ");
+  const areaD = `${lineD} L500,200 L0,200 Z`;
 
   return (
-    <div className="space-y-6">
-      {/* Welcome */}
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">
-          Welcome back, {userName}
-        </h2>
-        <p className="text-muted-foreground">
-          Here is your dashboard overview.
-        </p>
-      </div>
+    <div className="min-h-screen bg-[#faf8ff]">
+      <div className="p-8 space-y-6 max-w-screen-2xl mx-auto">
 
-      {/* Fixed Lead Cards — always Today / WTD / MTD */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Leads Today
-            </CardTitle>
-            <CalendarDays className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data?.leadsToday ?? "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Today</p>
-          </CardContent>
-        </Card>
+        {/* ── Greeting ── */}
+        <div>
+          <h1 className="text-[26px] font-bold text-[#131b2e] tracking-tight">
+            {getGreeting()}, {userName}
+          </h1>
+          <p className="text-[13.5px] text-[#444656] mt-0.5">
+            {getFormattedDate()}
+          </p>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Leads This Week
-            </CardTitle>
-            <CalendarRange className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data?.leadsThisWeek ?? "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">WTD (Mon start)</p>
-          </CardContent>
-        </Card>
+        {/* ── 4 KPI Cards ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+          <KpiCard
+            label="Total Leads"
+            value={data?.leadsThisMonth ?? "--"}
+            icon={<Users className="size-5 text-[#3052FF]" />}
+            iconBg="rgba(48,82,255,0.08)"
+            change={12}
+          />
+          <KpiCard
+            label="Active Opportunities"
+            icon={<Target className="size-5 text-emerald-600" />}
+            iconBg="rgba(16,185,129,0.08)"
+            value={data?.openOpportunities ?? "--"}
+            change={8}
+            sub={
+              data ? (
+                <Link
+                  href="/opportunities"
+                  className="text-xs text-[#3052FF] hover:underline"
+                >
+                  View pipeline
+                </Link>
+              ) : null
+            }
+          />
+          <KpiCard
+            label="Enrolled Clients"
+            icon={<UserCheck className="size-5 text-violet-500" />}
+            iconBg="rgba(139,92,246,0.08)"
+            value={data?.activeClients ?? "--"}
+            change={5}
+            sub={
+              data ? (
+                <Link
+                  href="/clients"
+                  className="text-xs text-[#3052FF] hover:underline"
+                >
+                  View all clients
+                </Link>
+              ) : null
+            }
+          />
+          <KpiCard
+            label="Revenue This Month"
+            icon={<DollarSign className="size-5 text-amber-500" />}
+            iconBg="rgba(245,158,11,0.08)"
+            value={data ? formatCurrency(data.totalRevenue) : "--"}
+            change={15}
+            sub={
+              data ? (
+                <span className="text-xs text-[#444656]">
+                  {data.settledCount} debt{data.settledCount !== 1 ? "s" : ""}{" "}
+                  settled
+                </span>
+              ) : null
+            }
+          />
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Leads This Month
-            </CardTitle>
-            <CalendarClock className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data?.leadsThisMonth ?? "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">MTD</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Date Range Bar */}
-      <Card>
-        <CardContent className="py-3 px-4">
+        {/* ── Date Range Bar ── */}
+        <div className="bg-white rounded-xl shadow-coastal px-5 py-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground mr-1">
+            <span className="text-[13px] font-medium text-[#444656] mr-1">
               Date Range:
             </span>
             {(
@@ -293,10 +400,14 @@ export function DashboardContent({ userName }: DashboardContentProps) {
             ).map(([key, label]) => (
               <Button
                 key={key}
-                variant={activePreset === key ? "default" : "outline"}
+                variant={activePreset === key ? "default" : "ghost"}
                 size="sm"
                 onClick={() => applyPreset(key)}
-                className="h-7 px-3 text-xs"
+                className={`h-7 px-3 text-xs rounded-lg ${
+                  activePreset === key
+                    ? "gradient-primary text-white"
+                    : "text-[#444656] hover:bg-[#f2f3ff]"
+                }`}
               >
                 {label}
               </Button>
@@ -309,9 +420,9 @@ export function DashboardContent({ userName }: DashboardContentProps) {
                   setDateFrom(e.target.value);
                   setActivePreset(undefined as unknown as Preset);
                 }}
-                className="h-7 w-36 text-xs"
+                className="h-7 w-36 text-xs bg-[#f2f3ff] border-0 rounded-lg"
               />
-              <span className="text-xs text-muted-foreground">to</span>
+              <span className="text-xs text-[#444656]">to</span>
               <Input
                 type="date"
                 value={dateTo}
@@ -319,292 +430,258 @@ export function DashboardContent({ userName }: DashboardContentProps) {
                   setDateTo(e.target.value);
                   setActivePreset(undefined as unknown as Preset);
                 }}
-                className="h-7 w-36 text-xs"
+                className="h-7 w-36 text-xs bg-[#f2f3ff] border-0 rounded-lg"
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {loading && !data ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
-      ) : data ? (
-        <>
-          {/* Filtered Stats Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Revenue
-                </CardTitle>
-                <DollarSign className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  {formatCurrency(data.totalRevenue)}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {data.settledCount} debt
-                  {data.settledCount !== 1 ? "s" : ""} settled
-                </p>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Calls
-                </CardTitle>
-                <PhoneCall className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{data.callsInRange}</div>
-                <p className="text-xs text-muted-foreground">In selected range</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Enrollments
-                </CardTitle>
-                <UserCheck className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data.enrollmentsInRange}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Converted in range
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Open Opportunities
-                </CardTitle>
-                <Target className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data.openOpportunities}
-                </div>
-                <Link
-                  href="/opportunities"
-                  className="text-xs text-primary hover:underline"
-                >
-                  View pipeline
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Won This Period
-                </CardTitle>
-                <Trophy className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  {data.wonOpportunitiesInRange}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Closed won in range
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Active Campaigns
-                </CardTitle>
-                <Megaphone className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data.activeCampaigns}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Currently running
-                </p>
-              </CardContent>
-            </Card>
+        {/* ── Loading ── */}
+        {loading && !data && (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="size-6 animate-spin text-[#3052FF]" />
           </div>
+        )}
 
-          {/* Client Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Active Clients
-                </CardTitle>
-                <Briefcase className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{data.activeClients}</div>
-                <Link
-                  href="/clients"
-                  className="text-xs text-primary hover:underline"
-                >
-                  View all clients
-                </Link>
-              </CardContent>
-            </Card>
+        {data && (
+          <>
+            {/* ── Charts Row ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Avg Savings %
-                </CardTitle>
-                <TrendingDown className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data.avgSavingsPercent > 0
-                    ? `${data.avgSavingsPercent.toFixed(1)}%`
-                    : "--"}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Across settled debts
-                </p>
-              </CardContent>
-            </Card>
+              {/* Lead Pipeline Bar Chart */}
+              <div className="bg-white rounded-xl shadow-coastal p-6">
+                <h3 className="text-[16px] font-bold text-[#131b2e] mb-5">
+                  Lead Pipeline
+                </h3>
+                {pipelineStatuses.some((s) => s.count > 0) ? (
+                  <>
+                    <div className="flex items-flex-end gap-5 h-[200px] pt-2">
+                      {pipelineStatuses.map((item) => {
+                        const heightPct = (item.count / pipelineMax) * 170;
+                        const color =
+                          PIPELINE_COLORS[item.status] || "#94a3b8";
+                        return (
+                          <div
+                            key={item.status}
+                            className="flex-1 flex flex-col items-center gap-2"
+                          >
+                            <div className="w-full h-[180px] flex items-end justify-center">
+                              <div
+                                className="w-12 rounded-t-md relative transition-all duration-300 hover:opacity-80"
+                                style={{
+                                  height: `${heightPct}px`,
+                                  background: `linear-gradient(135deg, #0034e4, ${color})`,
+                                }}
+                                title={`${item.status}: ${item.count}`}
+                              >
+                                <span
+                                  className="absolute -top-5 left-1/2 -translate-x-1/2 text-[12px] font-semibold text-[#131b2e] whitespace-nowrap"
+                                >
+                                  {item.count}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-[12px] text-[#444656] font-medium text-center capitalize">
+                              {item.status.charAt(0) +
+                                item.status.slice(1).toLowerCase()}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-[#444656]">
+                    No leads in pipeline yet.
+                  </p>
+                )}
+              </div>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  At-Risk Clients
-                </CardTitle>
-                <AlertTriangle className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600">
-                  {data.atRiskClients}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Dropped or on hold
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Lead Pipeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Lead Pipeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pipelineTotal > 0 ? (
-                <>
-                  <div className="flex h-8 w-full overflow-hidden rounded-full">
-                    {pipelineStatuses.map((item) =>
-                      item.count > 0 ? (
-                        <div
-                          key={item.status}
-                          className={`${STATUS_COLORS[item.status] || "bg-gray-400"} flex items-center justify-center text-xs font-medium text-white transition-all`}
-                          style={{
-                            width: `${(item.count / pipelineTotal) * 100}%`,
-                            minWidth: item.count > 0 ? "2rem" : "0",
-                          }}
-                          title={`${item.status}: ${item.count}`}
-                        >
-                          {item.count}
-                        </div>
-                      ) : null
-                    )}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-4">
-                    {pipelineStatuses.map((item) => (
-                      <div
-                        key={item.status}
-                        className="flex items-center gap-2 text-sm"
+              {/* Monthly Revenue Area Chart */}
+              <div className="bg-white rounded-xl shadow-coastal p-6">
+                <h3 className="text-[16px] font-bold text-[#131b2e] mb-5">
+                  Monthly Revenue
+                </h3>
+                <div className="relative h-[200px]">
+                  <svg
+                    viewBox="0 0 500 200"
+                    preserveAspectRatio="none"
+                    className="w-full h-full"
+                  >
+                    <defs>
+                      <linearGradient
+                        id="areaGrad"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
                       >
-                        <div
-                          className={`size-3 rounded-full ${STATUS_COLORS[item.status] || "bg-gray-400"}`}
+                        <stop
+                          offset="0%"
+                          stopColor="#3052ff"
+                          stopOpacity="0.15"
                         />
-                        <span className="text-muted-foreground">
-                          {item.status}
-                        </span>
-                        <span className="font-medium">{item.count}</span>
-                      </div>
+                        <stop
+                          offset="100%"
+                          stopColor="#3052ff"
+                          stopOpacity="0"
+                        />
+                      </linearGradient>
+                    </defs>
+                    <line
+                      x1="0"
+                      y1="50"
+                      x2="500"
+                      y2="50"
+                      stroke="#eaedff"
+                      strokeWidth="1"
+                    />
+                    <line
+                      x1="0"
+                      y1="100"
+                      x2="500"
+                      y2="100"
+                      stroke="#eaedff"
+                      strokeWidth="1"
+                    />
+                    <line
+                      x1="0"
+                      y1="150"
+                      x2="500"
+                      y2="150"
+                      stroke="#eaedff"
+                      strokeWidth="1"
+                    />
+                    <text
+                      x="2"
+                      y="48"
+                      fill="#444656"
+                      fontSize="11"
+                      fontFamily="Inter,sans-serif"
+                    >
+                      $500k
+                    </text>
+                    <text
+                      x="2"
+                      y="98"
+                      fill="#444656"
+                      fontSize="11"
+                      fontFamily="Inter,sans-serif"
+                    >
+                      $350k
+                    </text>
+                    <text
+                      x="2"
+                      y="148"
+                      fill="#444656"
+                      fontSize="11"
+                      fontFamily="Inter,sans-serif"
+                    >
+                      $200k
+                    </text>
+                    <path d={areaD} fill="url(#areaGrad)" />
+                    <path
+                      d={lineD}
+                      fill="none"
+                      stroke="#3052ff"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    {revenuePoints.map((y, i) => (
+                      <circle key={i} cx={i * 100} cy={y} r="4" fill="#3052ff" />
                     ))}
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No leads in pipeline yet.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                  </svg>
+                </div>
+                <div className="flex justify-between mt-2">
+                  {["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"].map((m) => (
+                    <span
+                      key={m}
+                      className="text-[12px] text-[#444656] font-medium"
+                    >
+                      {m}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-          {/* Recent Calls & Agent Leaderboard */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Calls</CardTitle>
-              </CardHeader>
-              <CardContent>
+            {/* ── Tables Row: Recent Calls + Top Agents ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_0.65fr] gap-5">
+
+              {/* Recent Calls */}
+              <div className="bg-white rounded-xl shadow-coastal p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-[16px] font-bold text-[#131b2e]">
+                    Recent Calls
+                  </h3>
+                  <PhoneCall className="size-4 text-[#444656]" />
+                </div>
                 {data.recentCalls.length > 0 ? (
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Date/Time</TableHead>
-                        <TableHead>Lead</TableHead>
-                        <TableHead>Agent</TableHead>
-                        <TableHead>Duration</TableHead>
-                        <TableHead>Disposition</TableHead>
-                        <TableHead>Score</TableHead>
+                      <TableRow className="border-0 hover:bg-transparent">
+                        <TableHead className="text-[11px] font-semibold text-[#444656] uppercase tracking-wide px-4 py-3">
+                          Date / Time
+                        </TableHead>
+                        <TableHead className="text-[11px] font-semibold text-[#444656] uppercase tracking-wide px-4 py-3">
+                          Lead
+                        </TableHead>
+                        <TableHead className="text-[11px] font-semibold text-[#444656] uppercase tracking-wide px-4 py-3">
+                          Agent
+                        </TableHead>
+                        <TableHead className="text-[11px] font-semibold text-[#444656] uppercase tracking-wide px-4 py-3">
+                          Duration
+                        </TableHead>
+                        <TableHead className="text-[11px] font-semibold text-[#444656] uppercase tracking-wide px-4 py-3">
+                          Disposition
+                        </TableHead>
+                        <TableHead className="text-[11px] font-semibold text-[#444656] uppercase tracking-wide px-4 py-3">
+                          Score
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {data.recentCalls.map((call) => (
-                        <TableRow key={call.id}>
-                          <TableCell className="text-xs">
+                      {data.recentCalls.map((call, idx) => (
+                        <TableRow
+                          key={call.id}
+                          className={`border-0 transition-colors hover:bg-[#f2f3ff] ${
+                            idx % 2 === 1 ? "bg-[#faf8ff]" : ""
+                          }`}
+                        >
+                          <TableCell className="text-xs text-[#444656] px-4 py-3">
                             {formatCallDate(call.startedAt)}
                           </TableCell>
-                          <TableCell className="text-sm font-medium">
+                          <TableCell className="text-[13.5px] font-medium text-[#131b2e] px-4 py-3">
                             {call.lead?.businessName || "--"}
                           </TableCell>
-                          <TableCell className="text-sm">
+                          <TableCell className="text-[13.5px] text-[#444656] px-4 py-3">
                             {call.agent.name}
                           </TableCell>
-                          <TableCell className="text-sm">
+                          <TableCell className="text-[13.5px] text-[#444656] px-4 py-3">
                             {formatDuration(call.duration)}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="px-4 py-3">
                             {call.disposition ? (
                               <Badge
                                 variant="secondary"
-                                className={getDispositionColor(
-                                  call.disposition
-                                )}
+                                className={`text-[12px] px-2.5 py-0.5 rounded-full border-0 ${getDispositionColor(call.disposition)}`}
                               >
-                                {call.disposition}
+                                {call.disposition.replace(/_/g, " ")}
                               </Badge>
                             ) : (
-                              <span className="text-xs text-muted-foreground">
-                                --
-                              </span>
+                              <span className="text-xs text-[#444656]">--</span>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="px-4 py-3">
                             {call.feedback ? (
                               <span
-                                className={`text-sm font-semibold ${getScoreColor(call.feedback.overallScore)}`}
+                                className={`text-[13.5px] font-semibold ${getScoreColor(call.feedback.overallScore)}`}
                               >
                                 {call.feedback.overallScore}
                               </span>
                             ) : (
-                              <span className="text-xs text-muted-foreground">
-                                --
-                              </span>
+                              <span className="text-xs text-[#444656]">--</span>
                             )}
                           </TableCell>
                         </TableRow>
@@ -612,65 +689,210 @@ export function DashboardContent({ userName }: DashboardContentProps) {
                     </TableBody>
                   </Table>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#444656]">
                     No calls in selected range.
                   </p>
                 )}
-              </CardContent>
-            </Card>
+              </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Agent Leaderboard</CardTitle>
-              </CardHeader>
-              <CardContent>
+              {/* Top Agents Leaderboard */}
+              <div className="bg-white rounded-xl shadow-coastal p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-[16px] font-bold text-[#131b2e]">
+                    Top Agents
+                  </h3>
+                  <Trophy className="size-4 text-amber-500" />
+                </div>
                 {data.agentLeaderboard.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Agent</TableHead>
-                        <TableHead>Calls</TableHead>
-                        <TableHead>Connections</TableHead>
-                        <TableHead>Enrollments</TableHead>
-                        <TableHead>Avg Score</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {data.agentLeaderboard.map((agent, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="font-medium">
-                            {agent.name}
-                          </TableCell>
-                          <TableCell>{agent.calls}</TableCell>
-                          <TableCell>{agent.connections}</TableCell>
-                          <TableCell>{agent.enrollments}</TableCell>
-                          <TableCell>
-                            {agent.avgScore !== null ? (
-                              <span
-                                className={`font-semibold ${getScoreColor(agent.avgScore)}`}
-                              >
-                                {agent.avgScore}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                --
-                              </span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div>
+                    {data.agentLeaderboard.map((agent, idx) => {
+                      const rankColor =
+                        idx === 0
+                          ? "#f59e0b"
+                          : idx === 1
+                          ? "#94a3b8"
+                          : idx === 2
+                          ? "#b45309"
+                          : "#444656";
+                      const avatarColor =
+                        AVATAR_COLORS[idx % AVATAR_COLORS.length];
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex items-center gap-3 px-4 py-3.5 rounded-lg transition-colors hover:bg-[#f2f3ff] ${
+                            idx % 2 === 1 ? "bg-[#faf8ff]" : ""
+                          }`}
+                        >
+                          {/* Rank */}
+                          <span
+                            className="text-[16px] font-bold w-6 shrink-0 text-center"
+                            style={{ color: rankColor, fontFamily: "sans-serif" }}
+                          >
+                            {idx + 1}
+                          </span>
+
+                          {/* Avatar */}
+                          <div
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-semibold text-white shrink-0"
+                            style={{ background: avatarColor }}
+                          >
+                            {getInitials(agent.name)}
+                          </div>
+
+                          {/* Name */}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13.5px] font-semibold text-[#131b2e] truncate">
+                              {agent.name}
+                            </div>
+                            <div className="text-[12px] text-[#444656]">
+                              Agent
+                            </div>
+                          </div>
+
+                          {/* Stats */}
+                          <div className="flex gap-4 text-[12.5px] text-[#444656] shrink-0">
+                            <span>
+                              Enrolled{" "}
+                              <strong className="text-[#131b2e]">
+                                {agent.enrollments}
+                              </strong>
+                            </span>
+                            <span>
+                              Calls{" "}
+                              <strong className="text-[#131b2e]">
+                                {agent.calls}
+                              </strong>
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#444656]">
                     No agent activity in selected range.
                   </p>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      ) : null}
+              </div>
+            </div>
+
+            {/* ── Upcoming Follow-ups ── */}
+            <div className="bg-white rounded-xl shadow-coastal p-6">
+              <h3 className="text-[16px] font-bold text-[#131b2e] mb-5">
+                Upcoming Follow-ups
+              </h3>
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-0 hover:bg-transparent">
+                    {["Lead", "Company", "Calls", "Enrolled", "Avg Score"].map(
+                      (h) => (
+                        <TableHead
+                          key={h}
+                          className="text-[11px] font-semibold text-[#444656] uppercase tracking-wide px-4 py-3"
+                        >
+                          {h}
+                        </TableHead>
+                      )
+                    )}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.agentLeaderboard.length > 0 ? (
+                    data.agentLeaderboard.map((agent, idx) => (
+                      <TableRow
+                        key={idx}
+                        className={`border-0 transition-colors hover:bg-[#f2f3ff] ${
+                          idx % 2 === 1 ? "bg-[#faf8ff]" : ""
+                        }`}
+                      >
+                        <TableCell className="text-[13.5px] font-medium text-[#131b2e] px-4 py-3">
+                          {agent.name}
+                        </TableCell>
+                        <TableCell className="text-[13.5px] text-[#444656] px-4 py-3">
+                          --
+                        </TableCell>
+                        <TableCell className="text-[13.5px] text-[#444656] px-4 py-3">
+                          {agent.calls}
+                        </TableCell>
+                        <TableCell className="text-[13.5px] text-[#444656] px-4 py-3">
+                          {agent.enrollments}
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
+                          {agent.avgScore !== null ? (
+                            <span
+                              className={`text-[13.5px] font-semibold ${getScoreColor(agent.avgScore)}`}
+                            >
+                              {agent.avgScore}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-[#444656]">--</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow className="border-0">
+                      <TableCell
+                        colSpan={5}
+                        className="text-sm text-[#444656] px-4 py-6 text-center"
+                      >
+                        No follow-up data available.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* ── Additional Stats (secondary row) ── */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              {[
+                {
+                  label: "Leads Today",
+                  value: data.leadsToday,
+                  sub: "Today",
+                },
+                {
+                  label: "Leads This Week",
+                  value: data.leadsThisWeek,
+                  sub: "WTD (Mon start)",
+                },
+                {
+                  label: "Calls in Range",
+                  value: data.callsInRange,
+                  sub: "Selected period",
+                },
+                {
+                  label: "Enrollments",
+                  value: data.enrollmentsInRange,
+                  sub: "Converted",
+                },
+                {
+                  label: "Won Opps",
+                  value: data.wonOpportunitiesInRange,
+                  sub: "Closed won",
+                  green: true,
+                },
+              ].map(({ label, value, sub, green }) => (
+                <div
+                  key={label}
+                  className="bg-white rounded-xl shadow-coastal p-5"
+                >
+                  <div
+                    className={`text-2xl font-bold ${green ? "text-emerald-600" : "text-[#131b2e]"}`}
+                  >
+                    {value}
+                  </div>
+                  <div className="text-[13px] font-medium text-[#131b2e] mt-1">
+                    {label}
+                  </div>
+                  <div className="text-[12px] text-[#444656] mt-0.5">{sub}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
