@@ -1,19 +1,13 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { CallNotes } from "@/components/calls/call-notes";
 import {
-  ArrowLeft,
   Phone,
   Clock,
   User,
-  Building2,
   Megaphone,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Volume2,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -29,36 +23,39 @@ function formatDuration(seconds: number | null): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function getDispositionColor(disposition: string | null): string {
-  switch (disposition) {
-    case "INTERESTED":
-      return "bg-green-100 text-green-800";
-    case "ENROLLED":
-      return "bg-green-200 text-green-900 font-bold";
-    case "NOT_INTERESTED":
-      return "bg-red-100 text-red-800";
-    case "DNC":
-      return "bg-red-200 text-red-900 font-bold";
-    case "CALLBACK":
-      return "bg-yellow-100 text-yellow-800";
-    case "VOICEMAIL":
-    case "NO_ANSWER":
-      return "bg-gray-100 text-gray-700";
-    default:
-      return "bg-gray-100 text-gray-600";
-  }
-}
+function DispositionBadge({ disposition }: { disposition: string | null }) {
+  if (!disposition) return null;
 
-function getScoreColor(score: number): string {
-  if (score >= 75) return "text-green-600";
-  if (score >= 50) return "text-yellow-600";
-  return "text-red-600";
-}
+  const styleMap: Record<string, string> = {
+    INTERESTED: "bg-[#dcfce7] text-[#15803d]",
+    ENROLLED: "bg-[#dcfce7] text-[#14532d] font-bold",
+    CALLBACK: "bg-[#dbeafe] text-[#1d4ed8]",
+    NOT_INTERESTED: "bg-[#fee2e2] text-[#b91c1c]",
+    DNC: "bg-[#fee2e2] text-[#991b1b] font-bold",
+    NO_ANSWER: "bg-[#f1f1f5] text-[#6b7280]",
+    VOICEMAIL: "bg-[#f1f1f5] text-[#6b7280]",
+    WRONG_NUMBER: "bg-[#ffedd5] text-[#c2410c]",
+    NOT_QUALIFIED: "bg-[#f1f1f5] text-[#6b7280]",
+  };
 
-function getScoreBgColor(score: number): string {
-  if (score >= 75) return "bg-green-50 border-green-200";
-  if (score >= 50) return "bg-yellow-50 border-yellow-200";
-  return "bg-red-50 border-red-200";
+  const labelMap: Record<string, string> = {
+    INTERESTED: "Interested",
+    ENROLLED: "Enrolled",
+    CALLBACK: "Callback",
+    NOT_INTERESTED: "Not Interested",
+    DNC: "DNC",
+    NO_ANSWER: "No Answer",
+    VOICEMAIL: "Voicemail",
+    WRONG_NUMBER: "Wrong Number",
+    NOT_QUALIFIED: "Not Qualified",
+  };
+
+  const cls = styleMap[disposition] ?? "bg-[#f1f1f5] text-[#6b7280]";
+  return (
+    <span className={`inline-block px-3 py-1 rounded-full text-[12px] font-semibold ${cls}`}>
+      {labelMap[disposition] ?? disposition}
+    </span>
+  );
 }
 
 interface TranscriptEntry {
@@ -71,6 +68,42 @@ interface KeyMoment {
   time?: string;
   description?: string;
   text?: string;
+}
+
+// SVG circular progress ring for overall score
+function ScoreRing({ score }: { score: number }) {
+  const r = 38;
+  const circumference = 2 * Math.PI * r; // ~238.76
+  const offset = circumference - (score / 100) * circumference;
+
+  const strokeColor =
+    score >= 75 ? "#16a34a" : score >= 50 ? "#ca8a04" : "#dc2626";
+
+  return (
+    <div className="relative w-[90px] h-[90px] shrink-0">
+      <svg width="90" height="90" viewBox="0 0 90 90" style={{ transform: "rotate(-90deg)" }}>
+        <circle cx="45" cy="45" r={r} fill="none" stroke="#eaedff" strokeWidth="7" />
+        <circle
+          cx="45"
+          cy="45"
+          r={r}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-[22px] font-extrabold text-[#131b2e] leading-none"
+          style={{ fontFamily: "var(--font-sans)" }}>
+          {score}
+        </span>
+        <span className="text-[10px] text-[#444656] leading-none mt-0.5">/ 100</span>
+      </div>
+    </div>
+  );
 }
 
 export default async function CallDetailPage({ params }: CallDetailPageProps) {
@@ -132,278 +165,257 @@ export default async function CallDetailPage({ params }: CallDetailPageProps) {
     }
   }
 
+  const leadName = call.lead?.businessName || call.lead?.contactName || call.phoneNumber;
+  const agentTalk = call.feedback?.talkRatio !== null && call.feedback?.talkRatio !== undefined
+    ? Math.round(call.feedback.talkRatio * 100)
+    : null;
+  const leadTalk = agentTalk !== null ? 100 - agentTalk : null;
+
   return (
-    <div className="space-y-6">
-      {/* Back button & Header */}
-      <div className="flex items-center gap-4">
-        <Link
-          href="/calls"
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="size-4" />
-          Back to Calls
+    <div className="space-y-5">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-[13px] text-[#444656]">
+        <Link href="/calls" className="text-[#3052ff] font-medium hover:underline">
+          Calls
         </Link>
-      </div>
+        <span className="text-[#c4c5d9]">›</span>
+        <span>Call #{id.slice(0, 8).toUpperCase()}</span>
+      </nav>
 
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">
-          Call with {call.lead?.businessName || call.phoneNumber}
+      {/* Header */}
+      <div className="flex flex-wrap items-center gap-4">
+        <h2 className="text-[24px] font-bold tracking-tight text-[#131b2e]">
+          {leadName}
         </h2>
-        <p className="text-muted-foreground">
-          {format(new Date(call.startedAt), "MMMM d, yyyy 'at' h:mm a")}
-        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="flex items-center gap-1.5 text-[13.5px] text-[#444656]">
+            <Calendar className="size-[15px]" />
+            {format(new Date(call.startedAt), "MMM d, yyyy h:mm a")}
+          </span>
+          <span className="inline-block px-3 py-1 rounded-full bg-[#f2f3ff] text-[#3052ff] text-[13px] font-semibold">
+            {formatDuration(call.duration)}
+          </span>
+          <DispositionBadge disposition={call.disposition} />
+        </div>
       </div>
 
-      {/* Info Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Building2 className="size-5 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Lead</p>
-                <p className="font-medium">
-                  {call.lead?.businessName || "--"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {call.lead?.contactName || ""}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Phone className="size-5 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Phone</p>
-                <p className="font-medium">{call.phoneNumber}</p>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  {call.direction === "OUTBOUND" ? (
-                    <ArrowUpRight className="size-3 text-blue-500" />
-                  ) : (
-                    <ArrowDownLeft className="size-3 text-green-500" />
-                  )}
-                  {call.direction}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <User className="size-5 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Agent</p>
-                <p className="font-medium">{call.agent.name}</p>
-                {call.campaign && (
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Megaphone className="size-3" />
-                    {call.campaign.name}
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Clock className="size-5 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Duration</p>
-                <p className="font-medium">{formatDuration(call.duration)}</p>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="secondary"
-                    className={getDispositionColor(call.disposition)}
-                  >
-                    {call.disposition || call.status}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Meta pills row */}
+      <div className="flex flex-wrap gap-3 text-[13px] text-[#444656]">
+        <span className="flex items-center gap-1.5">
+          <Phone className="size-[14px]" />
+          {call.phoneNumber}
+          {" — "}
+          <span className={call.direction === "OUTBOUND" ? "text-[#16a34a] font-semibold" : "text-[#3052ff] font-semibold"}>
+            {call.direction === "OUTBOUND" ? "↑ Outbound" : "↓ Inbound"}
+          </span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <User className="size-[14px]" />
+          {call.agent.name}
+        </span>
+        {call.campaign && (
+          <span className="flex items-center gap-1.5">
+            <Megaphone className="size-[14px]" />
+            {call.campaign.name}
+          </span>
+        )}
+        {call.duration && (
+          <span className="flex items-center gap-1.5">
+            <Clock className="size-[14px]" />
+            {formatDuration(call.duration)}
+          </span>
+        )}
       </div>
 
-      {/* Call Notes */}
-      <CallNotes callId={call.id} initialNotes={call.notes || ""} />
+      {/* SPLIT LAYOUT */}
+      <div className="grid gap-6" style={{ gridTemplateColumns: "55% 45%" }}>
 
-      {/* Transcript Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Transcript</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {transcriptEntries.length > 0 ? (
-            <div className="space-y-3 max-h-[500px] overflow-y-auto">
-              {transcriptEntries.map((entry, idx) => {
-                const isAgent =
-                  entry.speaker.toLowerCase() === "agent" ||
-                  entry.speaker.toLowerCase() === "rep";
-                return (
-                  <div
-                    key={idx}
-                    className={`flex ${isAgent ? "justify-end" : "justify-start"}`}
-                  >
+        {/* ── LEFT: Transcript ── */}
+        <div className="flex flex-col gap-4">
+
+          {/* Summary box */}
+          {call.transcript?.summary && (
+            <div className="bg-[#f2f3ff] rounded-xl p-5">
+              <h3 className="text-[14px] font-bold text-[#131b2e] mb-2">
+                Transcript Summary
+              </h3>
+              <p className="text-[13.5px] leading-relaxed text-[#444656]">
+                {call.transcript.summary}
+              </p>
+            </div>
+          )}
+
+          {/* Scrollable transcript */}
+          <div className="bg-white rounded-xl shadow-coastal overflow-hidden">
+            {transcriptEntries.length > 0 ? (
+              <div className="max-h-[600px] overflow-y-auto divide-y divide-[rgba(196,197,217,0.1)]">
+                {transcriptEntries.map((entry, idx) => {
+                  const isAgent =
+                    entry.speaker.toLowerCase() === "agent" ||
+                    entry.speaker.toLowerCase() === "rep";
+                  return (
                     <div
-                      className={`max-w-[75%] rounded-lg px-4 py-2 ${
-                        isAgent
-                          ? "bg-blue-100 text-blue-900"
-                          : "bg-gray-100 text-gray-900"
-                      }`}
+                      key={idx}
+                      className={`px-5 py-4 ${isAgent ? "bg-white" : "bg-[#f2f3ff]"}`}
                     >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-semibold">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span
+                          className={`text-[12px] font-semibold ${
+                            isAgent ? "text-[#3052ff]" : "text-[#444656]"
+                          }`}
+                        >
                           {entry.speaker}
+                          {isAgent ? " (Agent)" : ""}
                         </span>
                         {entry.timestamp && (
-                          <span className="text-xs opacity-60">
+                          <span className="text-[11px] text-[#999]">
                             {entry.timestamp}
                           </span>
                         )}
                       </div>
-                      <p className="text-sm">{entry.text}</p>
+                      <p className="text-[13.5px] leading-[1.65] text-[#131b2e]">
+                        {entry.text}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="px-5 py-10 text-center text-[13px] text-[#444656]">
+                No transcript available.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── RIGHT: AI Intelligence panel ── */}
+        <div className="flex flex-col gap-4">
+
+          {call.feedback ? (
+            <>
+              {/* Score + metrics card */}
+              <div className="bg-white rounded-xl shadow-coastal p-6">
+                <h3 className="text-[15px] font-bold text-[#131b2e] mb-5">
+                  AI Call Intelligence
+                </h3>
+
+                {/* Overall score */}
+                <div className="flex items-center gap-6 mb-5">
+                  <ScoreRing score={call.feedback.overallScore} />
+                  <div>
+                    <p className="text-[14px] font-bold text-[#131b2e] mb-1">
+                      Overall Score
+                    </p>
+                    <p className="text-[13px] text-[#444656] leading-snug">
+                      {call.feedback.overallScore >= 75
+                        ? "Strong performance on this call."
+                        : call.feedback.overallScore >= 50
+                        ? "Average performance. Room to improve."
+                        : "Below average. Review key moments."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Talk ratio bar */}
+                {agentTalk !== null && leadTalk !== null && (
+                  <div className="mb-5">
+                    <div className="flex justify-between text-[12px] text-[#444656] mb-1.5">
+                      <span>Agent {agentTalk}%</span>
+                      <span>Lead {leadTalk}%</span>
+                    </div>
+                    <div className="flex h-2.5 rounded-full overflow-hidden bg-[#f2f3ff]">
+                      <div
+                        className="gradient-primary"
+                        style={{ width: `${agentTalk}%` }}
+                      />
+                      <div
+                        className="bg-[#c4c5d9]"
+                        style={{ width: `${leadTalk}%` }}
+                      />
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No transcript available.
-            </p>
-          )}
-          {call.transcript?.summary && (
-            <div className="mt-4 rounded-lg border p-4">
-              <p className="text-xs font-medium text-muted-foreground mb-1">
-                Summary
-              </p>
-              <p className="text-sm">{call.transcript.summary}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                )}
 
-      {/* AI Feedback Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>AI Feedback</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {call.feedback ? (
-            <div className="space-y-6">
-              {/* Overall Score */}
-              <div className="flex items-center gap-6">
-                <div
-                  className={`flex size-20 items-center justify-center rounded-full border-4 ${getScoreBgColor(call.feedback.overallScore)}`}
-                >
-                  <span
-                    className={`text-3xl font-bold ${getScoreColor(call.feedback.overallScore)}`}
-                  >
-                    {call.feedback.overallScore}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-lg font-semibold">Overall Score</p>
-                  <p className="text-sm text-muted-foreground">
-                    Based on AI analysis of the call
-                  </p>
-                </div>
-              </div>
-
-              {/* Score Breakdown */}
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-lg border p-4">
-                  <p className="text-xs text-muted-foreground">Talk Ratio</p>
-                  <p className="text-xl font-bold">
-                    {call.feedback.talkRatio !== null
-                      ? `${Math.round(call.feedback.talkRatio * 100)}%`
-                      : "--"}
-                  </p>
-                </div>
-                <div className="rounded-lg border p-4">
-                  <p className="text-xs text-muted-foreground">
-                    Objection Handling
-                  </p>
-                  <p className="text-xl font-bold">
-                    {call.feedback.objectionHandling !== null
-                      ? `${call.feedback.objectionHandling}/100`
-                      : "--"}
-                  </p>
-                </div>
-                <div className="rounded-lg border p-4">
-                  <p className="text-xs text-muted-foreground">
-                    Closing Attempt
-                  </p>
-                  <p className="text-xl font-bold">
-                    {call.feedback.closingAttempt !== null
-                      ? call.feedback.closingAttempt
-                        ? "Yes"
-                        : "No"
-                      : "--"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Strengths */}
-              {strengths.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium mb-2">Strengths</p>
-                  <div className="flex flex-wrap gap-2">
-                    {strengths.map((s, idx) => (
-                      <Badge
-                        key={idx}
-                        variant="secondary"
-                        className="bg-green-100 text-green-800"
-                      >
-                        {s}
-                      </Badge>
-                    ))}
+                {/* Objection handling */}
+                {call.feedback.objectionHandling !== null && (
+                  <div className="flex items-center justify-between py-2.5 border-t border-[rgba(196,197,217,0.15)]">
+                    <span className="text-[13px] text-[#444656]">Objection Handling</span>
+                    <span className="text-[13.5px] font-semibold text-[#131b2e]">
+                      {call.feedback.objectionHandling} / 10
+                    </span>
                   </div>
+                )}
+
+                {/* Closing attempt */}
+                {call.feedback.closingAttempt !== null && (
+                  <div className="flex items-center justify-between py-2.5 border-t border-[rgba(196,197,217,0.15)]">
+                    <span className="text-[13px] text-[#444656]">Closing Attempt</span>
+                    <span
+                      className={`text-[13.5px] font-semibold ${
+                        call.feedback.closingAttempt ? "text-[#16a34a]" : "text-[#444656]"
+                      }`}
+                    >
+                      {call.feedback.closingAttempt ? "✓ Yes" : "✗ No"}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Strengths + Improvements card */}
+              {(strengths.length > 0 || improvements.length > 0) && (
+                <div className="bg-white rounded-xl shadow-coastal p-6">
+                  {strengths.length > 0 && (
+                    <>
+                      <p className="text-[12px] font-semibold text-[#444656] uppercase tracking-wide mb-2">
+                        Strengths
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {strengths.map((s, i) => (
+                          <span
+                            key={i}
+                            className="inline-block px-2.5 py-1 rounded-full text-[11.5px] font-semibold bg-[#dcfce7] text-[#15803d]"
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {improvements.length > 0 && (
+                    <>
+                      <p className="text-[12px] font-semibold text-[#444656] uppercase tracking-wide mb-2">
+                        Areas for Improvement
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {improvements.map((imp, i) => (
+                          <span
+                            key={i}
+                            className="inline-block px-2.5 py-1 rounded-full text-[11.5px] font-semibold bg-[#fef9c3] text-[#a16207]"
+                          >
+                            {imp}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
-              {/* Improvements */}
-              {improvements.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium mb-2">
-                    Areas for Improvement
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {improvements.map((imp, idx) => (
-                      <Badge
-                        key={idx}
-                        variant="secondary"
-                        className="bg-yellow-100 text-yellow-800"
-                      >
-                        {imp}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Key Moments */}
+              {/* Key Moments card */}
               {keyMoments.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium mb-2">Key Moments</p>
-                  <div className="relative border-l-2 border-gray-200 pl-4 space-y-4">
-                    {keyMoments.map((moment, idx) => (
-                      <div key={idx} className="relative">
-                        <div className="absolute -left-[1.3rem] top-1 size-2.5 rounded-full bg-blue-500" />
+                <div className="bg-white rounded-xl shadow-coastal p-6">
+                  <p className="text-[12px] font-semibold text-[#444656] uppercase tracking-wide mb-3">
+                    Key Moments
+                  </p>
+                  <div className="space-y-0">
+                    {keyMoments.map((moment, i) => (
+                      <div key={i} className="flex gap-2.5 py-2">
                         {moment.time && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-[12px] font-semibold text-[#3052ff] min-w-[42px] pt-0.5 shrink-0">
                             {moment.time}
                           </span>
                         )}
-                        <p className="text-sm">
+                        <p className="text-[13px] text-[#131b2e] leading-snug">
                           {moment.description || moment.text || String(moment)}
                         </p>
                       </div>
@@ -411,29 +423,27 @@ export default async function CallDetailPage({ params }: CallDetailPageProps) {
                   </div>
                 </div>
               )}
-            </div>
+            </>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              AI feedback will be available after call analysis.
-            </p>
+            <div className="bg-white rounded-xl shadow-coastal p-6">
+              <h3 className="text-[15px] font-bold text-[#131b2e] mb-3">
+                AI Call Intelligence
+              </h3>
+              <p className="text-[13px] text-[#444656]">
+                AI feedback will be available after call analysis.
+              </p>
+            </div>
           )}
-        </CardContent>
-      </Card>
 
-      {/* Recording Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recording</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3 rounded-lg border border-dashed p-6">
-            <Volume2 className="size-5 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              Recording playback coming soon.
-            </p>
+          {/* Call Notes — inline in AI panel */}
+          <div className="bg-white rounded-xl shadow-coastal p-6">
+            <h3 className="text-[15px] font-bold text-[#131b2e] mb-3">
+              Call Notes
+            </h3>
+            <CallNotes callId={call.id} initialNotes={call.notes || ""} />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

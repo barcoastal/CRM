@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CallLogTable } from "@/components/calls/call-log-table";
+import { Download } from "lucide-react";
 
 interface CallsPageProps {
   searchParams: Promise<{
@@ -103,11 +104,13 @@ export default async function CallsPage({ searchParams }: CallsPageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
+      {/* Page header */}
+      <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">Call History</h2>
-        <p className="text-muted-foreground">
-          Browse and filter all call records.
-        </p>
+        <button className="flex items-center gap-2 px-4 py-2 bg-white shadow-coastal rounded-sm text-[13px] font-medium text-[#131b2e] hover:bg-[#f2f3ff] transition-colors">
+          <Download className="size-4" />
+          Export
+        </button>
       </div>
 
       <CallLogTable

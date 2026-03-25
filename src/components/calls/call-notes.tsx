@@ -1,10 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Save, Loader2, Check } from "lucide-react";
+import { Loader2, Check, Save } from "lucide-react";
 
 interface CallNotesProps {
   callId: string;
@@ -43,38 +40,34 @@ export function CallNotes({ callId, initialNotes }: CallNotesProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Call Notes</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <Textarea
-            placeholder="Add notes about this call..."
-            value={notes}
-            onChange={(e) => {
-              setNotes(e.target.value);
-              setSaved(false);
-            }}
-            rows={4}
-          />
-          <div className="flex items-center gap-3">
-            <Button onClick={handleSave} disabled={isPending} size="sm">
-              {isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : saved ? (
-                <Check className="size-4" />
-              ) : (
-                <Save className="size-4" />
-              )}
-              {isPending ? "Saving..." : saved ? "Saved" : "Save Notes"}
-            </Button>
-            {error && (
-              <p className="text-sm text-red-500">{error}</p>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      <textarea
+        placeholder="Add notes about this call..."
+        value={notes}
+        onChange={(e) => {
+          setNotes(e.target.value);
+          setSaved(false);
+        }}
+        rows={4}
+        className="w-full min-h-[90px] border-none bg-[#f2f3ff] rounded-lg px-3.5 py-3 font-[inherit] text-[13px] text-[#131b2e] placeholder:text-[#444656] resize-y outline-none focus:ring-1 focus:ring-[#3052ff]"
+      />
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={isPending}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-sm text-[13px] font-medium text-white gradient-primary hover:opacity-90 transition-opacity disabled:opacity-60"
+        >
+          {isPending ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : saved ? (
+            <Check className="size-3.5" />
+          ) : (
+            <Save className="size-3.5" />
+          )}
+          {isPending ? "Saving..." : saved ? "Saved" : "Save Notes"}
+        </button>
+        {error && <p className="text-[13px] text-red-500">{error}</p>}
+      </div>
+    </div>
   );
 }
