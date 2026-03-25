@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Bell, LogOut } from "lucide-react";
+import { Search, Bell, LogOut, Menu } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import {
   DropdownMenu,
@@ -20,21 +20,41 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export function Topbar() {
+export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { data: session } = useSession();
   const userName = session?.user?.name ?? "User";
   const userEmail = session?.user?.email ?? "";
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-[#eaedff] bg-white px-8 shadow-sm">
-      {/* Search */}
+    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-[#eaedff] bg-white px-4 md:px-8 shadow-sm">
+      {/* Hamburger — mobile only */}
+      <button
+        className="md:hidden flex size-10 items-center justify-center rounded-lg text-[#444656] transition-colors hover:bg-[#f2f3ff]"
+        aria-label="Open navigation"
+        onClick={onMenuClick}
+      >
+        <Menu className="size-5" />
+      </button>
+
+      {/* Search — full on desktop, icon-only on mobile */}
       <div className="relative flex-1 max-w-md">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#444656]" />
-        <input
-          type="search"
-          placeholder="Search leads, clients, calls..."
-          className="h-9 w-full rounded-lg bg-[#f2f3ff] pl-9 pr-4 text-[13.5px] text-[#131b2e] placeholder:text-[#444656] outline-none focus:ring-2 focus:ring-[#3052ff]/20 border-none"
-        />
+        {/* Desktop search input */}
+        <div className="hidden md:block relative">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#444656]" />
+          <input
+            type="search"
+            placeholder="Search leads, clients, calls..."
+            className="h-9 w-full rounded-lg bg-[#f2f3ff] pl-9 pr-4 text-[13.5px] text-[#131b2e] placeholder:text-[#444656] outline-none focus:ring-2 focus:ring-[#3052ff]/20 border-none"
+          />
+        </div>
+
+        {/* Mobile search icon button */}
+        <button
+          className="md:hidden flex size-10 items-center justify-center rounded-lg text-[#444656] transition-colors hover:bg-[#f2f3ff]"
+          aria-label="Search"
+        >
+          <Search className="size-5" />
+        </button>
       </div>
 
       {/* Right actions */}
