@@ -47,6 +47,19 @@ model Lead {
   score           Int?
   scoreReason     String?
   notes           String?
+
+  // Marketing Attribution
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmTerm         String?
+  utmContent      String?
+
+  // Click IDs
+  eliClickId      String?
+  redtrackClickId String?
+  gclid           String?
+  fbclid          String?
   lastContactedAt DateTime?
   nextFollowUpAt  DateTime?
   assignedToId    String?

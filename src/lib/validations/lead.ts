@@ -37,6 +37,17 @@ export const createLeadSchema = z.object({
   source: z.enum(LEAD_SOURCES).default("OTHER"),
   notes: z.string().optional().or(z.literal("")),
   assignedToId: z.string().optional().or(z.literal("")),
+  // Marketing Attribution
+  utmSource: z.string().optional().or(z.literal("")),
+  utmMedium: z.string().optional().or(z.literal("")),
+  utmCampaign: z.string().optional().or(z.literal("")),
+  utmTerm: z.string().optional().or(z.literal("")),
+  utmContent: z.string().optional().or(z.literal("")),
+  // Click IDs
+  eliClickId: z.string().optional().or(z.literal("")),
+  redtrackClickId: z.string().optional().or(z.literal("")),
+  gclid: z.string().optional().or(z.literal("")),
+  fbclid: z.string().optional().or(z.literal("")),
 });
 
 export const updateLeadSchema = z.object({
@@ -54,6 +65,17 @@ export const updateLeadSchema = z.object({
   assignedToId: z.string().optional().or(z.literal("")),
   score: z.coerce.number().min(0).max(100).optional(),
   nextFollowUpAt: z.string().optional().or(z.literal("")),
+  // Marketing Attribution
+  utmSource: z.string().optional().or(z.literal("")),
+  utmMedium: z.string().optional().or(z.literal("")),
+  utmCampaign: z.string().optional().or(z.literal("")),
+  utmTerm: z.string().optional().or(z.literal("")),
+  utmContent: z.string().optional().or(z.literal("")),
+  // Click IDs
+  eliClickId: z.string().optional().or(z.literal("")),
+  redtrackClickId: z.string().optional().or(z.literal("")),
+  gclid: z.string().optional().or(z.literal("")),
+  fbclid: z.string().optional().or(z.literal("")),
 });
 
 export type CreateLeadInput = z.output<typeof createLeadSchema>;

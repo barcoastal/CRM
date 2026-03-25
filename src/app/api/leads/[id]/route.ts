@@ -176,6 +176,15 @@ export async function PATCH(
   if (data.nextFollowUpAt !== undefined) {
     updateData.nextFollowUpAt = data.nextFollowUpAt ? new Date(data.nextFollowUpAt) : null;
   }
+  if (data.utmSource !== undefined) updateData.utmSource = data.utmSource || null;
+  if (data.utmMedium !== undefined) updateData.utmMedium = data.utmMedium || null;
+  if (data.utmCampaign !== undefined) updateData.utmCampaign = data.utmCampaign || null;
+  if (data.utmTerm !== undefined) updateData.utmTerm = data.utmTerm || null;
+  if (data.utmContent !== undefined) updateData.utmContent = data.utmContent || null;
+  if (data.eliClickId !== undefined) updateData.eliClickId = data.eliClickId || null;
+  if (data.redtrackClickId !== undefined) updateData.redtrackClickId = data.redtrackClickId || null;
+  if (data.gclid !== undefined) updateData.gclid = data.gclid || null;
+  if (data.fbclid !== undefined) updateData.fbclid = data.fbclid || null;
 
   const lead = await prisma.lead.update({
     where: { id },

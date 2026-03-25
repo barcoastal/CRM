@@ -18,6 +18,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -32,17 +36,18 @@ const navItems = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+// Shared nav content used by both desktop sidebar and mobile sheet
+function SidebarNav({
+  collapsed,
+  onNavClick,
+}: {
+  collapsed?: boolean;
+  onNavClick?: () => void;
+}) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside
-      className={cn(
-        "fixed top-0 left-0 bottom-0 z-50 flex flex-col bg-[#283044] transition-all duration-200",
-        collapsed ? "w-[68px]" : "w-[240px]"
-      )}
-    >
+    <>
       {/* Logo */}
       <div
         className={cn(
@@ -72,6 +77,7 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               title={collapsed ? item.label : undefined}
+              onClick={onNavClick}
               className={cn(
                 "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13.5px] font-medium transition-colors duration-150",
                 isActive
@@ -86,6 +92,22 @@ export function Sidebar() {
           );
         })}
       </nav>
+    </>
+  );
+}
+
+// Desktop fixed sidebar
+export function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <aside
+      className={cn(
+        "fixed top-0 left-0 bottom-0 z-50 hidden md:flex flex-col bg-[#283044] transition-all duration-200",
+        collapsed ? "w-[68px]" : "w-[240px]"
+      )}
+    >
+      <SidebarNav collapsed={collapsed} />
 
       {/* Collapse toggle */}
       <div className="border-t border-white/[0.08] p-3">
@@ -111,6 +133,23 @@ export function Sidebar() {
   );
 }
 
-export function MobileSidebar() {
-  return null;
+// Mobile sheet drawer
+export function MobileSidebar({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent
+        side="left"
+        showCloseButton={false}
+        className="p-0 w-[240px] bg-[#283044] border-r-0 flex flex-col gap-0"
+      >
+        <SidebarNav onNavClick={onClose} />
+      </SheetContent>
+    </Sheet>
+  );
 }

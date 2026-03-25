@@ -57,6 +57,15 @@ export async function POST(request: NextRequest) {
       status: "NEW",
       notes: data.notes || null,
       assignedToId: data.assignedToId || null,
+      utmSource: data.utmSource || null,
+      utmMedium: data.utmMedium || null,
+      utmCampaign: data.utmCampaign || null,
+      utmTerm: data.utmTerm || null,
+      utmContent: data.utmContent || null,
+      eliClickId: data.eliClickId || null,
+      redtrackClickId: data.redtrackClickId || null,
+      gclid: data.gclid || null,
+      fbclid: data.fbclid || null,
     },
   });
 
