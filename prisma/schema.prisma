@@ -10,50 +10,226 @@ datasource db {
 // ============ AUTH ============
 
 model User {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   name         String
-  email        String   @unique
+  email        String    @unique
   passwordHash String
-  role         String   @default("SALES_REP") // ADMIN, MANAGER, SALES_REP, NEGOTIATOR
+  role         String    @default("SALES_REP") // LEGACY string role — replaced by profileId in Phase 2
   avatar       String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  leads              Lead[]
-  calls              Call[]
-  campaigns          CampaignAgent[]
-  callFeedbacks      CallFeedback[]
-  assignedClients    Client[]       @relation("ClientNegotiator")
-  negotiations       Negotiation[]
-  uploadedDocuments  Document[]
-  opportunities      Opportunity[]  @relation("OpportunityAssignee")
+  // Phase 1 access model
+  profileId       String?
+  profile         Profile?            @relation(fields: [profileId], references: [id])
+  hierarchyRoleId String?
+  hierarchyRole   Role?               @relation("UserRole", fields: [hierarchyRoleId], references: [id])
+  managerId       String?
+  manager         User?               @relation("UserManager", fields: [managerId], references: [id])
+  reports         User[]              @relation("UserManager")
+  permissionSets  UserPermissionSet[]
+  groupMembers    GroupMember[]
+  auditEntries    AuditLog[]
+  appLogs         ApplicationLog[]
+
+  leads             Lead[]
+  calls             Call[]
+  campaigns         CampaignAgent[]
+  callFeedbacks     CallFeedback[]
+  assignedClients   Client[]        @relation("ClientNegotiator")
+  negotiations      Negotiation[]
+  uploadedDocuments Document[]
+  opportunities     Opportunity[]   @relation("OpportunityAssignee")
+}
+
+// ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
+
+model Role {
+  id            String   @id @default(cuid())
+  name          String   @unique // "VP of Sales"
+  developerName String   @unique // "VPofSales"
+  parentId      String?
+  parent        Role?    @relation("RoleHierarchy", fields: [parentId], references: [id])
+  children      Role[]   @relation("RoleHierarchy")
+  users         User[]   @relation("UserRole")
+  createdAt     DateTime @default(now())
+}
+
+model Profile {
+  id          String              @id @default(cuid())
+  name        String              @unique // "Closer"
+  label       String // "Closer"
+  description String?
+  userType    String              @default("Standard") // Standard | Guest | Integration
+  isActive    Boolean             @default(true)
+  users       User[]
+  permissions ProfilePermission[]
+  createdAt   DateTime            @default(now())
+}
+
+model PermissionSet {
+  id           String                    @id @default(cuid())
+  name         String                    @unique // "Export_Reports"
+  label        String // "Export Reports"
+  description  String?
+  isCustom     Boolean                   @default(true)
+  permissions  PermissionSetPermission[]
+  profileLinks ProfilePermission[]
+  userLinks    UserPermissionSet[]
+  groupItems   PermissionSetGroupItem[]
+  createdAt    DateTime                  @default(now())
+}
+
+model PermissionSetGroup {
+  id          String                   @id @default(cuid())
+  name        String                   @unique // "Closers_PSG"
+  label       String // "Closers PSG"
+  description String?
+  items       PermissionSetGroupItem[]
+  createdAt   DateTime                 @default(now())
+}
+
+model PermissionSetGroupItem {
+  id              String             @id @default(cuid())
+  groupId         String
+  group           PermissionSetGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  permissionSetId String
+  permissionSet   PermissionSet      @relation(fields: [permissionSetId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, permissionSetId])
+}
+
+// A permission KEY (e.g. "Lead.Edit", "Reports.Export") — stored as a string, no separate catalog table.
+// PermissionSet → many permission keys via this junction.
+model PermissionSetPermission {
+  id              String        @id @default(cuid())
+  permissionSetId String
+  permissionSet   PermissionSet @relation(fields: [permissionSetId], references: [id], onDelete: Cascade)
+  key             String // e.g. "Lead.Edit", "Opportunity.Delete", "Reports.Export"
+
+  @@unique([permissionSetId, key])
+}
+
+model ProfilePermission {
+  id              String        @id @default(cuid())
+  profileId       String
+  profile         Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  permissionSetId String
+  permissionSet   PermissionSet @relation(fields: [permissionSetId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, permissionSetId])
+}
+
+model UserPermissionSet {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissionSetId String
+  permissionSet   PermissionSet @relation(fields: [permissionSetId], references: [id], onDelete: Cascade)
+  assignedAt      DateTime      @default(now())
+
+  @@unique([userId, permissionSetId])
+}
+
+// ============ GROUPS / QUEUES (SF Group object, Type=Queue|Role|PublicGroup) ============
+
+model Group {
+  id                String        @id @default(cuid())
+  name              String // "Closer Pool"
+  developerName     String        @unique // "Closer_Pool"
+  type              String        @default("PUBLIC_GROUP") // QUEUE | PUBLIC_GROUP | ROLE_GROUP
+  description       String?
+  // For queues: which sObject types can be assigned (e.g. "Lead", "Case")
+  supportedEntities String? // CSV: "Lead,Case"
+  members           GroupMember[]
+  createdAt         DateTime      @default(now())
+}
+
+model GroupMember {
+  id       String   @id @default(cuid())
+  groupId  String
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+// ============ AUDIT + LOGGING ============
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  entity    String // "Lead", "Opportunity", "Debt"
+  entityId  String
+  action    String // CREATE | UPDATE | DELETE
+  before    Json?
+  after     Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ApplicationLog {
+  id        String   @id @default(cuid())
+  level     String   @default("INFO") // DEBUG | INFO | WARN | ERROR
+  source    String // "auth", "dialer", "payment-webhook"
+  message   String
+  payload   Json?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([level])
+  @@index([source])
+  @@index([createdAt])
+}
+
+model AsyncOperation {
+  id         String    @id @default(cuid())
+  type       String // "bulk-reassign-leads", "draft-batch-run"
+  status     String    @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED
+  payload    Json?
+  result     Json?
+  error      String?
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([status])
+  @@index([type])
 }
 
 // ============ LEADS ============
 
 model Lead {
-  id              String   @id @default(cuid())
-  businessName    String
-  contactName     String
-  phone           String
-  email           String?
-  ein             String?  @unique
-  industry        String?
-  annualRevenue   Float?
-  totalDebtEst    Float?
-  source          String   @default("OTHER") // WEBSITE, REFERRAL, MAILER, PURCHASED_LIST, COLD_CALL, SOCIAL, OTHER
-  status          String   @default("NEW") // NEW, CONTACTED, QUALIFIED, UNQUALIFIED, CALLBACK, ENROLLED, LOST, DNC
-  score           Int?
-  scoreReason     String?
-  notes           String?
+  id            String  @id @default(cuid())
+  businessName  String
+  contactName   String
+  phone         String
+  email         String?
+  ein           String? @unique
+  industry      String?
+  annualRevenue Float?
+  totalDebtEst  Float?
+  source        String  @default("OTHER") // WEBSITE, REFERRAL, MAILER, PURCHASED_LIST, COLD_CALL, SOCIAL, OTHER
+  status        String  @default("NEW") // NEW, CONTACTED, QUALIFIED, UNQUALIFIED, CALLBACK, ENROLLED, LOST, DNC
+  score         Int?
+  scoreReason   String?
+  notes         String?
 
   // Marketing Attribution
-  utmSource       String?
-  utmMedium       String?
-  utmCampaign     String?
-  utmTerm         String?
-  utmContent      String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
 
   // Click IDs
   eliClickId      String?
@@ -63,9 +239,9 @@ model Lead {
   lastContactedAt DateTime?
   nextFollowUpAt  DateTime?
   assignedToId    String?
-  assignedTo      User?    @relation(fields: [assignedToId], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  assignedTo      User?     @relation(fields: [assignedToId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   calls            Call[]
   campaignContacts CampaignContact[]
@@ -82,8 +258,8 @@ model Campaign {
   dialerMode  String   @default("POWER") // POWER, PREVIEW, MANUAL
   status      String   @default("DRAFT") // DRAFT, ACTIVE, PAUSED, COMPLETED
   script      String?
-  startTime   String?  // "09:00"
-  endTime     String?  // "20:00"
+  startTime   String? // "09:00"
+  endTime     String? // "20:00"
   timezone    String   @default("America/New_York")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -122,24 +298,24 @@ model CampaignAgent {
 // ============ CALLS ============
 
 model Call {
-  id          String    @id @default(cuid())
-  direction   String    @default("OUTBOUND") // INBOUND, OUTBOUND
-  status      String    @default("INITIATED") // INITIATED, RINGING, IN_PROGRESS, COMPLETED, NO_ANSWER, BUSY, FAILED, VOICEMAIL
-  disposition String?   // INTERESTED, NOT_INTERESTED, CALLBACK, NOT_QUALIFIED, WRONG_NUMBER, VOICEMAIL, NO_ANSWER, DNC, ENROLLED
-  leadId      String?
-  lead        Lead?     @relation(fields: [leadId], references: [id])
-  agentId     String
-  agent       User      @relation(fields: [agentId], references: [id])
-  campaignId  String?
-  campaign    Campaign? @relation(fields: [campaignId], references: [id])
-  phoneNumber String
-  duration    Int?      // seconds
+  id           String    @id @default(cuid())
+  direction    String    @default("OUTBOUND") // INBOUND, OUTBOUND
+  status       String    @default("INITIATED") // INITIATED, RINGING, IN_PROGRESS, COMPLETED, NO_ANSWER, BUSY, FAILED, VOICEMAIL
+  disposition  String? // INTERESTED, NOT_INTERESTED, CALLBACK, NOT_QUALIFIED, WRONG_NUMBER, VOICEMAIL, NO_ANSWER, DNC, ENROLLED
+  leadId       String?
+  lead         Lead?     @relation(fields: [leadId], references: [id])
+  agentId      String
+  agent        User      @relation(fields: [agentId], references: [id])
+  campaignId   String?
+  campaign     Campaign? @relation(fields: [campaignId], references: [id])
+  phoneNumber  String
+  duration     Int? // seconds
   recordingUrl String?
-  startedAt   DateTime  @default(now())
-  answeredAt  DateTime?
-  endedAt     DateTime?
-  notes       String?
-  createdAt   DateTime  @default(now())
+  startedAt    DateTime  @default(now())
+  answeredAt   DateTime?
+  endedAt      DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
 
   transcript Transcript?
   feedback   CallFeedback?
@@ -151,10 +327,10 @@ model Transcript {
   id        String   @id @default(cuid())
   callId    String   @unique
   call      Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
-  content   String   // JSON array of { speaker, text, timestamp }
+  content   String // JSON array of { speaker, text, timestamp }
   summary   String?
-  keywords  String?  // JSON array of strings
-  sentiment String?  // positive, negative, neutral
+  keywords  String? // JSON array of strings
+  sentiment String? // positive, negative, neutral
   createdAt DateTime @default(now())
 }
 
@@ -166,52 +342,52 @@ model CallFeedback {
   call              Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
   agentId           String
   agent             User     @relation(fields: [agentId], references: [id])
-  overallScore      Int      // 0-100
+  overallScore      Int // 0-100
   talkRatio         Float?
-  objectionHandling Int?     // 0-100
+  objectionHandling Int? // 0-100
   closingAttempt    Boolean?
-  keyMoments        String?  // JSON array
-  improvements      String?  // JSON array
-  strengths         String?  // JSON array
+  keyMoments        String? // JSON array
+  improvements      String? // JSON array
+  strengths         String? // JSON array
   createdAt         DateTime @default(now())
 }
 
 // ============ CLIENTS (Post-Enrollment) ============
 
 model Opportunity {
-  id                String    @id @default(cuid())
-  leadId            String    @unique
-  lead              Lead      @relation(fields: [leadId], references: [id])
-  stage             String    @default("WORKING_OPPORTUNITY")
+  id                String     @id @default(cuid())
+  leadId            String     @unique
+  lead              Lead       @relation(fields: [leadId], references: [id])
+  stage             String     @default("WORKING_OPPORTUNITY")
   totalDebt         Float?
   expectedCloseDate DateTime?
   assignedToId      String?
-  assignedTo        User?     @relation("OpportunityAssignee", fields: [assignedToId], references: [id])
+  assignedTo        User?      @relation("OpportunityAssignee", fields: [assignedToId], references: [id])
   notes             String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
   client            Client?
   debts             Debt[]
   documents         Document[]
 }
 
 model Client {
-  id                  String       @id @default(cuid())
-  leadId              String       @unique
-  lead                Lead         @relation(fields: [leadId], references: [id])
-  opportunityId       String?      @unique
-  opportunity         Opportunity? @relation(fields: [opportunityId], references: [id])
-  programStartDate    DateTime
-  programLength       Int      // months
-  monthlyPayment      Float
-  totalEnrolledDebt   Float
-  totalSettled        Float    @default(0)
-  totalFees           Float    @default(0)
-  status              String   @default("ACTIVE") // ACTIVE, GRADUATED, DROPPED, ON_HOLD
+  id                   String       @id @default(cuid())
+  leadId               String       @unique
+  lead                 Lead         @relation(fields: [leadId], references: [id])
+  opportunityId        String?      @unique
+  opportunity          Opportunity? @relation(fields: [opportunityId], references: [id])
+  programStartDate     DateTime
+  programLength        Int // months
+  monthlyPayment       Float
+  totalEnrolledDebt    Float
+  totalSettled         Float        @default(0)
+  totalFees            Float        @default(0)
+  status               String       @default("ACTIVE") // ACTIVE, GRADUATED, DROPPED, ON_HOLD
   assignedNegotiatorId String?
-  assignedNegotiator  User?    @relation("ClientNegotiator", fields: [assignedNegotiatorId], references: [id])
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  assignedNegotiator   User?        @relation("ClientNegotiator", fields: [assignedNegotiatorId], references: [id])
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 
   debts     Debt[]
   payments  Payment[]
@@ -231,16 +407,16 @@ model Debt {
   originalBalance Float
   currentBalance  Float
   enrolledBalance Float
-  status          String    @default("ENROLLED") // ENROLLED, NEGOTIATING, SETTLED, PAID, DISPUTED, WRITTEN_OFF
+  status          String       @default("ENROLLED") // ENROLLED, NEGOTIATING, SETTLED, PAID, DISPUTED, WRITTEN_OFF
   settledAmount   Float?
   settledDate     DateTime?
   savingsAmount   Float?
   savingsPercent  Float?
   lastPaymentDate DateTime?
-  isDelinquent    Boolean   @default(false)
+  isDelinquent    Boolean      @default(false)
   notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   negotiations Negotiation[]
   payments     Payment[]
@@ -252,7 +428,7 @@ model Negotiation {
   debt          Debt     @relation(fields: [debtId], references: [id], onDelete: Cascade)
   negotiatorId  String
   negotiator    User     @relation(fields: [negotiatorId], references: [id])
-  type          String   // CALL, EMAIL, LETTER, FAX
+  type          String // CALL, EMAIL, LETTER, FAX
   date          DateTime
   offerAmount   Float?
   offerPercent  Float?
@@ -268,7 +444,7 @@ model Payment {
   client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   debtId        String?
   debt          Debt?     @relation(fields: [debtId], references: [id])
-  type          String    // CLIENT_PAYMENT, SETTLEMENT_PAYOUT, FEE
+  type          String // CLIENT_PAYMENT, SETTLEMENT_PAYOUT, FEE
   amount        Float
   scheduledDate DateTime
   paidDate      DateTime?
@@ -279,16 +455,16 @@ model Payment {
 }
 
 model Document {
-  id              String       @id @default(cuid())
-  clientId        String?
-  client          Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  opportunityId   String?
-  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  name            String
-  type         String   // ENGAGEMENT_AGREEMENT, HARDSHIP_LETTER, AUTHORIZATION, SETTLEMENT_OFFER, BANK_STATEMENT, TAX_RETURN, OTHER
-  filePath     String
-  fileSize     Int?
-  uploadedById String
-  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
-  createdAt    DateTime @default(now())
+  id            String       @id @default(cuid())
+  clientId      String?
+  client        Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  name          String
+  type          String // ENGAGEMENT_AGREEMENT, HARDSHIP_LETTER, AUTHORIZATION, SETTLEMENT_OFFER, BANK_STATEMENT, TAX_RETURN, OTHER
+  filePath      String
+  fileSize      Int?
+  uploadedById  String
+  uploadedBy    User         @relation(fields: [uploadedById], references: [id])
+  createdAt     DateTime     @default(now())
 }
