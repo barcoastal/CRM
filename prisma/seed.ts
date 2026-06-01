@@ -273,6 +273,9 @@ async function nukeAccessControl() {
 }
 
 async function nukeBusinessData() {
+  // Phase 4 — drop tasks/events first (they reference everything)
+  await prisma.task.deleteMany();
+  await prisma.event.deleteMany();
   await prisma.callFeedback.deleteMany();
   await prisma.transcript.deleteMany();
   await prisma.call.deleteMany();
@@ -281,7 +284,7 @@ async function nukeBusinessData() {
   await prisma.campaign.deleteMany();
   await prisma.negotiation.deleteMany();
   await prisma.payment.deleteMany();
-  // Phase 3 entities — drop before Debt/Account/User
+  // Phase 3 entities
   await prisma.settlement.deleteMany();
   await prisma.offer.deleteMany();
   await prisma.fee.deleteMany();
@@ -710,6 +713,80 @@ async function main() {
     },
   });
 
+  console.log("Seeding tasks + events...");
+
+  // Tasks on Acme: a completed disposition + a future follow-up + a past-due call
+  await prisma.task.create({
+    data: {
+      recordType: "DISPOSITION",
+      subject: "Confirmed program details with Bob — ready to send contract",
+      type: "CALL", status: "COMPLETED",
+      accountId: acmeAccount.id, contactId: acmeContact.id,
+      ownerId: closer.id, completedAt: new Date("2026-01-24"),
+      disposition: "INTERESTED", outcome: "Sent for signature",
+      notes: "Bob asked about restructuring two business lines too — flagged for upsell",
+    },
+  });
+  await prisma.task.create({
+    data: {
+      recordType: "ACTIVITY",
+      subject: "Follow up on Chase settlement payoff",
+      type: "CALL", status: "NOT_STARTED", priority: "HIGH",
+      accountId: acmeAccount.id, contactId: acmeContact.id,
+      ownerId: negotiator.id,
+      dueDate: new Date("2026-06-08"),
+    },
+  });
+  await prisma.task.create({
+    data: {
+      recordType: "ACTIVITY",
+      subject: "Address failed May draft — contact Bob re: bank balance",
+      type: "CALL", status: "IN_PROGRESS", priority: "HIGH",
+      accountId: acmeAccount.id, contactId: acmeContact.id, programPlanId: acmePlan.id,
+      ownerId: csa.id,
+      dueDate: new Date("2026-05-05"),
+    },
+  });
+  // Sunrise — open task for the proposed plan
+  await prisma.task.create({
+    data: {
+      recordType: "ACTIVITY",
+      subject: "Send DocuSign for Sunrise Restaurant program contract",
+      type: "EMAIL", status: "NOT_STARTED", priority: "NORMAL",
+      accountId: sunriseAccount.id, contactId: sunriseContact.id,
+      ownerId: closer.id,
+      dueDate: new Date("2026-06-03"),
+    },
+  });
+
+  // Event: a scheduled call with Acme
+  await prisma.event.create({
+    data: {
+      recordType: "EVENT",
+      subject: "Quarterly check-in with Bob Johnson",
+      description: "Review progress, discuss remaining debts, set expectations for next 3 months",
+      accountId: acmeAccount.id, contactId: acmeContact.id,
+      ownerId: closer.id,
+      startAt: new Date("2026-06-10T15:00:00Z"),
+      endAt: new Date("2026-06-10T15:30:00Z"),
+      status: "SCHEDULED",
+    },
+  });
+  // EVENT_DISPOSITION: log a past meeting that already happened
+  await prisma.event.create({
+    data: {
+      recordType: "EVENT_DISPOSITION",
+      subject: "Intake meeting with Acme — Bob + spouse",
+      accountId: acmeAccount.id, contactId: acmeContact.id,
+      ownerId: closer.id,
+      startAt: new Date("2026-01-20T14:00:00Z"),
+      endAt: new Date("2026-01-20T15:00:00Z"),
+      status: "COMPLETED",
+      disposition: "QUALIFIED", outcome: "Signed up for Debt Settlement program",
+      notes: "Solid affordability profile, motivated, clear understanding of timeline",
+    },
+  });
+
   console.log("Seeding sample leads + campaign...");
   const leads = await Promise.all([
     prisma.lead.create({
@@ -788,6 +865,8 @@ async function main() {
   console.log(`  Settlements:      1 (PENDING_PAYOFF, 60% savings)`);
   console.log(`  Fees:             2 (Setup + Monthly Admin)`);
   console.log(`  FinancialSummary: 1 snapshot`);
+  console.log(`  Tasks:            4 (1 disposition + 3 open)`);
+  console.log(`  Events:           2 (1 upcoming + 1 past intake)`);
   console.log(`  Leads:            ${leads.length}`);
   console.log(`  Campaign:         ${campaign.name}`);
   console.log(`\n  Logins (all password123):`);

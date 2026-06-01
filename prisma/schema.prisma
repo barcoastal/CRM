@@ -48,6 +48,8 @@ model User {
   feesCharged       Fee[]           @relation("FeeChargedBy")
   offersCreated     Offer[]         @relation("OfferCreatedBy")
   settlementsApproved Settlement[]  @relation("SettlementApprovedBy")
+  tasksOwned        Task[]          @relation("TaskOwner")
+  eventsOwned       Event[]         @relation("EventOwner")
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
@@ -252,6 +254,8 @@ model Account {
   programPlans      ProgramPlan[]
   paymentSummary    PaymentSummary?
   financialSummaries FinancialSummary[]
+  tasks             Task[]                   @relation("AccountTasks")
+  events            Event[]                  @relation("AccountEvents")
 
   @@index([recordType])
 }
@@ -277,6 +281,8 @@ model Contact {
   accountRelations    AccountContactRelation[]
   primaryForOpportunity Opportunity[]          @relation("OpportunityPrimaryContact")
   convertedFromLead   Lead[]                   @relation("LeadConvertedContact")
+  tasks               Task[]                   @relation("ContactTasks")
+  events              Event[]                  @relation("ContactEvents")
 }
 
 model AccountContactRelation {
@@ -360,6 +366,8 @@ model Lead {
   campaignContacts CampaignContact[]
   client           Client?
   opportunity      Opportunity?
+  tasks            Task[]            @relation("LeadTasks")
+  events           Event[]           @relation("LeadEvents")
 
   @@index([recordType])
   @@index([convertedAccountId])
@@ -435,6 +443,7 @@ model Call {
 
   transcript Transcript?
   feedback   CallFeedback?
+  task       Task?
 }
 
 // ============ AI: TRANSCRIPTION ============
@@ -492,6 +501,8 @@ model Opportunity {
   documents         Document[]
   programPlans      ProgramPlan[]
   financialSummaries FinancialSummary[]
+  tasks             Task[]      @relation("OpportunityTasks")
+  events            Event[]     @relation("OpportunityEvents")
 
   @@index([recordType])
   @@index([accountId])
@@ -554,6 +565,7 @@ model Debt {
   payments     Payment[]
   offers       Offer[]
   settlement   Settlement?
+  tasks        Task[]        @relation("DebtTasks")
 
   @@index([programPlanId])
   @@index([creditorId])
@@ -655,6 +667,7 @@ model ProgramPlan {
   drafts          Draft[]
   fees            Fee[]
   client          Client?
+  tasks           Task[]   @relation("ProgramPlanTasks")
 
   @@index([accountId])
   @@index([opportunityId])
@@ -810,4 +823,95 @@ model FinancialSummary {
   capturedById    String?
 
   @@index([accountId, capturedAt])
+}
+
+// ============ PHASE 4: ACTIVITIES (Task + Event) ============
+
+model Task {
+  id           String   @id @default(cuid())
+  recordType   String   @default("ACTIVITY") // ACTIVITY | DISPOSITION
+  subject      String
+  type         String   @default("TASK")     // CALL | EMAIL | LETTER | TASK | NOTE | OTHER
+  status       String   @default("NOT_STARTED") // NOT_STARTED | IN_PROGRESS | COMPLETED | DEFERRED | WAITING
+  priority     String   @default("NORMAL")   // LOW | NORMAL | HIGH
+
+  // Polymorphic "what"
+  accountId      String?
+  account        Account?     @relation("AccountTasks", fields: [accountId], references: [id])
+  opportunityId  String?
+  opportunity    Opportunity? @relation("OpportunityTasks", fields: [opportunityId], references: [id])
+  debtId         String?
+  debt           Debt?        @relation("DebtTasks", fields: [debtId], references: [id])
+  programPlanId  String?
+  programPlan    ProgramPlan? @relation("ProgramPlanTasks", fields: [programPlanId], references: [id])
+
+  // Polymorphic "who"
+  leadId    String?
+  lead      Lead?    @relation("LeadTasks", fields: [leadId], references: [id])
+  contactId String?
+  contact   Contact? @relation("ContactTasks", fields: [contactId], references: [id])
+
+  // Ownership / scheduling
+  ownerId     String?
+  owner       User?    @relation("TaskOwner", fields: [ownerId], references: [id])
+  dueDate     DateTime?
+  reminderAt  DateTime?
+  completedAt DateTime?
+
+  // Disposition-specific
+  disposition  String?
+  callbackDate DateTime?
+  outcome      String?
+  callId       String?  @unique
+  call         Call?    @relation(fields: [callId], references: [id])
+
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([ownerId, status])
+  @@index([dueDate])
+  @@index([accountId])
+  @@index([opportunityId])
+  @@index([leadId])
+  @@index([contactId])
+}
+
+model Event {
+  id           String   @id @default(cuid())
+  recordType   String   @default("EVENT")    // EVENT | EVENT_DISPOSITION
+  subject      String
+  description  String?
+  location     String?
+  status       String   @default("SCHEDULED") // SCHEDULED | COMPLETED | CANCELLED | NO_SHOW
+  startAt      DateTime
+  endAt        DateTime
+  allDay       Boolean  @default(false)
+
+  // Polymorphic relations
+  accountId      String?
+  account        Account?     @relation("AccountEvents", fields: [accountId], references: [id])
+  opportunityId  String?
+  opportunity    Opportunity? @relation("OpportunityEvents", fields: [opportunityId], references: [id])
+  leadId         String?
+  lead           Lead?        @relation("LeadEvents", fields: [leadId], references: [id])
+  contactId      String?
+  contact        Contact?     @relation("ContactEvents", fields: [contactId], references: [id])
+
+  ownerId      String?
+  owner        User?    @relation("EventOwner", fields: [ownerId], references: [id])
+
+  disposition  String?
+  outcome      String?
+
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([ownerId, status])
+  @@index([startAt])
+  @@index([accountId])
+  @@index([opportunityId])
+  @@index([leadId])
+  @@index([contactId])
 }

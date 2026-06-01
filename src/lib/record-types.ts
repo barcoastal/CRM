@@ -62,6 +62,25 @@ export const isSettlementRecordType = (v: string): v is SettlementRecordType =>
 export const isFeeRecordType = (v: string): v is FeeRecordType =>
   (FEE_RECORD_TYPES as readonly string[]).includes(v);
 
+export const TASK_RECORD_TYPES = ["ACTIVITY", "DISPOSITION"] as const;
+export type TaskRecordType = typeof TASK_RECORD_TYPES[number];
+export const isTaskRecordType = (v: string): v is TaskRecordType =>
+  (TASK_RECORD_TYPES as readonly string[]).includes(v);
+
+export const EVENT_RECORD_TYPES = ["EVENT", "EVENT_DISPOSITION"] as const;
+export type EventRecordType = typeof EVENT_RECORD_TYPES[number];
+export const isEventRecordType = (v: string): v is EventRecordType =>
+  (EVENT_RECORD_TYPES as readonly string[]).includes(v);
+
+export const TASK_TYPES = ["CALL", "EMAIL", "LETTER", "TASK", "NOTE", "OTHER"] as const;
+export type TaskType = typeof TASK_TYPES[number];
+
+export const TASK_STATUSES = ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "DEFERRED", "WAITING"] as const;
+export type TaskStatus = typeof TASK_STATUSES[number];
+
+export const EVENT_STATUSES = ["SCHEDULED", "COMPLETED", "CANCELLED", "NO_SHOW"] as const;
+export type EventStatus = typeof EVENT_STATUSES[number];
+
 export const isLeadRecordType = (v: string): v is LeadRecordType =>
   (LEAD_RECORD_TYPES as readonly string[]).includes(v);
 export const isAccountRecordType = (v: string): v is AccountRecordType =>
