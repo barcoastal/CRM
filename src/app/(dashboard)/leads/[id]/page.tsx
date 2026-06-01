@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { LeadDetailTabs } from "@/components/leads/lead-detail-tabs";
+import { ConvertLeadButton } from "@/components/leads/convert-lead-button";
 
 interface LeadDetailPageProps {
   params: Promise<{ id: string }>;
@@ -54,5 +55,21 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
     })),
   };
 
-  return <LeadDetailTabs lead={serializedLead} />;
+  return (
+    <div className="space-y-4">
+      <ConvertLeadButton
+        leadId={lead.id}
+        converted={
+          lead.convertedAccountId && lead.convertedContactId
+            ? {
+                accountId: lead.convertedAccountId,
+                contactId: lead.convertedContactId,
+                opportunityId: lead.convertedOpportunityId,
+              }
+            : undefined
+        }
+      />
+      <LeadDetailTabs lead={serializedLead} />
+    </div>
+  );
 }
