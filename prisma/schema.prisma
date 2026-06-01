@@ -44,6 +44,10 @@ model User {
   opportunities     Opportunity[]   @relation("OpportunityAssignee")
   ownedAccounts     Account[]       @relation("AccountOwner")
   ownedContacts     Contact[]       @relation("ContactOwner")
+  programPlansAssigned ProgramPlan[] @relation("ProgramPlanAssignedTo")
+  feesCharged       Fee[]           @relation("FeeChargedBy")
+  offersCreated     Offer[]         @relation("OfferCreatedBy")
+  settlementsApproved Settlement[]  @relation("SettlementApprovedBy")
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
@@ -245,6 +249,9 @@ model Account {
   creditor          Creditor?
   convertedFromLead Lead[]                   @relation("LeadConvertedAccount")
   primaryForContact Contact[]                @relation("PrimaryContactAccount")
+  programPlans      ProgramPlan[]
+  paymentSummary    PaymentSummary?
+  financialSummaries FinancialSummary[]
 
   @@index([recordType])
 }
@@ -483,6 +490,8 @@ model Opportunity {
   client            Client?
   debts             Debt[]
   documents         Document[]
+  programPlans      ProgramPlan[]
+  financialSummaries FinancialSummary[]
 
   @@index([recordType])
   @@index([accountId])
@@ -494,6 +503,8 @@ model Client {
   lead                 Lead         @relation(fields: [leadId], references: [id])
   opportunityId        String?      @unique
   opportunity          Opportunity? @relation(fields: [opportunityId], references: [id])
+  programPlanId        String?      @unique
+  programPlan          ProgramPlan? @relation(fields: [programPlanId], references: [id])
   programStartDate     DateTime
   programLength        Int // months
   monthlyPayment       Float
@@ -517,6 +528,8 @@ model Debt {
   client          Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   opportunityId   String?
   opportunity     Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  programPlanId   String?
+  programPlan     ProgramPlan? @relation(fields: [programPlanId], references: [id])
   creditorId      String?
   creditor        Creditor?    @relation(fields: [creditorId], references: [id])
   creditorName    String       // legacy free-form; preferred is creditorId. Kept for now.
@@ -539,6 +552,11 @@ model Debt {
 
   negotiations Negotiation[]
   payments     Payment[]
+  offers       Offer[]
+  settlement   Settlement?
+
+  @@index([programPlanId])
+  @@index([creditorId])
 }
 
 model Negotiation {
@@ -554,8 +572,11 @@ model Negotiation {
   response      String   @default("PENDING") // PENDING, ACCEPTED, REJECTED, COUNTERED
   counterAmount Float?
   notes         String?
+  offerId       String?
+  offer         Offer?   @relation(fields: [offerId], references: [id])
   createdAt     DateTime @default(now())
 }
+
 
 model Payment {
   id            String    @id @default(cuid())
@@ -586,4 +607,207 @@ model Document {
   uploadedById  String
   uploadedBy    User         @relation(fields: [uploadedById], references: [id])
   createdAt     DateTime     @default(now())
+}
+
+// ============ PHASE 3: DEBT OPERATIONS ============
+
+model PaymentProcessor {
+  id           String   @id @default(cuid())
+  name         String   @unique           // "RAM Payment Services"
+  code         String   @unique           // "RAM"
+  description  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  programPlans ProgramPlan[]
+}
+
+model ProgramPlan {
+  id              String   @id @default(cuid())
+  recordType      String   @default("DEBT_SETTLEMENT") // DEBT_SETTLEMENT | BUYOUT | RESTRUCTURE | LIMITED_ASSET_PROTECTION
+  accountId       String
+  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  opportunityId   String?
+  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id])
+  processorId     String?
+  processor       PaymentProcessor? @relation(fields: [processorId], references: [id])
+  assignedToId    String?
+  assignedTo      User?    @relation("ProgramPlanAssignedTo", fields: [assignedToId], references: [id])
+
+  status          String   @default("ACTIVE")  // PROPOSED | ACTIVE | PAUSED | COMPLETED | CANCELLED
+  startDate       DateTime
+  termMonths      Int
+  monthlyAmount   Float                        // recurring draft amount
+  totalProgramCost Float?                       // computed: termMonths * monthlyAmount + projected fees
+  totalEnrolledDebt Float?
+
+  bankAccountLast4 String?
+  bankRoutingLast4 String?
+  signedDate      DateTime?
+  signedDocumentUrl String?
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  debts           Debt[]
+  debitSchedules  DebitSchedule[]
+  drafts          Draft[]
+  fees            Fee[]
+  client          Client?
+
+  @@index([accountId])
+  @@index([opportunityId])
+  @@index([status])
+}
+
+model DebitSchedule {
+  id            String   @id @default(cuid())
+  programPlanId String
+  programPlan   ProgramPlan @relation(fields: [programPlanId], references: [id], onDelete: Cascade)
+  frequency     String   @default("MONTHLY")  // MONTHLY | BIWEEKLY | WEEKLY
+  dayOfMonth    Int?                          // 1-28 for MONTHLY
+  dayOfWeek     Int?                          // 0-6 for WEEKLY/BIWEEKLY (0=Sunday)
+  amount        Float
+  startDate     DateTime
+  endDate       DateTime?
+  nextRunDate   DateTime?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  drafts        Draft[]
+
+  @@index([programPlanId])
+  @@index([nextRunDate])
+}
+
+model Draft {
+  id              String   @id @default(cuid())
+  programPlanId   String
+  programPlan     ProgramPlan @relation(fields: [programPlanId], references: [id], onDelete: Cascade)
+  debitScheduleId String?
+  debitSchedule   DebitSchedule? @relation(fields: [debitScheduleId], references: [id])
+  scheduledDate   DateTime
+  amount          Float
+  status          String   @default("SCHEDULED") // SCHEDULED | PROCESSING | SUCCESS | FAILED | RETRYING | CANCELLED
+  attemptNumber   Int      @default(1)
+  maxAttempts     Int      @default(3)
+  parentDraftId   String?
+  parentDraft     Draft?   @relation("DraftRetries", fields: [parentDraftId], references: [id])
+  retries         Draft[]  @relation("DraftRetries")
+
+  // Processor data
+  processorReference String?
+  returnCode      String?      // ACH return code (R01, R02, etc.) when failed
+  returnReason    String?
+  processedAt     DateTime?
+  settledAt       DateTime?
+
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([programPlanId])
+  @@index([debitScheduleId])
+  @@index([status])
+  @@index([scheduledDate])
+}
+
+model Offer {
+  id            String   @id @default(cuid())
+  debtId        String
+  debt          Debt     @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  direction     String   @default("FROM_US")  // FROM_US | FROM_CREDITOR
+  amountOffered Float
+  percentOffered Float                        // amountOffered / debt.currentBalance
+  expiresAt     DateTime?
+  status        String   @default("PENDING")  // PENDING | COUNTERED | ACCEPTED | REJECTED | EXPIRED | WITHDRAWN
+  counterAmount Float?
+  termsNotes    String?
+  documentUrl   String?
+  createdById   String?
+  createdBy     User?    @relation("OfferCreatedBy", fields: [createdById], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  negotiations  Negotiation[]
+  settlement    Settlement?
+
+  @@index([debtId])
+  @@index([status])
+}
+
+model Settlement {
+  id              String   @id @default(cuid())
+  debtId          String   @unique
+  debt            Debt     @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  offerId         String?  @unique
+  offer           Offer?   @relation(fields: [offerId], references: [id])
+  recordType      String   @default("STANDARD") // STANDARD | LITIGATION | BUYOUT | WORKOUT
+  settledAmount   Float
+  savingsAmount   Float
+  savingsPercent  Float
+  settledDate     DateTime
+  payoffDueDate   DateTime?
+  payoffPaidDate  DateTime?
+  status          String   @default("PENDING_PAYOFF") // PENDING_PAYOFF | PAID | CANCELLED
+  approvedById    String?
+  approvedBy      User?    @relation("SettlementApprovedBy", fields: [approvedById], references: [id])
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+}
+
+model Fee {
+  id            String   @id @default(cuid())
+  programPlanId String
+  programPlan   ProgramPlan @relation(fields: [programPlanId], references: [id], onDelete: Cascade)
+  recordType    String   @default("MONTHLY_ADMIN") // SETUP | MONTHLY_ADMIN | SETTLEMENT_SUCCESS | CANCELLATION | OTHER
+  amount        Float
+  chargedDate   DateTime
+  status        String   @default("PENDING") // PENDING | CHARGED | WAIVED | REFUNDED
+  chargedById   String?
+  chargedBy     User?    @relation("FeeChargedBy", fields: [chargedById], references: [id])
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([programPlanId])
+  @@index([recordType])
+}
+
+model PaymentSummary {
+  id               String   @id @default(cuid())
+  accountId        String   @unique
+  account          Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  totalCollected   Float    @default(0)
+  totalDisbursed   Float    @default(0)
+  totalFees        Float    @default(0)
+  totalSettled     Float    @default(0)
+  totalSavings     Float    @default(0)
+  draftSuccessCount Int     @default(0)
+  draftFailedCount  Int     @default(0)
+  lastDraftDate    DateTime?
+  recomputedAt     DateTime @default(now())
+}
+
+model FinancialSummary {
+  id              String   @id @default(cuid())
+  accountId       String
+  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  opportunityId   String?
+  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id])
+  monthlyIncome   Float
+  monthlyExpenses Float
+  disposableIncome Float                       // computed: income - expenses
+  totalAssets     Float?
+  totalLiabilities Float?
+  notes           String?
+  capturedAt      DateTime @default(now())
+  capturedById    String?
+
+  @@index([accountId, capturedAt])
 }

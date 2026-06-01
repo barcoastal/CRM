@@ -281,12 +281,21 @@ async function nukeBusinessData() {
   await prisma.campaign.deleteMany();
   await prisma.negotiation.deleteMany();
   await prisma.payment.deleteMany();
+  // Phase 3 entities — drop before Debt/Account/User
+  await prisma.settlement.deleteMany();
+  await prisma.offer.deleteMany();
+  await prisma.fee.deleteMany();
+  await prisma.draft.deleteMany();
+  await prisma.debitSchedule.deleteMany();
+  await prisma.financialSummary.deleteMany();
+  await prisma.paymentSummary.deleteMany();
   await prisma.document.deleteMany();
   await prisma.debt.deleteMany();
   await prisma.client.deleteMany();
+  await prisma.programPlan.deleteMany();
+  await prisma.paymentProcessor.deleteMany();
   await prisma.opportunity.deleteMany();
   await prisma.lead.deleteMany();
-  // Phase 2 entities — must drop before User (Account/Contact reference User as owner)
   await prisma.creditor.deleteMany();
   await prisma.accountContactRelation.deleteMany();
   await prisma.contact.deleteMany();
@@ -557,6 +566,150 @@ async function main() {
     data: { accountId: sunriseAccount.id, contactId: sunriseContact.id, role: "Managing Partner" },
   });
 
+  console.log("Seeding payment processors + program plans...");
+
+  // Three processors — most settlement shops use one of these
+  const ram = await prisma.paymentProcessor.create({
+    data: { name: "RAM Payment Services", code: "RAM", description: "Dedicated trust account processor", isActive: true },
+  });
+  await prisma.paymentProcessor.create({
+    data: { name: "Reliant Account Management", code: "RELIANT", description: "Alternative trust processor", isActive: true },
+  });
+  await prisma.paymentProcessor.create({
+    data: { name: "Global Holdings Group", code: "GHG", description: "Backup processor", isActive: false },
+  });
+
+  // ProgramPlan for Acme — active, with debts, drafts, offers, settlements
+  const acmePlan = await prisma.programPlan.create({
+    data: {
+      recordType: "DEBT_SETTLEMENT",
+      accountId: acmeAccount.id,
+      processorId: ram.id,
+      assignedToId: negotiator.id,
+      status: "ACTIVE",
+      startDate: new Date("2026-02-01"),
+      termMonths: 36,
+      monthlyAmount: 875,
+      totalEnrolledDebt: 125000,
+      bankAccountLast4: "4321",
+      bankRoutingLast4: "9988",
+      signedDate: new Date("2026-01-25"),
+      notes: "Standard 36-month plan, monthly draft on the 1st",
+    },
+  });
+  await prisma.debitSchedule.create({
+    data: {
+      programPlanId: acmePlan.id,
+      frequency: "MONTHLY",
+      dayOfMonth: 1,
+      amount: 875,
+      startDate: new Date("2026-02-01"),
+      nextRunDate: new Date("2026-06-01"),
+    },
+  });
+  // 3 SUCCESS drafts, 1 FAILED draft, 1 SCHEDULED
+  const draft1 = await prisma.draft.create({
+    data: {
+      programPlanId: acmePlan.id, scheduledDate: new Date("2026-02-02"), amount: 875,
+      status: "SUCCESS", processedAt: new Date("2026-02-02"), settledAt: new Date("2026-02-04"),
+    },
+  });
+  await prisma.draft.create({
+    data: {
+      programPlanId: acmePlan.id, scheduledDate: new Date("2026-03-02"), amount: 875,
+      status: "SUCCESS", processedAt: new Date("2026-03-02"), settledAt: new Date("2026-03-04"),
+    },
+  });
+  await prisma.draft.create({
+    data: {
+      programPlanId: acmePlan.id, scheduledDate: new Date("2026-04-01"), amount: 875,
+      status: "SUCCESS", processedAt: new Date("2026-04-01"), settledAt: new Date("2026-04-03"),
+    },
+  });
+  await prisma.draft.create({
+    data: {
+      programPlanId: acmePlan.id, scheduledDate: new Date("2026-05-01"), amount: 875,
+      status: "FAILED", attemptNumber: 1, processedAt: new Date("2026-05-01"),
+      returnCode: "R01", returnReason: "Insufficient funds",
+    },
+  });
+  await prisma.draft.create({
+    data: {
+      programPlanId: acmePlan.id, scheduledDate: new Date("2026-05-08"), amount: 875,
+      status: "SCHEDULED", attemptNumber: 2, parentDraftId: draft1.id,
+    },
+  });
+  await prisma.fee.create({
+    data: {
+      programPlanId: acmePlan.id, recordType: "SETUP", amount: 250,
+      chargedDate: new Date("2026-02-02"), status: "CHARGED", chargedById: admin.id,
+    },
+  });
+  await prisma.fee.create({
+    data: {
+      programPlanId: acmePlan.id, recordType: "MONTHLY_ADMIN", amount: 49,
+      chargedDate: new Date("2026-03-02"), status: "CHARGED", chargedById: admin.id,
+    },
+  });
+
+  // A Debt tied to Chase under acmePlan, with an Offer + Settlement
+  const acmeDebt = await prisma.debt.create({
+    data: {
+      programPlanId: acmePlan.id,
+      creditorId: (await prisma.creditor.findFirst({ where: { account: { name: "Chase Bank" } } }))!.id,
+      creditorName: "Chase Bank",
+      accountNumber: "**** 8421",
+      originalBalance: 18500,
+      currentBalance: 18500,
+      enrolledBalance: 18500,
+      status: "NEGOTIATING",
+    },
+  });
+  const acmeOffer = await prisma.offer.create({
+    data: {
+      debtId: acmeDebt.id, direction: "FROM_US",
+      amountOffered: 7400, percentOffered: 0.4,
+      status: "ACCEPTED", createdById: negotiator.id,
+      termsNotes: "Lump-sum payoff within 30 days",
+    },
+  });
+  await prisma.settlement.create({
+    data: {
+      debtId: acmeDebt.id, offerId: acmeOffer.id, recordType: "STANDARD",
+      settledAmount: 7400, savingsAmount: 11100, savingsPercent: 0.6,
+      settledDate: new Date("2026-04-15"),
+      payoffDueDate: new Date("2026-05-15"), status: "PENDING_PAYOFF",
+      approvedById: admin.id,
+      notes: "Chase accepted 40% — strong outcome",
+    },
+  });
+
+  // FinancialSummary for Acme — intake snapshot
+  await prisma.financialSummary.create({
+    data: {
+      accountId: acmeAccount.id,
+      monthlyIncome: 70000, monthlyExpenses: 62500,
+      disposableIncome: 7500,
+      totalAssets: 320000, totalLiabilities: 280000,
+      notes: "Intake at enrollment", capturedById: closer.id,
+    },
+  });
+
+  // Smaller ProgramPlan for Sunrise — proposed, not yet active
+  await prisma.programPlan.create({
+    data: {
+      recordType: "DEBT_SETTLEMENT",
+      accountId: sunriseAccount.id,
+      processorId: ram.id,
+      status: "PROPOSED",
+      startDate: new Date("2026-06-01"),
+      termMonths: 24,
+      monthlyAmount: 520,
+      totalEnrolledDebt: 78000,
+      notes: "Awaiting signed contract",
+    },
+  });
+
   console.log("Seeding sample leads + campaign...");
   const leads = await Promise.all([
     prisma.lead.create({
@@ -628,6 +781,13 @@ async function main() {
   console.log(`  Accounts:         5 (2 clients, 3 creditors)`);
   console.log(`  Contacts:         2`);
   console.log(`  Creditors:        3 (Chase, Amex, Capital One)`);
+  console.log(`  Processors:       3 (RAM, Reliant, GHG)`);
+  console.log(`  ProgramPlans:     2 (1 ACTIVE w/ drafts, 1 PROPOSED)`);
+  console.log(`  Drafts:           5 (3 SUCCESS, 1 FAILED, 1 SCHEDULED retry)`);
+  console.log(`  Offers:           1 (ACCEPTED)`);
+  console.log(`  Settlements:      1 (PENDING_PAYOFF, 60% savings)`);
+  console.log(`  Fees:             2 (Setup + Monthly Admin)`);
+  console.log(`  FinancialSummary: 1 snapshot`);
   console.log(`  Leads:            ${leads.length}`);
   console.log(`  Campaign:         ${campaign.name}`);
   console.log(`\n  Logins (all password123):`);

@@ -34,6 +34,34 @@ export const OPPORTUNITY_RECORD_TYPES = [
 ] as const;
 export type OpportunityRecordType = typeof OPPORTUNITY_RECORD_TYPES[number];
 
+// ProgramPlan record types mirror Opportunity products
+export const PROGRAM_PLAN_RECORD_TYPES = OPPORTUNITY_RECORD_TYPES;
+export type ProgramPlanRecordType = OpportunityRecordType;
+
+export const SETTLEMENT_RECORD_TYPES = [
+  "STANDARD",
+  "LITIGATION",
+  "BUYOUT",
+  "WORKOUT",
+] as const;
+export type SettlementRecordType = typeof SETTLEMENT_RECORD_TYPES[number];
+
+export const FEE_RECORD_TYPES = [
+  "SETUP",
+  "MONTHLY_ADMIN",
+  "SETTLEMENT_SUCCESS",
+  "CANCELLATION",
+  "OTHER",
+] as const;
+export type FeeRecordType = typeof FEE_RECORD_TYPES[number];
+
+export const isProgramPlanRecordType = (v: string): v is ProgramPlanRecordType =>
+  (PROGRAM_PLAN_RECORD_TYPES as readonly string[]).includes(v);
+export const isSettlementRecordType = (v: string): v is SettlementRecordType =>
+  (SETTLEMENT_RECORD_TYPES as readonly string[]).includes(v);
+export const isFeeRecordType = (v: string): v is FeeRecordType =>
+  (FEE_RECORD_TYPES as readonly string[]).includes(v);
+
 export const isLeadRecordType = (v: string): v is LeadRecordType =>
   (LEAD_RECORD_TYPES as readonly string[]).includes(v);
 export const isAccountRecordType = (v: string): v is AccountRecordType =>
