@@ -1,7 +1,8 @@
-import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Mail, Phone, Globe, MapPin } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { ObjectHeader } from "@/components/slds/object-header";
+import { RelatedList } from "@/components/slds/related-list";
 
 const RECORD_TYPE_LABEL: Record<string, string> = {
   CLIENT: "Client", CREDITOR: "Creditor", VENDOR: "Vendor",
@@ -19,6 +20,10 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       creditor: { include: { _count: { select: { debts: true } } } },
       parentAccount: { select: { id: true, name: true } },
       childAccounts: { select: { id: true, name: true, recordType: true } },
+      programPlans: { orderBy: { startDate: "desc" } },
+      cases: { orderBy: { createdAt: "desc" }, take: 10 },
+      tasks: { where: { status: { not: "COMPLETED" } }, orderBy: { dueDate: "asc" }, take: 10 },
+      events: { orderBy: { startAt: "desc" }, take: 10 },
     },
   });
   if (!account) notFound();
@@ -27,162 +32,292 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const isCreditor = account.recordType === "CREDITOR";
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-[12px] text-zinc-500 mb-1">
-            <Link href="/accounts" className="hover:underline">Accounts</Link> / {RECORD_TYPE_LABEL[account.recordType]}
-          </div>
-          <h1 className="text-[1.75rem] font-bold tracking-tight" style={{ color: "#131b2e" }}>
-            {account.name}
-          </h1>
-          {account.parentAccount && (
-            <div className="text-[13px] text-zinc-600 mt-1">
-              Parent: <Link href={`/accounts/${account.parentAccount.id}`} className="text-[#0034e4] hover:underline">{account.parentAccount.name}</Link>
-            </div>
-          )}
-        </div>
-      </div>
+    <div>
+      <ObjectHeader
+        entity={isCreditor ? "Creditor" : "Account"}
+        entityLabel="Account"
+        recordTitle={account.name}
+        recordSubtitle={
+          account.parentAccount ? (
+            <>
+              Parent:{" "}
+              <Link href={`/accounts/${account.parentAccount.id}`} style={{ color: "#1589ee" }}>
+                {account.parentAccount.name}
+              </Link>
+            </>
+          ) : (
+            RECORD_TYPE_LABEL[account.recordType] ?? account.recordType
+          )
+        }
+        highlights={[
+          { label: "Type", value: RECORD_TYPE_LABEL[account.recordType] ?? account.recordType },
+          { label: "Phone", value: account.phone },
+          { label: "Industry", value: account.industry },
+          { label: "Account Owner", value: account.owner?.name },
+          { label: "Annual Revenue", value: account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : null },
+        ]}
+        actions={
+          <>
+            <SldsButton variant="neutral">Edit</SldsButton>
+            <SldsButton variant="neutral">New Case</SldsButton>
+            <SldsButton variant="neutral">More</SldsButton>
+          </>
+        }
+      />
 
-      {/* Detail grid */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2 space-y-4">
-          {/* Contact info */}
-          <section className="bg-white rounded-lg border border-zinc-200 p-5">
-            <h2 className="font-semibold text-[14px] text-zinc-700 mb-3">Contact info</h2>
-            <dl className="grid grid-cols-2 gap-3 text-[13px]">
-              {account.phone && (
-                <div className="flex items-center gap-2"><Phone className="size-4 text-zinc-400" /><span>{account.phone}</span></div>
-              )}
-              {account.email && (
-                <div className="flex items-center gap-2"><Mail className="size-4 text-zinc-400" /><span>{account.email}</span></div>
-              )}
-              {account.website && (
-                <div className="flex items-center gap-2"><Globe className="size-4 text-zinc-400" /><a href={account.website} target="_blank" rel="noreferrer" className="text-[#0034e4] hover:underline">{account.website}</a></div>
-              )}
-              {account.industry && <div><span className="text-zinc-500">Industry: </span>{account.industry}</div>}
-              {account.ein && <div><span className="text-zinc-500">EIN: </span>{account.ein}</div>}
-              {account.annualRevenue && <div><span className="text-zinc-500">Annual Revenue: </span>${account.annualRevenue.toLocaleString()}</div>}
-              {(account.billingCity || account.billingState) && (
-                <div className="col-span-2 flex items-center gap-2"><MapPin className="size-4 text-zinc-400" /><span>{[account.billingStreet, account.billingCity, account.billingState, account.billingZip].filter(Boolean).join(", ")}</span></div>
-              )}
-            </dl>
-            {account.description && (
+      {/* 2-col layout: details + related rail */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(280px, 1fr)", gap: 12 }}>
+        <div>
+          {/* Details card */}
+          <div
+            style={{
+              background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 16,
+              marginBottom: 12,
+            }}
+          >
+            <SectionHeader title="Account Information" />
+            <FieldGrid
+              fields={[
+                ["Account Name", account.name],
+                ["Type", RECORD_TYPE_LABEL[account.recordType] ?? account.recordType],
+                ["Phone", account.phone],
+                ["Email", account.email],
+                ["Website", account.website && (
+                  <a href={account.website} target="_blank" rel="noreferrer" style={{ color: "#1589ee" }}>
+                    {account.website}
+                  </a>
+                )],
+                ["Industry", account.industry],
+                ["EIN", account.ein],
+                ["Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : null],
+                ["Employees", account.numberOfEmployees],
+                ["Owner", account.owner?.name],
+              ]}
+            />
+            {(account.billingStreet || account.billingCity) && (
               <>
-                <h3 className="font-semibold text-[13px] text-zinc-700 mt-4 mb-1.5">Description</h3>
-                <p className="text-[13px] text-zinc-600 whitespace-pre-wrap">{account.description}</p>
+                <SectionHeader title="Address Information" style={{ marginTop: 16 }} />
+                <FieldGrid
+                  fields={[
+                    ["Billing Street", account.billingStreet],
+                    ["Billing City", account.billingCity],
+                    ["Billing State", account.billingState],
+                    ["Billing Zip", account.billingZip],
+                    ["Billing Country", account.billingCountry],
+                  ]}
+                />
               </>
             )}
-          </section>
-
-          {/* Contacts */}
-          <section className="bg-white rounded-lg border border-zinc-200 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-[14px] text-zinc-700">People ({account.contacts.length})</h2>
-            </div>
-            {account.contacts.length === 0 ? (
-              <p className="text-[13px] text-zinc-500">No contacts linked yet.</p>
-            ) : (
-              <table className="w-full text-[13px]">
-                <thead className="border-b border-zinc-200">
-                  <tr>
-                    <th className="text-left py-2 font-semibold text-zinc-600">Name</th>
-                    <th className="text-left py-2 font-semibold text-zinc-600">Role</th>
-                    <th className="text-left py-2 font-semibold text-zinc-600">Email</th>
-                    <th className="text-left py-2 font-semibold text-zinc-600">Phone</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {account.contacts.map((rel) => (
-                    <tr key={rel.id} className="border-b border-zinc-100">
-                      <td className="py-2.5">
-                        <Link href={`/contacts/${rel.contact.id}`} className="text-[#0034e4] hover:underline font-medium">
-                          {rel.contact.fullName}
-                        </Link>
-                      </td>
-                      <td className="py-2.5 text-zinc-600">{rel.role ?? "—"}</td>
-                      <td className="py-2.5 text-zinc-600">{rel.contact.email ?? "—"}</td>
-                      <td className="py-2.5 text-zinc-600">{rel.contact.phone ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {account.description && (
+              <>
+                <SectionHeader title="Description" style={{ marginTop: 16 }} />
+                <div style={{ fontSize: 13, color: "#080707", whiteSpace: "pre-wrap" }}>
+                  {account.description}
+                </div>
+              </>
             )}
-          </section>
+          </div>
 
-          {/* Opportunities */}
-          {isClient && (
-            <section className="bg-white rounded-lg border border-zinc-200 p-5">
-              <h2 className="font-semibold text-[14px] text-zinc-700 mb-3">Opportunities ({account.opportunities.length})</h2>
-              {account.opportunities.length === 0 ? (
-                <p className="text-[13px] text-zinc-500">No opportunities yet.</p>
-              ) : (
-                <table className="w-full text-[13px]">
-                  <thead className="border-b border-zinc-200">
-                    <tr>
-                      <th className="text-left py-2 font-semibold text-zinc-600">Product</th>
-                      <th className="text-left py-2 font-semibold text-zinc-600">Stage</th>
-                      <th className="text-right py-2 font-semibold text-zinc-600">Debt</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {account.opportunities.map((opp) => (
-                      <tr key={opp.id} className="border-b border-zinc-100">
-                        <td className="py-2.5">
-                          <Link href={`/opportunities/${opp.id}`} className="text-[#0034e4] hover:underline">
-                            {opp.recordType.replace(/_/g, " ")}
-                          </Link>
-                        </td>
-                        <td className="py-2.5 text-zinc-600">{opp.stage}</td>
-                        <td className="py-2.5 text-right text-zinc-700">${opp.totalDebt?.toLocaleString() ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </section>
-          )}
-
-          {/* Creditor metadata */}
           {isCreditor && account.creditor && (
-            <section className="bg-white rounded-lg border border-zinc-200 p-5">
-              <h2 className="font-semibold text-[14px] text-zinc-700 mb-3">Creditor details</h2>
-              <dl className="grid grid-cols-2 gap-3 text-[13px]">
-                <div><span className="text-zinc-500">Legal name: </span>{account.creditor.legalName}</div>
-                {account.creditor.collectionsPhone && <div><span className="text-zinc-500">Collections phone: </span>{account.creditor.collectionsPhone}</div>}
-                {account.creditor.collectionsEmail && <div><span className="text-zinc-500">Collections email: </span>{account.creditor.collectionsEmail}</div>}
-                <div><span className="text-zinc-500">Debts handled: </span>{account.creditor._count?.debts ?? 0}</div>
-                <div className="col-span-2"><span className="text-zinc-500">Settlement policy: </span>{account.creditor.settlementPolicy ?? "—"}</div>
-              </dl>
-            </section>
+            <div style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 16, marginBottom: 12 }}>
+              <SectionHeader title="Creditor Details" />
+              <FieldGrid
+                fields={[
+                  ["Legal Name", account.creditor.legalName],
+                  ["Collections Phone", account.creditor.collectionsPhone],
+                  ["Collections Email", account.creditor.collectionsEmail],
+                  ["Debts Handled", account.creditor._count?.debts ?? 0],
+                  ["Avg Accepted %", account.creditor.averageAcceptedPercent ? `${(account.creditor.averageAcceptedPercent * 100).toFixed(0)}%` : null],
+                ]}
+              />
+              {account.creditor.settlementPolicy && (
+                <>
+                  <SectionHeader title="Settlement Policy" style={{ marginTop: 16 }} />
+                  <div style={{ fontSize: 13, color: "#080707" }}>{account.creditor.settlementPolicy}</div>
+                </>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-4">
-          <section className="bg-white rounded-lg border border-zinc-200 p-5">
-            <h3 className="font-semibold text-[13px] text-zinc-700 mb-2">Owner</h3>
-            <p className="text-[13px]">{account.owner?.name ?? <span className="text-zinc-500">Unassigned</span>}</p>
-          </section>
-          <section className="bg-white rounded-lg border border-zinc-200 p-5">
-            <h3 className="font-semibold text-[13px] text-zinc-700 mb-2">Record type</h3>
-            <p className="text-[13px]">{RECORD_TYPE_LABEL[account.recordType] ?? account.recordType}</p>
-          </section>
+        {/* Right rail */}
+        <div>
+          {isClient && (
+            <RelatedList
+              entity="ProgramPlan"
+              title="Program Plans"
+              items={account.programPlans}
+              renderItem={(p) => (
+                <Link href={`/program-plans/${p.id}`} style={{ color: "#1589ee", textDecoration: "none" }}>
+                  {p.recordType.replace(/_/g, " ")} — {p.status}
+                </Link>
+              )}
+              emptyHint="No program plans yet."
+            />
+          )}
+
+          <RelatedList
+            entity="Contact"
+            title="Contacts"
+            items={account.contacts.map((r) => r.contact)}
+            renderItem={(c) => (
+              <div>
+                <Link href={`/contacts/${c.id}`} style={{ color: "#1589ee", fontWeight: 600, textDecoration: "none" }}>
+                  {c.fullName}
+                </Link>
+                {c.title && <div style={{ color: "#706e6b", fontSize: 12 }}>{c.title}</div>}
+              </div>
+            )}
+            emptyHint="No contacts linked yet."
+            newHref={`/contacts/new?accountId=${account.id}`}
+          />
+
+          {isClient && (
+            <RelatedList
+              entity="Opportunity"
+              title="Opportunities"
+              items={account.opportunities}
+              renderItem={(o) => (
+                <div>
+                  <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee", fontWeight: 600, textDecoration: "none" }}>
+                    {o.recordType.replace(/_/g, " ")}
+                  </Link>
+                  <div style={{ color: "#706e6b", fontSize: 12 }}>
+                    {o.stage} {o.totalDebt && `· $${o.totalDebt.toLocaleString()}`}
+                  </div>
+                </div>
+              )}
+              emptyHint="No opportunities yet."
+            />
+          )}
+
+          <RelatedList
+            entity="Case"
+            title="Cases"
+            items={account.cases}
+            renderItem={(c) => (
+              <div>
+                <Link href={`/cases/${c.id}`} style={{ color: "#1589ee", fontWeight: 600, textDecoration: "none" }}>
+                  {c.caseNumber}
+                </Link>
+                <div style={{ color: "#706e6b", fontSize: 12 }}>{c.subject}</div>
+                <div style={{ color: "#706e6b", fontSize: 11 }}>{c.status} · {c.priority}</div>
+              </div>
+            )}
+            emptyHint="No cases."
+          />
+
+          <RelatedList
+            entity="Task"
+            title="Open Tasks"
+            items={account.tasks}
+            renderItem={(t) => (
+              <div>
+                <div style={{ color: "#080707", fontWeight: 600 }}>{t.subject}</div>
+                {t.dueDate && (
+                  <div style={{ color: "#706e6b", fontSize: 12 }}>
+                    Due {t.dueDate.toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+            )}
+            emptyHint="No open tasks."
+          />
+
+          <RelatedList
+            entity="Event"
+            title="Events"
+            items={account.events}
+            renderItem={(e) => (
+              <div>
+                <div style={{ color: "#080707", fontWeight: 600 }}>{e.subject}</div>
+                <div style={{ color: "#706e6b", fontSize: 12 }}>
+                  {e.startAt.toLocaleString()}
+                </div>
+              </div>
+            )}
+            emptyHint="No events."
+          />
+
           {account.childAccounts.length > 0 && (
-            <section className="bg-white rounded-lg border border-zinc-200 p-5">
-              <h3 className="font-semibold text-[13px] text-zinc-700 mb-2">Sub-accounts ({account.childAccounts.length})</h3>
-              <ul className="space-y-1">
-                {account.childAccounts.map((c) => (
-                  <li key={c.id} className="text-[13px]">
-                    <Link href={`/accounts/${c.id}`} className="text-[#0034e4] hover:underline">{c.name}</Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <RelatedList
+              entity="Account"
+              title="Sub-Accounts"
+              items={account.childAccounts}
+              renderItem={(c) => (
+                <Link href={`/accounts/${c.id}`} style={{ color: "#1589ee", textDecoration: "none" }}>
+                  {c.name}
+                </Link>
+              )}
+              emptyHint=""
+            />
           )}
         </div>
       </div>
     </div>
   );
+}
+
+// ============ Tiny helpers (kept local to avoid coupling) ============
+
+function SectionHeader({ title, style }: { title: string; style?: React.CSSProperties }) {
+  return (
+    <div
+      style={{
+        fontSize: 11,
+        color: "#080707",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: 0.4,
+        background: "#fafaf9",
+        padding: "6px 10px",
+        margin: "-16px -16px 12px",
+        borderTop: "1px solid #ecebea",
+        borderBottom: "1px solid #ecebea",
+        ...style,
+      }}
+    >
+      {title}
+    </div>
+  );
+}
+
+function FieldGrid({ fields }: { fields: ([string, React.ReactNode][]) }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 24px" }}>
+      {fields.map(([label, value]) => (
+        <div key={label}>
+          <div style={{ fontSize: 11, color: "#706e6b", fontWeight: 400 }}>{label}</div>
+          <div style={{ fontSize: 13, color: "#080707", marginTop: 2 }}>
+            {value ?? <span style={{ color: "#b0adab" }}>—</span>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SldsButton({
+  children,
+  variant = "neutral",
+  href,
+}: {
+  children: React.ReactNode;
+  variant?: "neutral" | "brand" | "destructive";
+  href?: string;
+}) {
+  const styles: React.CSSProperties = {
+    fontSize: 13,
+    padding: "5px 14px",
+    borderRadius: 4,
+    border: variant === "neutral" ? "1px solid #d8dde6" : "1px solid transparent",
+    background: variant === "brand" ? "#1589ee" : variant === "destructive" ? "#c23934" : "#fff",
+    color: variant === "neutral" ? "#080707" : "#fff",
+    fontWeight: 400,
+    cursor: "pointer",
+    textDecoration: "none",
+    display: "inline-block",
+  };
+  if (href) return <a href={href} style={styles}>{children}</a>;
+  return <button style={styles}>{children}</button>;
 }

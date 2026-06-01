@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 import { ACCOUNT_RECORD_TYPES } from "@/lib/record-types";
-import { Building2, Search } from "lucide-react";
+import { ListView, type ListViewColumn } from "@/components/slds/list-view";
 
 interface AccountsPageProps {
   searchParams: Promise<{ recordType?: string; q?: string; page?: string }>;
@@ -10,23 +9,20 @@ interface AccountsPageProps {
 const LIMIT = 25;
 
 const RECORD_TYPE_LABEL: Record<string, string> = {
-  CLIENT: "Client",
-  CREDITOR: "Creditor",
-  VENDOR: "Vendor",
-  BUSINESS_ACCOUNT: "Business",
-  PERSON_ACCOUNT: "Person",
-  BUYOUT: "Buyout",
-  OTHER: "Other",
+  CLIENT: "Client", CREDITOR: "Creditor", VENDOR: "Vendor",
+  BUSINESS_ACCOUNT: "Business", PERSON_ACCOUNT: "Person", BUYOUT: "Buyout", OTHER: "Other",
 };
 
-const RECORD_TYPE_TONE: Record<string, string> = {
-  CLIENT: "bg-blue-100 text-blue-700",
-  CREDITOR: "bg-purple-100 text-purple-700",
-  VENDOR: "bg-amber-100 text-amber-700",
-  BUSINESS_ACCOUNT: "bg-emerald-100 text-emerald-700",
-  PERSON_ACCOUNT: "bg-pink-100 text-pink-700",
-  BUYOUT: "bg-rose-100 text-rose-700",
-  OTHER: "bg-zinc-100 text-zinc-700",
+type AccountRow = {
+  id: string;
+  name: string;
+  recordType: string;
+  email: string | null;
+  phone: string | null;
+  owner: { id: string; name: string } | null;
+  industry: string | null;
+  updatedAt: Date;
+  _count: { contacts: number; opportunities: number };
 };
 
 export default async function AccountsPage({ searchParams }: AccountsPageProps) {
@@ -63,98 +59,64 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     prisma.account.count({ where }),
   ]);
 
+  const viewName = recordType
+    ? `${RECORD_TYPE_LABEL[recordType]} Accounts`
+    : "All Accounts";
+
+  const columns: ListViewColumn<AccountRow>[] = [
+    {
+      key: "name",
+      label: "Account Name",
+      render: (a) => a.name,
+    },
+    {
+      key: "type",
+      label: "Type",
+      render: (a) => (
+        <span
+          style={{
+            background: "#ecebea",
+            color: "#080707",
+            padding: "2px 8px",
+            borderRadius: 12,
+            fontSize: 11,
+            fontWeight: 600,
+          }}
+        >
+          {RECORD_TYPE_LABEL[a.recordType] ?? a.recordType}
+        </span>
+      ),
+    },
+    { key: "phone", label: "Phone", render: (a) => a.phone ?? "—" },
+    { key: "email", label: "Email", render: (a) => a.email ?? "—" },
+    { key: "industry", label: "Industry", render: (a) => a.industry ?? "—" },
+    {
+      key: "contacts",
+      label: "Contacts",
+      render: (a) => a._count.contacts.toString(),
+    },
+    {
+      key: "opps",
+      label: "Opps",
+      render: (a) => a._count.opportunities.toString(),
+    },
+    {
+      key: "owner",
+      label: "Account Owner",
+      render: (a) => a.owner?.name ?? "—",
+    },
+  ];
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[1.5rem] font-bold tracking-tight" style={{ color: "#131b2e" }}>
-            Accounts
-          </h1>
-          <p className="text-[13px] mt-0.5" style={{ color: "#444656" }}>
-            Organizations and people we work with — clients, creditors, vendors.
-          </p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <form className="flex flex-wrap gap-2 items-center" method="GET">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-400" />
-          <input
-            name="q"
-            defaultValue={q ?? ""}
-            placeholder="Search by name, email, phone, EIN…"
-            className="pl-9 pr-3 py-2 border border-zinc-200 rounded-md text-[13px] w-80 bg-white"
-          />
-        </div>
-        <select
-          name="recordType"
-          defaultValue={recordType ?? ""}
-          className="px-3 py-2 border border-zinc-200 rounded-md text-[13px] bg-white"
-        >
-          <option value="">All record types</option>
-          {ACCOUNT_RECORD_TYPES.map((t) => (
-            <option key={t} value={t}>{RECORD_TYPE_LABEL[t]}</option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="px-4 py-2 text-[13px] font-semibold text-white rounded-md"
-          style={{ background: "linear-gradient(135deg, #0034e4, #3052ff)" }}
-        >
-          Apply
-        </button>
-      </form>
-
-      <div className="rounded-lg border border-zinc-200 bg-white overflow-hidden">
-        <table className="w-full text-[13px]">
-          <thead className="bg-zinc-50 border-b border-zinc-200">
-            <tr>
-              <th className="text-left px-4 py-2.5 font-semibold text-zinc-600">Name</th>
-              <th className="text-left px-4 py-2.5 font-semibold text-zinc-600">Type</th>
-              <th className="text-left px-4 py-2.5 font-semibold text-zinc-600">Contacts</th>
-              <th className="text-left px-4 py-2.5 font-semibold text-zinc-600">Opps</th>
-              <th className="text-left px-4 py-2.5 font-semibold text-zinc-600">Owner</th>
-              <th className="text-left px-4 py-2.5 font-semibold text-zinc-600">Updated</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.length === 0 && (
-              <tr>
-                <td colSpan={6} className="text-center px-4 py-12 text-zinc-500">
-                  <Building2 className="size-8 mx-auto mb-2 text-zinc-300" />
-                  No accounts match.
-                </td>
-              </tr>
-            )}
-            {items.map((a) => (
-              <tr key={a.id} className="border-b border-zinc-100 hover:bg-zinc-50">
-                <td className="px-4 py-2.5">
-                  <Link href={`/accounts/${a.id}`} className="font-medium text-[#0034e4] hover:underline">
-                    {a.name}
-                  </Link>
-                  {a.email && <div className="text-zinc-500 text-[12px]">{a.email}</div>}
-                </td>
-                <td className="px-4 py-2.5">
-                  <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${RECORD_TYPE_TONE[a.recordType] ?? "bg-zinc-100 text-zinc-700"}`}>
-                    {RECORD_TYPE_LABEL[a.recordType] ?? a.recordType}
-                  </span>
-                </td>
-                <td className="px-4 py-2.5 text-zinc-700">{a._count.contacts}</td>
-                <td className="px-4 py-2.5 text-zinc-700">{a._count.opportunities}</td>
-                <td className="px-4 py-2.5 text-zinc-600">{a.owner?.name ?? "—"}</td>
-                <td className="px-4 py-2.5 text-zinc-500">{a.updatedAt.toLocaleDateString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="text-[12px] text-zinc-500">
-        Showing {items.length} of {total} accounts
-        {recordType && ` · filtered by ${RECORD_TYPE_LABEL[recordType]}`}
-        {q && ` · matching "${q}"`}
-      </div>
-    </div>
+    <ListView
+      entity="Account"
+      entityLabel="Accounts"
+      viewName={viewName}
+      totalCount={total}
+      rows={items as AccountRow[]}
+      columns={columns}
+      rowHref={(a) => `/accounts/${a.id}`}
+      newHref="/accounts/new"
+    />
   );
 }

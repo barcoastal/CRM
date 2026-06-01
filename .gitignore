@@ -44,6 +44,9 @@ next-env.d.ts
 
 /src/generated/prisma
 
+# SLDS assets — copied from node_modules at build time
+/public/slds
+
 # sqlite
 *.db
 *.db-journal

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { DashboardShell } from "@/components/dashboard-shell";
+import { SldsShell } from "@/components/slds/shell";
 
 export default async function DashboardLayout({
   children,
@@ -8,10 +8,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
+  if (!session) redirect("/login");
 
-  if (!session) {
-    redirect("/login");
-  }
-
-  return <DashboardShell>{children}</DashboardShell>;
+  return <SldsShell userName={session.user?.name ?? undefined}>{children}</SldsShell>;
 }
