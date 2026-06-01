@@ -273,7 +273,10 @@ async function nukeAccessControl() {
 }
 
 async function nukeBusinessData() {
-  // Phase 4 — drop tasks/events first (they reference everything)
+  // Phase 5 — case comments + cases first (reference everything)
+  await prisma.caseComment.deleteMany();
+  await prisma.case.deleteMany();
+  // Phase 4 — drop tasks/events
   await prisma.task.deleteMany();
   await prisma.event.deleteMany();
   await prisma.callFeedback.deleteMany();
@@ -787,6 +790,82 @@ async function main() {
     },
   });
 
+  console.log("Seeding cases + comments...");
+
+  const csL1 = await prisma.group.findUnique({ where: { developerName: "CS_L1" } });
+  const csL2 = await prisma.group.findUnique({ where: { developerName: "CS_L2" } });
+
+  // C-0001: Failed-draft payment issue (IN_PROGRESS, assigned to CSA)
+  const caseFailedDraft = await prisma.case.create({
+    data: {
+      caseNumber: "C-0001",
+      recordType: "PAYMENT_ISSUE",
+      subject: "Failed May draft — insufficient funds",
+      description: "Client's May 1 draft of $875 returned R01. Need to reach out and reschedule.",
+      status: "IN_PROGRESS", priority: "HIGH", origin: "PHONE", escalationLevel: "L1",
+      accountId: acmeAccount.id, contactId: acmeContact.id, programPlanId: acmePlan.id,
+      ownerId: csa.id, ownerGroupId: csL1?.id ?? null,
+      createdById: admin.id,
+      firstResponseAt: new Date("2026-05-02"),
+      slaDueAt: new Date("2026-05-09"),
+    },
+  });
+  await prisma.caseComment.createMany({
+    data: [
+      { caseId: caseFailedDraft.id, authorId: csa.id, body: "Called Bob; left voicemail at 4:30pm.", isInternal: true },
+      { caseId: caseFailedDraft.id, authorId: csa.id, body: "Bob called back, wants to reschedule for the 8th. Confirmed bank balance will be sufficient.", isInternal: true },
+    ],
+  });
+
+  // C-0002: Skip payment request — escalated, waiting on approval
+  await prisma.case.create({
+    data: {
+      caseNumber: "C-0002",
+      recordType: "SKIP_PAYMENT",
+      subject: "Skip payment for June — client traveling for surgery",
+      description: "Client requests one-month skip due to hospital stay. Resume July 1.",
+      status: "ESCALATED", priority: "NORMAL", origin: "PHONE", escalationLevel: "L2",
+      accountId: acmeAccount.id, programPlanId: acmePlan.id,
+      ownerGroupId: csL2?.id ?? null,
+      requiresApproval: true,
+      createdById: csa.id,
+      firstResponseAt: new Date("2026-05-28"),
+    },
+  });
+
+  // C-0003: Document request (NEW at L1)
+  await prisma.case.create({
+    data: {
+      caseNumber: "C-0003",
+      recordType: "DOCUMENT_REQUEST",
+      subject: "Client needs copy of welcome packet",
+      description: "Bob misplaced welcome materials; resend digital copy via email.",
+      status: "NEW", priority: "LOW", origin: "EMAIL", escalationLevel: "L1",
+      accountId: acmeAccount.id, contactId: acmeContact.id,
+      ownerGroupId: csL1?.id ?? null,
+      createdById: admin.id,
+    },
+  });
+
+  // C-0004: Cancellation — resolved, approved
+  await prisma.case.create({
+    data: {
+      caseNumber: "C-0004",
+      recordType: "CANCELLATION",
+      subject: "Sunrise Restaurant cancellation reversal",
+      description: "Maria initially asked to cancel; agreed to continue after Closer call.",
+      status: "RESOLVED", priority: "URGENT", origin: "PHONE", escalationLevel: "L1",
+      accountId: sunriseAccount.id, contactId: sunriseContact.id,
+      ownerId: csa.id,
+      requiresApproval: true,
+      approvedById: admin.id, approvedAt: new Date("2026-05-25"),
+      approvalNotes: "Approved retention; offered one-month fee waiver.",
+      firstResponseAt: new Date("2026-05-24"),
+      resolvedAt: new Date("2026-05-26"),
+      createdById: csa.id,
+    },
+  });
+
   console.log("Seeding sample leads + campaign...");
   const leads = await Promise.all([
     prisma.lead.create({
@@ -867,6 +946,8 @@ async function main() {
   console.log(`  FinancialSummary: 1 snapshot`);
   console.log(`  Tasks:            4 (1 disposition + 3 open)`);
   console.log(`  Events:           2 (1 upcoming + 1 past intake)`);
+  console.log(`  Cases:            4 (1 IN_PROGRESS, 1 ESCALATED w/ approval, 1 NEW, 1 RESOLVED)`);
+  console.log(`  Case comments:    2 (on failed-draft case)`);
   console.log(`  Leads:            ${leads.length}`);
   console.log(`  Campaign:         ${campaign.name}`);
   console.log(`\n  Logins (all password123):`);

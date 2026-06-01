@@ -81,6 +81,48 @@ export type TaskStatus = typeof TASK_STATUSES[number];
 export const EVENT_STATUSES = ["SCHEDULED", "COMPLETED", "CANCELLED", "NO_SHOW"] as const;
 export type EventStatus = typeof EVENT_STATUSES[number];
 
+export const CASE_RECORD_TYPES = [
+  "SUPPORT",
+  "PAYMENT_ISSUE",
+  "SKIP_PAYMENT",
+  "CANCELLATION",
+  "BANK_UPDATE",
+  "DOCUMENT_REQUEST",
+] as const;
+export type CaseRecordType = typeof CASE_RECORD_TYPES[number];
+export const isCaseRecordType = (v: string): v is CaseRecordType =>
+  (CASE_RECORD_TYPES as readonly string[]).includes(v);
+
+export const CASE_STATUSES = [
+  "NEW",
+  "OPEN",
+  "IN_PROGRESS",
+  "WAITING_ON_CUSTOMER",
+  "ESCALATED",
+  "RESOLVED",
+  "CLOSED",
+] as const;
+export type CaseStatus = typeof CASE_STATUSES[number];
+
+export const CASE_PRIORITIES = ["LOW", "NORMAL", "HIGH", "URGENT"] as const;
+export type CasePriority = typeof CASE_PRIORITIES[number];
+
+export const CASE_ORIGINS = ["PHONE", "EMAIL", "WEB", "CHAT", "OTHER"] as const;
+export type CaseOrigin = typeof CASE_ORIGINS[number];
+
+export const ESCALATION_LEVELS = ["L1", "L2", "L3"] as const;
+export type EscalationLevel = typeof ESCALATION_LEVELS[number];
+
+export function isTerminalCaseStatus(status: string): boolean {
+  return status === "RESOLVED" || status === "CLOSED";
+}
+
+export function nextEscalationLevel(current: string): EscalationLevel | null {
+  if (current === "L1") return "L2";
+  if (current === "L2") return "L3";
+  return null;
+}
+
 export const isLeadRecordType = (v: string): v is LeadRecordType =>
   (LEAD_RECORD_TYPES as readonly string[]).includes(v);
 export const isAccountRecordType = (v: string): v is AccountRecordType =>

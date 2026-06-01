@@ -50,6 +50,10 @@ model User {
   settlementsApproved Settlement[]  @relation("SettlementApprovedBy")
   tasksOwned        Task[]          @relation("TaskOwner")
   eventsOwned       Event[]         @relation("EventOwner")
+  casesOwned        Case[]          @relation("CaseOwner")
+  casesCreated      Case[]          @relation("CaseCreatedBy")
+  casesApproved     Case[]          @relation("CaseApprover")
+  caseComments      CaseComment[]   @relation("CaseCommentAuthor")
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
@@ -152,6 +156,7 @@ model Group {
   // For queues: which sObject types can be assigned (e.g. "Lead", "Case")
   supportedEntities String? // CSV: "Lead,Case"
   members           GroupMember[]
+  casesAsOwner      Case[]        @relation("CaseOwnerGroup")
   createdAt         DateTime      @default(now())
 }
 
@@ -256,6 +261,7 @@ model Account {
   financialSummaries FinancialSummary[]
   tasks             Task[]                   @relation("AccountTasks")
   events            Event[]                  @relation("AccountEvents")
+  cases             Case[]                   @relation("AccountCases")
 
   @@index([recordType])
 }
@@ -283,6 +289,7 @@ model Contact {
   convertedFromLead   Lead[]                   @relation("LeadConvertedContact")
   tasks               Task[]                   @relation("ContactTasks")
   events              Event[]                  @relation("ContactEvents")
+  cases               Case[]                   @relation("ContactCases")
 }
 
 model AccountContactRelation {
@@ -668,6 +675,7 @@ model ProgramPlan {
   fees            Fee[]
   client          Client?
   tasks           Task[]   @relation("ProgramPlanTasks")
+  cases           Case[]   @relation("ProgramPlanCases")
 
   @@index([accountId])
   @@index([opportunityId])
@@ -716,6 +724,8 @@ model Draft {
   returnReason    String?
   processedAt     DateTime?
   settledAt       DateTime?
+
+  cases           Case[]   @relation("DraftCases")
 
   notes           String?
   createdAt       DateTime @default(now())
@@ -864,6 +874,8 @@ model Task {
   outcome      String?
   callId       String?  @unique
   call         Call?    @relation(fields: [callId], references: [id])
+  caseId       String?
+  case         Case?    @relation("CaseTasks", fields: [caseId], references: [id])
 
   notes      String?
   createdAt  DateTime @default(now())
@@ -875,6 +887,7 @@ model Task {
   @@index([opportunityId])
   @@index([leadId])
   @@index([contactId])
+  @@index([caseId])
 }
 
 model Event {
@@ -901,6 +914,9 @@ model Event {
   ownerId      String?
   owner        User?    @relation("EventOwner", fields: [ownerId], references: [id])
 
+  caseId       String?
+  case         Case?    @relation("CaseEvents", fields: [caseId], references: [id])
+
   disposition  String?
   outcome      String?
 
@@ -914,4 +930,81 @@ model Event {
   @@index([opportunityId])
   @@index([leadId])
   @@index([contactId])
+  @@index([caseId])
+}
+
+// ============ PHASE 5: CASE MANAGEMENT ============
+
+model Case {
+  id              String   @id @default(cuid())
+  caseNumber      String   @unique
+  recordType      String   @default("SUPPORT") // SUPPORT | PAYMENT_ISSUE | SKIP_PAYMENT | CANCELLATION | BANK_UPDATE | DOCUMENT_REQUEST
+  subject         String
+  description     String?
+  status          String   @default("NEW")     // NEW | OPEN | IN_PROGRESS | WAITING_ON_CUSTOMER | ESCALATED | RESOLVED | CLOSED
+  priority        String   @default("NORMAL")  // LOW | NORMAL | HIGH | URGENT
+  origin          String   @default("PHONE")   // PHONE | EMAIL | WEB | CHAT | OTHER
+  escalationLevel String   @default("L1")      // L1 | L2 | L3
+
+  // Polymorphic "what"
+  accountId     String?
+  account       Account?     @relation("AccountCases", fields: [accountId], references: [id])
+  contactId     String?
+  contact       Contact?     @relation("ContactCases", fields: [contactId], references: [id])
+  programPlanId String?
+  programPlan   ProgramPlan? @relation("ProgramPlanCases", fields: [programPlanId], references: [id])
+  draftId       String?
+  draft         Draft?       @relation("DraftCases", fields: [draftId], references: [id])
+
+  // Ownership: user OR queue (Group)
+  ownerId      String?
+  owner        User?    @relation("CaseOwner", fields: [ownerId], references: [id])
+  ownerGroupId String?
+  ownerGroup   Group?   @relation("CaseOwnerGroup", fields: [ownerGroupId], references: [id])
+
+  parentCaseId String?
+  parentCase   Case?   @relation("CaseHierarchy", fields: [parentCaseId], references: [id])
+  childCases   Case[]  @relation("CaseHierarchy")
+
+  // Approval (lightweight; full ApprovalProcess in Phase 7)
+  requiresApproval Boolean   @default(false)
+  approvedById     String?
+  approvedBy       User?     @relation("CaseApprover", fields: [approvedById], references: [id])
+  approvedAt       DateTime?
+  approvalNotes    String?
+
+  // SLA / lifecycle timestamps
+  slaDueAt        DateTime?
+  firstResponseAt DateTime?
+  resolvedAt      DateTime?
+  closedAt        DateTime?
+
+  createdById String?
+  createdBy   User?   @relation("CaseCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comments CaseComment[]
+  tasks    Task[]      @relation("CaseTasks")
+  events   Event[]     @relation("CaseEvents")
+
+  @@index([status])
+  @@index([ownerId])
+  @@index([ownerGroupId])
+  @@index([accountId])
+  @@index([recordType])
+}
+
+model CaseComment {
+  id         String   @id @default(cuid())
+  caseId     String
+  case       Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  authorId   String?
+  author     User?    @relation("CaseCommentAuthor", fields: [authorId], references: [id])
+  body       String
+  isInternal Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([caseId, createdAt])
 }
