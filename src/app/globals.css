@@ -1,49 +1,155 @@
 /* SLDS — Salesforce Lightning Design System */
 @import url("/slds/styles/salesforce-lightning-design-system.min.css");
 
-/* Keep tailwind for utility classes (spacing/flex etc.) but SLDS takes over visuals */
+/* Tailwind kept for utility classes only — SLDS owns the visuals */
 @import "tailwindcss";
 
 @layer base {
   html, body {
     font-family: "Salesforce Sans", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-    background-color: #f3f3f3; /* SLDS canvas */
-    color: #181818;            /* SLDS text-default */
+    background-color: #f3f3f3;
+    color: #181818;
     min-height: 100%;
-  }
-  /* Constrain SLDS's high z-index reset that can clash with portals */
-  .slds-scope {
-    position: relative;
+    margin: 0;
   }
 }
 
-/* Salesforce Lightning's chrome variables */
-:root {
-  --sf-header-bg: #16325c;            /* navy header */
-  --sf-header-text: #ffffff;
-  --sf-tabnav-bg: #ffffff;
-  --sf-tabnav-active: #1589ee;        /* sf blue underline */
-  --sf-brand-blue: #0070d2;
-  --sf-canvas: #f3f3f3;
-  --sf-border: #d8dde6;
+/* The SLDS context-bar expects to live under .slds-context-bar_container, but
+   we use it standalone — ensure background + height match SF Lightning */
+.slds-context-bar {
+  background: #fafaf9;
+  border-bottom: 1px solid #d8dde6;
+  height: 38px;
+  display: flex;
+  align-items: stretch;
+  padding: 0 16px;
+  overflow-x: auto;
+  white-space: nowrap;
+  position: sticky;
+  top: 48px;
+  z-index: 8000;
 }
 
-/* Object-icon background colors — match SLDS conventions */
-.sf-icon-bg-account      { background-color: #fcb95b; }
-.sf-icon-bg-contact      { background-color: #a094ed; }
-.sf-icon-bg-lead         { background-color: #f88962; }
-.sf-icon-bg-opportunity  { background-color: #fcb95b; }
-.sf-icon-bg-client       { background-color: #44a3e6; }
-.sf-icon-bg-creditor     { background-color: #a094ed; }
-.sf-icon-bg-case         { background-color: #f2974a; }
-.sf-icon-bg-program_plan { background-color: #44a3e6; }
-.sf-icon-bg-draft        { background-color: #4dc4ff; }
-.sf-icon-bg-offer        { background-color: #a094ed; }
-.sf-icon-bg-settlement   { background-color: #5cd9ff; }
-.sf-icon-bg-fee          { background-color: #ffb758; }
-.sf-icon-bg-task         { background-color: #4bc076; }
-.sf-icon-bg-event        { background-color: #d4504c; }
-.sf-icon-bg-email        { background-color: #95aec5; }
-.sf-icon-bg-sms          { background-color: #16325c; }
-.sf-icon-bg-campaign     { background-color: #f4d666; }
-.sf-icon-bg-user         { background-color: #6dcff6; }
+.slds-context-bar__primary {
+  display: inline-flex;
+  align-items: center;
+  border-right: 1px solid #d8dde6;
+  padding-right: 12px;
+  margin-right: 8px;
+}
+
+.slds-context-bar__primary .slds-context-bar__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  height: 100%;
+  font-weight: 700;
+  color: #16325c;
+}
+
+.slds-context-bar__secondary ul {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+}
+
+.slds-context-bar__secondary .slds-context-bar__item {
+  display: inline-flex;
+  align-items: stretch;
+  border-right: 1px solid #d8dde6;
+}
+
+.slds-context-bar__secondary .slds-context-bar__item:first-child {
+  border-left: 1px solid #d8dde6;
+}
+
+.slds-context-bar__item .slds-context-bar__label-action {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  color: #3e3e3c;
+  text-decoration: none;
+  font-size: 13px;
+  border-bottom: 3px solid transparent;
+  border-top: 3px solid transparent;
+  height: 100%;
+}
+
+.slds-context-bar__item:hover .slds-context-bar__label-action {
+  background: #f3f2f2;
+}
+
+.slds-context-bar__item.slds-is-active .slds-context-bar__label-action {
+  background: #fff;
+  color: #16325c;
+  font-weight: 700;
+  border-bottom: 3px solid #1589ee;
+}
+
+/* Global header — SLDS provides .slds-global-header but expects you to wrap it.
+   Make it the navy gradient SF uses. */
+.slds-global-header_container .slds-global-header {
+  background: linear-gradient(180deg, #1797c0 0%, #16325c 100%);
+  color: #fff;
+  padding: 8px 16px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 9000;
+}
+
+.slds-global-header__item_search {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.slds-global-header .slds-input {
+  border: 0;
+  background: rgba(255, 255, 255, 0.95);
+  color: #181818;
+  height: 32px;
+  padding-left: 32px;
+}
+
+.slds-global-header .slds-input::placeholder {
+  color: #54698d;
+}
+
+.slds-global-header .slds-button_icon svg,
+.slds-global-header__item .slds-button__icon {
+  fill: #fff;
+}
+
+.slds-global-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.slds-global-actions__item-action,
+.slds-global-actions__avatar {
+  background: transparent;
+  border: 0;
+  padding: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.slds-global-actions__item-action:hover,
+.slds-global-actions .slds-button_icon:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.slds-global-actions .slds-avatar {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}

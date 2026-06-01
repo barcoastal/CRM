@@ -60,7 +60,7 @@ export function ListView<T extends { id: string }>({
           <div style={{ fontSize: 11, color: "#706e6b" }}>{entityLabel ?? entity}</div>
           <div style={{ fontSize: 18, fontWeight: 700, color: "#080707", display: "inline-flex", gap: 4, alignItems: "center" }}>
             {viewName}
-            <UtilityIcon name="down" size={14} />
+            <UtilityIcon name="down" size="x-small" />
           </div>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 4, alignItems: "center" }}>
@@ -178,7 +178,7 @@ function IconButton({ title, icon }: { title: string; icon: string }) {
         cursor: "pointer",
       }}
     >
-      <UtilityIcon name={icon} size={14} />
+      <UtilityIcon name={icon} size="x-small" />
     </button>
   );
 }

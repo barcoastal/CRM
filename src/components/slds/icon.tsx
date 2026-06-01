@@ -1,8 +1,9 @@
-import { iconUrl, iconBg } from "@/lib/slds/object-icons";
+import { iconUrl, ENTITY_ICONS } from "@/lib/slds/object-icons";
 
 /**
- * Object icon — the colored square + glyph used everywhere SF puts an
- * object reference (header, tabs, related list rows).
+ * Object icon — colored SLDS square + glyph. Uses SLDS's own
+ * .slds-icon_container + .slds-icon-standard-{name} for the background
+ * color (no custom CSS needed).
  *
  * Sizes follow SLDS scale:
  *   xx-small (16px), x-small (20px), small (24px), medium (32px), large (48px)
@@ -16,34 +17,18 @@ export function ObjectIcon({
   size?: "xx-small" | "x-small" | "small" | "medium" | "large";
   title?: string;
 }) {
-  const pxBySize: Record<string, number> = {
-    "xx-small": 16, "x-small": 20, small: 24, medium: 32, large: 48,
-  };
-  const px = pxBySize[size];
-  const url = iconUrl(entity as keyof typeof import("@/lib/slds/object-icons").ENTITY_ICONS);
-  const bg = iconBg(entity as keyof typeof import("@/lib/slds/object-icons").ENTITY_ICONS);
+  const info = ENTITY_ICONS[entity as keyof typeof ENTITY_ICONS] ?? ENTITY_ICONS.Account;
+  const url = iconUrl(entity as keyof typeof ENTITY_ICONS);
+  const sldsKey = info.iconName.replace(/_/g, "_"); // e.g. "service_contract"
 
   return (
     <span
-      className={`slds-icon_container slds-icon-standard-${entity.toLowerCase()} ${bg}`}
+      className={`slds-icon_container slds-icon-${info.iconSet}-${sldsKey}`}
       title={title ?? entity}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: px,
-        height: px,
-        borderRadius: 4,
-        flexShrink: 0,
-      }}
     >
-      <img
-        src={url}
-        alt={title ?? entity}
-        width={Math.round(px * 0.6)}
-        height={Math.round(px * 0.6)}
-        style={{ filter: "brightness(0) invert(1)" }}
-      />
+      <span className={`slds-icon slds-icon_container slds-icon-${info.iconSet}-${sldsKey} slds-icon_${size}`}>
+        <img src={url} alt={title ?? entity} className="slds-icon" />
+      </span>
     </span>
   );
 }
@@ -53,23 +38,16 @@ export function ObjectIcon({
  */
 export function UtilityIcon({
   name,
-  size = 16,
+  size = "x-small",
   className,
-  color,
 }: {
   name: string;
-  size?: number;
+  size?: "xx-small" | "x-small" | "small" | "medium" | "large";
   className?: string;
-  color?: string;
 }) {
   return (
-    <img
-      src={`/slds/icons/utility/${name}.svg`}
-      alt=""
-      width={size}
-      height={size}
-      className={className}
-      style={color ? { filter: `brightness(0) saturate(100%) ${color}` } : undefined}
-    />
+    <svg className={`slds-icon slds-icon_${size} ${className ?? ""}`} aria-hidden="true">
+      <use xlinkHref={`/slds/icons/utility-sprite/svg/symbols.svg#${name}`} />
+    </svg>
   );
 }
