@@ -53,10 +53,9 @@ export async function GET(
     expectedCloseDate: opportunity.expectedCloseDate?.toISOString() ?? null,
     createdAt: opportunity.createdAt.toISOString(),
     updatedAt: opportunity.updatedAt.toISOString(),
-    lead: {
-      ...opportunity.lead,
-      createdAt: opportunity.lead.createdAt.toISOString(),
-    },
+    lead: opportunity.lead
+      ? { ...opportunity.lead, createdAt: opportunity.lead.createdAt.toISOString() }
+      : null,
   });
 }
 

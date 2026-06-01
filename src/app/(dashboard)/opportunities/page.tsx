@@ -67,12 +67,17 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
 
   const totalPages = Math.ceil(total / limit);
 
-  const serialized = opportunities.map((opp) => ({
-    ...opp,
-    expectedCloseDate: opp.expectedCloseDate?.toISOString() ?? null,
-    createdAt: opp.createdAt.toISOString(),
-    updatedAt: opp.updatedAt.toISOString(),
-  }));
+  // Phase 2: lead is now nullable on Opportunity. List view shows a placeholder lead
+  // for unlinked opps until the Account-based UI is in place.
+  const serialized = opportunities
+    .filter((opp) => opp.lead != null)
+    .map((opp) => ({
+      ...opp,
+      lead: opp.lead!,
+      expectedCloseDate: opp.expectedCloseDate?.toISOString() ?? null,
+      createdAt: opp.createdAt.toISOString(),
+      updatedAt: opp.updatedAt.toISOString(),
+    }));
 
   return (
     <div className="space-y-5">

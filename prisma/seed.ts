@@ -286,6 +286,11 @@ async function nukeBusinessData() {
   await prisma.client.deleteMany();
   await prisma.opportunity.deleteMany();
   await prisma.lead.deleteMany();
+  // Phase 2 entities — must drop before User (Account/Contact reference User as owner)
+  await prisma.creditor.deleteMany();
+  await prisma.accountContactRelation.deleteMany();
+  await prisma.contact.deleteMany();
+  await prisma.account.deleteMany();
   await prisma.user.deleteMany();
 }
 
@@ -472,7 +477,86 @@ async function main() {
     ],
   });
 
-  // ---------- SAMPLE BUSINESS DATA (so existing UI still works) ----------
+  // ---------- SAMPLE BUSINESS DATA (Phase 2: Accounts + Contacts + Creditors) ----------
+  console.log("Seeding sample accounts, contacts, creditors...");
+
+  // Three creditors — these get referenced by debts in Phase 3
+  const chase = await prisma.account.create({
+    data: {
+      recordType: "CREDITOR", name: "Chase Bank", type: "ORG",
+      phone: "+18009352721", email: "collections@chase.com",
+      website: "https://chase.com",
+    },
+  });
+  await prisma.creditor.create({
+    data: {
+      accountId: chase.id, legalName: "JPMorgan Chase Bank, N.A.",
+      collectionsPhone: "+18009352721", collectionsEmail: "collections@chase.com",
+      settlementPolicy: "Typically accepts 40-50% on charged-off accounts.",
+    },
+  });
+
+  const amex = await prisma.account.create({
+    data: {
+      recordType: "CREDITOR", name: "American Express", type: "ORG",
+      phone: "+18005281234", email: "collections@aexp.com",
+    },
+  });
+  await prisma.creditor.create({
+    data: {
+      accountId: amex.id, legalName: "American Express National Bank",
+      collectionsPhone: "+18005281234",
+      settlementPolicy: "Aggressive negotiators; often hold at 60%+ before settlement.",
+    },
+  });
+
+  const capitalOne = await prisma.account.create({
+    data: { recordType: "CREDITOR", name: "Capital One", type: "ORG", phone: "+18002584300" },
+  });
+  await prisma.creditor.create({
+    data: { accountId: capitalOne.id, legalName: "Capital One, N.A.", collectionsPhone: "+18002584300" },
+  });
+
+  // Two sample CLIENT accounts (pre-conversion) — give UI something to show
+  const acmeAccount = await prisma.account.create({
+    data: {
+      recordType: "BUSINESS_ACCOUNT", name: "Acme Construction LLC", type: "ORG",
+      ein: "12-3456789", phone: "+15551234567", email: "bob@acmeconstruction.com",
+      industry: "Construction", annualRevenue: 850000,
+      ownerId: closer.id,
+    },
+  });
+  const acmeContact = await prisma.contact.create({
+    data: {
+      firstName: "Bob", lastName: "Johnson", fullName: "Bob Johnson",
+      email: "bob@acmeconstruction.com", phone: "+15551234567",
+      title: "Owner",
+      primaryAccountId: acmeAccount.id, ownerId: closer.id,
+    },
+  });
+  await prisma.accountContactRelation.create({
+    data: { accountId: acmeAccount.id, contactId: acmeContact.id, role: "Owner" },
+  });
+
+  const sunriseAccount = await prisma.account.create({
+    data: {
+      recordType: "BUSINESS_ACCOUNT", name: "Sunrise Restaurant Group", type: "ORG",
+      ein: "98-7654321", phone: "+15559876543", email: "maria@sunrisegroup.com",
+      industry: "Food Service", annualRevenue: 420000,
+      ownerId: closer.id,
+    },
+  });
+  const sunriseContact = await prisma.contact.create({
+    data: {
+      firstName: "Maria", lastName: "Garcia", fullName: "Maria Garcia",
+      email: "maria@sunrisegroup.com", phone: "+15559876543", title: "Managing Partner",
+      primaryAccountId: sunriseAccount.id, ownerId: closer.id,
+    },
+  });
+  await prisma.accountContactRelation.create({
+    data: { accountId: sunriseAccount.id, contactId: sunriseContact.id, role: "Managing Partner" },
+  });
+
   console.log("Seeding sample leads + campaign...");
   const leads = await Promise.all([
     prisma.lead.create({
@@ -541,6 +625,9 @@ async function main() {
   console.log(`  Profiles:         ${PROFILES.length}`);
   console.log(`  Queues:           ${QUEUES.length}`);
   console.log(`  Users:            5 (admin, sales mgr, closer, csa, negotiator)`);
+  console.log(`  Accounts:         5 (2 clients, 3 creditors)`);
+  console.log(`  Contacts:         2`);
+  console.log(`  Creditors:        3 (Chase, Amex, Capital One)`);
   console.log(`  Leads:            ${leads.length}`);
   console.log(`  Campaign:         ${campaign.name}`);
   console.log(`\n  Logins (all password123):`);

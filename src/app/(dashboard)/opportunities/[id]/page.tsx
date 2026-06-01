@@ -78,24 +78,31 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
     notFound();
   }
 
+  // Phase 2: Opportunity.lead is now nullable (post-conversion, opp lives on Account).
+  // If no lead is attached, redirect to the Account-centric view (built in Phase 2 UI).
+  if (!opportunity.lead) {
+    notFound();
+  }
+  const lead = opportunity.lead;
+
   const serialized = {
     ...opportunity,
     expectedCloseDate: opportunity.expectedCloseDate?.toISOString() ?? null,
     createdAt: opportunity.createdAt.toISOString(),
     updatedAt: opportunity.updatedAt.toISOString(),
     lead: {
-      ...opportunity.lead,
-      lastContactedAt: opportunity.lead.lastContactedAt?.toISOString() ?? null,
-      nextFollowUpAt: opportunity.lead.nextFollowUpAt?.toISOString() ?? null,
-      createdAt: opportunity.lead.createdAt.toISOString(),
-      calls: opportunity.lead.calls.map((call) => ({
+      ...lead,
+      lastContactedAt: lead.lastContactedAt?.toISOString() ?? null,
+      nextFollowUpAt: lead.nextFollowUpAt?.toISOString() ?? null,
+      createdAt: lead.createdAt.toISOString(),
+      calls: lead.calls.map((call) => ({
         ...call,
         startedAt: call.startedAt.toISOString(),
         answeredAt: call.answeredAt?.toISOString() ?? null,
         endedAt: call.endedAt?.toISOString() ?? null,
         createdAt: call.createdAt.toISOString(),
       })),
-      campaignContacts: opportunity.lead.campaignContacts.map((cc) => ({
+      campaignContacts: lead.campaignContacts.map((cc) => ({
         ...cc,
         lastAttempt: cc.lastAttempt?.toISOString() ?? null,
         createdAt: cc.createdAt.toISOString(),
