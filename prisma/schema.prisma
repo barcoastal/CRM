@@ -54,6 +54,10 @@ model User {
   casesCreated      Case[]          @relation("CaseCreatedBy")
   casesApproved     Case[]          @relation("CaseApprover")
   caseComments      CaseComment[]   @relation("CaseCommentAuthor")
+  emailsOwned       EmailMessage[]  @relation("EmailOwner")
+  smsOwned          SmsMessage[]    @relation("SmsOwner")
+  emailTemplates    EmailTemplate[] @relation("EmailTemplateAuthor")
+  integrationCredentials IntegrationCredential[] @relation("IntegrationCredentialAuthor")
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
@@ -261,6 +265,8 @@ model Account {
   financialSummaries FinancialSummary[]
   tasks             Task[]                   @relation("AccountTasks")
   events            Event[]                  @relation("AccountEvents")
+  emails            EmailMessage[]           @relation("AccountEmails")
+  sms               SmsMessage[]             @relation("AccountSms")
   cases             Case[]                   @relation("AccountCases")
 
   @@index([recordType])
@@ -289,6 +295,8 @@ model Contact {
   convertedFromLead   Lead[]                   @relation("LeadConvertedContact")
   tasks               Task[]                   @relation("ContactTasks")
   events              Event[]                  @relation("ContactEvents")
+  emails              EmailMessage[]           @relation("ContactEmails")
+  sms                 SmsMessage[]             @relation("ContactSms")
   cases               Case[]                   @relation("ContactCases")
 }
 
@@ -375,6 +383,8 @@ model Lead {
   opportunity      Opportunity?
   tasks            Task[]            @relation("LeadTasks")
   events           Event[]           @relation("LeadEvents")
+  emails           EmailMessage[]    @relation("LeadEmails")
+  sms              SmsMessage[]      @relation("LeadSms")
 
   @@index([recordType])
   @@index([convertedAccountId])
@@ -510,6 +520,7 @@ model Opportunity {
   financialSummaries FinancialSummary[]
   tasks             Task[]      @relation("OpportunityTasks")
   events            Event[]     @relation("OpportunityEvents")
+  emails            EmailMessage[] @relation("OpportunityEmails")
 
   @@index([recordType])
   @@index([accountId])
@@ -988,6 +999,8 @@ model Case {
   comments CaseComment[]
   tasks    Task[]      @relation("CaseTasks")
   events   Event[]     @relation("CaseEvents")
+  emails   EmailMessage[] @relation("CaseEmails")
+  sms      SmsMessage[]   @relation("CaseSms")
 
   @@index([status])
   @@index([ownerId])
@@ -1007,4 +1020,148 @@ model CaseComment {
   createdAt  DateTime @default(now())
 
   @@index([caseId, createdAt])
+}
+
+// ============ PHASE 6: COMMUNICATIONS + INTEGRATIONS ============
+
+model EmailMessage {
+  id          String  @id @default(cuid())
+  direction   String  @default("OUTBOUND") // INBOUND | OUTBOUND
+  status      String  @default("DRAFT")    // DRAFT | QUEUED | SENT | DELIVERED | OPENED | CLICKED | BOUNCED | COMPLAINED | FAILED
+  fromAddress String
+  toAddresses String                       // CSV
+  cc          String?
+  bcc         String?
+  subject     String
+  bodyText    String?
+  bodyHtml    String?
+
+  templateId String?
+  template   EmailTemplate? @relation(fields: [templateId], references: [id])
+
+  accountId     String?
+  account       Account?     @relation("AccountEmails", fields: [accountId], references: [id])
+  contactId     String?
+  contact       Contact?     @relation("ContactEmails", fields: [contactId], references: [id])
+  leadId        String?
+  lead          Lead?        @relation("LeadEmails", fields: [leadId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity? @relation("OpportunityEmails", fields: [opportunityId], references: [id])
+  caseId        String?
+  case          Case?        @relation("CaseEmails", fields: [caseId], references: [id])
+
+  ownerId String?
+  owner   User?   @relation("EmailOwner", fields: [ownerId], references: [id])
+
+  providerMessageId String?
+  provider          String?
+  errorReason       String?
+
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  openedAt    DateTime?
+  clickedAt   DateTime?
+  bouncedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([direction])
+  @@index([accountId])
+  @@index([leadId])
+  @@index([caseId])
+}
+
+model SmsMessage {
+  id         String  @id @default(cuid())
+  direction  String  @default("OUTBOUND") // INBOUND | OUTBOUND
+  status     String  @default("QUEUED")   // QUEUED | SENT | DELIVERED | FAILED | RECEIVED
+  fromNumber String
+  toNumber   String
+  body       String
+  segments   Int     @default(1)
+
+  accountId String?
+  account   Account? @relation("AccountSms", fields: [accountId], references: [id])
+  contactId String?
+  contact   Contact? @relation("ContactSms", fields: [contactId], references: [id])
+  leadId    String?
+  lead      Lead?    @relation("LeadSms", fields: [leadId], references: [id])
+  caseId    String?
+  case      Case?    @relation("CaseSms", fields: [caseId], references: [id])
+
+  ownerId String?
+  owner   User?   @relation("SmsOwner", fields: [ownerId], references: [id])
+
+  providerMessageId String?
+  provider          String?
+  errorReason       String?
+  errorCode         String?
+
+  sentAt      DateTime?
+  deliveredAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([accountId])
+  @@index([leadId])
+}
+
+model EmailTemplate {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  developerName String   @unique
+  subject       String
+  bodyText      String?
+  bodyHtml      String?
+  description   String?
+  folder        String?  @default("General")
+  isActive      Boolean  @default(true)
+  createdById   String?
+  createdBy     User?    @relation("EmailTemplateAuthor", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  emails EmailMessage[]
+}
+
+model IntegrationCredential {
+  id          String   @id @default(cuid())
+  provider    String                       // FIVE9 | TWILIO | TELNYX | DOCUSIGN | PARDOT | KLAVIYO | SENDGRID
+  name        String
+  isActive    Boolean  @default(true)
+  config      Json
+  scopes      String?
+  rotatedAt   DateTime?
+  createdById String?
+  createdBy   User?    @relation("IntegrationCredentialAuthor", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, name])
+  @@index([provider, isActive])
+}
+
+model WebhookEvent {
+  id             String   @id @default(cuid())
+  source         String                       // PAYMENT_PROCESSOR | LEAD_IMPORT | OPT_OUT | AD_CLICK | TWILIO | SENDGRID
+  endpoint       String
+  ipAddress      String?
+  headers        Json?
+  payload        Json?
+  signature      String?
+  signatureValid Boolean?
+  status         String   @default("RECEIVED") // RECEIVED | PROCESSED | FAILED | IGNORED
+  resultNote     String?
+  processedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([source, status])
+  @@index([createdAt])
 }

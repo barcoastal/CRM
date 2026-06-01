@@ -273,7 +273,13 @@ async function nukeAccessControl() {
 }
 
 async function nukeBusinessData() {
-  // Phase 5 — case comments + cases first (reference everything)
+  // Phase 6 — emails / sms / templates / integrations / webhook events
+  await prisma.emailMessage.deleteMany();
+  await prisma.smsMessage.deleteMany();
+  await prisma.emailTemplate.deleteMany();
+  await prisma.integrationCredential.deleteMany();
+  await prisma.webhookEvent.deleteMany();
+  // Phase 5 — case comments + cases
   await prisma.caseComment.deleteMany();
   await prisma.case.deleteMany();
   // Phase 4 — drop tasks/events
@@ -866,6 +872,109 @@ async function main() {
     },
   });
 
+  console.log("Seeding email templates, communications, integrations...");
+
+  const tplWelcome = await prisma.emailTemplate.create({
+    data: {
+      name: "Welcome — Program Enrollment", developerName: "Welcome_Enrollment",
+      subject: "Welcome to Coastal Debt, {{contact.firstName}}!",
+      bodyText: "Hi {{contact.firstName}},\n\nWelcome aboard! Your {{programPlan.termMonths}}-month program is set to start on {{programPlan.startDate}}. Your monthly draft of ${{programPlan.monthlyAmount}} will pull on the 1st of each month.\n\n— Coastal Team",
+      folder: "Onboarding", isActive: true, createdById: admin.id,
+    },
+  });
+  await prisma.emailTemplate.create({
+    data: {
+      name: "Failed Draft — Notify Client", developerName: "Failed_Draft_Notify",
+      subject: "Important: Your recent payment didn't go through",
+      bodyText: "Hi {{contact.firstName}},\n\nYour {{programPlan.monthlyAmount}} draft on {{draft.scheduledDate}} returned with code {{draft.returnCode}}. We'll re-attempt in 5 business days.",
+      folder: "Operations", isActive: true, createdById: admin.id,
+    },
+  });
+  await prisma.emailTemplate.create({
+    data: {
+      name: "Settlement Accepted — Congratulations", developerName: "Settlement_Accepted",
+      subject: "Great news, {{contact.firstName}} — {{creditor.legalName}} accepted",
+      bodyText: "We negotiated a settlement of ${{settlement.settledAmount}} against ${{debt.originalBalance}} — saving you ${{settlement.savingsAmount}}.",
+      folder: "Negotiations", isActive: true, createdById: admin.id,
+    },
+  });
+
+  await prisma.emailMessage.create({
+    data: {
+      direction: "OUTBOUND", status: "DELIVERED",
+      fromAddress: "team@coastaldebt.com", toAddresses: acmeContact.email!,
+      subject: "Welcome to Coastal Debt, Bob!",
+      bodyText: "Welcome aboard, Bob! Your 36-month program is set...",
+      templateId: tplWelcome.id,
+      accountId: acmeAccount.id, contactId: acmeContact.id,
+      ownerId: closer.id,
+      provider: "sendgrid", providerMessageId: "sg_msg_abc123",
+      sentAt: new Date("2026-02-01T15:00:00Z"),
+      deliveredAt: new Date("2026-02-01T15:00:12Z"),
+    },
+  });
+  await prisma.emailMessage.create({
+    data: {
+      direction: "OUTBOUND", status: "DRAFT",
+      fromAddress: "team@coastaldebt.com", toAddresses: sunriseContact.email!,
+      subject: "Sunrise Restaurant — DocuSign enclosed",
+      bodyText: "Hi Maria, please find your enrollment contract attached for signature.",
+      accountId: sunriseAccount.id, contactId: sunriseContact.id, ownerId: closer.id,
+    },
+  });
+
+  await prisma.smsMessage.create({
+    data: {
+      direction: "OUTBOUND", status: "DELIVERED",
+      fromNumber: "+18005551234", toNumber: acmeContact.phone!,
+      body: "Hi Bob — just confirming your draft is rescheduled for May 8. Reply Y to confirm.",
+      accountId: acmeAccount.id, contactId: acmeContact.id, ownerId: csa.id,
+      provider: "twilio", providerMessageId: "SM_abc999",
+      sentAt: new Date("2026-05-03T18:00:00Z"),
+      deliveredAt: new Date("2026-05-03T18:00:04Z"),
+    },
+  });
+  await prisma.smsMessage.create({
+    data: {
+      direction: "INBOUND", status: "RECEIVED",
+      fromNumber: acmeContact.phone!, toNumber: "+18005551234",
+      body: "Y — thanks!",
+      accountId: acmeAccount.id, contactId: acmeContact.id,
+      provider: "twilio",
+    },
+  });
+
+  await prisma.integrationCredential.create({
+    data: {
+      provider: "TWILIO", name: "Primary Twilio account", isActive: true,
+      config: {
+        accountSid: "AC_PLACEHOLDER_FILL_ME",
+        apiKey: "SK_PLACEHOLDER",
+        apiSecret: "SECRET_PLACEHOLDER",
+        outboundNumber: "+18005551234",
+      },
+      createdById: admin.id,
+    },
+  });
+  await prisma.integrationCredential.create({
+    data: {
+      provider: "DOCUSIGN", name: "Production DocuSign account", isActive: false,
+      config: { accountId: "PLACEHOLDER", integrationKey: "PLACEHOLDER" },
+      createdById: admin.id,
+    },
+  });
+
+  await prisma.webhookEvent.create({
+    data: {
+      source: "PAYMENT_PROCESSOR", endpoint: "/api/webhooks/payment-processor",
+      ipAddress: "203.0.113.42",
+      payload: { draftId: "test-draft-id", status: "SUCCESS" },
+      signatureValid: true, status: "PROCESSED",
+      resultNote: "test-draft-id → SUCCESS",
+      processedAt: new Date("2026-04-01T16:00:00Z"),
+    },
+  });
+
   console.log("Seeding sample leads + campaign...");
   const leads = await Promise.all([
     prisma.lead.create({
@@ -948,6 +1057,11 @@ async function main() {
   console.log(`  Events:           2 (1 upcoming + 1 past intake)`);
   console.log(`  Cases:            4 (1 IN_PROGRESS, 1 ESCALATED w/ approval, 1 NEW, 1 RESOLVED)`);
   console.log(`  Case comments:    2 (on failed-draft case)`);
+  console.log(`  Email templates:  3 (Welcome / Failed Draft / Settlement Accepted)`);
+  console.log(`  Emails:           2 (1 DELIVERED welcome + 1 DRAFT to Sunrise)`);
+  console.log(`  SMS:              2 (1 outbound + 1 inbound reply on Acme)`);
+  console.log(`  Integrations:     2 (Twilio placeholder + DocuSign placeholder)`);
+  console.log(`  Webhook events:   1 (PAYMENT_PROCESSOR test)`);
   console.log(`  Leads:            ${leads.length}`);
   console.log(`  Campaign:         ${campaign.name}`);
   console.log(`\n  Logins (all password123):`);
