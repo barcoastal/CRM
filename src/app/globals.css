@@ -1,7 +1,7 @@
 /* SLDS — Salesforce Lightning Design System */
 @import url("/slds/styles/salesforce-lightning-design-system.min.css");
 
-/* Tailwind kept for utility classes only — SLDS owns the visuals */
+/* Tailwind for utility classes */
 @import "tailwindcss";
 
 @layer base {
@@ -11,145 +11,264 @@
     color: #181818;
     min-height: 100%;
     margin: 0;
+    font-size: 13px;
   }
 }
 
-/* The SLDS context-bar expects to live under .slds-context-bar_container, but
-   we use it standalone — ensure background + height match SF Lightning */
-.slds-context-bar {
-  background: #fafaf9;
-  border-bottom: 1px solid #d8dde6;
-  height: 38px;
-  display: flex;
-  align-items: stretch;
-  padding: 0 16px;
-  overflow-x: auto;
-  white-space: nowrap;
-  position: sticky;
-  top: 48px;
-  z-index: 8000;
-}
-
-.slds-context-bar__primary {
-  display: inline-flex;
-  align-items: center;
-  border-right: 1px solid #d8dde6;
-  padding-right: 12px;
-  margin-right: 8px;
-}
-
-.slds-context-bar__primary .slds-context-bar__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 8px;
-  height: 100%;
-  font-weight: 700;
-  color: #16325c;
-}
-
-.slds-context-bar__secondary ul {
-  display: flex;
-  align-items: stretch;
-  height: 100%;
-}
-
-.slds-context-bar__secondary .slds-context-bar__item {
-  display: inline-flex;
-  align-items: stretch;
-  border-right: 1px solid #d8dde6;
-}
-
-.slds-context-bar__secondary .slds-context-bar__item:first-child {
-  border-left: 1px solid #d8dde6;
-}
-
-.slds-context-bar__item .slds-context-bar__label-action {
-  display: inline-flex;
-  align-items: center;
-  padding: 0 12px;
-  color: #3e3e3c;
-  text-decoration: none;
-  font-size: 13px;
-  border-bottom: 3px solid transparent;
-  border-top: 3px solid transparent;
-  height: 100%;
-}
-
-.slds-context-bar__item:hover .slds-context-bar__label-action {
-  background: #f3f2f2;
-}
-
-.slds-context-bar__item.slds-is-active .slds-context-bar__label-action {
+/* ============ ROW 1: minimal global bar ============ */
+.sf-global-bar {
+  height: 36px;
   background: #fff;
-  color: #16325c;
-  font-weight: 700;
-  border-bottom: 3px solid #1589ee;
-}
-
-/* Global header — SLDS provides .slds-global-header but expects you to wrap it.
-   Make it the navy gradient SF uses. */
-.slds-global-header_container .slds-global-header {
-  background: linear-gradient(180deg, #1797c0 0%, #16325c 100%);
-  color: #fff;
-  padding: 8px 16px;
-  height: 48px;
+  border-bottom: 1px solid #d8dde6;
   display: flex;
   align-items: center;
-  gap: 16px;
+  padding: 0 16px;
+  gap: 12px;
   position: sticky;
   top: 0;
   z-index: 9000;
 }
 
-.slds-global-header__item_search {
+.sf-app-badge {
+  background: #16325c;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -16px;
+  text-decoration: none;
+}
+
+.sf-app-badge-icon {
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  clip-path: polygon(20% 10%, 80% 10%, 90% 30%, 90% 90%, 10% 90%, 10% 30%);
+}
+
+.sf-search-wrap {
   flex: 1;
   display: flex;
   justify-content: center;
 }
 
-.slds-global-header .slds-input {
-  border: 0;
-  background: rgba(255, 255, 255, 0.95);
-  color: #181818;
-  height: 32px;
-  padding-left: 32px;
-}
-
-.slds-global-header .slds-input::placeholder {
-  color: #54698d;
-}
-
-.slds-global-header .slds-button_icon svg,
-.slds-global-header__item .slds-button__icon {
-  fill: #fff;
-}
-
-.slds-global-actions {
+.sf-search {
   display: flex;
   align-items: center;
-  gap: 4px;
-  list-style: none;
-  margin: 0;
+  background: #fff;
+  border: 1px solid #d8dde6;
+  border-radius: 4px;
+  padding: 0 8px;
+  width: min(620px, 80%);
+  height: 28px;
+}
+
+.sf-search-icon {
+  width: 14px;
+  height: 14px;
+  fill: #54698d;
+  flex-shrink: 0;
+}
+
+.sf-search-input {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: 0 8px;
+  font-size: 13px;
+  color: #181818;
+}
+
+.sf-search-input::placeholder { color: #b0adab; }
+
+.sf-global-utilities {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+
+.sf-util-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
   padding: 0;
 }
 
-.slds-global-actions__item-action,
-.slds-global-actions__avatar {
+.sf-util-btn:hover { background: #f3f2f2; }
+.sf-util-btn-chev { width: 16px; }
+
+.sf-util-icon {
+  width: 18px;
+  height: 18px;
+  fill: #706e6b;
+}
+
+.sf-util-icon-small { width: 10px; height: 10px; fill: #706e6b; }
+
+.sf-avatar-btn {
   background: transparent;
   border: 0;
-  padding: 4px;
+  padding: 0 0 0 8px;
   cursor: pointer;
+}
+
+.sf-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #54698d;
+  color: #fff;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sf-profile-menu {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  background: #fff;
+  border: 1px solid #d8dde6;
   border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  min-width: 220px;
+  z-index: 9100;
+  padding: 4px 0;
 }
 
-.slds-global-actions__item-action:hover,
-.slds-global-actions .slds-button_icon:hover {
-  background: rgba(255, 255, 255, 0.12);
+.sf-profile-name {
+  padding: 8px 12px;
+  font-weight: 700;
+  border-bottom: 1px solid #d8dde6;
+  font-size: 13px;
 }
 
-.slds-global-actions .slds-avatar {
-  border: 2px solid rgba(255, 255, 255, 0.3);
+.sf-profile-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 13px;
+  color: #080707;
+  text-decoration: none;
+}
+
+.sf-profile-item:hover { background: #f3f2f2; }
+
+/* ============ ROW 2: app launcher + app name + tabs ============ */
+.sf-nav-bar {
+  height: 40px;
+  background: #fff;
+  border-bottom: 1px solid #d8dde6;
+  display: flex;
+  align-items: stretch;
+  padding-left: 0;
+  position: sticky;
+  top: 36px;
+  z-index: 8500;
+}
+
+.sf-app-launcher {
+  background: transparent;
+  border: 0;
+  width: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-right: 1px solid #d8dde6;
+}
+
+.sf-app-launcher:hover { background: #f3f2f2; }
+
+.sf-waffle {
+  display: grid;
+  grid-template-columns: repeat(3, 4px);
+  gap: 2px;
+}
+.sf-waffle span { width: 4px; height: 4px; background: #54698d; border-radius: 1px; }
+
+.sf-app-name {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #16325c;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sf-tab-nav {
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  overflow-x: auto;
+}
+
+.sf-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  color: #080707;
+  text-decoration: none;
+  font-size: 13px;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+
+.sf-tab:hover { background: #f3f2f2; }
+
+.sf-tab-active {
+  color: #080707;
+  font-weight: 600;
+  border-bottom-color: #1589ee;
+}
+
+.sf-tab-chev {
+  width: 8px;
+  height: 8px;
+  fill: #706e6b;
+}
+
+.sf-tab-edit {
+  background: transparent;
+  border: 0;
+  border-left: 1px solid #d8dde6;
+  width: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sf-tab-edit:hover { background: #f3f2f2; }
+
+/* ============ ROW 3: decorative blue banner ============ */
+.sf-decor-band {
+  height: 30px;
+  background-color: #2e5b8b;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,0.04) 0,
+    rgba(255,255,255,0.04) 2px,
+    transparent 2px,
+    transparent 8px
+  );
 }
