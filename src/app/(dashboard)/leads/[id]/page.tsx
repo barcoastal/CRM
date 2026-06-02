@@ -8,26 +8,20 @@ import { RelatedList } from "@/components/slds/related-list";
 import { ConvertLeadButton } from "@/components/leads/convert-lead-button";
 import { leadStatusTone } from "@/lib/slds/status-tones";
 
+// SF-canonical Lead status path — 1:1 with cdcrm.lightning.force.com
 const LEAD_PATH = [
   { label: "New" },
-  { label: "Contacted" },
-  { label: "Qualified" },
+  { label: "Working Lead" },
+  { label: "Archive Disposition" },
   { label: "Converted" },
 ];
 
 function leadPathIndex(status: string): number {
-  const map: Record<string, number> = {
-    NEW: 0,
-    CONTACTED: 1,
-    QUALIFIED: 2,
-    CALLBACK: 1,
-    ENROLLED: 3,
-    CONVERTED: 3,
-    UNQUALIFIED: -1,
-    LOST: -1,
-    DNC: -1,
-  };
-  return map[status] ?? 0;
+  const s = (status ?? "").toUpperCase().replace(/[_ ]+/g, "_");
+  if (s === "CONVERTED" || s === "ENROLLED") return 3;
+  if (s === "ARCHIVE_DISPOSITION" || s === "DNC" || s === "LOST" || s === "UNQUALIFIED") return 2;
+  if (s === "WORKING_LEAD" || s === "CONTACTED" || s === "QUALIFIED" || s === "CALLBACK") return 1;
+  return 0;
 }
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {

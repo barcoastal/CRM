@@ -1167,6 +1167,25 @@ model WebhookEvent {
   @@index([createdAt])
 }
 
+// ============ DISPOSITIONS (SF picklist parity — per-entity picklist values) ============
+
+model Disposition {
+  id        String   @id @default(cuid())
+  entity    String   // "Lead" | "Task" | "Call" | "Negotiation"
+  category  String   // "SUB_DISPOSITION" | "CALL_OUTCOME"
+  value     String   // canonical stored value
+  label     String   // UI label
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  // When set, picking this disposition updates Lead.status to this value
+  leadStatusMapping String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([entity, category, value])
+  @@index([entity, category, isActive])
+}
+
 // ============ LIST VIEWS (SF List View parity) ============
 
 model ListView {

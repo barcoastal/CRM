@@ -14,7 +14,7 @@ export default async function SettingsPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [users, profiles, roles, queues, permSets, integrations, templates] = await Promise.all([
+  const [users, profiles, roles, queues, permSets, integrations, templates, dispositions, listViews] = await Promise.all([
     prisma.user.count({ where: { isActive: true } }),
     prisma.profile.count({ where: { isActive: true } }),
     prisma.role.count(),
@@ -22,6 +22,8 @@ export default async function SettingsPage() {
     prisma.permissionSet.count(),
     prisma.integrationCredential.count(),
     prisma.emailTemplate.count({ where: { isActive: true } }),
+    prisma.disposition.count({ where: { isActive: true } }),
+    prisma.listView.count(),
   ]);
 
   const cards: { section: string; items: SettingsCard[] }[] = [
@@ -33,6 +35,13 @@ export default async function SettingsPage() {
         { href: "/settings/permission-sets", title: "Permission Sets", description: "Fine-grained capability bundles", count: permSets },
         { href: "/settings/roles", title: "Role Hierarchy", description: "Reporting relationships", count: roles },
         { href: "/settings/queues", title: "Queues", description: "Lead/case routing pools", count: queues },
+      ],
+    },
+    {
+      section: "Picklists & Views",
+      items: [
+        { href: "/settings/dispositions", title: "Dispositions", description: "Per-entity picklist values (47 SF Lead sub-dispositions seeded)", count: dispositions },
+        { href: "/settings/list-views", title: "List Views", description: "Saved filter sets for object list pages", count: listViews },
       ],
     },
     {

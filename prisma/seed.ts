@@ -1062,8 +1062,28 @@ async function main() {
     }
   }
 
+  // ---------- DISPOSITIONS (SF Lead picklist — 47 sub-dispositions) ----------
+  console.log("Seeding dispositions...");
+  const { LEAD_SUB_DISPOSITIONS, DISPOSITION_TO_STATUS } = await import("../src/lib/sf-canonical");
+  await prisma.disposition.deleteMany({ where: { entity: "Lead" } });
+  let dispositionCount = 0;
+  for (const [i, d] of LEAD_SUB_DISPOSITIONS.entries()) {
+    await prisma.disposition.create({
+      data: {
+        entity: "Lead",
+        category: "SUB_DISPOSITION",
+        value: d.value,
+        label: d.label,
+        sortOrder: i,
+        leadStatusMapping: DISPOSITION_TO_STATUS[d.value] ?? "Working Lead",
+      },
+    });
+    dispositionCount++;
+  }
+
   console.log("\nSeed complete!");
   console.log(`  List Views:       ${listViewCount}`);
+  console.log(`  Dispositions:     ${dispositionCount} (Lead sub-dispositions, SF parity)`);
   console.log(`  Roles:            ${ROLES.length}`);
   console.log(`  Permission sets:  ${PERM_SETS.length}`);
   console.log(`  PermSet groups:   ${PSGS.length}`);
