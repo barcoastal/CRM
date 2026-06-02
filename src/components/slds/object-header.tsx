@@ -1,4 +1,3 @@
-import { ObjectIcon, UtilityIcon } from "./icon";
 import type { ReactNode } from "react";
 
 export interface ObjectHeaderField {
@@ -7,11 +6,8 @@ export interface ObjectHeaderField {
 }
 
 /**
- * SLDS record-page header. Renders the colored object icon + entity name +
- * record title, a row of "highlights" (key fields displayed inline) and an
- * action buttons strip on the right.
- *
- * Matches the SF Lightning Experience pattern exactly.
+ * SLDS canonical Page Header for record pages.
+ * Renders the exact .slds-page-header markup so SLDS CSS handles it natively.
  */
 export function ObjectHeader({
   entity,
@@ -21,77 +17,80 @@ export function ObjectHeader({
   highlights = [],
   actions,
 }: {
-  entity: string;            // "Account" → drives icon
-  entityLabel?: string;      // "Account" — text under icon
-  recordTitle: string;       // "Acme Construction LLC"
+  entity: string;
+  entityLabel?: string;
+  recordTitle: string;
   recordSubtitle?: ReactNode;
   highlights?: ObjectHeaderField[];
   actions?: ReactNode;
 }) {
+  const slug = slugEntity(entity);
   return (
-    <div
-      style={{
-        background: "#fff",
-        borderRadius: 4,
-        border: "1px solid #d8dde6",
-        padding: "12px 16px",
-        marginBottom: 12,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-        <ObjectIcon entity={entity} size="large" />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, color: "#3e3e3c", fontWeight: 400 }}>{entityLabel ?? entity}</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#080707", marginTop: 2 }}>
-            {recordTitle}
+    <div className="slds-page-header slds-page-header_record-home">
+      <div className="slds-page-header__row">
+        <div className="slds-page-header__col-title">
+          <div className="slds-media">
+            <div className="slds-media__figure">
+              <span className={`slds-icon_container slds-icon-standard-${slug}`} title={entityLabel ?? entity}>
+                <svg className="slds-icon slds-page-header__icon" aria-hidden="true">
+                  <use xlinkHref={`/slds/icons/standard-sprite/svg/symbols.svg#${slug}`} />
+                </svg>
+              </span>
+            </div>
+            <div className="slds-media__body">
+              <div className="slds-page-header__name">
+                <div className="slds-page-header__name-title">
+                  <h1>
+                    <span className="slds-page-header__title slds-truncate" style={{ display: "block" }}>
+                      <span className="slds-text-body_regular slds-text-color_weak" style={{ display: "block", fontSize: 12 }}>
+                        {entityLabel ?? entity}
+                      </span>
+                      <span style={{ fontSize: 18, fontWeight: 700, color: "#080707" }}>
+                        {recordTitle}
+                      </span>
+                    </span>
+                  </h1>
+                </div>
+              </div>
+              {recordSubtitle && (
+                <p className="slds-page-header__name-meta slds-text-body_small slds-text-color_weak">
+                  {recordSubtitle}
+                </p>
+              )}
+            </div>
           </div>
-          {recordSubtitle && (
-            <div style={{ fontSize: 12, color: "#3e3e3c", marginTop: 4 }}>{recordSubtitle}</div>
-          )}
         </div>
         {actions && (
-          <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>{actions}</div>
+          <div className="slds-page-header__col-actions">
+            <div className="slds-page-header__controls">
+              <div className="slds-page-header__control" style={{ display: "flex", gap: 4 }}>
+                {actions}
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
       {highlights.length > 0 && (
-        <div
-          style={{
-            marginTop: 14,
-            paddingTop: 14,
-            borderTop: "1px solid #ecebea",
-            display: "grid",
-            gridTemplateColumns: `repeat(${Math.min(highlights.length, 5)}, minmax(0, 1fr))`,
-            gap: 12,
-          }}
-        >
-          {highlights.map((h, i) => (
-            <div key={i} style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 11, color: "#706e6b", fontWeight: 400 }}>{h.label}</div>
-              <div
-                style={{
-                  fontSize: 13,
-                  color: "#080707",
-                  fontWeight: 600,
-                  marginTop: 2,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {h.value ?? "—"}
-              </div>
-            </div>
-          ))}
+        <div className="slds-page-header__row slds-page-header__row_gutters">
+          <div className="slds-page-header__col-details">
+            <ul className="slds-page-header__detail-row">
+              {highlights.map((h, i) => (
+                <li key={i} className="slds-page-header__detail-block">
+                  <div className="slds-text-title slds-truncate" title={h.label}>{h.label}</div>
+                  <div className="slds-text-body_regular slds-truncate" style={{ fontWeight: 600 }}>
+                    {h.value ?? "—"}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-/**
- * SF-style detail tab navigation (sits below ObjectHeader on record pages).
- */
 export function DetailTabs({
   tabs,
   activeTab,
@@ -102,41 +101,60 @@ export function DetailTabs({
   onChange?: (id: string) => void;
 }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        borderBottom: "1px solid #d8dde6",
-        background: "#fff",
-        padding: "0 16px",
-        gap: 4,
-      }}
-    >
-      {tabs.map((t) => {
-        const active = t.id === activeTab;
-        return (
-          <button
-            key={t.id}
-            onClick={() => onChange?.(t.id)}
-            style={{
-              background: "transparent",
-              border: 0,
-              padding: "10px 12px",
-              fontSize: 13,
-              fontWeight: active ? 700 : 400,
-              color: active ? "#16325c" : "#3e3e3c",
-              borderBottom: active ? "3px solid #1589ee" : "3px solid transparent",
-              cursor: "pointer",
-            }}
-          >
-            {t.label}
-            {t.count !== undefined && (
-              <span style={{ color: "#706e6b", fontWeight: 400, marginLeft: 6 }}>
-                ({t.count})
-              </span>
-            )}
-          </button>
-        );
-      })}
+    <div className="slds-tabs_default">
+      <ul className="slds-tabs_default__nav" role="tablist">
+        {tabs.map((t) => {
+          const active = t.id === activeTab;
+          return (
+            <li
+              key={t.id}
+              className={`slds-tabs_default__item ${active ? "slds-is-active" : ""}`}
+              role="presentation"
+            >
+              <a
+                className="slds-tabs_default__link"
+                href={`#${t.id}`}
+                role="tab"
+                tabIndex={active ? 0 : -1}
+                aria-selected={active}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onChange?.(t.id);
+                }}
+              >
+                {t.label}
+                {t.count !== undefined && (
+                  <span className="slds-text-color_weak slds-p-left_xx-small">({t.count})</span>
+                )}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
+}
+
+function slugEntity(entity: string): string {
+  const map: Record<string, string> = {
+    Account: "account",
+    Contact: "contact",
+    Lead: "lead",
+    Opportunity: "opportunity",
+    Client: "household",
+    Creditor: "partners",
+    Case: "case",
+    ProgramPlan: "service_contract",
+    Draft: "invoice",
+    Offer: "quotes",
+    Settlement: "agent_session",
+    Fee: "currency",
+    Task: "task",
+    Event: "event",
+    Email: "email",
+    Sms: "sms",
+    Campaign: "campaign",
+    User: "user",
+  };
+  return map[entity] ?? "default";
 }

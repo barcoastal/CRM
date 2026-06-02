@@ -1,29 +1,27 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ObjectIcon, UtilityIcon } from "./icon";
 
 export interface ListViewColumn<T> {
   key: string;
   label: string;
-  width?: string;
   render: (row: T) => ReactNode;
-  sortable?: boolean;
 }
 
 /**
- * SLDS list-view shell: object header strip (icon + entity + view picker +
- * action buttons) and a data table with hover rows.
+ * SF Lightning list view — canonical SLDS markup so the SLDS CSS
+ * (.slds-card, .slds-table_bordered, .slds-cell-edit, etc.) styles
+ * everything natively.
  */
 export function ListView<T extends { id: string }>({
   entity,
   entityLabel,
-  viewName = `All ${entityLabel ?? entity}s`,
+  viewName = `Recently Viewed`,
   totalCount,
   rows,
   columns,
   rowHref,
   newHref,
-  actions,
+  iconHref,
 }: {
   entity: string;
   entityLabel?: string;
@@ -33,58 +31,36 @@ export function ListView<T extends { id: string }>({
   columns: ListViewColumn<T>[];
   rowHref?: (row: T) => string;
   newHref?: string;
-  actions?: ReactNode;
+  iconHref?: string;  // direct SLDS sprite path override
 }) {
   return (
-    <div
-      style={{
-        background: "#fff",
-        borderRadius: 4,
-        border: "1px solid #d8dde6",
-        overflow: "hidden",
-      }}
-    >
-      {/* Header strip */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "10px 16px",
-          gap: 12,
-          borderBottom: "1px solid #d8dde6",
-          background: "#fafaf9",
-        }}
-      >
-        <ObjectIcon entity={entity} size="medium" />
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 11, color: "#706e6b" }}>{entityLabel ?? entity}</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#080707", display: "inline-flex", gap: 4, alignItems: "center" }}>
-            {viewName}
-            <UtilityIcon name="down" size="x-small" />
+    <article className="slds-card">
+      {/* Card header — matches SF list-view header */}
+      <div className="slds-card__header slds-grid slds-grid_vertical-align-center">
+        <header className="slds-media slds-media_center slds-has-flexi-truncate">
+          <div className="slds-media__figure">
+            <span className={`slds-icon_container slds-icon-standard-${slugEntity(entity)}`} title={entityLabel ?? entity}>
+              <svg className="slds-icon slds-icon_small" aria-hidden="true">
+                <use xlinkHref={iconHref ?? `/slds/icons/standard-sprite/svg/symbols.svg#${slugEntity(entity)}`} />
+              </svg>
+              <span className="slds-assistive-text">{entityLabel ?? entity}</span>
+            </span>
           </div>
-        </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 4, alignItems: "center" }}>
-          <span style={{ fontSize: 12, color: "#706e6b", marginRight: 8 }}>
-            {totalCount} item{totalCount === 1 ? "" : "s"}
-          </span>
-          <IconButton title="Refresh" icon="refresh" />
-          <IconButton title="List View Settings" icon="settings" />
-          <IconButton title="Display as Split View" icon="rows" />
-          {actions}
+          <div className="slds-media__body">
+            <div className="slds-text-color_weak slds-text-body_small">{entityLabel ?? entity}s</div>
+            <h2 className="slds-card__header-title">
+              <span className="slds-text-heading_medium" style={{ fontWeight: 700, color: "#080707" }}>
+                {viewName}
+              </span>
+            </h2>
+            <div className="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
+              {totalCount} item{totalCount === 1 ? "" : "s"} · Updated a few seconds ago
+            </div>
+          </div>
+        </header>
+        <div className="slds-no-flex">
           {newHref && (
-            <Link
-              href={newHref}
-              style={{
-                marginLeft: 8,
-                background: "#1589ee",
-                color: "#fff",
-                padding: "6px 12px",
-                borderRadius: 4,
-                fontSize: 13,
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
+            <Link href={newHref} className="slds-button slds-button_neutral">
               New
             </Link>
           )}
@@ -92,26 +68,18 @@ export function ListView<T extends { id: string }>({
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <div className="slds-card__body slds-card__body_inner" style={{ padding: 0 }}>
+        <table
+          className="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped"
+          role="grid"
+        >
           <thead>
-            <tr style={{ borderBottom: "1px solid #d8dde6", background: "#fafaf9" }}>
+            <tr className="slds-line-height_reset">
               {columns.map((c) => (
-                <th
-                  key={c.key}
-                  style={{
-                    textAlign: "left",
-                    padding: "8px 12px",
-                    fontSize: 11,
-                    color: "#3e3e3c",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.4,
-                    width: c.width,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {c.label}
+                <th key={c.key} scope="col">
+                  <div className="slds-truncate slds-text-title_caps" title={c.label}>
+                    {c.label}
+                  </div>
                 </th>
               ))}
             </tr>
@@ -127,28 +95,21 @@ export function ListView<T extends { id: string }>({
             {rows.map((row) => {
               const href = rowHref?.(row);
               return (
-                <tr
-                  key={row.id}
-                  style={{
-                    borderBottom: "1px solid #f3f3f3",
-                  }}
-                >
+                <tr key={row.id} className="slds-hint-parent">
                   {columns.map((c, ci) => (
-                    <td
-                      key={c.key}
-                      style={{
-                        padding: "10px 12px",
-                        color: "#080707",
-                        verticalAlign: "middle",
-                      }}
-                    >
-                      {ci === 0 && href ? (
-                        <Link href={href} style={{ color: "#1589ee", textDecoration: "none", fontWeight: 600 }}>
-                          {c.render(row)}
-                        </Link>
-                      ) : (
-                        c.render(row)
-                      )}
+                    <td key={c.key} role="gridcell">
+                      <div className="slds-truncate" title={typeof c.render === "function" ? "" : ""}>
+                        {ci === 0 && href ? (
+                          <Link
+                            href={href}
+                            style={{ color: "#0070d2", textDecoration: "none", fontWeight: 400 }}
+                          >
+                            {c.render(row)}
+                          </Link>
+                        ) : (
+                          c.render(row)
+                        )}
+                      </div>
                     </td>
                   ))}
                 </tr>
@@ -157,28 +118,31 @@ export function ListView<T extends { id: string }>({
           </tbody>
         </table>
       </div>
-    </div>
+    </article>
   );
 }
 
-function IconButton({ title, icon }: { title: string; icon: string }) {
-  return (
-    <button
-      title={title}
-      aria-label={title}
-      style={{
-        background: "transparent",
-        border: "1px solid #d8dde6",
-        borderRadius: 4,
-        width: 32,
-        height: 32,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-      }}
-    >
-      <UtilityIcon name={icon} size="x-small" />
-    </button>
-  );
+function slugEntity(entity: string): string {
+  // Maps Entity → SLDS icon name (lowercase, _-separated)
+  const map: Record<string, string> = {
+    Account: "account",
+    Contact: "contact",
+    Lead: "lead",
+    Opportunity: "opportunity",
+    Client: "household",
+    Creditor: "partners",
+    Case: "case",
+    ProgramPlan: "service_contract",
+    Draft: "invoice",
+    Offer: "quotes",
+    Settlement: "agent_session",
+    Fee: "currency",
+    Task: "task",
+    Event: "event",
+    Email: "email",
+    Sms: "sms",
+    Campaign: "campaign",
+    User: "user",
+  };
+  return map[entity] ?? "default";
 }

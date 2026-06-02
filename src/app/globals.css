@@ -1,28 +1,43 @@
+/* Inter as Salesforce Sans look-alike (SF Sans is licensed; Inter is the closest free match) */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
 /* SLDS — Salesforce Lightning Design System */
 @import url("/slds/styles/salesforce-lightning-design-system.min.css");
 
-/* Tailwind for utility classes */
+/* Tailwind for layout utilities only */
 @import "tailwindcss";
 
 @layer base {
   html, body {
-    font-family: "Salesforce Sans", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-family: "Salesforce Sans", "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
     background-color: #f3f3f3;
     color: #181818;
     min-height: 100%;
     margin: 0;
     font-size: 13px;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
-/* ============ ROW 1: minimal global bar ============ */
+/* SLDS uses --lwc-* CSS custom properties extensively. Apply them globally. */
+:root {
+  --slds-c-card-color-background: #fff;
+}
+
+/* ============ Salesforce Lightning Chrome ============
+   Real SF Lightning has TWO white horizontal bars + a thin diagonal banner.
+   Row 1 (36px): app badge, search, utility icons
+   Row 2 (40px): app launcher waffle, app name in bold, tab strip
+   Row 3 (30px): decorative diagonal blue band
+*/
+
 .sf-global-bar {
   height: 36px;
   background: #fff;
   border-bottom: 1px solid #d8dde6;
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 16px 0 0;
   gap: 12px;
   position: sticky;
   top: 0;
@@ -36,7 +51,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-left: -16px;
   text-decoration: none;
 }
 
@@ -44,7 +58,7 @@
   width: 18px;
   height: 18px;
   background: #fff;
-  clip-path: polygon(20% 10%, 80% 10%, 90% 30%, 90% 90%, 10% 90%, 10% 30%);
+  clip-path: polygon(0 30%, 50% 0, 100% 30%, 100% 100%, 0 100%);
 }
 
 .sf-search-wrap {
@@ -64,12 +78,7 @@
   height: 28px;
 }
 
-.sf-search-icon {
-  width: 14px;
-  height: 14px;
-  fill: #54698d;
-  flex-shrink: 0;
-}
+.sf-search-icon { width: 14px; height: 14px; fill: #54698d; flex-shrink: 0; }
 
 .sf-search-input {
   flex: 1;
@@ -106,12 +115,7 @@
 .sf-util-btn:hover { background: #f3f2f2; }
 .sf-util-btn-chev { width: 16px; }
 
-.sf-util-icon {
-  width: 18px;
-  height: 18px;
-  fill: #706e6b;
-}
-
+.sf-util-icon { width: 18px; height: 18px; fill: #706e6b; }
 .sf-util-icon-small { width: 10px; height: 10px; fill: #706e6b; }
 
 .sf-avatar-btn {
@@ -169,7 +173,6 @@
 
 .sf-profile-item:hover { background: #f3f2f2; }
 
-/* ============ ROW 2: app launcher + app name + tabs ============ */
 .sf-nav-bar {
   height: 40px;
   background: #fff;
@@ -234,18 +237,8 @@
 }
 
 .sf-tab:hover { background: #f3f2f2; }
-
-.sf-tab-active {
-  color: #080707;
-  font-weight: 600;
-  border-bottom-color: #1589ee;
-}
-
-.sf-tab-chev {
-  width: 8px;
-  height: 8px;
-  fill: #706e6b;
-}
+.sf-tab-active { color: #080707; font-weight: 600; border-bottom-color: #1589ee; }
+.sf-tab-chev { width: 8px; height: 8px; fill: #706e6b; }
 
 .sf-tab-edit {
   background: transparent;
@@ -260,15 +253,14 @@
 
 .sf-tab-edit:hover { background: #f3f2f2; }
 
-/* ============ ROW 3: decorative blue banner ============ */
 .sf-decor-band {
   height: 30px;
   background-color: #2e5b8b;
   background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255,255,255,0.04) 0,
-    rgba(255,255,255,0.04) 2px,
+    -45deg,
+    rgba(255,255,255,0.06) 0,
+    rgba(255,255,255,0.06) 2px,
     transparent 2px,
-    transparent 8px
+    transparent 7px
   );
 }

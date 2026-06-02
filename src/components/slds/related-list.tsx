@@ -1,11 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ObjectIcon, UtilityIcon } from "./icon";
 
-/**
- * SF-style "related list" card. Used in the right rail of record pages
- * (e.g. "Contacts (3)" on an Account detail page).
- */
 export function RelatedList<T extends { id: string }>({
   entity,
   title,
@@ -23,85 +18,86 @@ export function RelatedList<T extends { id: string }>({
   newHref?: string;
   viewAllHref?: string;
 }) {
+  const slug = slugEntity(entity);
   return (
-    <div
-      style={{
-        background: "#fff",
-        border: "1px solid #d8dde6",
-        borderRadius: 4,
-        marginBottom: 12,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "10px 14px",
-          borderBottom: "1px solid #d8dde6",
-          gap: 10,
-        }}
-      >
-        <ObjectIcon entity={entity} size="small" />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#080707" }}>
-            {title} ({items.length})
+    <article className="slds-card slds-m-bottom_small">
+      <div className="slds-card__header slds-grid">
+        <header className="slds-media slds-media_center slds-has-flexi-truncate">
+          <div className="slds-media__figure">
+            <span className={`slds-icon_container slds-icon-standard-${slug}`} title={entity}>
+              <svg className="slds-icon slds-icon_small" aria-hidden="true">
+                <use xlinkHref={`/slds/icons/standard-sprite/svg/symbols.svg#${slug}`} />
+              </svg>
+            </span>
           </div>
+          <div className="slds-media__body">
+            <h2 className="slds-card__header-title">
+              <span className="slds-text-heading_small" style={{ fontWeight: 700 }}>
+                {title} ({items.length})
+              </span>
+            </h2>
+          </div>
+        </header>
+        <div className="slds-no-flex">
+          {newHref && (
+            <Link href={newHref} className="slds-button slds-button_neutral slds-button_small">
+              New
+            </Link>
+          )}
         </div>
-        {newHref && (
-          <Link
-            href={newHref}
-            title="New"
-            style={{
-              border: "1px solid #d8dde6",
-              borderRadius: 4,
-              padding: "4px 8px",
-              fontSize: 12,
-              color: "#080707",
-              textDecoration: "none",
-              background: "#fff",
-            }}
-          >
-            New
-          </Link>
-        )}
       </div>
 
-      <div>
+      <div className="slds-card__body">
         {items.length === 0 ? (
-          <div style={{ padding: "16px", color: "#706e6b", fontSize: 12 }}>{emptyHint}</div>
+          <div className="slds-p-around_medium slds-text-color_weak slds-text-body_small">
+            {emptyHint}
+          </div>
         ) : (
-          items.map((item) => (
-            <div
-              key={item.id}
-              style={{
-                padding: "10px 14px",
-                borderBottom: "1px solid #f3f3f3",
-                fontSize: 13,
-                color: "#080707",
-              }}
-            >
-              {renderItem(item)}
-            </div>
-          ))
+          <ul>
+            {items.map((item) => (
+              <li
+                key={item.id}
+                className="slds-p-around_small"
+                style={{ borderBottom: "1px solid #f3f3f3", fontSize: 13 }}
+              >
+                {renderItem(item)}
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
       {viewAllHref && items.length > 0 && (
-        <Link
-          href={viewAllHref}
-          style={{
-            display: "block",
-            textAlign: "center",
-            padding: "8px",
-            fontSize: 12,
-            color: "#1589ee",
-            textDecoration: "none",
-            borderTop: "1px solid #f3f3f3",
-          }}
-        >
-          View All
-        </Link>
+        <footer className="slds-card__footer">
+          <Link href={viewAllHref} className="slds-text-link">
+            View All
+          </Link>
+        </footer>
       )}
-    </div>
+    </article>
   );
+}
+
+function slugEntity(entity: string): string {
+  const map: Record<string, string> = {
+    Account: "account",
+    Contact: "contact",
+    Lead: "lead",
+    Opportunity: "opportunity",
+    Client: "household",
+    Creditor: "partners",
+    Case: "case",
+    ProgramPlan: "service_contract",
+    Draft: "invoice",
+    Offer: "quotes",
+    Settlement: "agent_session",
+    Fee: "currency",
+    Task: "task",
+    Event: "event",
+    Email: "email",
+    Sms: "sms",
+    Campaign: "campaign",
+    User: "user",
+  };
+  return map[entity] ?? "default";
 }
