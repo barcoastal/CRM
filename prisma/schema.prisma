@@ -59,6 +59,8 @@ model User {
   smsOwned          SmsMessage[]    @relation("SmsOwner")
   emailTemplates    EmailTemplate[] @relation("EmailTemplateAuthor")
   integrationCredentials IntegrationCredential[] @relation("IntegrationCredentialAuthor")
+  paymentCalcsSaved LeadPaymentCalculation[] @relation("PaymentCalcSavedBy")
+  leadHistoryChanges LeadHistory[]   @relation("LeadHistoryChangedBy")
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
@@ -378,14 +380,17 @@ model Lead {
   convertedOpportunityId String?
   convertedAt            DateTime?
 
-  calls            Call[]
-  campaignContacts CampaignContact[]
-  client           Client?
-  opportunity      Opportunity?
-  tasks            Task[]            @relation("LeadTasks")
-  events           Event[]           @relation("LeadEvents")
-  emails           EmailMessage[]    @relation("LeadEmails")
-  sms              SmsMessage[]      @relation("LeadSms")
+  calls               Call[]
+  campaignContacts    CampaignContact[]
+  client              Client?
+  opportunity         Opportunity?
+  tasks               Task[]                   @relation("LeadTasks")
+  events              Event[]                  @relation("LeadEvents")
+  emails              EmailMessage[]           @relation("LeadEmails")
+  sms                 SmsMessage[]             @relation("LeadSms")
+  paymentCalculations LeadPaymentCalculation[]
+  history             LeadHistory[]
+  documents           Document[]               @relation("LeadDocuments")
 
   @@index([recordType])
   @@index([convertedAccountId])
@@ -631,6 +636,8 @@ model Document {
   client        Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   opportunityId String?
   opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  leadId        String?
+  lead          Lead?        @relation("LeadDocuments", fields: [leadId], references: [id], onDelete: Cascade)
   name          String
   type          String // ENGAGEMENT_AGREEMENT, HARDSHIP_LETTER, AUTHORIZATION, SETTLEMENT_OFFER, BANK_STATEMENT, TAX_RETURN, OTHER
   filePath      String
@@ -638,6 +645,8 @@ model Document {
   uploadedById  String
   uploadedBy    User         @relation(fields: [uploadedById], references: [id])
   createdAt     DateTime     @default(now())
+
+  @@index([leadId])
 }
 
 // ============ PHASE 3: DEBT OPERATIONS ============
@@ -1179,11 +1188,55 @@ model Disposition {
   isActive  Boolean  @default(true)
   // When set, picking this disposition updates Lead.status to this value
   leadStatusMapping String?
+  // Stage gate — when set, this sub-disposition is only selectable when Stage = this value
+  stage     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([entity, category, value])
+  @@unique([entity, category, value, stage])
   @@index([entity, category, isActive])
+  @@index([entity, stage])
+}
+
+// ============ LEAD PAYMENT CALCULATOR (SF parity) ============
+
+model LeadPaymentCalculation {
+  id                   String   @id @default(cuid())
+  leadId               String
+  lead                 Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  totalDebt            Float?
+  setupFee             Float?
+  serviceFee           Float?
+  monthlyBankFee       Float?
+  settlementPercentage Float?   // e.g. 50.0 = 50%
+  programFeePercent    Float?
+  totalSettlement      Float?
+  programFeePeriod     Int?     // months
+  estimatedAmount      Float?
+  retainerPercentage   Float?
+  savedById            String?
+  savedBy              User?    @relation("PaymentCalcSavedBy", fields: [savedById], references: [id])
+  savedAt              DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([leadId, savedAt])
+}
+
+// ============ LEAD HISTORY (SF Lead History parity — every field change) ============
+
+model LeadHistory {
+  id          String   @id @default(cuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  field       String   // canonical field name on Lead
+  oldValue    String?
+  newValue    String?
+  changedById String?
+  changedBy   User?    @relation("LeadHistoryChangedBy", fields: [changedById], references: [id])
+  changedAt   DateTime @default(now())
+
+  @@index([leadId, changedAt])
 }
 
 // ============ LIST VIEWS (SF List View parity) ============

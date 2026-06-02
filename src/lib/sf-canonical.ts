@@ -100,6 +100,94 @@ export const DISPOSITION_TO_STATUS: Record<string, LeadStatusV2> = {
   // Default for everything else → Working Lead
 };
 
+/**
+ * For each Lead.Stage, the allowed Sub_Disposition__c values when picking
+ * a sub-disposition in the Disposition modal. Derived from the actual SF
+ * Lightning modal dropdowns in the Yati org.
+ */
+export const STAGE_TO_SUB_DISPOSITIONS: Record<LeadStatusV2, string[]> = {
+  "New": [
+    "Left VM",
+    "No Answer",
+    "Wrong Number",
+    "SMS sent",
+    "Stage Change",
+    "Left Review",
+    "DIDNT Register",
+  ],
+  "Working Lead": [
+    "Appointment",
+    "Callback",
+    "Call Transferred from Fronter",
+    "Left VM",
+    "No Answer",
+    "No Answer-5up",
+    "Phone not in use",
+    "VM Full",
+    "Wrong Number",
+    "SMS sent",
+    "Stage Change",
+    "Left Review",
+    "Call Transferred (TO)",
+    "DIDNT Register",
+  ],
+  "Archive Disposition": [
+    "Bad State",
+    "Can't afford the program",
+    "Can't Save Weekly",
+    "Closed Lost",
+    "Debt too new",
+    "DNC (Do not call)",
+    "Duplicate",
+    "Enrolled with another company",
+    "Fake Lead",
+    "Looking for a loan",
+    "Lowered Payments with Lenders",
+    "Not Enough Debt",
+    "Not Interested",
+    "Not Interested - High UCC Risk",
+    "Not Interested Qualified",
+    "Number not in use",
+    "Other",
+    "Payments are sustainable",
+    "Phone not in use",
+    "Stopped Answering",
+    "Transfer Not Qualified",
+    "Wrong Number",
+    "VM Full",
+    "No MCA Debt",
+    "Never Answered",
+    "Test Lead",
+    "Fake Leads",
+    "Archived - Duplicate Lead",
+    "High Risk",
+  ],
+  "Converted": [
+    "Active Opportunity Exists",
+    "Active Web Lead Exists",
+    "New Web Lead Created",
+    "Active Lead Exists",
+    "New Non-Web Lead Created",
+    "Final Stage",
+  ],
+};
+
+/** Call Result picklist on the Log Disposition section */
+export const CALL_RESULTS = [
+  "Successful Transfer",
+  "Hung Up",
+  "Technical Issue",
+] as const;
+
+/** Status picklist on the Log Disposition section (Task status) */
+export const DISPOSITION_TASK_STATUSES = [
+  "Completed",
+  "Not Started",
+  "In Progress",
+  "Waiting on someone else",
+  "Deferred",
+] as const;
+
 /** SF Lead Source picklist — ~50 values */
 export const LEAD_SOURCES = [
   "Website", "Web", "Bing", "Phone Inquiry", "Partner Referral", "Other",

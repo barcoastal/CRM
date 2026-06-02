@@ -1,7 +1,12 @@
 import { PrismaClient } from "../src/generated/prisma/client.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hash } from "bcryptjs";
-import { LEAD_SUB_DISPOSITIONS, DISPOSITION_TO_STATUS } from "../src/lib/sf-canonical";
+import {
+  LEAD_SUB_DISPOSITIONS,
+  DISPOSITION_TO_STATUS,
+  STAGE_TO_SUB_DISPOSITIONS,
+  LEAD_STATUSES,
+} from "../src/lib/sf-canonical";
 import { SYSTEM_VIEWS } from "../src/lib/list-views";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
@@ -987,7 +992,7 @@ async function main() {
         phone: "+15551234567", email: "bob@acmeconstruction.com",
         ein: "12-3456789", industry: "Construction",
         annualRevenue: 850000, totalDebtEst: 125000,
-        source: "WEBSITE", status: "NEW", score: 85,
+        source: "WEBSITE", status: "New", score: 85,
         scoreReason: "High debt-to-revenue ratio, active business, responsive",
         assignedToId: closer.id,
       },
@@ -998,7 +1003,7 @@ async function main() {
         phone: "+15559876543", email: "maria@sunrisegroup.com",
         ein: "98-7654321", industry: "Food Service",
         annualRevenue: 420000, totalDebtEst: 78000,
-        source: "REFERRAL", status: "CONTACTED", score: 72,
+        source: "REFERRAL", status: "Working Lead", score: 72,
         scoreReason: "Moderate debt, seasonal business, showed interest",
         assignedToId: closer.id,
         lastContactedAt: new Date("2026-05-20"),
@@ -1010,7 +1015,7 @@ async function main() {
         businessName: "Brightside Landscaping", contactName: "Tom Peters",
         phone: "+15553334444", email: "tom@brightsidelandscaping.com",
         industry: "Landscaping", annualRevenue: 190000, totalDebtEst: 42000,
-        source: "COLD_CALL", status: "QUALIFIED", score: 91,
+        source: "COLD_CALL", status: "Working Lead", score: 91,
         scoreReason: "Ready to enroll, has documentation, motivated",
         assignedToId: closer.id,
         lastContactedAt: new Date("2026-05-25"),
@@ -1022,7 +1027,7 @@ async function main() {
         businessName: "Downtown Dental Practice", contactName: "Dr. Lisa Chen",
         phone: "+15556667777", email: "lisa@downtowndental.com",
         industry: "Healthcare", annualRevenue: 620000, totalDebtEst: 210000,
-        source: "PURCHASED_LIST", status: "NEW", score: 78,
+        source: "PURCHASED_LIST", status: "New", score: 78,
         scoreReason: "High debt amount, professional practice, good revenue",
       },
     }),
@@ -1063,22 +1068,47 @@ async function main() {
     }
   }
 
-  // ---------- DISPOSITIONS (SF Lead picklist — 47 sub-dispositions) ----------
+  // ---------- DISPOSITIONS (SF Lead picklist — sub-dispositions per stage) ----------
   console.log("Seeding dispositions...");
   await prisma.disposition.deleteMany({ where: { entity: "Lead" } });
   let dispositionCount = 0;
+  // First: per-stage sub-dispositions (used by the Disposition modal)
+  for (const stage of LEAD_STATUSES) {
+    const values = STAGE_TO_SUB_DISPOSITIONS[stage];
+    for (const [i, value] of values.entries()) {
+      await prisma.disposition.create({
+        data: {
+          entity: "Lead",
+          category: "SUB_DISPOSITION",
+          value,
+          label: value,
+          stage,
+          sortOrder: i,
+          leadStatusMapping: stage,
+        },
+      });
+      dispositionCount++;
+    }
+  }
+  // Also keep flat fallback for the master picklist setup page (no stage gate)
   for (const [i, d] of LEAD_SUB_DISPOSITIONS.entries()) {
-    await prisma.disposition.create({
-      data: {
-        entity: "Lead",
-        category: "SUB_DISPOSITION",
-        value: d.value,
-        label: d.label,
-        sortOrder: i,
-        leadStatusMapping: DISPOSITION_TO_STATUS[d.value] ?? "Working Lead",
-      },
+    const exists = await prisma.disposition.findFirst({
+      where: { entity: "Lead", category: "SUB_DISPOSITION", value: d.value, stage: null },
     });
-    dispositionCount++;
+    if (!exists) {
+      await prisma.disposition.create({
+        data: {
+          entity: "Lead",
+          category: "SUB_DISPOSITION",
+          value: d.value,
+          label: d.label,
+          stage: null,
+          sortOrder: 1000 + i,
+          leadStatusMapping: DISPOSITION_TO_STATUS[d.value] ?? "Working Lead",
+        },
+      });
+      dispositionCount++;
+    }
   }
 
   console.log("\nSeed complete!");
