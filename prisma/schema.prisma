@@ -573,6 +573,9 @@ model Debt {
   creditorPhone   String?
   creditorEmail   String?
   accountNumber   String?
+  debtType        String?      // MCA | CREDIT_LINE | TERM_LOAN | BUSINESS_CC | EQUIPMENT | INVOICE_FACTORING | OTHER (carried from LeadDebt)
+  paymentFrequency String?     // DAILY | WEEKLY | BI_WEEKLY | MONTHLY | LUMP_SUM
+  paymentAmount   Float?
   originalBalance Float
   currentBalance  Float
   enrolledBalance Float

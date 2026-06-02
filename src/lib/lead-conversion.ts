@@ -67,7 +67,10 @@ export async function convertLead(
   leadId: string,
   opts: ConvertLeadOptions = {},
 ): Promise<ConvertLeadResult> {
-  const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+  const lead = await prisma.lead.findUnique({
+    where: { id: leadId },
+    include: { debts: true },
+  });
   if (!lead) throw new Error(`Lead ${leadId} not found`);
 
   // Already converted? Return the existing IDs idempotently.
@@ -151,6 +154,24 @@ export async function convertLead(
         },
       });
       opportunityId = opp.id;
+
+      // Copy Lead debts into the new Opportunity
+      for (const d of lead.debts) {
+        await tx.debt.create({
+          data: {
+            opportunityId: opp.id,
+            creditorName: d.creditorName ?? "Unknown",
+            debtType: d.type,
+            paymentFrequency: d.frequency,
+            paymentAmount: d.paymentAmount,
+            originalBalance: d.amount,
+            currentBalance: d.amount,
+            enrolledBalance: d.amount,
+            status: d.status === "DEFAULTED" ? "ENROLLED" : d.status === "SETTLED" ? "SETTLED" : "ENROLLED",
+            notes: d.notes,
+          },
+        });
+      }
     }
 
     await tx.lead.update({
@@ -160,7 +181,7 @@ export async function convertLead(
         convertedContactId: contact.id,
         convertedOpportunityId: opportunityId,
         convertedAt: new Date(),
-        status: "CONVERTED",
+        status: "Converted",
       },
     });
 
@@ -182,7 +203,7 @@ export async function convertLead(
       entityId: lead.id,
       action: "UPDATE",
       before: { status: lead.status, convertedAccountId: null },
-      after: { status: "CONVERTED", convertedAccountId: result.accountId },
+      after: { status: "Converted", convertedAccountId: result.accountId },
     }).catch(() => null),
   ]);
 

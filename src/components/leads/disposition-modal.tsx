@@ -85,8 +85,18 @@ export function DispositionModal({
         const { error: msg } = await res.json().catch(() => ({ error: "Save failed" }));
         throw new Error(msg ?? "Save failed");
       }
-      router.refresh();
+      const out = (await res.json().catch(() => ({}))) as {
+        conversion?: { opportunityId: string | null; accountId: string };
+        conversionError?: string;
+      };
       onClose();
+      if (out.conversion?.opportunityId) {
+        router.push(`/opportunities/${out.conversion.opportunityId}`);
+      } else if (out.conversion?.accountId) {
+        router.push(`/accounts/${out.conversion.accountId}`);
+      } else {
+        router.refresh();
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Save failed");
     } finally {
