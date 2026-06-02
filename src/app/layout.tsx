@@ -1,13 +1,8 @@
 import type { Metadata } from "next";
-import { Manrope, Inter } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
-
-const manrope = Manrope({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
 
 const inter = Inter({
   variable: "--font-body",
@@ -26,9 +21,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${manrope.variable} ${inter.variable} antialiased`}
-      >
+      <head>
+        {/* Load SLDS CSS as a runtime <link> — Next/Tailwind drops absolute @import URLs at build time */}
+        <link
+          rel="stylesheet"
+          href="/slds/styles/salesforce-lightning-design-system.min.css"
+        />
+      </head>
+      <body className={`${inter.variable} antialiased`}>
         <Providers>{children}</Providers>
         <Toaster richColors position="top-right" />
       </body>

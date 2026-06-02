@@ -1,9 +1,4 @@
-/* Inter as Salesforce Sans look-alike (SF Sans is licensed; Inter is the closest free match) */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-
-/* SLDS — Salesforce Lightning Design System */
-@import url("/slds/styles/salesforce-lightning-design-system.min.css");
-
+/* SLDS CSS is loaded via <link> tag in src/app/layout.tsx — see comment there */
 /* Tailwind for layout utilities only */
 @import "tailwindcss";
 
