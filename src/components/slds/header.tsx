@@ -5,6 +5,7 @@ import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { ObjectIcon } from "./icon";
+import { AppLauncher } from "./app-launcher";
 
 interface TabItem {
   label: string;
@@ -55,6 +56,7 @@ export function SldsHeader({
   userName?: string;
 }) {
   const [profileOpen, setProfileOpen] = useState(false);
+  const [launcherOpen, setLauncherOpen] = useState(false);
   const pathname = usePathname();
 
   return (
@@ -129,9 +131,17 @@ export function SldsHeader({
         </div>
       </div>
 
+      {/* App Launcher modal */}
+      <AppLauncher open={launcherOpen} onClose={() => setLauncherOpen(false)} />
+
       {/* Row 2 — app launcher waffle + app name + horizontal tab nav */}
       <div className="sf-nav-bar">
-        <button className="sf-app-launcher" title="App Launcher" aria-label="App Launcher">
+        <button
+          className="sf-app-launcher"
+          title="App Launcher"
+          aria-label="App Launcher"
+          onClick={() => setLauncherOpen(true)}
+        >
           <span className="sf-waffle" aria-hidden="true">
             {Array.from({ length: 9 }).map((_, i) => <span key={i} />)}
           </span>
