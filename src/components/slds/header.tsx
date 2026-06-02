@@ -57,6 +57,8 @@ export function SldsHeader({
 }) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [launcherOpen, setLauncherOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const pathname = usePathname();
 
   return (
@@ -77,36 +79,74 @@ export function SldsHeader({
         </div>
 
         <div className="sf-global-utilities">
-          <button className="sf-util-btn" title="Favorites">
+          <Link href="/leads" className="sf-util-btn" title="Favorites">
             <svg className="sf-util-icon" aria-hidden="true">
               <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#favorite" />
             </svg>
-          </button>
-          <button className="sf-util-btn sf-util-btn-chev" title="Favorites list">
+          </Link>
+          <Link href="/leads" className="sf-util-btn sf-util-btn-chev" title="Favorites list">
             <svg className="sf-util-icon-small" aria-hidden="true">
               <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#down" />
             </svg>
-          </button>
-          <button className="sf-util-btn" title="Add">
-            <svg className="sf-util-icon" aria-hidden="true">
-              <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#add" />
-            </svg>
-          </button>
-          <button className="sf-util-btn" title="Help">
+          </Link>
+          <div style={{ position: "relative" }}>
+            <button
+              className="sf-util-btn"
+              title="Create new..."
+              onClick={() => setQuickOpen((o) => !o)}
+            >
+              <svg className="sf-util-icon" aria-hidden="true">
+                <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#add" />
+              </svg>
+            </button>
+            {quickOpen && (
+              <div className="sf-profile-menu" style={{ position: "absolute", top: 36, right: 0, minWidth: 200 }}>
+                <div className="sf-profile-name">Create New</div>
+                <Link href="/leads/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Lead</Link>
+                <Link href="/accounts/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Account</Link>
+                <Link href="/contacts/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Contact</Link>
+                <Link href="/opportunities/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Opportunity</Link>
+                <Link href="/cases/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Case</Link>
+                <Link href="/tasks/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Task</Link>
+                <Link href="/events/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Event</Link>
+              </div>
+            )}
+          </div>
+          <a
+            href="https://www.lightningdesignsystem.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="sf-util-btn"
+            title="Help"
+          >
             <svg className="sf-util-icon" aria-hidden="true">
               <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#question_mark" />
             </svg>
-          </button>
-          <button className="sf-util-btn" title="Setup">
+          </a>
+          <Link href="/settings" className="sf-util-btn" title="Setup">
             <svg className="sf-util-icon" aria-hidden="true">
               <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#setup" />
             </svg>
-          </button>
-          <button className="sf-util-btn" title="Notifications">
-            <svg className="sf-util-icon" aria-hidden="true">
-              <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#notification" />
-            </svg>
-          </button>
+          </Link>
+          <div style={{ position: "relative" }}>
+            <button
+              className="sf-util-btn"
+              title="Notifications"
+              onClick={() => setNotificationsOpen((o) => !o)}
+            >
+              <svg className="sf-util-icon" aria-hidden="true">
+                <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#notification" />
+              </svg>
+            </button>
+            {notificationsOpen && (
+              <div className="sf-profile-menu" style={{ position: "absolute", top: 36, right: 0, minWidth: 280 }}>
+                <div className="sf-profile-name">Notifications</div>
+                <div style={{ padding: "16px", color: "#706e6b", fontSize: 12 }}>
+                  You&apos;re all caught up.
+                </div>
+              </div>
+            )}
+          </div>
           <button
             className="sf-avatar-btn"
             onClick={() => setProfileOpen((o) => !o)}
