@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { ViewPicker, type ListViewOption } from "./view-picker";
 
 export interface ListViewColumn<T> {
   key: string;
@@ -22,6 +23,7 @@ export function ListView<T extends { id: string }>({
   rowHref,
   newHref,
   iconHref,
+  views,
 }: {
   entity: string;
   entityLabel?: string;
@@ -32,6 +34,7 @@ export function ListView<T extends { id: string }>({
   rowHref?: (row: T) => string;
   newHref?: string;
   iconHref?: string;  // direct SLDS sprite path override
+  views?: ListViewOption[]; // when provided, renders the view picker
 }) {
   return (
     <article className="slds-card">
@@ -49,9 +52,13 @@ export function ListView<T extends { id: string }>({
           <div className="slds-media__body">
             <div className="slds-text-color_weak slds-text-body_small">{entityLabel ?? entity}s</div>
             <h2 className="slds-card__header-title">
-              <span className="slds-text-heading_medium" style={{ fontWeight: 700, color: "#080707" }}>
-                {viewName}
-              </span>
+              {views ? (
+                <ViewPicker views={views} currentName={viewName} entity={entity} />
+              ) : (
+                <span className="slds-text-heading_medium" style={{ fontWeight: 700, color: "#080707" }}>
+                  {viewName}
+                </span>
+              )}
             </h2>
             <div className="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
               {totalCount} item{totalCount === 1 ? "" : "s"} · Updated a few seconds ago

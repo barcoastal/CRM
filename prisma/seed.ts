@@ -273,6 +273,8 @@ async function nukeAccessControl() {
 }
 
 async function nukeBusinessData() {
+  // List views (no FK on this; nuke first for re-seed)
+  await prisma.listView.deleteMany();
   // Phase 6 — emails / sms / templates / integrations / webhook events
   await prisma.emailMessage.deleteMany();
   await prisma.smsMessage.deleteMany();
@@ -1036,7 +1038,32 @@ async function main() {
     },
   });
 
+  // ---------- LIST VIEWS (system views per entity) ----------
+  console.log("Seeding list views...");
+  const { SYSTEM_VIEWS } = await import("../src/lib/list-views");
+  let listViewCount = 0;
+  for (const [entity, views] of Object.entries(SYSTEM_VIEWS)) {
+    for (const v of views) {
+      await prisma.listView.create({
+        data: {
+          entity,
+          name: v.name,
+          developerName: v.developerName,
+          filters: v.filters as object,
+          sortField: v.sortField ?? null,
+          sortDir: v.sortDir ?? "desc",
+          isShared: true,
+          isSystem: true,
+          isPinned: !!v.isPinned,
+          sortOrder: v.sortOrder ?? 0,
+        },
+      });
+      listViewCount++;
+    }
+  }
+
   console.log("\nSeed complete!");
+  console.log(`  List Views:       ${listViewCount}`);
   console.log(`  Roles:            ${ROLES.length}`);
   console.log(`  Permission sets:  ${PERM_SETS.length}`);
   console.log(`  PermSet groups:   ${PSGS.length}`);

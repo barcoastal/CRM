@@ -54,6 +54,7 @@ model User {
   casesCreated      Case[]          @relation("CaseCreatedBy")
   casesApproved     Case[]          @relation("CaseApprover")
   caseComments      CaseComment[]   @relation("CaseCommentAuthor")
+  listViews         ListView[]      @relation("ListViewOwner")
   emailsOwned       EmailMessage[]  @relation("EmailOwner")
   smsOwned          SmsMessage[]    @relation("SmsOwner")
   emailTemplates    EmailTemplate[] @relation("EmailTemplateAuthor")
@@ -1164,4 +1165,29 @@ model WebhookEvent {
 
   @@index([source, status])
   @@index([createdAt])
+}
+
+// ============ LIST VIEWS (SF List View parity) ============
+
+model ListView {
+  id            String   @id @default(cuid())
+  entity        String   // "Lead" | "Account" | "Contact" | "Opportunity" | "Case" | ...
+  name          String                     // "Web Leads"
+  developerName String?                    // "Web_Leads" — optional for user views
+  filters       Json     @default("[]")    // [{ field, op, value }]
+  columns       Json?                      // [string] — column keys to show
+  sortField     String?
+  sortDir       String   @default("desc")  // asc | desc
+  ownerId       String?
+  owner         User?    @relation("ListViewOwner", fields: [ownerId], references: [id])
+  isShared      Boolean  @default(false)   // visible to all users
+  isPinned      Boolean  @default(false)   // pin on the view picker
+  isSystem      Boolean  @default(false)   // pre-seeded, can't be deleted by users
+  sortOrder     Int      @default(0)       // for ordering in the picker
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([entity, developerName])
+  @@index([entity, ownerId])
+  @@index([entity, isShared])
 }
