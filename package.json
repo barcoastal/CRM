@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/copy-slds.mjs && next dev",
-    "build": "node scripts/copy-slds.mjs && prisma generate && next build",
+    "dev": "next dev",
+    "build": "prisma generate && next build",
     "start": "prisma db push --accept-data-loss && node server.js",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma db push --force-reset --accept-data-loss && tsx prisma/seed.ts",
