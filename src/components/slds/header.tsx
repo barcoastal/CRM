@@ -22,6 +22,7 @@ const TABS: TabItem[] = [
   { label: "Creditors", href: "/creditors", entity: "Creditor" },
   { label: "Cases", href: "/cases", entity: "Case" },
   { label: "Tasks", href: "/tasks", entity: "Task" },
+  { label: "Events", href: "/events", entity: "Event" },
   { label: "Dialer", href: "/dialer" },
   { label: "Campaigns", href: "/campaigns", entity: "Campaign" },
   { label: "Reports", href: "/reports" },
