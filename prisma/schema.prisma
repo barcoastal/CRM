@@ -61,6 +61,7 @@ model User {
   integrationCredentials IntegrationCredential[] @relation("IntegrationCredentialAuthor")
   paymentCalcsSaved LeadPaymentCalculation[] @relation("PaymentCalcSavedBy")
   leadHistoryChanges LeadHistory[]   @relation("LeadHistoryChangedBy")
+  leadDebtsCreated  LeadDebt[]      @relation("LeadDebtCreatedBy")
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
@@ -391,6 +392,7 @@ model Lead {
   paymentCalculations LeadPaymentCalculation[]
   history             LeadHistory[]
   documents           Document[]               @relation("LeadDocuments")
+  debts               LeadDebt[]
 
   @@index([recordType])
   @@index([convertedAccountId])
@@ -1221,6 +1223,27 @@ model LeadPaymentCalculation {
   updatedAt            DateTime @updatedAt
 
   @@index([leadId, savedAt])
+}
+
+// ============ LEAD DEBT (Debt Information tab on Lead detail) ============
+
+model LeadDebt {
+  id            String   @id @default(cuid())
+  leadId        String
+  lead          Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type          String   // MCA | CREDIT_LINE | TERM_LOAN | BUSINESS_CC | EQUIPMENT | INVOICE_FACTORING | OTHER
+  creditorName  String?
+  amount        Float
+  frequency     String   // DAILY | WEEKLY | BI_WEEKLY | MONTHLY | LUMP_SUM
+  paymentAmount Float?
+  status        String   @default("ACTIVE") // ACTIVE | DEFAULTED | SETTLED | PAID_OFF | DISPUTED
+  notes         String?
+  createdById   String?
+  createdBy     User?    @relation("LeadDebtCreatedBy", fields: [createdById], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([leadId])
 }
 
 // ============ LEAD HISTORY (SF Lead History parity — every field change) ============

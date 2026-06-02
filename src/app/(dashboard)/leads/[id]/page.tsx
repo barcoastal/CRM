@@ -8,6 +8,7 @@ import { LeadTabs } from "@/components/leads/lead-tabs";
 import { LeadHeaderButtons } from "@/components/leads/lead-header-buttons";
 import { PaymentCalculator } from "@/components/leads/payment-calculator";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
+import { DebtInformation } from "@/components/leads/debt-information";
 import { LeadRelated } from "@/components/leads/lead-related";
 import { ConvertLeadButton } from "@/components/leads/convert-lead-button";
 import { leadStatusTone } from "@/lib/slds/status-tones";
@@ -53,6 +54,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         orderBy: { createdAt: "desc" },
         include: { uploadedBy: { select: { name: true } } },
       },
+      debts: { orderBy: { createdAt: "asc" } },
     },
   });
   if (!lead) notFound();
@@ -157,32 +159,20 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   );
 
   const debtInfo = (
-    <Section title="Debt Information">
-      <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
-            <th style={th}>Type</th>
-            <th style={th}>Amount</th>
-            <th style={th}>Frequency</th>
-            <th style={th}>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td colSpan={4} style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>
-              No debt information entered yet.
-            </td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr style={{ borderTop: "1px solid #d8dde6", background: "#fafaf9" }}>
-            <td style={{ ...td, fontWeight: 700 }}>Total</td>
-            <td style={{ ...td, fontWeight: 700 }}>$0.00</td>
-            <td style={td} />
-            <td style={td} />
-          </tr>
-        </tfoot>
-      </table>
+    <Section title={`Debt Information (${lead.debts.length})`}>
+      <DebtInformation
+        leadId={lead.id}
+        items={lead.debts.map((d) => ({
+          id: d.id,
+          type: d.type,
+          creditorName: d.creditorName,
+          amount: d.amount,
+          frequency: d.frequency,
+          paymentAmount: d.paymentAmount,
+          status: d.status,
+          notes: d.notes,
+        }))}
+      />
     </Section>
   );
 
@@ -312,16 +302,3 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   );
 }
 
-const th: React.CSSProperties = {
-  textAlign: "left",
-  padding: "8px 12px",
-  fontWeight: 700,
-  fontSize: 12,
-  color: "#3e3e3c",
-  textTransform: "uppercase",
-  letterSpacing: 0.3,
-};
-const td: React.CSSProperties = {
-  padding: "10px 12px",
-  color: "#080707",
-};
