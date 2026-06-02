@@ -1,0 +1,118 @@
+"use client";
+
+/**
+ * SF Lightning Path component — the green chevron stage bar that sits on
+ * record pages between the highlights and the tab nav.
+ *
+ * Each stage is a chevron-shaped step. Completed stages are filled green
+ * with a checkmark, the current stage is bold-bordered and slightly wider,
+ * upcoming stages are light gray. To the right is a primary action button
+ * ("Mark as Complete", "Change Closed Stage", etc.).
+ */
+
+export interface PathStage {
+  label: string;
+  /** Optional sub-label (e.g. "First Payment Completed") */
+  sublabel?: string;
+}
+
+export function Path({
+  stages,
+  currentIndex,
+  actionLabel = "Mark as Current Stage",
+  onAction,
+}: {
+  stages: readonly PathStage[];
+  currentIndex: number;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "stretch",
+        background: "#fff",
+        borderBottom: "1px solid #d8dde6",
+        padding: "8px 12px",
+        gap: 0,
+      }}
+    >
+      <div style={{ flex: 1, display: "flex", height: 36, overflow: "hidden" }}>
+        {stages.map((stage, i) => {
+          const isDone = i < currentIndex;
+          const isCurrent = i === currentIndex;
+          const isFirst = i === 0;
+          const isLast = i === stages.length - 1;
+          return (
+            <div
+              key={i}
+              className={`sf-path-step ${
+                isDone ? "sf-path-done" : isCurrent ? "sf-path-current" : "sf-path-upcoming"
+              }`}
+              style={{
+                flex: isCurrent ? 1.6 : 1,
+                minWidth: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+                marginLeft: isFirst ? 0 : -10,
+                clipPath: isLast
+                  ? "polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%)"
+                  : "polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%)",
+                fontSize: 12,
+                fontWeight: isCurrent ? 700 : 400,
+                color: isDone || isCurrent ? "#fff" : "#3e3e3c",
+                whiteSpace: "nowrap",
+                paddingLeft: isFirst ? 12 : 18,
+                paddingRight: isLast ? 12 : 18,
+                cursor: "default",
+              }}
+              title={stage.label}
+            >
+              {isDone && (
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  style={{ marginRight: 6, fill: "#fff", flexShrink: 0 }}
+                >
+                  <path d="M4.5 8.5L2 6l-1 1 3.5 3.5L11 4l-1-1z" />
+                </svg>
+              )}
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                {stage.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={onAction}
+        style={{
+          marginLeft: 12,
+          background: "#1589ee",
+          color: "#fff",
+          border: 0,
+          padding: "0 16px",
+          height: 36,
+          borderRadius: 4,
+          fontSize: 13,
+          fontWeight: 400,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {actionLabel}
+      </button>
+
+      <style jsx>{`
+        :global(.sf-path-done) { background: #04844b; }
+        :global(.sf-path-current) { background: #1589ee; }
+        :global(.sf-path-upcoming) { background: #ecebea; }
+      `}</style>
+    </div>
+  );
+}
