@@ -1,7 +1,10 @@
-import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Mail, Phone, Smartphone, Briefcase, Cake } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { RecordPage, HeaderActions } from "@/components/slds/record-page";
+import { Section, FieldGrid } from "@/components/slds/section";
+import { ActivityRail, type ActivityItem } from "@/components/slds/activity-rail";
+import { RelatedList } from "@/components/slds/related-list";
 
 export default async function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -10,72 +13,103 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     include: {
       primaryAccount: true,
       owner: { select: { id: true, name: true, email: true } },
-      accountRelations: {
-        include: { account: { select: { id: true, name: true, recordType: true } } },
-      },
+      accountRelations: { include: { account: { select: { id: true, name: true, recordType: true } } } },
+      tasks: { orderBy: { dueDate: "asc" }, take: 30 },
+      events: { orderBy: { startAt: "desc" }, take: 30 },
+      emails: { orderBy: { createdAt: "desc" }, take: 20 },
+      sms: { orderBy: { createdAt: "desc" }, take: 20 },
     },
   });
   if (!contact) notFound();
 
+  const activity: ActivityItem[] = [
+    ...contact.tasks.map((t) => ({
+      id: t.id, type: (t.type === "CALL" ? "CALL" : "TASK") as ActivityItem["type"],
+      subject: t.subject, meta: t.outcome ?? null,
+      date: t.dueDate ?? t.completedAt ?? t.createdAt, done: t.status === "COMPLETED",
+    })),
+    ...contact.events.map((e) => ({
+      id: e.id, type: "EVENT" as const, subject: e.subject, meta: e.location ?? null,
+      date: e.startAt, done: e.status === "COMPLETED",
+    })),
+    ...contact.emails.map((m) => ({
+      id: m.id, type: "EMAIL" as const, subject: m.subject, meta: m.toAddresses,
+      date: m.sentAt ?? m.createdAt, done: m.status === "DELIVERED",
+    })),
+    ...contact.sms.map((m) => ({
+      id: m.id, type: "SMS" as const, subject: m.body.slice(0, 80),
+      meta: `${m.direction === "OUTBOUND" ? "→" : "←"} ${m.toNumber}`,
+      date: m.sentAt ?? m.createdAt, done: m.status === "DELIVERED",
+    })),
+  ];
+
   return (
-    <div className="space-y-5">
-      <div>
-        <div className="text-[12px] text-zinc-500 mb-1">
-          <Link href="/contacts" className="hover:underline">Contacts</Link>
-        </div>
-        <h1 className="text-[1.75rem] font-bold tracking-tight" style={{ color: "#131b2e" }}>
-          {contact.fullName}
-        </h1>
-        {contact.title && <p className="text-[13px] text-zinc-600 mt-0.5">{contact.title}</p>}
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2 space-y-4">
-          <section className="bg-white rounded-lg border border-zinc-200 p-5">
-            <h2 className="font-semibold text-[14px] text-zinc-700 mb-3">Contact info</h2>
-            <dl className="grid grid-cols-2 gap-3 text-[13px]">
-              {contact.email && <div className="flex items-center gap-2"><Mail className="size-4 text-zinc-400" />{contact.email}</div>}
-              {contact.phone && <div className="flex items-center gap-2"><Phone className="size-4 text-zinc-400" />{contact.phone}</div>}
-              {contact.mobilePhone && <div className="flex items-center gap-2"><Smartphone className="size-4 text-zinc-400" />{contact.mobilePhone}</div>}
-              {contact.title && <div className="flex items-center gap-2"><Briefcase className="size-4 text-zinc-400" />{contact.title}</div>}
-              {contact.birthdate && <div className="flex items-center gap-2"><Cake className="size-4 text-zinc-400" />{contact.birthdate.toLocaleDateString()}</div>}
-            </dl>
-          </section>
-
-          <section className="bg-white rounded-lg border border-zinc-200 p-5">
-            <h2 className="font-semibold text-[14px] text-zinc-700 mb-3">Linked accounts ({contact.accountRelations.length})</h2>
-            {contact.accountRelations.length === 0 ? (
-              <p className="text-[13px] text-zinc-500">Not linked to any account yet.</p>
-            ) : (
-              <ul className="space-y-2">
-                {contact.accountRelations.map((rel) => (
-                  <li key={rel.id} className="flex items-center justify-between text-[13px]">
-                    <Link href={`/accounts/${rel.account.id}`} className="text-[#0034e4] hover:underline font-medium">
-                      {rel.account.name}
-                    </Link>
-                    <span className="text-zinc-500">{rel.role ?? "—"}</span>
-                  </li>
-                ))}
-              </ul>
+    <RecordPage
+      entity="Contact"
+      entityLabel="Contact"
+      recordTitle={contact.fullName}
+      recordSubtitle={contact.title ?? undefined}
+      highlights={[
+        { label: "Phone", value: contact.phone },
+        { label: "Email", value: contact.email },
+        { label: "Title", value: contact.title },
+        { label: "Account", value: contact.primaryAccount?.name && (
+          <Link href={`/accounts/${contact.primaryAccount.id}`} style={{ color: "#1589ee" }}>{contact.primaryAccount.name}</Link>
+        ) },
+        { label: "Owner", value: contact.owner?.name },
+      ]}
+      actions={
+        <HeaderActions buttons={[{ label: "+ Follow" }, { label: "Edit" }, { label: "New Task" }, { label: "New Event" }]} />
+      }
+      details={
+        <>
+          <Section title="Contact Information">
+            <FieldGrid
+              fields={[
+                ["First Name", contact.firstName],
+                ["Last Name", contact.lastName],
+                ["Title", contact.title],
+                ["Email", contact.email],
+                ["Phone", contact.phone],
+                ["Mobile Phone", contact.mobilePhone],
+                ["Birthdate", contact.birthdate?.toLocaleDateString()],
+                ["Owner", contact.owner?.name],
+              ]}
+            />
+          </Section>
+          {contact.primaryAccount && (
+            <Section title="Account Information">
+              <FieldGrid
+                fields={[
+                  ["Primary Account", <Link key="a" href={`/accounts/${contact.primaryAccount.id}`} style={{ color: "#1589ee" }}>{contact.primaryAccount.name}</Link>],
+                  ["Account Type", contact.primaryAccount.recordType.replace(/_/g, " ")],
+                  ["Account Phone", contact.primaryAccount.phone],
+                  ["Account Email", contact.primaryAccount.email],
+                ]}
+              />
+            </Section>
+          )}
+        </>
+      }
+      rail={
+        <>
+          <RelatedList
+            entity="Account"
+            title="Related Accounts"
+            items={contact.accountRelations.map((r) => ({ id: r.id, role: r.role, account: r.account }))}
+            renderItem={(r) => (
+              <div>
+                <Link href={`/accounts/${r.account.id}`} style={{ color: "#1589ee", fontWeight: 600 }}>
+                  {r.account.name}
+                </Link>
+                {r.role && <div style={{ fontSize: 11, color: "#706e6b" }}>{r.role}</div>}
+              </div>
             )}
-          </section>
-        </div>
-
-        <div className="space-y-4">
-          <section className="bg-white rounded-lg border border-zinc-200 p-5">
-            <h3 className="font-semibold text-[13px] text-zinc-700 mb-2">Primary account</h3>
-            {contact.primaryAccount ? (
-              <Link href={`/accounts/${contact.primaryAccount.id}`} className="text-[#0034e4] hover:underline text-[13px]">
-                {contact.primaryAccount.name}
-              </Link>
-            ) : <p className="text-[13px] text-zinc-500">—</p>}
-          </section>
-          <section className="bg-white rounded-lg border border-zinc-200 p-5">
-            <h3 className="font-semibold text-[13px] text-zinc-700 mb-2">Owner</h3>
-            <p className="text-[13px]">{contact.owner?.name ?? <span className="text-zinc-500">Unassigned</span>}</p>
-          </section>
-        </div>
-      </div>
-    </div>
+            emptyHint="No other accounts."
+          />
+          <ActivityRail items={activity} />
+        </>
+      }
+    />
   );
 }
