@@ -22,11 +22,20 @@ const DOC_TYPES = [
   "TAX_RETURN",
 ];
 
-export function DocumentsUpload({ leadId, items }: { leadId: string; items: DocItem[] }) {
+export function DocumentsUpload({
+  leadId,
+  endpoint,
+  items,
+}: {
+  leadId?: string;
+  endpoint?: string;
+  items: DocItem[];
+}) {
   const router = useRouter();
   const ref = useRef<HTMLInputElement>(null);
   const [hover, setHover] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const baseUrl = endpoint ?? `/api/leads/${leadId}/documents`;
 
   async function upload(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -36,7 +45,7 @@ export function DocumentsUpload({ leadId, items }: { leadId: string; items: DocI
         const form = new FormData();
         form.append("file", f);
         form.append("type", "OTHER");
-        await fetch(`/api/leads/${leadId}/documents`, { method: "POST", body: form });
+        await fetch(baseUrl, { method: "POST", body: form });
       }
       router.refresh();
     } finally {
@@ -112,7 +121,7 @@ export function DocumentsUpload({ leadId, items }: { leadId: string; items: DocI
             {items.map((d) => (
               <tr key={d.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
                 <td style={td}>
-                  <a href={`/api/leads/${leadId}/documents/${d.id}`} style={{ color: "#0070d2" }}>
+                  <a href={`${baseUrl}/${d.id}`} style={{ color: "#0070d2" }}>
                     {d.name}
                   </a>
                 </td>

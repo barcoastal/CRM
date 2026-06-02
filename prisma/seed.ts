@@ -6,6 +6,8 @@ import {
   DISPOSITION_TO_STATUS,
   STAGE_TO_SUB_DISPOSITIONS,
   LEAD_STATUSES,
+  OPP_STAGES,
+  OPP_STAGE_TO_SUB_DISPOSITIONS,
 } from "../src/lib/sf-canonical";
 import { SYSTEM_VIEWS } from "../src/lib/list-views";
 
@@ -1105,6 +1107,26 @@ async function main() {
           stage: null,
           sortOrder: 1000 + i,
           leadStatusMapping: DISPOSITION_TO_STATUS[d.value] ?? "Working Lead",
+        },
+      });
+      dispositionCount++;
+    }
+  }
+
+  // Opportunity dispositions per stage
+  await prisma.disposition.deleteMany({ where: { entity: "Opportunity" } });
+  for (const stage of OPP_STAGES) {
+    const values = OPP_STAGE_TO_SUB_DISPOSITIONS[stage];
+    for (const [i, value] of values.entries()) {
+      await prisma.disposition.create({
+        data: {
+          entity: "Opportunity",
+          category: "SUB_DISPOSITION",
+          value,
+          label: value,
+          stage,
+          sortOrder: i,
+          leadStatusMapping: stage,
         },
       });
       dispositionCount++;

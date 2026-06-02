@@ -113,9 +113,13 @@ function CalcField({
 
 export function PaymentCalculator({
   leadId,
+  endpoint,
   initial,
 }: {
-  leadId: string;
+  /** Pass leadId for legacy callers; will derive endpoint as /api/leads/[id]/calculator */
+  leadId?: string;
+  /** Or pass full endpoint to point elsewhere (e.g. /api/opportunities/[id]/calculator) */
+  endpoint?: string;
   initial?: Partial<Calc>;
 }) {
   const router = useRouter();
@@ -152,7 +156,8 @@ export function PaymentCalculator({
         totalSettlement: num(totalSettlement),
         estimatedAmount: num(estimatedAmount),
       };
-      const res = await fetch(`/api/leads/${leadId}/calculator`, {
+      const url = endpoint ?? `/api/leads/${leadId}/calculator`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

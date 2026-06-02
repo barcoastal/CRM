@@ -188,6 +188,161 @@ export const DISPOSITION_TASK_STATUSES = [
   "Deferred",
 ] as const;
 
+/** SF Opportunity stages (9 stages — matches the path on opp detail) */
+export const OPP_STAGES = [
+  "Working Opportunity",
+  "Waiting for Agreements",
+  "Agreements Received",
+  "Ready To Close",
+  "Contract Sent",
+  "Archived",
+  "Closed Won First Payment Pending",
+  "Closed Won - First Payment Completed",
+  "Closed Lost",
+] as const;
+export type OppStage = typeof OPP_STAGES[number];
+
+/**
+ * Final stage that flips the opportunity into Account land — when an opp
+ * reaches "Closed Won - First Payment Completed", a Client record is
+ * created/ensured and the user gets routed to the Account.
+ */
+export const OPP_STAGE_FINAL_WIN = "Closed Won - First Payment Completed" as const;
+
+/**
+ * For each Opp.Stage, the allowed Sub_Disposition__c values when picking
+ * in the Disposition modal. Derived from the actual SF Lightning dropdowns
+ * on the Opportunity object.
+ */
+export const OPP_STAGE_TO_SUB_DISPOSITIONS: Record<OppStage, string[]> = {
+  "Working Opportunity": [
+    "Appointment",
+    "Callback",
+    "Call Transferred from Fronter",
+    "Left VM",
+    "No Answer",
+    "No Answer-5up",
+    "Phone not in use",
+    "VM Full",
+    "Wrong Number",
+    "SMS sent",
+    "Notes",
+    "Stage Change",
+    "Left Review",
+    "Didn't Register",
+    "Opportunity Reactivated",
+    "Opportunity Reshuffled",
+  ],
+  "Waiting for Agreements": [
+    "Appointment",
+    "Callback",
+    "Call Transferred from Fronter",
+    "Left VM",
+    "No Answer",
+    "No Answer-5up",
+    "Phone not in use",
+    "VM Full",
+    "Wrong Number",
+    "SMS sent",
+    "Notes",
+    "Stage Change",
+    "Left Review",
+    "Didn't Register",
+    "Opportunity Reshuffled",
+  ],
+  "Agreements Received": [
+    "Appointment",
+    "Callback",
+    "Call Transferred from Fronter",
+    "Left VM",
+    "No Answer",
+    "No Answer-5up",
+    "Phone not in use",
+    "VM Full",
+    "Wrong Number",
+    "SMS sent",
+    "Notes",
+    "Stage Change",
+    "Left Review",
+    "Didn't Register",
+    "Opportunity Reshuffled",
+  ],
+  "Ready To Close": [
+    "Appointment",
+    "Callback",
+    "Call Transferred from Fronter",
+    "Left VM",
+    "No Answer",
+    "No Answer-5up",
+    "Phone not in use",
+    "VM Full",
+    "Wrong Number",
+    "SMS sent",
+    "Notes",
+    "Stage Change",
+    "Left Review",
+    "Resend contract",
+    "Didn't Register",
+    "Opportunity Reshuffled",
+  ],
+  "Contract Sent": [
+    "Appointment",
+    "Callback",
+    "Call Transferred from Fronter",
+    "Left VM",
+    "No Answer",
+    "No Answer-5up",
+    "Phone not in use",
+    "VM Full",
+    "Wrong Number",
+    "SMS sent",
+    "Notes",
+    "Stage Change",
+    "Left Review",
+    "Didn't Register",
+    "Opportunity Reshuffled",
+  ],
+  "Archived": [
+    "Bad State",
+    "Can't afford the program",
+    "Can't Save Weekly",
+    "Closed Lost",
+    "DNC (Do not call)",
+    "Duplicate",
+    "Enrolled with another company",
+    "Fake Lead",
+    "Not Interested",
+    "Not Interested Qualified",
+    "Looking for a loan",
+    "Lowered Payments with Lenders",
+    "Other",
+    "Payments are sustainable",
+    "Stopped Answering",
+    "Stage Change",
+  ],
+  "Closed Won First Payment Pending": [
+    "First Payment Pending",
+    "First Payment Scheduled",
+    "Awaiting Funds",
+    "Stage Change",
+    "Notes",
+  ],
+  "Closed Won - First Payment Completed": [
+    "First Payment Completed",
+    "Active Client",
+    "Stage Change",
+    "Notes",
+  ],
+  "Closed Lost": [
+    "Closed Lost",
+    "Lost - Competitor",
+    "Lost - Price",
+    "Lost - No Decision",
+    "Lost - Other",
+    "Notes",
+  ],
+};
+
 /** SF Lead Source picklist — ~50 values */
 export const LEAD_SOURCES = [
   "Website", "Web", "Bing", "Phone Inquiry", "Partner Referral", "Other",

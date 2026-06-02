@@ -1,86 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { createDocumentSchema } from "@/lib/validations/payment";
+import { requireAuthOrRespond } from "@/lib/api-auth";
+
+const UPLOAD_ROOT = path.join(process.cwd(), "uploads", "opportunities");
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+  const r = await requireAuthOrRespond("Opportunity.Read");
+  if ("response" in r) return r.response;
   const { id } = await params;
-
-  const opportunity = await prisma.opportunity.findUnique({ where: { id } });
-  if (!opportunity) {
-    return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
-  }
-
   const { searchParams } = new URL(request.url);
   const type = searchParams.get("type");
-
   const where: Record<string, unknown> = { opportunityId: id };
   if (type) where.type = type;
-
-  const documents = await prisma.document.findMany({
+  const items = await prisma.document.findMany({
     where,
+    include: { uploadedBy: { select: { id: true, name: true } } },
     orderBy: { createdAt: "desc" },
-    include: {
-      uploadedBy: {
-        select: { id: true, name: true },
-      },
-    },
   });
-
-  return NextResponse.json(documents);
+  return NextResponse.json(items);
 }
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+  const r = await requireAuthOrRespond("Opportunity.Edit");
+  if ("response" in r) return r.response;
+  const { session } = r;
   const { id } = await params;
 
-  const opportunity = await prisma.opportunity.findUnique({ where: { id } });
-  if (!opportunity) {
-    return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
+  const opp = await prisma.opportunity.findUnique({ where: { id } });
+  if (!opp) return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
+
+  const form = await request.formData();
+  const file = form.get("file");
+  const type = (form.get("type") as string) || "OTHER";
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: "No file" }, { status: 400 });
   }
 
-  const body = await request.json();
-  const parsed = createDocumentSchema.safeParse(body);
+  const dir = path.join(UPLOAD_ROOT, id);
+  await fs.mkdir(dir, { recursive: true });
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const storedName = `${Date.now()}_${safeName}`;
+  const filePath = path.join(dir, storedName);
+  const buf = Buffer.from(await file.arrayBuffer());
+  await fs.writeFile(filePath, buf);
 
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400 }
-    );
-  }
-
-  const data = parsed.data;
-
-  const document = await prisma.document.create({
+  const doc = await prisma.document.create({
     data: {
       opportunityId: id,
-      name: data.name,
-      type: data.type,
-      filePath: data.filePath,
-      fileSize: data.fileSize ?? null,
-      uploadedById: session.user!.id!,
-    },
-    include: {
-      uploadedBy: {
-        select: { id: true, name: true },
-      },
+      name: file.name,
+      type,
+      filePath: path.relative(process.cwd(), filePath),
+      fileSize: buf.byteLength,
+      uploadedById: session.userId,
     },
   });
 
-  return NextResponse.json(document, { status: 201 });
+  return NextResponse.json(doc);
 }

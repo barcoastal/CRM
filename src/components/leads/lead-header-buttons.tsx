@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DispositionModal } from "./disposition-modal";
-import type { LeadStatusV2 } from "@/lib/sf-canonical";
+import {
+  LEAD_STATUSES,
+  STAGE_TO_SUB_DISPOSITIONS,
+  type LeadStatusV2,
+} from "@/lib/sf-canonical";
 
 const btn: React.CSSProperties = {
   background: "#fff",
@@ -56,7 +60,9 @@ export function LeadHeaderButtons({
         New Event
       </button>
       <DispositionModal
-        leadId={leadId}
+        endpoint={`/api/leads/${leadId}/disposition`}
+        stages={LEAD_STATUSES}
+        subDispositionsByStage={STAGE_TO_SUB_DISPOSITIONS}
         currentStage={currentStage}
         open={modal}
         onClose={() => setModal(false)}

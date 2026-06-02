@@ -32,9 +32,13 @@ export const createDebtSchema = z.object({
   creditorPhone: z.string().optional().or(z.literal("")),
   creditorEmail: z.string().email("Invalid email").optional().or(z.literal("")),
   accountNumber: z.string().optional().or(z.literal("")),
+  debtType: z.string().optional().or(z.literal("")),
+  paymentFrequency: z.string().optional().or(z.literal("")),
+  paymentAmount: z.coerce.number().nonnegative().optional(),
   originalBalance: z.coerce.number().positive("Original balance must be positive"),
   currentBalance: z.coerce.number().min(0, "Current balance cannot be negative"),
   enrolledBalance: z.coerce.number().positive("Enrolled balance must be positive"),
+  status: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
 });
 

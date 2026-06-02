@@ -72,9 +72,13 @@ export async function POST(
       creditorPhone: data.creditorPhone || null,
       creditorEmail: data.creditorEmail || null,
       accountNumber: data.accountNumber || null,
+      debtType: data.debtType || null,
+      paymentFrequency: data.paymentFrequency || null,
+      paymentAmount: typeof data.paymentAmount === "number" ? data.paymentAmount : null,
       originalBalance: data.originalBalance,
       currentBalance: data.currentBalance,
       enrolledBalance: data.enrolledBalance,
+      status: data.status || undefined,
       notes: data.notes || null,
     },
     include: {

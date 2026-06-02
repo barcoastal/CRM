@@ -3,13 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Modal, ModalButton } from "@/components/slds/modal";
-import {
-  LEAD_STATUSES,
-  STAGE_TO_SUB_DISPOSITIONS,
-  CALL_RESULTS,
-  DISPOSITION_TASK_STATUSES,
-  type LeadStatusV2,
-} from "@/lib/sf-canonical";
+import { CALL_RESULTS, DISPOSITION_TASK_STATUSES } from "@/lib/sf-canonical";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -32,19 +26,29 @@ const labelStyle: React.CSSProperties = {
 
 const requiredMark = <span style={{ color: "#c23934", marginRight: 2 }}>*</span>;
 
+export type DispositionModalProps = {
+  /** API endpoint to POST {stage, subDisposition, subject, callResult, status, description} */
+  endpoint: string;
+  /** All allowed stages (in path order) */
+  stages: readonly string[];
+  /** Map of stage → allowed sub-dispositions */
+  subDispositionsByStage: Record<string, readonly string[]>;
+  /** Current stage value */
+  currentStage: string;
+  open: boolean;
+  onClose: () => void;
+};
+
 export function DispositionModal({
-  leadId,
+  endpoint,
+  stages,
+  subDispositionsByStage,
   currentStage,
   open,
   onClose,
-}: {
-  leadId: string;
-  currentStage: LeadStatusV2;
-  open: boolean;
-  onClose: () => void;
-}) {
+}: DispositionModalProps) {
   const router = useRouter();
-  const [stage, setStage] = useState<LeadStatusV2>(currentStage);
+  const [stage, setStage] = useState<string>(currentStage);
   const [subDispo, setSubDispo] = useState("");
   const [subject, setSubject] = useState<string>(currentStage);
   const [callResult, setCallResult] = useState("");
@@ -53,9 +57,9 @@ export function DispositionModal({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const subOptions = useMemo(() => STAGE_TO_SUB_DISPOSITIONS[stage] ?? [], [stage]);
+  const subOptions = useMemo(() => subDispositionsByStage[stage] ?? [], [stage, subDispositionsByStage]);
 
-  function handleStageChange(s: LeadStatusV2) {
+  function handleStageChange(s: string) {
     setStage(s);
     setSubject(s);
     setSubDispo("");
@@ -69,7 +73,7 @@ export function DispositionModal({
     }
     setSaving(true);
     try {
-      const res = await fetch(`/api/leads/${leadId}/disposition`, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -87,10 +91,13 @@ export function DispositionModal({
       }
       const out = (await res.json().catch(() => ({}))) as {
         conversion?: { opportunityId: string | null; accountId: string };
+        redirectTo?: string;
         conversionError?: string;
       };
       onClose();
-      if (out.conversion?.opportunityId) {
+      if (out.redirectTo) {
+        router.push(out.redirectTo);
+      } else if (out.conversion?.opportunityId) {
         router.push(`/opportunities/${out.conversion.opportunityId}`);
       } else if (out.conversion?.accountId) {
         router.push(`/accounts/${out.conversion.accountId}`);
@@ -135,10 +142,10 @@ export function DispositionModal({
           <label style={labelStyle}>{requiredMark}Stage</label>
           <select
             value={stage}
-            onChange={(e) => handleStageChange(e.target.value as LeadStatusV2)}
+            onChange={(e) => handleStageChange(e.target.value)}
             style={inputStyle}
           >
-            {LEAD_STATUSES.map((s) => (
+            {stages.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
