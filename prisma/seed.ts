@@ -1,6 +1,8 @@
 import { PrismaClient } from "../src/generated/prisma/client.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hash } from "bcryptjs";
+import { LEAD_SUB_DISPOSITIONS, DISPOSITION_TO_STATUS } from "../src/lib/sf-canonical";
+import { SYSTEM_VIEWS } from "../src/lib/list-views";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter } as any);
@@ -1040,7 +1042,6 @@ async function main() {
 
   // ---------- LIST VIEWS (system views per entity) ----------
   console.log("Seeding list views...");
-  const { SYSTEM_VIEWS } = await import("../src/lib/list-views");
   let listViewCount = 0;
   for (const [entity, views] of Object.entries(SYSTEM_VIEWS)) {
     for (const v of views) {
@@ -1064,7 +1065,6 @@ async function main() {
 
   // ---------- DISPOSITIONS (SF Lead picklist — 47 sub-dispositions) ----------
   console.log("Seeding dispositions...");
-  const { LEAD_SUB_DISPOSITIONS, DISPOSITION_TO_STATUS } = await import("../src/lib/sf-canonical");
   await prisma.disposition.deleteMany({ where: { entity: "Lead" } });
   let dispositionCount = 0;
   for (const [i, d] of LEAD_SUB_DISPOSITIONS.entries()) {
