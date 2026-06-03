@@ -343,6 +343,82 @@ export const OPP_STAGE_TO_SUB_DISPOSITIONS: Record<OppStage, string[]> = {
   ],
 };
 
+/** SF Account stages (8 — matches the path on Account detail) */
+export const ACCOUNT_STAGES = [
+  "First Payment pending",
+  "Active",
+  "On Hold",
+  "Pending Cancellation",
+  "Cancelled",
+  "Suspended",
+  "Graduated",
+  "Closed Duplicate",
+] as const;
+export type AccountStage = typeof ACCOUNT_STAGES[number];
+
+export const ACCOUNT_STAGE_TO_SUB_DISPOSITIONS: Record<AccountStage, string[]> = {
+  "First Payment pending": [
+    "Awaiting First Draft",
+    "First Payment Scheduled",
+    "Welcome Call Pending",
+    "Welcome Call Completed",
+    "Notes",
+    "Stage Change",
+  ],
+  "Active": [
+    "Welcome Call Completed",
+    "Payment Received",
+    "Payment Skipped",
+    "Reschedule Requested",
+    "Reschedule Completed",
+    "Settlement Authorized",
+    "Settlement Completed",
+    "Notes",
+    "Stage Change",
+  ],
+  "On Hold": [
+    "Hardship Hold",
+    "Payment Hold",
+    "Document Hold",
+    "Legal Hold",
+    "Bank Change Pending",
+    "Notes",
+    "Stage Change",
+  ],
+  "Pending Cancellation": [
+    "Cancel Requested",
+    "Final Payment Pending",
+    "Awaiting Refund",
+    "Notes",
+    "Stage Change",
+  ],
+  "Cancelled": [
+    "Client Cancelled",
+    "NSF Cancelled",
+    "Cancelled - Refund Issued",
+    "Cancelled - No Refund",
+    "Notes",
+  ],
+  "Suspended": [
+    "NSF Suspension",
+    "Documentation Suspension",
+    "Compliance Suspension",
+    "Notes",
+    "Stage Change",
+  ],
+  "Graduated": [
+    "Program Completed",
+    "All Debts Settled",
+    "Final Payment Received",
+    "Notes",
+  ],
+  "Closed Duplicate": [
+    "Merged with Account",
+    "Created in Error",
+    "Notes",
+  ],
+};
+
 /** SF Lead Source picklist — ~50 values */
 export const LEAD_SOURCES = [
   "Website", "Web", "Bing", "Phone Inquiry", "Partner Referral", "Other",

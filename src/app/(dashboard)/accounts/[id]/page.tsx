@@ -1,15 +1,27 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { ObjectHeader } from "@/components/slds/object-header";
+import { RecordPage, StatusPill } from "@/components/slds/record-page";
 import { Section, FieldGrid } from "@/components/slds/section";
-import { ActivityRail, type ActivityItem } from "@/components/slds/activity-rail";
+import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activity-chatter-rail";
+import type { ActivityItem } from "@/components/slds/activity-rail";
 import { RelatedList } from "@/components/slds/related-list";
+import { AccountTabs } from "@/components/accounts/account-tabs";
+import { AccountHeaderButtons } from "@/components/accounts/account-header-buttons";
+import { BankDetailsCard } from "@/components/accounts/bank-details-card";
+import { HealthCheckCard } from "@/components/accounts/health-check-card";
+import { EscrowBalanceCard } from "@/components/accounts/escrow-balance-card";
+import { DocumentsUpload } from "@/components/leads/documents-upload";
+import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
+import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
+import { genericTone } from "@/lib/slds/status-tones";
 
-const RECORD_TYPE_LABEL: Record<string, string> = {
-  CLIENT: "Client", CREDITOR: "Creditor", VENDOR: "Vendor",
-  BUSINESS_ACCOUNT: "Business", PERSON_ACCOUNT: "Person", BUYOUT: "Buyout", OTHER: "Other",
-};
+const PATH = ACCOUNT_STAGES.map((s) => ({ label: s }));
+
+function accountPathIndex(stage: string): number {
+  const i = (ACCOUNT_STAGES as readonly string[]).indexOf(stage);
+  return i >= 0 ? i : 0;
+}
 
 export default async function AccountDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,258 +30,462 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     include: {
       owner: { select: { id: true, name: true, email: true } },
       contacts: { include: { contact: true }, orderBy: { createdAt: "asc" } },
-      opportunities: { orderBy: { createdAt: "desc" } },
-      creditor: { include: { _count: { select: { debts: true } } } },
+      opportunities: {
+        include: {
+          debts: true,
+          _count: { select: { debts: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      },
       parentAccount: { select: { id: true, name: true } },
-      childAccounts: { select: { id: true, name: true, recordType: true } },
       programPlans: { orderBy: { startDate: "desc" } },
-      cases: { orderBy: { createdAt: "desc" }, take: 10 },
-      tasks: { orderBy: { dueDate: "asc" }, take: 50 },
-      events: { orderBy: { startAt: "desc" }, take: 50 },
-      emails: { orderBy: { createdAt: "desc" }, take: 20 },
-      sms: { orderBy: { createdAt: "desc" }, take: 20 },
+      documents: { include: { uploadedBy: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" } },
+      tasks: { orderBy: { createdAt: "desc" }, take: 50 },
+      events: { orderBy: { startAt: "desc" }, take: 30 },
+      emails: { orderBy: { createdAt: "desc" }, take: 30 },
+      sms: { orderBy: { createdAt: "desc" }, take: 30 },
+      cases: { orderBy: { createdAt: "desc" }, take: 20 },
+      history: { include: { changedBy: { select: { name: true } } }, orderBy: { changedAt: "desc" }, take: 100 },
     },
   });
   if (!account) notFound();
 
-  const isClient = account.recordType === "CLIENT" || account.recordType === "BUSINESS_ACCOUNT" || account.recordType === "PERSON_ACCOUNT";
-  const isCreditor = account.recordType === "CREDITOR";
-
-  // Compile activity feed from tasks + events + emails + sms
   const activity: ActivityItem[] = [
     ...account.tasks.map((t) => ({
       id: t.id,
-      type: (t.type === "EMAIL" ? "EMAIL" : t.type === "CALL" ? "CALL" : "TASK") as ActivityItem["type"],
+      type: (t.type === "CALL" ? "CALL" : "TASK") as ActivityItem["type"],
       subject: t.subject,
       meta: t.outcome ?? t.disposition ?? null,
       date: t.dueDate ?? t.completedAt ?? t.createdAt,
       done: t.status === "COMPLETED",
     })),
     ...account.events.map((e) => ({
-      id: e.id, type: "EVENT" as const, subject: e.subject,
-      meta: e.location ?? null, date: e.startAt, done: e.status === "COMPLETED",
+      id: e.id,
+      type: "EVENT" as const,
+      subject: e.subject,
+      meta: e.location ?? null,
+      date: e.startAt,
+      done: e.status === "COMPLETED",
     })),
     ...account.emails.map((m) => ({
-      id: m.id, type: "EMAIL" as const, subject: m.subject,
-      meta: `${m.direction === "OUTBOUND" ? "Sent to" : "From"} ${m.toAddresses}`,
-      date: m.sentAt ?? m.createdAt, done: m.status === "DELIVERED" || m.status === "OPENED",
+      id: m.id,
+      type: "EMAIL" as const,
+      subject: m.subject,
+      meta: `${m.direction === "OUTBOUND" ? "To" : "From"} ${m.toAddresses}`,
+      date: m.sentAt ?? m.createdAt,
+      done: m.status === "DELIVERED",
     })),
     ...account.sms.map((m) => ({
-      id: m.id, type: "SMS" as const, subject: m.body.slice(0, 80),
+      id: m.id,
+      type: "SMS" as const,
+      subject: m.body.slice(0, 80),
       meta: `${m.direction === "OUTBOUND" ? "→" : "←"} ${m.toNumber}`,
-      date: m.sentAt ?? m.createdAt, done: m.status === "DELIVERED",
+      date: m.sentAt ?? m.createdAt,
+      done: m.status === "DELIVERED",
     })),
   ];
 
-  return (
-    <div>
-      {/* Object header: entity icon + label + record name + highlights + actions */}
-      <ObjectHeader
-        entity={isCreditor ? "Creditor" : "Account"}
-        entityLabel="Account"
-        recordTitle={account.name}
-        recordSubtitle={
-          account.parentAccount ? (
-            <>
-              Parent:{" "}
-              <Link href={`/accounts/${account.parentAccount.id}`} style={{ color: "#1589ee" }}>
-                {account.parentAccount.name}
-              </Link>
-            </>
-          ) : (
-            RECORD_TYPE_LABEL[account.recordType] ?? account.recordType
-          )
-        }
-        highlights={[
-          { label: "Type", value: RECORD_TYPE_LABEL[account.recordType] ?? account.recordType },
-          { label: "Phone", value: account.phone },
-          { label: "Industry", value: account.industry },
-          { label: "Account Owner", value: account.owner?.name },
-          { label: "Annual Revenue", value: account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : null },
-        ]}
-        actions={
-          <>
-            <button className="slds-button slds-button_neutral">+ Follow</button>
-            <button className="slds-button slds-button_neutral">Edit</button>
-            <button className="slds-button slds-button_neutral">New Case</button>
-            <button className="slds-button slds-button_icon slds-button_icon-border-filled" title="More">
-              <svg width="14" height="14" viewBox="0 0 14 14" style={{ fill: "#080707" }}>
-                <circle cx="2" cy="7" r="1.5" /><circle cx="7" cy="7" r="1.5" /><circle cx="12" cy="7" r="1.5" />
-              </svg>
-            </button>
-          </>
-        }
+  const chatter: ChatterPost[] = account.emails.map((m) => ({
+    id: m.id,
+    authorName: m.direction === "OUTBOUND" ? "You" : m.fromAddress,
+    body: `${m.subject}\n\n${m.bodyText ?? m.bodyHtml?.replace(/<[^>]+>/g, "") ?? ""}`,
+    createdAt: m.sentAt ?? m.createdAt,
+  }));
+
+  const allDebts = account.opportunities.flatMap((o) => o.debts);
+  const totalDebt = allDebts.reduce((s, d) => s + d.originalBalance, 0) || account.currentTotalDebt || 0;
+  const headerTitle = `$${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const statusTone = (status: string): "success" | "warning" | "danger" | "neutral" => {
+    if (!status) return "neutral";
+    const s = status.toLowerCase();
+    if (s.includes("active")) return "success";
+    if (s.includes("pending")) return "warning";
+    if (s.includes("nsf") || s.includes("cancel") || s.includes("suspend")) return "danger";
+    return "neutral";
+  };
+
+  const detailsPanel = (
+    <>
+      <Section title="Account Information">
+        <FieldGrid
+          fields={[
+            ["Account Name", account.name],
+            ["Parent Account", account.parentAccount?.name && (
+              <Link href={`/accounts/${account.parentAccount.id}`} style={{ color: "#1589ee" }}>{account.parentAccount.name}</Link>
+            )],
+            ["Industry", account.industry],
+            ["Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : null],
+            ["Account ID", account.id.slice(-8).toUpperCase()],
+            ["External SAS ID", account.externalSasId],
+            ["EIN", account.ein],
+            ["Phone", account.phone],
+            ["Email", account.email],
+            ["Owner", account.owner?.name],
+            ["Business Start Date", account.businessStartDate?.toLocaleDateString()],
+            ["UCC Filing Date", account.uccFilingDate?.toLocaleDateString()],
+            ["Program Start Date", account.programStartDate?.toLocaleDateString()],
+            ["Program End Date", account.programEndDate?.toLocaleDateString()],
+            ["Bank Account Sync Status", account.bankAccountSyncStatus],
+            ["Cancellation Date", account.cancellationDate?.toLocaleDateString()],
+            ["Cancellation Reason", account.cancellationReason],
+            ["Legal Status", account.legalStatus],
+            ["Submitted by Legal", account.submittedByLegal],
+            ["Reschedule Status", account.rescheduleStatus],
+            ["Conversion Reason", account.conversionReason],
+            ["Loan Provider", account.loanProvider],
+            ["Collection Agency", account.collectionAgency],
+          ]}
+        />
+      </Section>
+
+      <Section title="Billing Address" defaultOpen={false}>
+        <FieldGrid
+          fields={[
+            ["Street", account.billingStreet],
+            ["City", account.billingCity],
+            ["State", account.billingState],
+            ["Zip", account.billingZip],
+            ["Country", account.billingCountry],
+          ]}
+        />
+      </Section>
+
+      <Section title="File Status">
+        <FieldGrid
+          fields={[
+            ["Client Status", <StatusPill key="cs" label={account.clientStatus} tone={statusTone(account.clientStatus)} />],
+            ["Payment Status", <StatusPill key="ps" label={account.paymentStatus} tone={statusTone(account.paymentStatus)} />],
+            ["Qualified Status", account.qualifiedStatus],
+            ["High UCC Risk", account.highUccRisk ? "Yes" : "No"],
+            ["Graduated Status", account.graduatedStatus],
+            ["Bank Account Status", <StatusPill key="bas" label={account.bankAccountStatus} tone={statusTone(account.bankAccountStatus)} />],
+          ]}
+        />
+      </Section>
+
+      <Section title="Financial Summary Information" defaultOpen={false}>
+        <FieldGrid
+          fields={[
+            ["Operating Expenses", account.operatingExpenses != null ? `$${account.operatingExpenses.toLocaleString()}` : null],
+            ["Gross Profit", account.grossProfit != null ? `$${account.grossProfit.toLocaleString()}` : null],
+            ["Net Profit", account.netProfit != null ? `$${account.netProfit.toLocaleString()}` : null],
+            ["Debt Payments", account.debtPayments != null ? `$${account.debtPayments.toLocaleString()}` : null],
+            ["EBITDA", account.ebitda != null ? `$${account.ebitda.toLocaleString()}` : null],
+            ["Buyout Program Weekly Payment", account.buyoutProgramWeeklyPayment != null ? `$${account.buyoutProgramWeeklyPayment.toLocaleString()}` : null],
+            ["Buyout Program Monthly Payment", account.buyoutProgramMonthlyPayment != null ? `$${account.buyoutProgramMonthlyPayment.toLocaleString()}` : null],
+            ["Created", account.createdAt.toLocaleString()],
+            ["Last Modified", account.updatedAt.toLocaleString()],
+          ]}
+        />
+        {account.financialDescription && (
+          <div style={{ marginTop: 12, fontSize: 13, whiteSpace: "pre-wrap" }}>{account.financialDescription}</div>
+        )}
+      </Section>
+    </>
+  );
+
+  const calcPanel = (
+    <Section title="Reschedule Program">
+      <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>
+        Reschedule Program calculator — coming next. Use the Opportunity Payment Calculator on the active opp for now.
+      </div>
+    </Section>
+  );
+
+  const activitiesPanel = (
+    <Section title={`Activities (${activity.length})`}>
+      {activity.length === 0 ? (
+        <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>No activity recorded.</div>
+      ) : (
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+              <th style={th}>Date</th>
+              <th style={th}>Type</th>
+              <th style={th}>Subject</th>
+              <th style={th}>Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...activity].sort((a, b) => b.date.getTime() - a.date.getTime()).map((a) => (
+              <tr key={a.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
+                <td style={td}>{a.date.toLocaleString()}</td>
+                <td style={td}>{a.type}</td>
+                <td style={td}>{a.subject}</td>
+                <td style={td}>{a.meta ?? "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Section>
+  );
+
+  const documentsPanel = (
+    <Section title={`Files (${account.documents.length})`}>
+      <DocumentsUpload
+        endpoint={`/api/accounts/${account.id}/documents`}
+        items={account.documents.map((d) => ({
+          id: d.id,
+          name: d.name,
+          type: d.type,
+          fileSize: d.fileSize,
+          createdAt: d.createdAt.toISOString(),
+          uploadedBy: d.uploadedBy ? { name: d.uploadedBy.name } : null,
+        }))}
       />
+    </Section>
+  );
 
-      {/* 2-col body: details (left) + activity rail (right) */}
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(320px, 1fr)", gap: 12, marginTop: 8 }}>
-        <div>
-          <Section title="Account Information">
-            <FieldGrid
-              fields={[
-                ["Account Name", account.name],
-                ["Type", RECORD_TYPE_LABEL[account.recordType] ?? account.recordType],
-                ["Phone", account.phone],
-                ["Email", account.email],
-                ["Website", account.website && (
-                  <a href={account.website} target="_blank" rel="noreferrer" style={{ color: "#1589ee" }}>{account.website}</a>
-                )],
-                ["Industry", account.industry],
-                ["EIN", account.ein],
-                ["Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : null],
-                ["Employees", account.numberOfEmployees],
-                ["Owner", account.owner?.name],
-              ]}
-            />
-          </Section>
-
-          {(account.billingStreet || account.billingCity) && (
-            <Section title="Address Information">
-              <FieldGrid
-                fields={[
-                  ["Billing Street", account.billingStreet],
-                  ["Billing City", account.billingCity],
-                  ["Billing State", account.billingState],
-                  ["Billing Zip", account.billingZip],
-                  ["Billing Country", account.billingCountry],
-                ]}
-              />
-            </Section>
+  const relatedPanel = (
+    <>
+      {allDebts.length > 0 && (
+        <RelatedList
+          entity="Opportunity"
+          title="Debt Details"
+          items={allDebts}
+          renderItem={(d) => (
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
+              <span>{d.creditorName}</span>
+              <span>${d.originalBalance.toLocaleString()}</span>
+              <span>${d.paymentAmount?.toLocaleString() ?? "—"}</span>
+              <StatusPill label={d.status} tone={genericTone(d.status)} />
+            </div>
           )}
+          emptyHint="No debts."
+        />
+      )}
+      <RelatedList
+        entity="Opportunity"
+        title="Opportunities"
+        items={account.opportunities}
+        renderItem={(o) => (
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
+            <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee" }}>{o.name ?? o.recordType}</Link>
+            <span>{o.stage}</span>
+            <span>v{o.version}</span>
+            <span>${o.totalDebt?.toLocaleString() ?? "—"}</span>
+          </div>
+        )}
+        emptyHint="No opportunities."
+      />
+      <RelatedList
+        entity="Case"
+        title="Cases"
+        items={account.cases}
+        renderItem={(c) => (
+          <div>
+            <Link href={`/cases/${c.id}`} style={{ color: "#1589ee" }}>{c.subject}</Link>
+            <span style={{ color: "#706e6b", marginLeft: 8 }}>· {c.status}</span>
+          </div>
+        )}
+        emptyHint="No cases."
+      />
+      <RelatedList
+        entity="Contact"
+        title="Contacts"
+        items={account.contacts}
+        renderItem={(rel) => (
+          <div>
+            <Link href={`/contacts/${rel.contact.id}`} style={{ color: "#1589ee" }}>{rel.contact.fullName}</Link>
+            <span style={{ color: "#706e6b", marginLeft: 8 }}>· {rel.role}</span>
+          </div>
+        )}
+        emptyHint="No contacts."
+      />
+      <RelatedList
+        entity="Account"
+        title="Account History"
+        items={account.history}
+        renderItem={(h) => (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12 }}>
+            <div>{new Date(h.changedAt).toLocaleString()}</div>
+            <div>{h.field}</div>
+            <div>{h.changedBy?.name ?? "System"}</div>
+            <div style={{ color: "#706e6b" }}>{h.oldValue ?? "—"}</div>
+            <div>{h.newValue ?? "—"}</div>
+          </div>
+        )}
+        emptyHint="No history."
+      />
+    </>
+  );
 
-          {account.description && (
-            <Section title="Description">
-              <div style={{ fontSize: 13, color: "#080707", whiteSpace: "pre-wrap" }}>
-                {account.description}
+  const paymentSummariesPanel = (
+    <Section title="Payment Summaries">
+      <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>
+        Aggregated payment view — coming next.
+      </div>
+    </Section>
+  );
+
+  const settlementsPanel = (
+    <Section title="Settlements">
+      {allDebts.length === 0 ? (
+        <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>No debt records yet.</div>
+      ) : (
+        <OppDebtInformation
+          opportunityId={account.opportunities[0]?.id ?? ""}
+          items={allDebts.map((d) => ({
+            id: d.id,
+            creditorName: d.creditorName,
+            debtType: d.debtType,
+            paymentFrequency: d.paymentFrequency,
+            paymentAmount: d.paymentAmount,
+            originalBalance: d.originalBalance,
+            currentBalance: d.currentBalance,
+            enrolledBalance: d.enrolledBalance,
+            status: d.status,
+          }))}
+        />
+      )}
+    </Section>
+  );
+
+  const opportunitiesPanel = (
+    <Section title={`Opportunities (${account.opportunities.length})`}>
+      {account.opportunities.length === 0 ? (
+        <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>No opportunities yet.</div>
+      ) : (
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+              <th style={th}>Opportunity Name</th>
+              <th style={th}>Version</th>
+              <th style={th}>Stage</th>
+              <th style={th}>Current Total Debt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {account.opportunities.map((o) => (
+              <tr key={o.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
+                <td style={td}>
+                  <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee" }}>{o.name ?? o.recordType.replace(/_/g, " ")}</Link>
+                </td>
+                <td style={td}>v{o.version}</td>
+                <td style={td}>{o.stage}</td>
+                <td style={td}>${o.totalDebt?.toLocaleString() ?? "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Section>
+  );
+
+  const marketingPanel = (
+    <Section title="Marketing Attribution">
+      <FieldGrid fields={[["Account Source", account.recordType.replace(/_/g, " ")]]} />
+    </Section>
+  );
+
+  return (
+    <RecordPage
+      entity="Account"
+      entityLabel="Account"
+      recordTitle={headerTitle}
+      recordSubtitle={
+        <>
+          {account.name} · <StatusPill label={account.stage} tone={statusTone(account.stage)} />
+        </>
+      }
+      highlights={[
+        { label: "Client Status", value: <StatusPill label={account.clientStatus} tone={statusTone(account.clientStatus)} /> },
+        { label: "Processor Status", value: account.processorStatus ?? "Not Synced" },
+        { label: "Payment Status", value: <StatusPill label={account.paymentStatus} tone={statusTone(account.paymentStatus)} /> },
+        { label: "Bank Account Status", value: <StatusPill label={account.bankAccountStatus} tone={statusTone(account.bankAccountStatus)} /> },
+      ]}
+      actions={<AccountHeaderButtons accountId={account.id} currentStage={account.stage} />}
+      pathStages={PATH}
+      pathCurrentIndex={accountPathIndex(account.stage)}
+      pathActionLabel="Mark Stage as Complete"
+      details={
+        <AccountTabs
+          panels={{
+            Details: detailsPanel,
+            "Payment Calculator": calcPanel,
+            Activities: activitiesPanel,
+            Documents: documentsPanel,
+            "Related Records": relatedPanel,
+            "Payment Summaries": paymentSummariesPanel,
+            Settlements: settlementsPanel,
+            Opportunities: opportunitiesPanel,
+            Marketing: marketingPanel,
+          }}
+        />
+      }
+      rail={
+        <>
+          <HealthCheckCard
+            welcomeCallCompleted={account.welcomeCallCompleted}
+            firstPaymentReceived={account.firstPaymentReceived}
+          />
+          <EscrowBalanceCard
+            balance={account.escrowBalance}
+            pulledAt={account.escrowPulledAt}
+            feePaidInFull={account.feePaidInFull}
+          />
+          <BankDetailsCard
+            accountId={account.id}
+            initial={{
+              bankName: account.bankName,
+              bankRoutingNumber: account.bankRoutingNumber,
+              bankAccountNumber: account.bankAccountNumber,
+              bankAccountType: account.bankAccountType,
+            }}
+          />
+          <RelatedList
+            entity="Opportunity"
+            title="Opportunities"
+            items={account.opportunities}
+            renderItem={(o) => (
+              <div>
+                <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee", fontWeight: 600 }}>
+                  {o.name ?? o.recordType.replace(/_/g, " ")}
+                </Link>
+                <div style={{ fontSize: 11, color: "#706e6b" }}>v{o.version} · {o.stage}</div>
               </div>
-            </Section>
-          )}
-
-          {isCreditor && account.creditor && (
-            <Section title="Creditor Details">
-              <FieldGrid
-                fields={[
-                  ["Legal Name", account.creditor.legalName],
-                  ["Collections Phone", account.creditor.collectionsPhone],
-                  ["Collections Email", account.creditor.collectionsEmail],
-                  ["Debts Handled", account.creditor._count?.debts ?? 0],
-                  ["Avg Accepted %", account.creditor.averageAcceptedPercent ? `${(account.creditor.averageAcceptedPercent * 100).toFixed(0)}%` : null],
-                ]}
-              />
-              {account.creditor.settlementPolicy && (
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ fontSize: 11, color: "#706e6b", fontWeight: 400, marginBottom: 4 }}>Settlement Policy</div>
-                  <div style={{ fontSize: 13, color: "#080707" }}>{account.creditor.settlementPolicy}</div>
-                </div>
-              )}
-            </Section>
-          )}
-
-          {/* Related lists below details (Account doesn't get them in the rail) */}
-          {isClient && account.programPlans.length > 0 && (
-            <Section title={`Program Plans (${account.programPlans.length})`}>
-              <table style={{ width: "100%", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #ecebea" }}>
-                    <th style={th}>Product</th>
-                    <th style={th}>Status</th>
-                    <th style={{ ...th, textAlign: "right" }}>Monthly</th>
-                    <th style={{ ...th, textAlign: "right" }}>Term</th>
-                    <th style={{ ...th, textAlign: "right" }}>Total Debt</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {account.programPlans.map((p) => (
-                    <tr key={p.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                      <td style={td}>
-                        <Link href={`/program-plans/${p.id}`} style={{ color: "#1589ee" }}>
-                          {p.recordType.replace(/_/g, " ")}
-                        </Link>
-                      </td>
-                      <td style={td}>{p.status}</td>
-                      <td style={{ ...td, textAlign: "right" }}>${p.monthlyAmount.toLocaleString()}</td>
-                      <td style={{ ...td, textAlign: "right" }}>{p.termMonths}mo</td>
-                      <td style={{ ...td, textAlign: "right" }}>${p.totalEnrolledDebt?.toLocaleString() ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Section>
-          )}
-
-          {isClient && account.opportunities.length > 0 && (
-            <Section title={`Opportunities (${account.opportunities.length})`}>
-              <table style={{ width: "100%", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #ecebea" }}>
-                    <th style={th}>Product</th>
-                    <th style={th}>Stage</th>
-                    <th style={{ ...th, textAlign: "right" }}>Total Debt</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {account.opportunities.map((o) => (
-                    <tr key={o.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                      <td style={td}>
-                        <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee" }}>
-                          {o.recordType.replace(/_/g, " ")}
-                        </Link>
-                      </td>
-                      <td style={td}>{o.stage}</td>
-                      <td style={{ ...td, textAlign: "right" }}>${o.totalDebt?.toLocaleString() ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Section>
-          )}
-        </div>
-
-        {/* Right rail */}
-        <div>
+            )}
+            emptyHint="No opportunities."
+          />
           <RelatedList
             entity="Contact"
             title="Contacts"
-            items={account.contacts.map((r) => r.contact)}
-            renderItem={(c) => (
+            items={account.contacts}
+            renderItem={(rel) => (
               <div>
-                <Link href={`/contacts/${c.id}`} style={{ color: "#1589ee", fontWeight: 600 }}>
-                  {c.fullName}
+                <Link href={`/contacts/${rel.contact.id}`} style={{ color: "#1589ee", fontWeight: 600 }}>
+                  {rel.contact.fullName}
                 </Link>
-                {c.title && <div style={{ color: "#706e6b", fontSize: 12 }}>{c.title}</div>}
+                {rel.contact.email && (
+                  <div style={{ fontSize: 11, color: "#706e6b" }}>{rel.contact.email}</div>
+                )}
+                {rel.contact.phone && (
+                  <div style={{ fontSize: 11, color: "#706e6b" }}>{rel.contact.phone}</div>
+                )}
               </div>
             )}
             emptyHint="No contacts."
-            newHref={`/contacts/new?accountId=${account.id}`}
           />
-          <RelatedList
-            entity="Case"
-            title="Cases"
-            items={account.cases}
-            renderItem={(c) => (
-              <div>
-                <Link href={`/cases/${c.id}`} style={{ color: "#1589ee", fontWeight: 600 }}>
-                  {c.caseNumber}
-                </Link>
-                <div style={{ color: "#706e6b", fontSize: 12 }}>{c.subject}</div>
-              </div>
-            )}
-            emptyHint="No cases."
-          />
-          <ActivityRail items={activity} />
-        </div>
-      </div>
-    </div>
+          <ActivityChatterRail activities={activity} chatter={chatter} />
+        </>
+      }
+    />
   );
 }
 
 const th: React.CSSProperties = {
   textAlign: "left",
-  padding: "8px 4px",
-  fontSize: 11,
-  color: "#3e3e3c",
+  padding: "8px 12px",
   fontWeight: 700,
+  fontSize: 12,
+  color: "#3e3e3c",
   textTransform: "uppercase",
-  letterSpacing: 0.4,
+  letterSpacing: 0.3,
 };
-const td: React.CSSProperties = { padding: "8px 4px", verticalAlign: "middle" };
+const td: React.CSSProperties = {
+  padding: "10px 12px",
+  color: "#080707",
+  fontSize: 13,
+};

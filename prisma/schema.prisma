@@ -64,6 +64,7 @@ model User {
   leadDebtsCreated  LeadDebt[]      @relation("LeadDebtCreatedBy")
   oppPaymentCalcsSaved OpportunityPaymentCalculation[] @relation("OppPaymentCalcSavedBy")
   oppHistoryChanges OpportunityHistory[] @relation("OpportunityHistoryChangedBy")
+  accountHistoryChanges AccountHistory[] @relation("AccountHistoryChangedBy")
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
@@ -261,6 +262,75 @@ model Account {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  // SF Account stage (8 stages — First Payment pending → Active → On Hold → ... → Closed Duplicate)
+  stage           String   @default("First Payment pending")
+
+  // Status pills shown in the highlight strip
+  clientStatus       String  @default("Active")        // Active | Inactive | Hardship | Cancelled
+  processorStatus    String?                           // Active | Inactive | Suspended
+  paymentStatus      String  @default("Active")        // Active | NSF | Suspended | Closed
+  bankAccountStatus  String  @default("Active")        // Active | Pending | Closed | Invalid
+
+  // Program dates
+  programStartDate DateTime?
+  programEndDate   DateTime?
+  businessStartDate DateTime?
+  uccFilingDate    DateTime?
+
+  // Cancellation
+  cancellationDate    DateTime?
+  cancellationReason  String?
+
+  // Legal
+  legalStatus        String?
+  submittedByLegal   String?
+
+  // Reschedule
+  rescheduleStatus String?
+  conversionReason String?
+
+  // Lender info
+  loanProvider     String?
+  collectionAgency String?
+
+  // External system IDs
+  externalSasId     String?
+  uccFilingId       String?
+  bankAccountSyncStatus String?
+
+  // File Status
+  qualifiedStatus   String?
+  highUccRisk       Boolean @default(false)
+  graduatedStatus   String?
+
+  // Financial Summary
+  operatingExpenses     Float?
+  netProfit             Float?
+  ebitda                Float?
+  grossProfit           Float?
+  debtPayments          Float?
+  buyoutProgramWeeklyPayment   Float?
+  buyoutProgramMonthlyPayment  Float?
+  financialDescription  String?
+
+  // Bank Details (editable on right rail)
+  bankName          String?
+  bankRoutingNumber String?
+  bankAccountNumber String?
+  bankAccountType   String?  // Checking | Savings
+
+  // Escrow
+  escrowBalance     Float    @default(0)
+  escrowPulledAt    DateTime?
+  feePaidInFull     Boolean  @default(false)
+
+  // Health Check
+  welcomeCallCompleted   Boolean @default(false)
+  firstPaymentReceived   Boolean @default(false)
+
+  // Total current debt cached for display (computed from active opps)
+  currentTotalDebt  Float?
+
   contacts          AccountContactRelation[]
   opportunities     Opportunity[]
   creditor          Creditor?
@@ -274,8 +344,27 @@ model Account {
   emails            EmailMessage[]           @relation("AccountEmails")
   sms               SmsMessage[]             @relation("AccountSms")
   cases             Case[]                   @relation("AccountCases")
+  history           AccountHistory[]
+  documents         Document[]               @relation("AccountDocuments")
 
   @@index([recordType])
+  @@index([stage])
+}
+
+// ============ ACCOUNT HISTORY (SF Account History parity) ============
+
+model AccountHistory {
+  id          String   @id @default(cuid())
+  accountId   String
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  field       String
+  oldValue    String?
+  newValue    String?
+  changedById String?
+  changedBy   User?    @relation("AccountHistoryChangedBy", fields: [changedById], references: [id])
+  changedAt   DateTime @default(now())
+
+  @@index([accountId, changedAt])
 }
 
 model Contact {
@@ -695,6 +784,8 @@ model Document {
   opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   leadId        String?
   lead          Lead?        @relation("LeadDocuments", fields: [leadId], references: [id], onDelete: Cascade)
+  accountId     String?
+  account       Account?     @relation("AccountDocuments", fields: [accountId], references: [id], onDelete: Cascade)
   name          String
   type          String // ENGAGEMENT_AGREEMENT, HARDSHIP_LETTER, AUTHORIZATION, SETTLEMENT_OFFER, BANK_STATEMENT, TAX_RETURN, OTHER
   filePath      String
@@ -704,6 +795,7 @@ model Document {
   createdAt     DateTime     @default(now())
 
   @@index([leadId])
+  @@index([accountId])
 }
 
 // ============ PHASE 3: DEBT OPERATIONS ============
