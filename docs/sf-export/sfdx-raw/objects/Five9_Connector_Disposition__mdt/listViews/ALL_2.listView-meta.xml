@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>ALL_2</fullName>
+    <columns>MasterLabel</columns>
+    <columns>NamespacePrefix</columns>
+    <columns>DeveloperName</columns>
+    <columns>Stage__c</columns>
+    <columns>Sub_Disposition__c</columns>
+    <columns>Create_Task__c</columns>
+    <columns>Is_Lead_Marketing_Qualified__c</columns>
+    <filterScope>Everything</filterScope>
+    <label>ALL 2</label>
+</ListView>

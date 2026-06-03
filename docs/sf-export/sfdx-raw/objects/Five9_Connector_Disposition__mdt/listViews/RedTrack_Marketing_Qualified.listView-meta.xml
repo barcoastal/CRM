@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>RedTrack_Marketing_Qualified</fullName>
+    <columns>MasterLabel</columns>
+    <columns>DeveloperName</columns>
+    <columns>NamespacePrefix</columns>
+    <columns>Sub_Disposition__c</columns>
+    <columns>Stage__c</columns>
+    <columns>Create_Task__c</columns>
+    <columns>Is_Lead_Marketing_Qualified__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Is_Lead_Marketing_Qualified__c</field>
+        <operation>equals</operation>
+        <value>1</value>
+    </filters>
+    <label>RedTrack_Marketing_Qualified</label>
+    <sharedTo>
+        <group>Admins</group>
+    </sharedTo>
+</ListView>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Last_Completed_Draft_Date__c</fullName>
+    <label>Last Completed Draft Date</label>
+    <summarizedField>Draft__c.Draft_Date__c</summarizedField>
+    <summaryFilterItems>
+        <field>Draft__c.Draft_Status__c</field>
+        <operation>equals</operation>
+        <value>Processing, Completed</value>
+    </summaryFilterItems>
+    <summaryForeignKey>Draft__c.Program_Plan__c</summaryForeignKey>
+    <summaryOperation>max</summaryOperation>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Summary</type>
+</CustomField>

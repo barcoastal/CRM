@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Debt_Status__c</fullName>
+    <label>Debt Status</label>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Current</fullName>
+                <default>false</default>
+                <label>Current</label>
+            </value>
+            <value>
+                <fullName>Default</fullName>
+                <default>false</default>
+                <label>Default</label>
+            </value>
+            <value>
+                <fullName>Reprieve</fullName>
+                <default>false</default>
+                <label>Reprieve</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>CD-1</description>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Campaign.Leads_Without_OutboundAnI_Populated__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Opportunity.Lead_Source_Category__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>View and Edit Converted Leads</label>
+    <userPermissions>
+        <enabled>true</enabled>
+        <name>AllowViewEditConvertedLeads</name>
+    </userPermissions>
+    <userPermissions>
+        <enabled>true</enabled>
+        <name>BulkApiHardDelete</name>
+    </userPermissions>
+</PermissionSet>

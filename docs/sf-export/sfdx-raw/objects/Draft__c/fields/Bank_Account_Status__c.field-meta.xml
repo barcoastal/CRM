@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Bank_Account_Status__c</fullName>
+    <label>Bank Account Status</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>R01 Insufficient Funds</fullName>
+                <default>false</default>
+                <label>R01: Insufficient Funds</label>
+            </value>
+            <value>
+                <fullName>R02 Account Closed</fullName>
+                <default>false</default>
+                <label>R02: Account Closed</label>
+            </value>
+            <value>
+                <fullName>R03 No Account/Unable to Locate Account</fullName>
+                <default>false</default>
+                <label>R03: No account or unable to locate account</label>
+            </value>
+            <value>
+                <fullName>R04 Invalid account number</fullName>
+                <default>false</default>
+                <label>R04: Invalid account number</label>
+            </value>
+            <value>
+                <fullName>R05 Unauthorized Debit to Consumer Account</fullName>
+                <default>false</default>
+                <label>R05: Unauthorized debit entry</label>
+            </value>
+            <value>
+                <fullName>R06 Returned per ODFI request The ODFI has requested the return</fullName>
+                <default>false</default>
+                <label>R06: Returned per ODFI request The ODFI has requested the return</label>
+            </value>
+            <value>
+                <fullName>R07 Authorization revoked by customer</fullName>
+                <default>false</default>
+                <label>R07: Authorization revoked by customer</label>
+            </value>
+            <value>
+                <fullName>R08 Payment Stopped or Stop Payment on Item</fullName>
+                <default>false</default>
+                <label>R08: Payment stopped</label>
+            </value>
+            <value>
+                <fullName>R09 Uncollected Funds</fullName>
+                <default>false</default>
+                <label>R09: Insufficient collected funds in account being charged</label>
+            </value>
+            <value>
+                <fullName>R10 Customer advises not authorized</fullName>
+                <default>false</default>
+                <label>R10: Customer advises not authorized</label>
+            </value>
+            <value>
+                <fullName>R11 Check Truncation Entry Return</fullName>
+                <default>false</default>
+                <label>R11: Check Truncation Entry Return</label>
+            </value>
+            <value>
+                <fullName>R16 Account Frozen</fullName>
+                <default>false</default>
+                <label>R16: Account frozen/entry returned per OFAC instruction</label>
+            </value>
+            <value>
+                <fullName>R20 Non-Transaction account</fullName>
+                <default>false</default>
+                <label>R20: Non-Transaction account</label>
+            </value>
+            <value>
+                <fullName>R29 Corporate customer advises not authorized</fullName>
+                <default>false</default>
+                <label>R29: Corporate customer advises not authorized</label>
+            </value>
+            <value>
+                <fullName>R51 Item Related to RCK Entry is Ineligible or RCK Entry is Improper</fullName>
+                <default>false</default>
+                <label>R51 Item Related to RCK Entry is Ineligible or RCK Entry is Improper</label>
+            </value>
+            <value>
+                <fullName>L09 Invalid Individual Name/Company Name</fullName>
+                <default>false</default>
+                <label>L09 Invalid Individual Name/Company Name</label>
+            </value>
+            <value>
+                <fullName>Invalid Fed ACH</fullName>
+                <default>false</default>
+                <label>Invalid Fed ACH</label>
+            </value>
+            <value>
+                <fullName>Transaction previously returned unauthorized</fullName>
+                <default>false</default>
+                <label>Transaction previously returned unauthorized</label>
+            </value>
+            <value>
+                <fullName>Test Row</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>Test Row</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

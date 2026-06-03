@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Imported_at_Oct_10</fullName>
+    <columns>NAME</columns>
+    <columns>Convoso_Id__c</columns>
+    <columns>Archived__c</columns>
+    <columns>Executed__c</columns>
+    <columns>Total_Count__c</columns>
+    <columns>Succes_Count__c</columns>
+    <columns>Number_of_Leads__c</columns>
+    <columns>Failure_Count__c</columns>
+    <columns>Data_Error__c</columns>
+    <columns>Description__c</columns>
+    <columns>Converted_to_Lead_Formula__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>CREATED_DATE</field>
+        <operation>equals</operation>
+        <value>10/10/2023 12:00 AM</value>
+    </filters>
+    <label>Imported at Oct-10</label>
+</ListView>

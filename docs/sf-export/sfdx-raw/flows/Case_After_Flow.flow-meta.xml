@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <description>Notify owner when new case is created.</description>
+        <name>NotifyOnCaseCreation</name>
+        <label>NotifyOnCaseCreation</label>
+        <locationX>50</locationX>
+        <locationY>575</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <connector>
+            <targetReference>Is_Owner_Changed</targetReference>
+        </connector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <elementReference>NewCaseEmailBody</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailAddressesArray</name>
+            <value>
+                <elementReference>EmailAddressCollection</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>sendRichBody</name>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>senderAddress</name>
+            <value>
+                <elementReference>$User.Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <elementReference>NewCaseEmailSubject</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+    </actionCalls>
+    <actionCalls>
+        <description>Email notification will be sent to new owner and old owner when there is a change in owner.</description>
+        <name>NotifyOnOwnerChange</name>
+        <label>NotifyOnOwnerChange</label>
+        <locationX>50</locationX>
+        <locationY>1031</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <connector>
+            <targetReference>Is_Status_Changed</targetReference>
+        </connector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <elementReference>OwnerChangeEmailBody</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailAddressesArray</name>
+            <value>
+                <elementReference>EmailAddressCollection</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>sendRichBody</name>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>senderAddress</name>
+            <value>
+                <elementReference>$User.Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <elementReference>OwnerChangeEmailSubject</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+    </actionCalls>
+    <actionCalls>
+        <description>Email notification send to owner whenever there is a case status change.</description>
+        <name>NotifyOnStatusChange</name>
+        <label>NotifyOnStatusChange</label>
+        <locationX>50</locationX>
+        <locationY>1487</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <elementReference>StatusChangeEmailBody</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <elementReference>CurrentOwnerEmail</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>sendRichBody</name>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>senderAddress</name>
+            <value>
+                <elementReference>$User.Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <elementReference>StatusChangeEmailSubject</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+    </actionCalls>
+    <apiVersion>57.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <assignments>
+        <description>assign owner and contact email address</description>
+        <name>Assign_Email_Addresses</name>
+        <label>Assign Email Addresses</label>
+        <locationX>50</locationX>
+        <locationY>455</locationY>
+        <assignmentItems>
+            <assignToReference>EmailAddressCollection</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>CurrentOwnerEmail</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>EmailAddressCollection</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>$Record.ContactEmail</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>NotifyOnCaseCreation</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <description>assign contact, new and old owner email address based on whether the owner is queue or user</description>
+        <name>Assign_Email_Addresses_0</name>
+        <label>Assign Email Addresses</label>
+        <locationX>50</locationX>
+        <locationY>911</locationY>
+        <assignmentItems>
+            <assignToReference>EmailAddressCollection</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>CurrentOwnerEmail</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>EmailAddressCollection</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>$Record.ContactEmail</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>EmailAddressCollection</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>PriorOwnerEmail</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>NotifyOnOwnerChange</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <description>assign owner and contact email address</description>
+        <name>Assign_Email_Addresses_1</name>
+        <label>Assign Email Addresses</label>
+        <locationX>50</locationX>
+        <locationY>1367</locationY>
+        <assignmentItems>
+            <assignToReference>EmailAddressCollection</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>CurrentOwnerEmail</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>EmailAddressCollection</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>$Record.ContactEmail</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>NotifyOnStatusChange</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <description>Check whether the current case record triggered the flow is NEW.</description>
+        <name>Is_New_Case</name>
+        <label>Is New Case?</label>
+        <locationX>182</locationX>
+        <locationY>335</locationY>
+        <defaultConnector>
+            <targetReference>Is_Owner_Changed</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>False - Is New Case</defaultConnectorLabel>
+        <rules>
+            <name>True_Is_New_Case</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>isNew</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>CurrentOwnerEmail</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Assign_Email_Addresses</targetReference>
+            </connector>
+            <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>
+            <label>True - Is New Case</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <description>Check whether the owner is changed or not</description>
+        <name>Is_Owner_Changed</name>
+        <label>Is Owner Changed?</label>
+        <locationX>182</locationX>
+        <locationY>791</locationY>
+        <defaultConnector>
+            <targetReference>Is_Status_Changed</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>False - Is Owner Changed</defaultConnectorLabel>
+        <rules>
+            <name>True_Is_Owner_Changed</name>
+            <conditionLogic>1 AND (2 OR 3)</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.OwnerId</leftValueReference>
+                <operator>IsChanged</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>CurrentOwnerEmail</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>PriorOwnerEmail</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Assign_Email_Addresses_0</targetReference>
+            </connector>
+            <label>True - Is Owner Changed</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <description>Check whether the case status is changed or not</description>
+        <name>Is_Status_Changed</name>
+        <label>Is Status Changed?</label>
+        <locationX>182</locationX>
+        <locationY>1247</locationY>
+        <defaultConnectorLabel>False - Is Status Changed</defaultConnectorLabel>
+        <rules>
+            <name>True_Is_Status_Changed</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Status</leftValueReference>
+                <operator>IsChanged</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>CurrentOwnerEmail</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Assign_Email_Addresses_1</targetReference>
+            </connector>
+            <label>True - Is Status Changed</label>
+        </rules>
+    </decisions>
+    <description>Case Record Triggered Flow to execute all the logics for the case object on after create and after update events.</description>
+    <environments>Default</environments>
+    <formulas>
+        <description>formula to generate the contact lightning record detail link</description>
+        <name>CaseDetailLink</name>
+        <dataType>String</dataType>
+        <expression>LEFT({!$Api.Partner_Server_URL_260}, FIND(&apos;/services&apos;, {!$Api.Partner_Server_URL_260})) &amp; {!$Record.Id}</expression>
+    </formulas>
+    <formulas>
+        <description>Formula to generate the owner email based on whether the owner is user or queue.</description>
+        <name>CurrentOwnerEmail</name>
+        <dataType>String</dataType>
+        <expression>IF( NOT( ISBLANK( {!$Record.Owner:User.Id} ) ), {!$Record.Owner:User.Email}, IF( NOT( ISBLANK( {!$Record.Owner:Group.Id} ) ) &amp;&amp; NOT( ISBLANK({!$Record.Owner:Group.Email}) ), {!$Record.Owner:Group.Email}, NULL))</expression>
+    </formulas>
+    <formulas>
+        <description>Formula to generate owner name based on whether the owner is user or queue</description>
+        <name>CurrentOwnerName</name>
+        <dataType>String</dataType>
+        <expression>IF( NOT( ISBLANK( {!$Record.Owner:User.Id} ) ), {!$Record.Owner:User.FirstName}&amp;&apos; &apos;&amp;{!$Record.Owner:User.LastName}, IF( NOT( ISBLANK( {!$Record.Owner:Group.Id} ) ), {!$Record.Owner:Group.Name}, &apos;&apos;))</expression>
+    </formulas>
+    <formulas>
+        <description>Check whether the current record is new or not.</description>
+        <name>isNew</name>
+        <dataType>Boolean</dataType>
+        <expression>ISNEW()</expression>
+    </formulas>
+    <formulas>
+        <name>NewCaseEmailSubject</name>
+        <dataType>String</dataType>
+        <expression>&apos;New Case Created - &apos;&amp;{!$Record.CaseNumber}</expression>
+    </formulas>
+    <formulas>
+        <description>Subject of the email to send to old owner and new owner when there is a change in the owner.</description>
+        <name>OwnerChangeEmailSubject</name>
+        <dataType>String</dataType>
+        <expression>&apos;Case Owner Changed - &apos;&amp;{!$Record.CaseNumber}</expression>
+    </formulas>
+    <formulas>
+        <description>Formula to generate the prior owner email based on whether the owner is user or queue.</description>
+        <name>PriorOwnerEmail</name>
+        <dataType>String</dataType>
+        <expression>IF( NOT( ISBLANK( {!$Record__Prior.Owner:User.Id} ) ), {!$Record__Prior.Owner:User.Email}, IF( NOT( ISBLANK( {!$Record__Prior.Owner:Group.Id} ) ) &amp;&amp; NOT( ISBLANK({!$Record__Prior.Owner:Group.Email}) ), {!$Record__Prior.Owner:Group.Email}, NULL))</expression>
+    </formulas>
+    <formulas>
+        <description>Formula to generate previous owner name based on whether the owner is user or queue</description>
+        <name>PriorOwnerName</name>
+        <dataType>String</dataType>
+        <expression>IF( NOT( ISBLANK( {!$Record__Prior.Owner:User.Id} ) ), {!$Record__Prior.Owner:User.FirstName}&amp;&apos; &apos;&amp;{!$Record__Prior.Owner:User.LastName}, IF( NOT( ISBLANK( {!$Record__Prior.Owner:Group.Id} ) ), {!$Record__Prior.Owner:Group.Name}, &apos;&apos;))</expression>
+    </formulas>
+    <formulas>
+        <description>Subject of the email send to owner when there is a change in the status.</description>
+        <name>StatusChangeEmailSubject</name>
+        <dataType>String</dataType>
+        <expression>{!$Record.CaseNumber} &amp;&apos; - Case status has been changed&apos;</expression>
+    </formulas>
+    <interviewLabel>Case After Flow {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Case After Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Is_New_Case</targetReference>
+        </connector>
+        <object>Case</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Draft</status>
+    <textTemplates>
+        <description>email body to notify owner when new case is created.</description>
+        <name>NewCaseEmailBody</name>
+        <isViewedAsPlainText>false</isViewedAsPlainText>
+        <text>&lt;p&gt;Dear &lt;span style=&quot;background-color: rgb(255, 255, 255);&quot;&gt;{!CurrentOwnerName}&lt;/span&gt;,&lt;/p&gt;&lt;p&gt;A new case has been created and assigned to you with the following details:&lt;/p&gt;&lt;p&gt;Case Number: &lt;em&gt;{!$Record.CaseNumber}&lt;/em&gt;&lt;/p&gt;&lt;p&gt;Subject: &lt;em&gt;{!$Record.Subject}&lt;/em&gt;&lt;/p&gt;&lt;p&gt;Description: &lt;em&gt;{!$Record.Description}&lt;/em&gt;&lt;/p&gt;&lt;p&gt;Please click &lt;a href=&quot;{!CaseDetailLink}&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;here&lt;/a&gt; to review this case record and take any necessary actions.&lt;/p&gt;&lt;p&gt;Thank you,&lt;/p&gt;&lt;p&gt;{!$Organization.Name}&lt;/p&gt;</text>
+    </textTemplates>
+    <textTemplates>
+        <description>Body of the email send to new owner and old owner when there is a change in owner.</description>
+        <name>OwnerChangeEmailBody</name>
+        <isViewedAsPlainText>false</isViewedAsPlainText>
+        <text>&lt;p&gt;Hello,&lt;/p&gt;&lt;p&gt;The owner of case {!$Record.CaseNumber} has been changed from &lt;em style=&quot;background-color: rgb(255, 255, 255); color: rgb(68, 68, 68);&quot;&gt;{!PriorOwnerName}&lt;/em&gt; to &lt;em style=&quot;background-color: rgb(255, 255, 255); color: rgb(68, 68, 68);&quot;&gt;{!CurrentOwnerName}&lt;/em&gt;. Case needs to be resolved within our standard service levels.&lt;/p&gt;&lt;p&gt;Please click &lt;a href=&quot;{!CaseDetailLink}&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;here&lt;/a&gt; to view this case record &lt;span style=&quot;color: rgb(68, 68, 68); background-color: rgb(255, 255, 255);&quot;&gt;and take any necessary actions.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Thank you,&lt;/p&gt;&lt;p&gt;{!$Organization.Name}&lt;/p&gt;</text>
+    </textTemplates>
+    <textTemplates>
+        <description>Body of the email to send notification whenever there is a status change in the case.</description>
+        <name>StatusChangeEmailBody</name>
+        <isViewedAsPlainText>false</isViewedAsPlainText>
+        <text>&lt;p&gt;Dear {!CurrentOwnerName},&lt;/p&gt;&lt;p&gt;We wanted to let you know that the status of your case ({!$Record.CaseNumber}) has been updated.&lt;/p&gt;&lt;p&gt;The new status is: &lt;strong&gt;{!$Record.Status}&lt;/strong&gt;.&lt;/p&gt;&lt;p&gt;Please click &lt;a href=&quot;{!CaseDetailLink}&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;here&lt;/a&gt; to view this case record &lt;span style=&quot;color: rgb(68, 68, 68); background-color: rgb(255, 255, 255);&quot;&gt;and take any necessary actions&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;Thank you,&lt;/p&gt;&lt;p&gt;{!$Organization.Name}&lt;/p&gt;</text>
+    </textTemplates>
+    <variables>
+        <description>Collection variable to add new and old owner email address.</description>
+        <name>EmailAddressCollection</name>
+        <dataType>String</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

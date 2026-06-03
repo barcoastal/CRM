@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Operation__c</fullName>
+    <label>Operation</label>
+    <required>true</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Remove Lead From Five9 - Lead Final Disposition</fullName>
+                <default>false</default>
+                <label>Remove Lead From Five9 - Lead Final Disposition</label>
+            </value>
+            <value>
+                <fullName>Remove Lead From Five9 - Opportunity Final Disposition</fullName>
+                <default>false</default>
+                <label>Remove Lead From Five9 - Opportunity Final Disposition</label>
+            </value>
+            <value>
+                <fullName>Remove Lead From Five9 - Opportunity Closed</fullName>
+                <default>false</default>
+                <label>Remove Lead From Five9 - Opportunity Closed</label>
+            </value>
+            <value>
+                <fullName>DeDuplicate Lead</fullName>
+                <default>false</default>
+                <label>DeDuplicate Lead</label>
+            </value>
+            <value>
+                <fullName>IPQualityScoreCheck</fullName>
+                <default>false</default>
+                <label>IP Quality Score Check</label>
+            </value>
+            <value>
+                <fullName>Remove Lead From Five9 - API</fullName>
+                <default>false</default>
+                <label>Remove Lead From Five9 - API</label>
+            </value>
+            <value>
+                <fullName>RedTrack_LeadCreation</fullName>
+                <default>false</default>
+                <label>RedTrack - Lead Creation</label>
+            </value>
+            <value>
+                <fullName>RedTrack_LeadQualification</fullName>
+                <default>false</default>
+                <label>RedTrack - Lead Qualification</label>
+            </value>
+            <value>
+                <fullName>RedTrack_OpportunityCreation</fullName>
+                <default>false</default>
+                <label>RedTrack - Opportunity Creation</label>
+            </value>
+            <value>
+                <fullName>RedTrack_ContractSent</fullName>
+                <default>false</default>
+                <label>RedTrack - Contract Sent</label>
+            </value>
+            <value>
+                <fullName>RedTrack_OpportunityClosedWon</fullName>
+                <default>false</default>
+                <label>RedTrack - Opportunity Closed Won</label>
+            </value>
+            <value>
+                <fullName>RedTrack_OpportunityFirstPayment</fullName>
+                <default>false</default>
+                <label>RedTrack - Opportunity First Payment</label>
+            </value>
+            <value>
+                <fullName>SetCustomerStatusAPI</fullName>
+                <default>false</default>
+                <label>SetCustomerStatusAPI</label>
+            </value>
+            <value>
+                <fullName>RedTrack_InboundLeadQualification</fullName>
+                <default>false</default>
+                <label>RedTrack - Inbound Lead Qualification</label>
+            </value>
+            <value>
+                <fullName>RedTrack_InboundLeadCreation</fullName>
+                <default>false</default>
+                <label>RedTrack - Inbound Lead Creation</label>
+            </value>
+            <value>
+                <fullName>AdClick_Id_Update</fullName>
+                <default>false</default>
+                <label>AdClick Id Update</label>
+            </value>
+            <value>
+                <fullName>Citadel_API</fullName>
+                <default>false</default>
+                <label>Citadel API</label>
+            </value>
+            <value>
+                <fullName>Legal_Network_Communication</fullName>
+                <default>false</default>
+                <label>Legal Network Communication</label>
+            </value>
+            <value>
+                <fullName>RedTrackLeadInsert</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>RedTrackLeadInsert</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SAS_GetDrafts</fullName>
+    <columns>NAME</columns>
+    <columns>Exception_Message__c</columns>
+    <columns>Statement__c</columns>
+    <columns>Log_Type__c</columns>
+    <columns>Record_Id__c</columns>
+    <columns>CREATED_DATE</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Statement__c</field>
+        <operation>equals</operation>
+        <value>GetUpdatedDebits Callout request sent to SAS</value>
+    </filters>
+    <label>SAS GetDrafts</label>
+</ListView>

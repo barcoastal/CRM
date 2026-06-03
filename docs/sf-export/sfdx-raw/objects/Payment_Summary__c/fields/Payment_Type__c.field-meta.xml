@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Payment_Type__c</fullName>
+    <label>Payment Type</label>
+    <required>true</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Draft</fullName>
+                <default>false</default>
+                <label>Draft</label>
+            </value>
+            <value>
+                <fullName>Settlement</fullName>
+                <default>false</default>
+                <label>Settlement</label>
+            </value>
+            <value>
+                <fullName>Program Fee</fullName>
+                <default>false</default>
+                <label>Program Fee</label>
+            </value>
+            <value>
+                <fullName>Program Fee - Settlements</fullName>
+                <default>false</default>
+                <label>Program Fee - Settlements</label>
+            </value>
+            <value>
+                <fullName>Retainer Fee</fullName>
+                <default>false</default>
+                <label>Retainer Fee</label>
+            </value>
+            <value>
+                <fullName>Setup Fee</fullName>
+                <default>false</default>
+                <label>Setup Fee</label>
+            </value>
+            <value>
+                <fullName>Processor Fee</fullName>
+                <default>false</default>
+                <label>Processor Fee</label>
+            </value>
+            <value>
+                <fullName>Service Fee</fullName>
+                <default>false</default>
+                <label>Service Fee</label>
+            </value>
+            <value>
+                <fullName>Citadel Fee</fullName>
+                <default>false</default>
+                <label>Citadel Fee</label>
+            </value>
+            <value>
+                <fullName>Escrow Amount</fullName>
+                <default>false</default>
+                <label>Escrow Amount</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

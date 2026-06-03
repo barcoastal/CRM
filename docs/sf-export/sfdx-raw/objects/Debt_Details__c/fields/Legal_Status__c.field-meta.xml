@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Legal_Status__c</fullName>
+    <label>Legal Status</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Summons</fullName>
+                <default>false</default>
+                <label>Summons</label>
+            </value>
+            <value>
+                <fullName>Arbitration</fullName>
+                <default>false</default>
+                <label>Arbitration</label>
+            </value>
+            <value>
+                <fullName>UCC Lien</fullName>
+                <default>false</default>
+                <label>UCC Lien</label>
+            </value>
+            <value>
+                <fullName>Default judgment (no response to legal)</fullName>
+                <default>false</default>
+                <label>Default judgment (no response to legal)</label>
+            </value>
+            <value>
+                <fullName>Summary Judgment (awarded by court)</fullName>
+                <default>false</default>
+                <label>Summary Judgment (awarded by court)</label>
+            </value>
+            <value>
+                <fullName>COJ</fullName>
+                <default>false</default>
+                <label>COJ</label>
+            </value>
+            <value>
+                <fullName>Summons / UCC Lien</fullName>
+                <default>false</default>
+                <label>Summons / UCC Lien</label>
+            </value>
+            <value>
+                <fullName>Arbitration / UCC Lien</fullName>
+                <default>false</default>
+                <label>Arbitration / UCC Lien</label>
+            </value>
+            <value>
+                <fullName>Active Negotiation</fullName>
+                <default>false</default>
+                <label>Active Negotiation</label>
+            </value>
+            <value>
+                <fullName>Active Negotiation / Legal</fullName>
+                <default>false</default>
+                <label>Active Negotiation / Legal</label>
+            </value>
+            <value>
+                <fullName>Arbitration Award</fullName>
+                <default>false</default>
+                <label>Arbitration Award</label>
+            </value>
+            <value>
+                <fullName>Judgement</fullName>
+                <default>false</default>
+                <label>Judgement</label>
+            </value>
+            <value>
+                <fullName>Active Negotiation/UCC Lien</fullName>
+                <default>false</default>
+                <label>Active Negotiation/UCC Lien</label>
+            </value>
+            <value>
+                <fullName>Dismissed With Prejudice</fullName>
+                <default>false</default>
+                <label>Dismissed With Prejudice</label>
+            </value>
+            <value>
+                <fullName>Dismissed Without Prejudice</fullName>
+                <default>false</default>
+                <label>Dismissed Without Prejudice</label>
+            </value>
+            <value>
+                <fullName>Correspondence</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>Correspondence</label>
+            </value>
+            <value>
+                <fullName>Counter Signature from the Lender</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>Counter Signature from the Lender</label>
+            </value>
+            <value>
+                <fullName>Default judgment  (no response to legal)</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>Default judgment  (no response to legal)</label>
+            </value>
+            <value>
+                <fullName>Send it out to the CSR for Client Signature</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>Send it out to the CSR for Client Signature</label>
+            </value>
+            <value>
+                <fullName>Settled PIF</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>Settled PIF</label>
+            </value>
+            <value>
+                <fullName>Settled lump sum</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>Settled lump sum</label>
+            </value>
+            <value>
+                <fullName>Settled payments</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>Settled payments</label>
+            </value>
+            <value>
+                <fullName>Summary Judgment  (awarded by court)</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>Summary Judgment  (awarded by court)</label>
+            </value>
+            <value>
+                <fullName>Waiting for the Settlement agreement</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>Waiting for the Settlement agreement</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

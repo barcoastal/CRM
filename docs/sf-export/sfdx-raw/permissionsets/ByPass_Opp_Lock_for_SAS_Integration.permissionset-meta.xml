@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customPermissions>
+        <enabled>true</enabled>
+        <name>Bypass_Lock_Opportunity</name>
+    </customPermissions>
+    <customPermissions>
+        <enabled>true</enabled>
+        <name>Edit_Archived_Opportunities</name>
+    </customPermissions>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>ByPass Opp Lock for SAS Integration</label>
+</PermissionSet>

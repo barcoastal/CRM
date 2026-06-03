@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Completed_Drafts_Amount__c</fullName>
+    <label>Completed Drafts Amount</label>
+    <summarizedField>Draft__c.Draft_Total_Amount__c</summarizedField>
+    <summaryFilterItems>
+        <field>Draft__c.Draft_Status__c</field>
+        <operation>equals</operation>
+        <value>Completed</value>
+    </summaryFilterItems>
+    <summaryForeignKey>Draft__c.Program_Plan__c</summaryForeignKey>
+    <summaryOperation>sum</summaryOperation>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Summary</type>
+</CustomField>

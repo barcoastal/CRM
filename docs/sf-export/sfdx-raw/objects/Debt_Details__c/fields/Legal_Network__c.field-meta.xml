@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Legal_Network__c</fullName>
+    <label>Legal Network</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Citadel</fullName>
+                <default>false</default>
+                <label>Citadel</label>
+            </value>
+            <value>
+                <fullName>Victory Legal Plan</fullName>
+                <default>false</default>
+                <label>Victory Legal Plan</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

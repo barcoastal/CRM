@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Custom metadata to store the field mapping between SAS and Salesforce</description>
+    <label>SAS Mapping</label>
+    <pluralLabel>SAS Mappings</pluralLabel>
+    <visibility>Public</visibility>
+</CustomObject>

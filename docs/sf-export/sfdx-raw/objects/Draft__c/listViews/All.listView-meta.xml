@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>All</fullName>
+    <columns>NAME</columns>
+    <columns>Program_Plan__c</columns>
+    <columns>LAST_UPDATE</columns>
+    <columns>LAST_ACTIVITY</columns>
+    <columns>Sync_Status__c</columns>
+    <columns>Draft_Status__c</columns>
+    <columns>Account__c</columns>
+    <columns>Draft_Date__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Program_Plan__c</field>
+        <operation>equals</operation>
+        <value>Plan-74318</value>
+    </filters>
+    <filters>
+        <field>Sync_Status__c</field>
+        <operation>notEqual</operation>
+        <value>Sync Pending</value>
+    </filters>
+    <label>All</label>
+</ListView>

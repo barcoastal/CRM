@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>64.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <choices>
+        <name>Add_Debits_to_Schedule</name>
+        <choiceText>Add Debits to Schedule</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Add Debits to Schedule</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Cancellation</name>
+        <choiceText>Cancellation</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Cancellation</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Discontinued_Citadel_fee</name>
+        <choiceText>Discontinued Citadel fee</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Discontinued Citadel fee</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Double_Payment_Request</name>
+        <choiceText>Double Payment Request</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Double Payment Request</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Payment_Modification_Redraft</name>
+        <choiceText>Payment Modification/Redraft</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Payment Modification/Redraft</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Payment_Redraft</name>
+        <choiceText>Payment Redraft</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Payment Redraft</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Payment_Schedule</name>
+        <choiceText>Payment Schedule</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Payment Schedule</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Payment_Schedule_Modification</name>
+        <choiceText>Payment Schedule Modification</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Payment Schedule Modification</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Payments</name>
+        <choiceText>Payments</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Payments</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Program_Extension</name>
+        <choiceText>Program Extension</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Program Extension</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Refund</name>
+        <choiceText>Refund</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Refund</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Skip_Payment</name>
+        <choiceText>Skip Payment</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Skip payment</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>test_sub_action</name>
+        <choiceText>test sub action</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>test sub action</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>testAction</name>
+        <choiceText>testAction</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>testAction</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Wire_Confirmation</name>
+        <choiceText>Wire Confirmation</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Wire Confirmation</stringValue>
+        </value>
+    </choices>
+    <choices>
+        <name>Wire_Confirmation_and_Skip_a_Payment</name>
+        <choiceText>Wire Confirmation and Skip a Payment</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>Wire Confirmation and Skip a Payment</stringValue>
+        </value>
+    </choices>
+    <customProperties>
+        <name>ScreenProgressIndicator</name>
+        <value>
+            <stringValue>{&quot;location&quot;:&quot;top&quot;,&quot;type&quot;:&quot;simple&quot;}</stringValue>
+        </value>
+    </customProperties>
+    <environments>Default</environments>
+    <interviewLabel>Case Flow {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Case Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>Flow</processType>
+    <recordLookups>
+        <name>Get_Oppotunity</name>
+        <label>Get Oppotunity</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Case_Action</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>recordId</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>Opportunity</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <screens>
+        <name>Case_Action</name>
+        <label>Case Action</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <backButtonLabel>Back</backButtonLabel>
+        <connector>
+            <targetReference>Create_a_case_skip_payment</targetReference>
+        </connector>
+        <fields>
+            <name>Action</name>
+            <choiceReferences>Payments</choiceReferences>
+            <dataType>String</dataType>
+            <fieldText>Action</fieldText>
+            <fieldType>DropdownBox</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+            <isRequired>true</isRequired>
+            <styleProperties>
+                <verticalAlignment>
+                    <stringValue>top</stringValue>
+                </verticalAlignment>
+                <width>
+                    <stringValue>12</stringValue>
+                </width>
+            </styleProperties>
+        </fields>
+        <fields>
+            <name>SubAction</name>
+            <choiceReferences>Skip_Payment</choiceReferences>
+            <choiceReferences>Payment_Schedule_Modification</choiceReferences>
+            <choiceReferences>Payment_Schedule</choiceReferences>
+            <choiceReferences>Payment_Modification_Redraft</choiceReferences>
+            <choiceReferences>Payment_Redraft</choiceReferences>
+            <choiceReferences>Double_Payment_Request</choiceReferences>
+            <choiceReferences>Wire_Confirmation</choiceReferences>
+            <choiceReferences>Wire_Confirmation_and_Skip_a_Payment</choiceReferences>
+            <choiceReferences>Discontinued_Citadel_fee</choiceReferences>
+            <choiceReferences>Add_Debits_to_Schedule</choiceReferences>
+            <choiceReferences>Program_Extension</choiceReferences>
+            <choiceReferences>Refund</choiceReferences>
+            <choiceReferences>Cancellation</choiceReferences>
+            <dataType>String</dataType>
+            <fieldText>Sub Action</fieldText>
+            <fieldType>DropdownBox</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+            <isRequired>true</isRequired>
+            <styleProperties>
+                <verticalAlignment>
+                    <stringValue>top</stringValue>
+                </verticalAlignment>
+                <width>
+                    <stringValue>12</stringValue>
+                </width>
+            </styleProperties>
+            <visibilityRule>
+                <conditionLogic>and</conditionLogic>
+                <conditions>
+                    <leftValueReference>Action</leftValueReference>
+                    <operator>EqualTo</operator>
+                    <rightValue>
+                        <elementReference>Payments</elementReference>
+                    </rightValue>
+                </conditions>
+            </visibilityRule>
+        </fields>
+        <nextOrFinishButtonLabel>Next</nextOrFinishButtonLabel>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Get_Oppotunity</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Create_a_case_skip_payment</name>
+        <label>Create a case- skip payment</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <flowName>Create_Case_Skip_Payment</flowName>
+        <inputAssignments>
+            <name>recordId</name>
+            <value>
+                <elementReference>recordId</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>subAction</name>
+            <value>
+                <elementReference>SubAction</elementReference>
+            </value>
+        </inputAssignments>
+    </subflows>
+    <variables>
+        <name>recordId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+</Flow>

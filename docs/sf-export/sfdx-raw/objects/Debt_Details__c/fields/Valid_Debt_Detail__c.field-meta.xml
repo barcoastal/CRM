@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Valid_Debt_Detail__c</fullName>
+    <formula>OR(
+    AND(
+        ISBLANK(Opportunity__r.Opportunity__c),
+        OR(
+            ISBLANK(TEXT(Opportunity__r.Version_Status__c)),
+            TEXT(Opportunity__r.Version_Status__c) = &quot;Pending Client Approval&quot;,
+            TEXT(Opportunity__r.Version_Status__c) = &quot;Draft&quot;,
+            TEXT(Opportunity__r.Version_Status__c) = &quot;Active&quot;
+        )
+    ),
+    AND(
+        NOT(ISBLANK(Opportunity__r.Opportunity__c)),
+        TEXT(Opportunity__r.Version_Status__c) = &quot;Active&quot;
+    )
+)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Valid Debt Detail</label>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

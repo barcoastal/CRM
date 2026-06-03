@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Debug</fullName>
+    <columns>NAME</columns>
+    <columns>Callout_Response__c</columns>
+    <columns>Lead__c</columns>
+    <columns>CREATED_DATE</columns>
+    <columns>Account__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Callout_End_Point__c</field>
+        <operation>contains</operation>
+        <value>https://app.outboundani.com</value>
+    </filters>
+    <filters>
+        <field>CREATED_DATE</field>
+        <operation>equals</operation>
+        <value>TODAY</value>
+    </filters>
+    <label>Debug</label>
+</ListView>

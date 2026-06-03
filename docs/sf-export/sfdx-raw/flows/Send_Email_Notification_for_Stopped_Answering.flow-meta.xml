@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Client_Template</name>
+        <label>Client Template</label>
+        <locationX>50</locationX>
+        <locationY>539</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <elementReference>Get_Related_Contact.Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>composeEmailContent</name>
+            <value>
+                <stringValue>True</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <elementReference>BankAccountStatusTemplate</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <stringValue>&lt;p&gt;&lt;span style=&quot;font-family: Lora;&quot;&gt;Dear &lt;/span&gt;&lt;span style=&quot;font-family: Lora; background-color: rgb(255, 255, 255);&quot;&gt;{!Get_Related_Contact.Name}&lt;/span&gt;&lt;span style=&quot;font-family: Lora;&quot;&gt;,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;font-family: Lora;&quot;&gt;As outlined in our contract, initiating a stop payment constitutes a breach, leading to immediate termination of the program. This action signals to both the bank and us that you no longer wish to continue with our services. Effective communication with us is crucial, and bypassing this step by stopping payments suggests a lack of commitment to the program.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;font-family: Lora;&quot;&gt;You engaged our services to manage your MCA debt, but halting payments means you are not fulfilling your part of the agreement. Attached is a copy of your contract, which states on Page 3, Provision 5, that we may terminate the contract with written notice under these circumstances.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;font-family: Lora;&quot;&gt;Unfortunately, we must proceed with closing your account and terminating our services as per the contract terms.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;font-family: Lora;&quot;&gt;If you have any questions or need further clarification, please feel free to reach out.&lt;/span&gt;&lt;/p&gt;</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>sendRichBody</name>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+        <offset>0</offset>
+    </actionCalls>
+    <actionCalls>
+        <name>X4th_NSF_Template</name>
+        <label>4th NSF Template</label>
+        <locationX>314</locationX>
+        <locationY>539</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <elementReference>Get_Related_Contact.Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>composeEmailContent</name>
+            <value>
+                <stringValue>True</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <elementReference>FourthNSFSubject</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <stringValue>&lt;p&gt;&lt;span style=&quot;font-family: Lora;&quot;&gt;Dear {!Get_Related_Contact.Name},&amp;nbsp;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;font-family: Lora;&quot;&gt;As stated in your contract, if you fail to make program payments then you will be in breach of contract and therefore at risk of program termination.&amp;nbsp;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;font-family: Lora;&quot;&gt;Unfortunately, as a result of program nonpayment, this serves as written notice from my Office that your account is canceled and our services are terminated.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;font-family: Lora; font-size: 11pt;&quot;&gt;We wish you the very best in regaining control back over your business.&lt;/span&gt;&lt;/p&gt;</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>sendRichBody</name>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+        <offset>0</offset>
+    </actionCalls>
+    <apiVersion>61.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <decisions>
+        <name>Check_Stage_and_Bank_Status</name>
+        <label>Check Stage and Bank Status</label>
+        <locationX>314</locationX>
+        <locationY>431</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Bank_Status_Met</name>
+            <conditionLogic>(1 OR 2 OR 3 OR 4 OR 5 OR 6 OR 7) AND 8</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Bank_Account_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>R05: Unauthorized debit entry</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Bank_Account_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>R06: Returned per ODFI request The ODFI has requested the return</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Bank_Account_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>R07: Authorization revoked by customer</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Bank_Account_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>R08: Payment stopped</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Bank_Account_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>R10: Customer advises not authorized</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Bank_Account_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>R29: Corporate customer advises not authorized</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Bank_Account_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Transaction previously returned unauthorized</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Bank_Account_Status__c</leftValueReference>
+                <operator>IsChanged</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Client_Template</targetReference>
+            </connector>
+            <label>Bank Status Met</label>
+        </rules>
+        <rules>
+            <name>X4th_NSF</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Payment_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>4th NSF</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Payment_Status__c</leftValueReference>
+                <operator>IsChanged</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>X4th_NSF_Template</targetReference>
+            </connector>
+            <label>4th NSF</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <interviewLabel>Send Email Notification for Stopped Answering {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Send Email Notification for Stopped Answering</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <name>Get_Related_Contact</name>
+        <label>Get Related Contact</label>
+        <locationX>314</locationX>
+        <locationY>323</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Check_Stage_and_Bank_Status</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Primary_Contact__c</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>Contact</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <start>
+        <locationX>188</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Get_Related_Contact</targetReference>
+        </connector>
+        <object>Account</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Obsolete</status>
+    <textTemplates>
+        <name>AccountStageTemplate</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>Cancel Client: {!$Record.Cancellation_Reason__c}: {!Get_Related_Contact.Name} - {!$Record.Name}</text>
+    </textTemplates>
+    <textTemplates>
+        <name>BankAccountStatusTemplate</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>Notice of Contract Termination: {!Get_Related_Contact.Name} - {!$Record.Name}</text>
+    </textTemplates>
+    <textTemplates>
+        <name>BankStatusRecipents</name>
+        <isViewedAsPlainText>false</isViewedAsPlainText>
+        <text>&lt;p&gt;cs@CITADELBUSINESSLEGALPLAN.COM&lt;/p&gt;&lt;p&gt;nmaraglino@citadelbusinesslegalplan.com&lt;/p&gt;&lt;p&gt;payments@coastaldebt.com&lt;/p&gt;&lt;p&gt;nathanm@coastaldebt.com&amp;nbsp;&lt;/p&gt;&lt;p&gt;yeislee@coastaldebt.com&lt;/p&gt;</text>
+    </textTemplates>
+    <textTemplates>
+        <name>FourthNSFSubject</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>Program Cancelation - {!Get_Related_Contact.Name} and {!$Record.Name}</text>
+    </textTemplates>
+    <variables>
+        <name>InternalEmailAddresses</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <stringValue>nmaraglino@citadelbusinesslegalplan.com,cs@citadelbusinesslegalplan.com,apereira@citadelbusinesslegalplan.com,dpagano@citadelbusinesslegalplan.com,pbofill@citadelbusinesslegalplan.com, abiscardi@coastaldebt.com, ferron@coastaldebt.com, negotiations@coastaldebt.com, tgoss@citadelbusinesslegalplan.com, AMentzer@CITADELBUSINESSLEGALPLAN.COM, Jbessent@coastaldebt.com, yeislee@coastaldebt.com, nathanm@coastaldebt.com</stringValue>
+        </value>
+    </variables>
+    <variables>
+        <name>InternalEmailRecipents</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <stringValue>cs@CITADELBUSINESSLEGALPLAN.COM,nmaraglino@citadelbusinesslegalplan.com,payments@coastaldebt.com,nathanm@coastaldebt.com,yeislee@coastaldebt.com</stringValue>
+        </value>
+    </variables>
+</Flow>

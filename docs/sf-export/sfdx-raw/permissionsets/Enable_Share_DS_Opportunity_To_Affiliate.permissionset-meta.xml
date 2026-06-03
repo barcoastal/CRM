@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customPermissions>
+        <enabled>true</enabled>
+        <name>Enable_Share_DS_Opp_to_Affiliates</name>
+    </customPermissions>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Enable Share DS Opportunity To Affiliate</label>
+</PermissionSet>

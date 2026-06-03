@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>63.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <decisions>
+        <name>Leads_Created_By</name>
+        <label>Leads Created By</label>
+        <locationX>446</locationX>
+        <locationY>287</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Bull_Market_Leads</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Owner:User.Username</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>weblead1@bullmarket.com</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Assign_Lead_Source_as_Bull_Market</targetReference>
+            </connector>
+            <label>Bull Market Leads</label>
+        </rules>
+        <rules>
+            <name>Nerd_Wallet_Leads</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Owner:User.Username</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>nerdwalletleads@coastaldebt.com</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Assign_Lead_Source_as_Nerd_Wallet</targetReference>
+            </connector>
+            <label>Nerd Wallet Leads</label>
+        </rules>
+        <rules>
+            <name>VIP_Response</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Owner:User.Username</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>webleads@vipresponse.nl</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Assign_Lead_Source_as_VIP_Response</targetReference>
+            </connector>
+            <label>VIP Response</label>
+        </rules>
+    </decisions>
+    <description>Pre Populate the specific lead fields based on the source of the leads [Different Lead Source Partners or Different Streams]</description>
+    <environments>Default</environments>
+    <interviewLabel>PrePopulate Lead Source {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>PrePopulate Lead Fields</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <name>Assign_Lead_Source_as_Bull_Market</name>
+        <label>Assign Lead Source as Bull Market</label>
+        <locationX>50</locationX>
+        <locationY>395</locationY>
+        <inputAssignments>
+            <field>LeadSource</field>
+            <value>
+                <stringValue>Bullmarket</stringValue>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <recordUpdates>
+        <name>Assign_Lead_Source_as_Nerd_Wallet</name>
+        <label>Assign Lead Source as Nerd Wallet</label>
+        <locationX>314</locationX>
+        <locationY>395</locationY>
+        <inputAssignments>
+            <field>LeadSource</field>
+            <value>
+                <elementReference>NerdWalletLeadSource</elementReference>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <recordUpdates>
+        <name>Assign_Lead_Source_as_VIP_Response</name>
+        <label>Assign Lead Source as VIP Response</label>
+        <locationX>578</locationX>
+        <locationY>395</locationY>
+        <inputAssignments>
+            <field>LeadSource</field>
+            <value>
+                <elementReference>VIPResponseLeadSource</elementReference>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>320</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Leads_Created_By</targetReference>
+        </connector>
+        <object>Lead</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Active</status>
+    <variables>
+        <name>LeadSourcePartner1</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <stringValue>nathanm@coastaldebt.com.qa25a</stringValue>
+        </value>
+    </variables>
+    <variables>
+        <name>NerdWalletLeadSource</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <stringValue>Nerd Wallet</stringValue>
+        </value>
+    </variables>
+    <variables>
+        <name>VIPResponseLeadSource</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <stringValue>VIP Response</stringValue>
+        </value>
+    </variables>
+</Flow>

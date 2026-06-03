@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Account_Mismatch_Validation_Rule</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(NOT( $Permission.Bypass_Validation_Rule ),Opportunity__r.AccountId != Account__r.Id)</errorConditionFormula>
+    <errorMessage>Account on opportunity and debt details are not matching</errorMessage>
+</ValidationRule>

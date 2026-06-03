@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>External_API_Details__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <label>External API Details</label>
+    <referenceTo>External_API_Details__c</referenceTo>
+    <relationshipLabel>External Datas</relationshipLabel>
+    <relationshipName>External_Datas</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

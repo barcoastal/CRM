@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Sort_Order__c</fullName>
+    <externalId>false</externalId>
+    <formula>IF(ISPICKVAL(Payment_Type__c , &apos;Draft&apos;), 1,
+IF(ISPICKVAL(Payment_Type__c , &apos;Escrow&apos;),2 ,
+IF(ISPICKVAL(Payment_Type__c , &apos;Program Fee&apos;), 3,
+IF(ISPICKVAL(Payment_Type__c , &apos;Program Fee - Settlements&apos;), 4,
+IF(ISPICKVAL(Payment_Type__c , &apos;Retainer Fee&apos;), 5,
+IF(ISPICKVAL(Payment_Type__c , &apos;Setup Fee&apos;), 6,
+IF(ISPICKVAL(Payment_Type__c , &apos;Service Fee&apos;), 7,
+IF(ISPICKVAL(Payment_Type__c , &apos;Citadel Fee&apos;), 8,
+IF(ISPICKVAL(Payment_Type__c , &apos;Processor Fee&apos;), 9,
+IF(ISPICKVAL(Payment_Type__c , &apos;Settlements&apos;), 10, 0) ) ) ) ) ) ) ) ))</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Sort Order</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

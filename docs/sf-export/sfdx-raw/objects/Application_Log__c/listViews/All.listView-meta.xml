@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>All</fullName>
+    <columns>NAME</columns>
+    <columns>Statement__c</columns>
+    <columns>Exception_Message__c</columns>
+    <columns>Record_Id__c</columns>
+    <columns>Log_Type__c</columns>
+    <columns>CREATED_DATE</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Statement__c</field>
+        <operation>notEqual</operation>
+        <value>Callout request sent to Outbound ANI</value>
+    </filters>
+    <filters>
+        <field>CREATED_DATE</field>
+        <operation>greaterOrEqual</operation>
+        <value>5/14/2026 6:25 PM</value>
+    </filters>
+    <label>All</label>
+</ListView>

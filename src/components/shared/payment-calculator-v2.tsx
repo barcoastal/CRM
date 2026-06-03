@@ -86,7 +86,7 @@ export function PaymentCalculatorV2({
           bankFeePerPeriod: SF_DEFAULTS.monthlyBankFee,
           citadelFeePerPeriod: 0,
           totalSettlement: t.totalSettlementAmt,
-          estimatedAmount: t.totalCost,
+          estimatedAmount: t.newTotalDebtAmount,
         }),
       });
       if (res.ok) {

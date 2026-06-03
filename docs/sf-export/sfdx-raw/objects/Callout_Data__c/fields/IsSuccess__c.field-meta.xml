@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>IsSuccess__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>To capture the boolean value whether the callout is success or not</description>
+    <label>IsSuccess</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Callout_request_sent_to_Outbound_ANI</fullName>
+    <columns>NAME</columns>
+    <columns>Statement__c</columns>
+    <columns>Exception_Message__c</columns>
+    <columns>Record_Id__c</columns>
+    <columns>Log_Type__c</columns>
+    <columns>CREATED_DATE</columns>
+    <columns>LAST_UPDATE</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Statement__c</field>
+        <operation>equals</operation>
+        <value>Callout request sent to Outbound ANI</value>
+    </filters>
+    <label>Callout request sent to Outbound ANI</label>
+</ListView>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Successful_Conversion</fullName>
+    <columns>NAME</columns>
+    <columns>Convoso_Id__c</columns>
+    <columns>Application_Log__c</columns>
+    <columns>Total_Count__c</columns>
+    <columns>Succes_Count__c</columns>
+    <columns>Failure_Count__c</columns>
+    <columns>Number_of_Leads__c</columns>
+    <columns>Executed__c</columns>
+    <columns>Converted_to_Lead_Formula__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Converted_to_Lead_Formula__c</field>
+        <operation>equals</operation>
+        <value>1</value>
+    </filters>
+    <filters>
+        <field>Archived__c</field>
+        <operation>equals</operation>
+        <value>0</value>
+    </filters>
+    <label>Successful Conversion</label>
+</ListView>

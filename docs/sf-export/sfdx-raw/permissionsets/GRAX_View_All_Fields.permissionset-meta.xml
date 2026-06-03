@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Grants users access to view all fields in GRAX regardless of their Field Level Security permissions</description>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Opportunity.Lead_Source_Category__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>User.vCard_Link__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>GRAX Console View All Fields</label>
+</PermissionSet>

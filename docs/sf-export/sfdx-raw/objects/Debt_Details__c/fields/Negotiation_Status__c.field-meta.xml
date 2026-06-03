@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Negotiation_Status__c</fullName>
+    <label>Negotiation Status</label>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Settled PIF</fullName>
+                <default>false</default>
+                <label>Settled PIF</label>
+            </value>
+            <value>
+                <fullName>Settled payments</fullName>
+                <default>false</default>
+                <label>Settled payments</label>
+            </value>
+            <value>
+                <fullName>Settled lump sum</fullName>
+                <default>false</default>
+                <label>Settled lump sum</label>
+            </value>
+            <value>
+                <fullName>Correspondence</fullName>
+                <default>false</default>
+                <label>Need Correspondence</label>
+            </value>
+            <value>
+                <fullName>Waiting for the Settlement agreement</fullName>
+                <default>false</default>
+                <label>Waiting for the Settlement agreement</label>
+            </value>
+            <value>
+                <fullName>Send it out to the CSR for Client Signature</fullName>
+                <default>false</default>
+                <label>Send it out to the CSR for Client Signature</label>
+            </value>
+            <value>
+                <fullName>Counter Signature from the Lender</fullName>
+                <default>false</default>
+                <label>Counter Signature from the Lender</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

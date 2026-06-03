@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Next_Draft_Date__c</fullName>
+    <label>Next Draft Date</label>
+    <summarizedField>Draft__c.Draft_Date__c</summarizedField>
+    <summaryFilterItems>
+        <field>Draft__c.Draft_Status__c</field>
+        <operation>equals</operation>
+        <value>Scheduled</value>
+    </summaryFilterItems>
+    <summaryForeignKey>Draft__c.Program_Plan__c</summaryForeignKey>
+    <summaryOperation>min</summaryOperation>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Summary</type>
+</CustomField>

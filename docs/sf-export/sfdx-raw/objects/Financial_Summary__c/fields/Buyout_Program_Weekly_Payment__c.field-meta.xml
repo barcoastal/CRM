@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Buyout_Program_Weekly_Payment__c</fullName>
+    <formula>IF((!ISNULL(Net_Profit__c) &amp;&amp; Net_Profit__c &gt; 0), 
+IF(Buyout_Program_Weeks__c &gt; 104, 104, ROUND(Opportunity__r.Total_Debt__c * 0.92 / Buyout_Program_Weeks__c,0))
+, 0)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Estimated Weekly Payment</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Currency</type>
+</CustomField>
