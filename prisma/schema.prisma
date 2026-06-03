@@ -660,10 +660,13 @@ model OpportunityPaymentCalculation {
   setupFee             Float?
   serviceFee           Float?
   monthlyBankFee       Float?
+  citadelFee           Float?
   settlementPercentage Float?
   programFeePercent    Float?
   totalSettlement      Float?
   programFeePeriod     Int?
+  frequency            String?
+  firstPaymentDate     DateTime?
   estimatedAmount      Float?
   retainerPercentage   Float?
   savedById            String?
@@ -1357,10 +1360,13 @@ model LeadPaymentCalculation {
   setupFee             Float?
   serviceFee           Float?
   monthlyBankFee       Float?
+  citadelFee           Float?
   settlementPercentage Float?   // e.g. 50.0 = 50%
   programFeePercent    Float?
   totalSettlement      Float?
-  programFeePeriod     Int?     // months
+  programFeePeriod     Int?     // periods (weeks/months)
+  frequency            String?  // DAILY | WEEKLY | BI_WEEKLY | MONTHLY
+  firstPaymentDate     DateTime?
   estimatedAmount      Float?
   retainerPercentage   Float?
   savedById            String?

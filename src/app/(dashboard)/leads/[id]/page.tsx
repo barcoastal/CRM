@@ -6,7 +6,7 @@ import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activit
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { LeadTabs } from "@/components/leads/lead-tabs";
 import { LeadHeaderButtons } from "@/components/leads/lead-header-buttons";
-import { PaymentCalculator } from "@/components/leads/payment-calculator";
+import { PaymentCalculatorV2 } from "@/components/shared/payment-calculator-v2";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { DebtInformation } from "@/components/leads/debt-information";
 import { LeadRelated } from "@/components/leads/lead-related";
@@ -178,22 +178,23 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   const calc = (
     <Section title="Payment Calculator">
-      <PaymentCalculator
-        leadId={lead.id}
-        initial={
-          latestCalc
-            ? {
-                totalDebt: latestCalc.totalDebt ?? "",
-                setupFee: latestCalc.setupFee ?? "",
-                serviceFee: latestCalc.serviceFee ?? "",
-                monthlyBankFee: latestCalc.monthlyBankFee ?? "",
-                settlementPercentage: latestCalc.settlementPercentage ?? "",
-                programFeePercent: latestCalc.programFeePercent ?? "",
-                programFeePeriod: latestCalc.programFeePeriod ?? "",
-                retainerPercentage: latestCalc.retainerPercentage ?? "",
-              }
-            : undefined
-        }
+      <PaymentCalculatorV2
+        saveEndpoint={`/api/leads/${lead.id}/calculator`}
+        initial={{
+          totalDebt: latestCalc?.totalDebt ?? lead.totalDebtEst ?? 44000,
+          settlementPercent: latestCalc?.settlementPercentage ?? 40,
+          programFeePercent: latestCalc?.programFeePercent ?? 25,
+          retainerPercent: latestCalc?.retainerPercentage ?? 30,
+          setupFee: latestCalc?.setupFee ?? 4000,
+          serviceFeePerPeriod: latestCalc?.serviceFee ?? 9.95,
+          bankFeePerPeriod: latestCalc?.monthlyBankFee ?? 9.95,
+          citadelFeePerPeriod: latestCalc?.citadelFee ?? 0,
+          paymentTerm: latestCalc?.programFeePeriod ?? 50,
+          frequency: (latestCalc?.frequency as "WEEKLY") ?? "WEEKLY",
+          firstPaymentDate: latestCalc?.firstPaymentDate
+            ? latestCalc.firstPaymentDate.toISOString().slice(0, 10)
+            : new Date().toISOString().slice(0, 10),
+        }}
       />
     </Section>
   );

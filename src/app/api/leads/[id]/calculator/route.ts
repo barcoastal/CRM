@@ -25,14 +25,20 @@ export async function POST(
       leadId: id,
       totalDebt: n(body.totalDebt),
       setupFee: n(body.setupFee),
-      serviceFee: n(body.serviceFee),
-      monthlyBankFee: n(body.monthlyBankFee),
-      settlementPercentage: n(body.settlementPercentage),
+      serviceFee: n(body.serviceFee ?? body.serviceFeePerPeriod),
+      monthlyBankFee: n(body.monthlyBankFee ?? body.bankFeePerPeriod),
+      citadelFee: n(body.citadelFee ?? body.citadelFeePerPeriod),
+      settlementPercentage: n(body.settlementPercentage ?? body.settlementPercent),
       programFeePercent: n(body.programFeePercent),
       totalSettlement: n(body.totalSettlement),
-      programFeePeriod: typeof body.programFeePeriod === "number" ? Math.round(body.programFeePeriod) : null,
+      programFeePeriod:
+        typeof (body.programFeePeriod ?? body.paymentTerm) === "number"
+          ? Math.round(body.programFeePeriod ?? body.paymentTerm)
+          : null,
+      frequency: typeof body.frequency === "string" ? body.frequency : null,
+      firstPaymentDate: body.firstPaymentDate ? new Date(body.firstPaymentDate) : null,
       estimatedAmount: n(body.estimatedAmount),
-      retainerPercentage: n(body.retainerPercentage),
+      retainerPercentage: n(body.retainerPercentage ?? body.retainerPercent),
       savedById: session.userId,
     },
   });

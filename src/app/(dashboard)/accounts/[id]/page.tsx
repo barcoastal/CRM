@@ -13,6 +13,7 @@ import { HealthCheckCard } from "@/components/accounts/health-check-card";
 import { EscrowBalanceCard } from "@/components/accounts/escrow-balance-card";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
+import { PaymentCalculatorV2 } from "@/components/shared/payment-calculator-v2";
 import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
 import { genericTone } from "@/lib/slds/status-tones";
 
@@ -185,10 +186,25 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     </>
   );
 
-  const calcPanel = (
+  const activeOpp = account.opportunities[0];
+  const calcPanel = activeOpp ? (
+    <Section title="Reschedule Program">
+      <PaymentCalculatorV2
+        saveEndpoint={`/api/opportunities/${activeOpp.id}/calculator`}
+        initial={{
+          totalDebt: activeOpp.totalDebt ?? totalDebt,
+          paymentTerm: 50,
+          frequency: "WEEKLY",
+          firstPaymentDate: account.programStartDate
+            ? account.programStartDate.toISOString().slice(0, 10)
+            : new Date().toISOString().slice(0, 10),
+        }}
+      />
+    </Section>
+  ) : (
     <Section title="Reschedule Program">
       <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>
-        Reschedule Program calculator — coming next. Use the Opportunity Payment Calculator on the active opp for now.
+        No active opportunity. Create one first to use the payment calculator.
       </div>
     </Section>
   );
