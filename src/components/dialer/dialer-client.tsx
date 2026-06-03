@@ -157,7 +157,16 @@ export function DialerClient({
         headers: { "Content-Type": "application/json" },
         body: body ? JSON.stringify(body) : undefined,
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        // Stale JWT — sign out and bounce to login so the agent can start fresh
+        toast.error(data.error || "Session expired. Redirecting to login…");
+        await fetch("/api/auth/signout", { method: "POST" }).catch(() => null);
+        setTimeout(() => {
+          window.location.href = "/login?next=/dialer";
+        }, 800);
+        throw new Error(data.error || "Session expired");
+      }
       if (!res.ok) {
         throw new Error(data.error || "API request failed");
       }
