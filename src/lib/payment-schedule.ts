@@ -1,235 +1,243 @@
 /**
- * Payment Schedule Generator — Coastal Debt formula.
+ * Payment Schedule Generator — Coastal Debt / SF "Business Lead" formula.
  *
- * Each weekly draft is allocated in this order:
- *   1. Setup Fee (first weeks, until full setup is collected)
- *   2. Retained Fee (next weeks, until retainer % of program fee is collected)
- *   3. Program Fee + Escrow (parallel, weighted by their remaining balance)
+ * Reverse-engineered from the SF Payment Calculator Lightning app on
+ * 2026-06-03 by feeding $50K and $100K through Term=6 and confirming the
+ * outputs are exact to the cent.
  *
- * Service Fee, Bank Fee, and Citadel Fee are skimmed every payment regardless.
+ * Locked defaults (the SF UI grays them out — only Total Debt + Term are
+ * user-editable in Business Lead mode):
+ *   Settlement %       = 43
+ *   Program Fee %      = 20
+ *   Retainer %         = 10
+ *   Setup Fee          = $850 (one-time, paid in Setup Row)
+ *   Service Fee        = $55 / period
+ *   Monthly Bank Fee   = $10 / month
+ *   Bank Setup Fee     = $15 (one-time)
+ *   Payment Frequency  = Weekly
  *
- * The weekly draft amount is computed so the program completes exactly in
- * `paymentTerm` periods (so weekly draft × periods covers all fees + escrow).
+ * Schedule shape:
+ *   Row 1 (Setup Row):   Setup Fee + Retainer = $850 + Debt × 10%
+ *   Rows 2..N (Weekly):  constant $W each, where N = Term × 4 - 1
+ *
+ * Aggregate totals:
+ *   Total Settlement      = Debt × 43%
+ *   Total Program Fee     = Debt × 20%
+ *   Total Retainer        = Debt × 10%
+ *   Total Amount With Fees = Debt × 73%
+ *   Estimated You Save    = Debt × 27%
+ *   Total Cost            = Debt × 73% + $865 + $230 × Term
+ *   Weekly Payment        = (Debt × 63% + $15 + $230 × Term) / (Term × 4 − 1)
  */
 
-export type Frequency = "DAILY" | "WEEKLY" | "BI_WEEKLY" | "MONTHLY";
+export type Frequency = "WEEKLY" | "BI_WEEKLY" | "MONTHLY" | "DAILY";
+
+/** SF Business Lead defaults — locked in the canonical calculator */
+export const SF_DEFAULTS = {
+  settlementPercent: 43,
+  programFeePercent: 20,
+  retainerPercent: 10,
+  setupFee: 850,
+  serviceFeePerPeriod: 55,
+  monthlyBankFee: 10,
+  bankSetupFee: 15,
+  frequency: "WEEKLY" as Frequency,
+} as const;
 
 export interface PaymentScheduleInput {
+  /** Total debt to settle */
   totalDebt: number;
-  settlementPercent: number;     // 0–100 — % of debt to settle for
-  programFeePercent: number;     // 0–100 — % of debt charged as program fee
-  retainerPercent: number;       // 0–100 — % of program fee paid up front as retained fee
-  setupFee: number;              // one-time, paid first weeks
-  serviceFeePerPeriod: number;   // recurring, every period
-  bankFeePerPeriod: number;      // recurring, every period
-  citadelFeePerPeriod: number;   // recurring legal-protection fee, every period
-  paymentTerm: number;           // total number of periods
-  frequency: Frequency;
-  firstPaymentDate: string | Date;
+  /** Program term in MONTHS (1–30 in SF). Defaults to 6. */
+  termMonths?: number;
+  /** Frequency — only WEEKLY is supported by SF Business Lead mode. */
+  frequency?: Frequency;
+  /** First payment date for the schedule */
+  firstPaymentDate?: string | Date;
+  /** Optional overrides — pass to change the locked SF defaults */
+  settlementPercent?: number;
+  programFeePercent?: number;
+  retainerPercent?: number;
+  setupFee?: number;
+  serviceFeePerPeriod?: number;
+  monthlyBankFee?: number;
+  bankSetupFee?: number;
 }
 
 export interface PaymentRow {
   index: number;
   date: Date;
-  weeklyDraftAmount: number;
-  programFee: number;
-  retainedFee: number;
+  weeklyPaymentAmount: number;
   setupFee: number;
-  bankFee: number;
-  serviceFee: number;
-  citadelFee: number;
-  escrowAmount: number;
-  runningBalance: number;   // cumulative escrow balance
-  status: "Pending" | "Scheduled" | "Completed";
+  weeklyProgramFee: number;
+  weeklyServiceFee: number;
+  monthlyBankFee: number;
+  weeklySavings: number;
+  status: "Pending" | "Completed";
 }
 
 export interface PaymentScheduleResult {
   rows: PaymentRow[];
   totals: {
-    programLength: number;        // periods
     totalDebt: number;
-    totalSettlement: number;      // target $ to settle for
+    settlementPercent: number;
+    programFeePercent: number;
+    retainerPercent: number;
+    totalSettlementAmt: number;
     totalProgramFee: number;
-    totalRetainedFee: number;
-    totalSetupFee: number;
-    totalBankFee: number;
-    totalServiceFee: number;
-    totalCitadelFee: number;
-    totalEscrowAmount: number;
-    totalProgramCost: number;     // grand total of all weekly drafts
-    estimatedAmountYouSave: number; // totalDebt - totalSettlement - totalProgramFee
-    totalWeeklyPayment: number;   // = mean weekly draft
-    totalWeeklySaving: number;    // weekly portion of estimated savings
-    totalProcessorFee: number;    // bank + citadel + service (alias)
-    totalRetainerPaymentCost: number; // alias for retained fee total
+    retainerAmount: number;
+    totalAmountWithFees: number;        // labeled "(73%)"
+    totalAmountWithFeesPercent: number; // e.g. 73
+    estimatedAmountYouSave: number;     // labeled "(27%)"
+    estimatedAmountYouSavePercent: number;
+    weeklyPayments: number;
+    totalCost: number;
+    setupRowAmount: number;
+    weeklyRows: number;                  // count of weekly rows
+    totalRows: number;                   // 1 setup + weeklyRows
+    weeklyServiceFee: number;            // per-week display value
+    monthlyBankFee: number;
+    bankSetupFee: number;
+    setupFee: number;
   };
-}
-
-function addPeriod(date: Date, frequency: Frequency, n: number): Date {
-  const d = new Date(date);
-  switch (frequency) {
-    case "DAILY":
-      d.setDate(d.getDate() + n);
-      break;
-    case "WEEKLY":
-      d.setDate(d.getDate() + n * 7);
-      break;
-    case "BI_WEEKLY":
-      d.setDate(d.getDate() + n * 14);
-      break;
-    case "MONTHLY":
-      d.setMonth(d.getMonth() + n);
-      break;
-  }
-  return d;
 }
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+function addWeeks(d: Date, n: number): Date {
+  const copy = new Date(d);
+  copy.setDate(copy.getDate() + n * 7);
+  return copy;
+}
+
+/** Number of months between two weekly payments — used for the "Monthly Bank Fee" column display. */
+function monthsBetween(start: Date, end: Date): number {
+  return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+}
+
 export function generatePaymentSchedule(input: PaymentScheduleInput): PaymentScheduleResult {
-  const {
-    totalDebt,
-    settlementPercent,
-    programFeePercent,
-    retainerPercent,
-    setupFee,
-    serviceFeePerPeriod,
-    bankFeePerPeriod,
-    citadelFeePerPeriod,
-    paymentTerm,
-    frequency,
-    firstPaymentDate,
-  } = input;
+  const debt = input.totalDebt;
+  const termMonths = Math.max(1, Math.round(input.termMonths ?? 6));
+  const sp = input.settlementPercent ?? SF_DEFAULTS.settlementPercent;
+  const pp = input.programFeePercent ?? SF_DEFAULTS.programFeePercent;
+  const rp = input.retainerPercent ?? SF_DEFAULTS.retainerPercent;
+  const setupFee = input.setupFee ?? SF_DEFAULTS.setupFee;
+  const servicePerPeriod = input.serviceFeePerPeriod ?? SF_DEFAULTS.serviceFeePerPeriod;
+  const monthlyBankFee = input.monthlyBankFee ?? SF_DEFAULTS.monthlyBankFee;
+  const bankSetupFee = input.bankSetupFee ?? SF_DEFAULTS.bankSetupFee;
 
-  const term = Math.max(1, Math.round(paymentTerm));
-  const totalSettlement = round2(totalDebt * (settlementPercent / 100));
-  const totalProgramFee = round2(totalDebt * (programFeePercent / 100));
-  const totalRetainedFee = round2(totalProgramFee * (retainerPercent / 100));
-  const totalSetupFee = round2(setupFee);
-  const recurringPerPeriod = serviceFeePerPeriod + bankFeePerPeriod + citadelFeePerPeriod;
-  const totalServiceFee = round2(serviceFeePerPeriod * term);
-  const totalBankFee = round2(bankFeePerPeriod * term);
-  const totalCitadelFee = round2(citadelFeePerPeriod * term);
+  // ============ Aggregate totals ============
+  const totalSettlementAmt = round2(debt * (sp / 100));
+  const totalProgramFee = round2(debt * (pp / 100));
+  const retainerAmount = round2(debt * (rp / 100));
+  const totalWithFeesPercent = sp + pp + rp; // = 73
+  const totalAmountWithFees = round2(debt * (totalWithFeesPercent / 100));
+  const estimatedAmountYouSavePercent = round2(100 - totalWithFeesPercent);
+  const estimatedAmountYouSave = round2(debt * (estimatedAmountYouSavePercent / 100));
 
-  // Total $ that must come out of the program: settlement (→ escrow) + fees
-  // (escrow is filled from "Program + Escrow" bucket which equals settlement)
-  const totalEscrowAmount = totalSettlement;
-  const buildupBuckets = totalSetupFee + totalRetainedFee + totalProgramFee + totalEscrowAmount;
-  const totalRecurring = recurringPerPeriod * term;
-  const totalProgramCost = round2(buildupBuckets + totalRecurring);
-  const baseWeeklyDraft = round2(totalProgramCost / term);
+  const totalRows = termMonths * 4;          // monthly × 4 weeks
+  const weeklyRows = totalRows - 1;          // setup row replaces "week 1"
+  const totalCost = round2(
+    totalSettlementAmt +
+      totalProgramFee +
+      setupFee +
+      retainerAmount +
+      servicePerPeriod * totalRows +
+      monthlyBankFee * termMonths +
+      bankSetupFee
+  );
+  const setupRowAmount = round2(setupFee + retainerAmount);
+  const weeklyPayments = round2((totalCost - setupRowAmount) / weeklyRows);
 
-  // Allocation state
-  let setupRemaining = totalSetupFee;
-  let retainedRemaining = totalRetainedFee;
-  let programRemaining = totalProgramFee;
-  let escrowRemaining = totalEscrowAmount;
-  let runningEscrow = 0;
-
-  const startDate = new Date(firstPaymentDate);
+  // ============ Per-row schedule ============
+  const startDate = new Date(input.firstPaymentDate ?? new Date());
   const rows: PaymentRow[] = [];
   const today = new Date();
 
-  for (let i = 0; i < term; i++) {
-    const date = addPeriod(startDate, frequency, i);
-    const isLast = i === term - 1;
+  // Row 1: setup row (Setup Fee + Retainer)
+  rows.push({
+    index: 1,
+    date: startDate,
+    weeklyPaymentAmount: setupRowAmount,
+    setupFee: setupFee,
+    weeklyProgramFee: 0,
+    weeklyServiceFee: 0,
+    monthlyBankFee: 0,
+    weeklySavings: 0,
+    status: startDate < today ? "Completed" : "Pending",
+  });
 
-    // Each row pays recurring fees first, then allocates the rest to buildup
-    // buckets in priority order. On the last row we top up rounding remainder.
-    const periodDraft = baseWeeklyDraft;
-    let buildupBudget = round2(periodDraft - recurringPerPeriod);
+  // Weekly Program Fee allocation: program fee paid first weeks until exhausted,
+  // then $0 (and that bucket flows to weekly savings).
+  // Per-week split inside $weeklyPayments:
+  //   serviceFee = $55 fixed
+  //   programFee = whatever's left of total program fee, capped at (weeklyPayments - serviceFee - amortizedBank)
+  //   savings    = remainder
+  let programRemaining = totalProgramFee;
+  // The amortized bank component embedded in weekly payments:
+  //   weekly bank component = (monthlyBank × termMonths + bankSetup) / weeklyRows
+  const bankAmortized = round2((monthlyBankFee * termMonths + bankSetupFee) / weeklyRows);
+  const targetProgramPlusSavings = round2(weeklyPayments - servicePerPeriod - bankAmortized);
 
-    if (isLast) {
-      // ensure last row clears all remaining buckets exactly
-      buildupBudget = round2(setupRemaining + retainedRemaining + programRemaining + escrowRemaining);
-    }
-
-    // 1) Setup
-    let setupThisRow = 0;
-    if (setupRemaining > 0 && buildupBudget > 0) {
-      setupThisRow = round2(Math.min(setupRemaining, buildupBudget));
-      setupRemaining = round2(setupRemaining - setupThisRow);
-      buildupBudget = round2(buildupBudget - setupThisRow);
-    }
-
-    // 2) Retained
-    let retainedThisRow = 0;
-    if (retainedRemaining > 0 && buildupBudget > 0) {
-      retainedThisRow = round2(Math.min(retainedRemaining, buildupBudget));
-      retainedRemaining = round2(retainedRemaining - retainedThisRow);
-      buildupBudget = round2(buildupBudget - retainedThisRow);
-    }
-
-    // 3) Program + Escrow in parallel, weighted by remaining balance
-    let programThisRow = 0;
-    let escrowThisRow = 0;
-    if (buildupBudget > 0 && (programRemaining > 0 || escrowRemaining > 0)) {
-      const totalRemaining = programRemaining + escrowRemaining;
-      if (totalRemaining > 0) {
-        const programShare = (programRemaining / totalRemaining) * buildupBudget;
-        const escrowShare = (escrowRemaining / totalRemaining) * buildupBudget;
-        programThisRow = round2(Math.min(programRemaining, programShare));
-        escrowThisRow = round2(Math.min(escrowRemaining, escrowShare));
-        programRemaining = round2(programRemaining - programThisRow);
-        escrowRemaining = round2(escrowRemaining - escrowThisRow);
-        buildupBudget = round2(buildupBudget - programThisRow - escrowThisRow);
-        // any rounding leftover → escrow
-        if (buildupBudget > 0) {
-          escrowThisRow = round2(escrowThisRow + buildupBudget);
-        }
+  for (let i = 1; i <= weeklyRows; i++) {
+    const date = addWeeks(startDate, i);
+    // Display value for Monthly Bank Fee column:
+    //  - week 1 (i=1): bankSetup + monthlyBank = $25
+    //  - every ~4 weeks after: monthlyBank = $10
+    //  - others: $0
+    let displayBank = 0;
+    if (i === 1) {
+      displayBank = bankSetupFee + monthlyBankFee;
+    } else {
+      // Charge monthly bank fee every 4 weeks (week 5, 9, 13, ...)
+      const sinceFirst = i - 1;
+      if (sinceFirst % 4 === 0) {
+        displayBank = monthlyBankFee;
       }
     }
 
-    runningEscrow = round2(runningEscrow + escrowThisRow);
-
-    const actualDraft = round2(
-      setupThisRow +
-        retainedThisRow +
-        programThisRow +
-        escrowThisRow +
-        recurringPerPeriod
-    );
+    // Program fee for this week — pay as much as possible until exhausted
+    const programThisWeek = Math.min(programRemaining, targetProgramPlusSavings);
+    programRemaining = round2(programRemaining - programThisWeek);
+    const savingsThisWeek = round2(targetProgramPlusSavings - programThisWeek);
 
     rows.push({
       index: i + 1,
       date,
-      weeklyDraftAmount: actualDraft,
-      programFee: programThisRow,
-      retainedFee: retainedThisRow,
-      setupFee: setupThisRow,
-      bankFee: bankFeePerPeriod,
-      serviceFee: serviceFeePerPeriod,
-      citadelFee: citadelFeePerPeriod,
-      escrowAmount: escrowThisRow,
-      runningBalance: runningEscrow,
+      weeklyPaymentAmount: weeklyPayments,
+      setupFee: 0,
+      weeklyProgramFee: round2(programThisWeek),
+      weeklyServiceFee: servicePerPeriod,
+      monthlyBankFee: displayBank,
+      weeklySavings: savingsThisWeek,
       status: date < today ? "Completed" : "Pending",
     });
   }
 
-  const actualTotalDraft = round2(rows.reduce((s, r) => s + r.weeklyDraftAmount, 0));
-  const estimatedAmountYouSave = round2(totalDebt - totalSettlement - totalProgramFee - totalSetupFee);
-
   return {
     rows,
     totals: {
-      programLength: term,
-      totalDebt: round2(totalDebt),
-      totalSettlement,
+      totalDebt: round2(debt),
+      settlementPercent: sp,
+      programFeePercent: pp,
+      retainerPercent: rp,
+      totalSettlementAmt,
       totalProgramFee,
-      totalRetainedFee,
-      totalSetupFee,
-      totalBankFee,
-      totalServiceFee,
-      totalCitadelFee,
-      totalEscrowAmount,
-      totalProgramCost: actualTotalDraft,
+      retainerAmount,
+      totalAmountWithFees,
+      totalAmountWithFeesPercent: totalWithFeesPercent,
       estimatedAmountYouSave,
-      totalWeeklyPayment: round2(actualTotalDraft / term),
-      totalWeeklySaving: round2(estimatedAmountYouSave / term),
-      totalProcessorFee: round2(totalBankFee + totalCitadelFee + totalServiceFee),
-      totalRetainerPaymentCost: totalRetainedFee,
+      estimatedAmountYouSavePercent,
+      weeklyPayments,
+      totalCost,
+      setupRowAmount,
+      weeklyRows,
+      totalRows,
+      weeklyServiceFee: servicePerPeriod,
+      monthlyBankFee,
+      bankSetupFee,
+      setupFee,
     },
   };
 }

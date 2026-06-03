@@ -275,15 +275,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         saveEndpoint={`/api/opportunities/${opp.id}/calculator`}
         initial={{
           totalDebt: latestCalc?.totalDebt ?? totalDebtVal,
-          settlementPercent: latestCalc?.settlementPercentage ?? 40,
-          programFeePercent: latestCalc?.programFeePercent ?? 25,
-          retainerPercent: latestCalc?.retainerPercentage ?? 30,
-          setupFee: latestCalc?.setupFee ?? 4000,
-          serviceFeePerPeriod: latestCalc?.serviceFee ?? 9.95,
-          bankFeePerPeriod: latestCalc?.monthlyBankFee ?? 9.95,
-          citadelFeePerPeriod: latestCalc?.citadelFee ?? 0,
-          paymentTerm: latestCalc?.programFeePeriod ?? 50,
-          frequency: (latestCalc?.frequency as "WEEKLY") ?? "WEEKLY",
+          termMonths: latestCalc?.programFeePeriod ?? 6,
           firstPaymentDate: latestCalc?.firstPaymentDate
             ? latestCalc.firstPaymentDate.toISOString().slice(0, 10)
             : new Date().toISOString().slice(0, 10),

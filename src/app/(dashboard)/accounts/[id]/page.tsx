@@ -193,8 +193,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         saveEndpoint={`/api/opportunities/${activeOpp.id}/calculator`}
         initial={{
           totalDebt: activeOpp.totalDebt ?? totalDebt,
-          paymentTerm: 50,
-          frequency: "WEEKLY",
+          termMonths: 6,
           firstPaymentDate: account.programStartDate
             ? account.programStartDate.toISOString().slice(0, 10)
             : new Date().toISOString().slice(0, 10),

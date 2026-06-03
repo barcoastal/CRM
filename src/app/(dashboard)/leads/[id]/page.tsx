@@ -181,16 +181,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       <PaymentCalculatorV2
         saveEndpoint={`/api/leads/${lead.id}/calculator`}
         initial={{
-          totalDebt: latestCalc?.totalDebt ?? lead.totalDebtEst ?? 44000,
-          settlementPercent: latestCalc?.settlementPercentage ?? 40,
-          programFeePercent: latestCalc?.programFeePercent ?? 25,
-          retainerPercent: latestCalc?.retainerPercentage ?? 30,
-          setupFee: latestCalc?.setupFee ?? 4000,
-          serviceFeePerPeriod: latestCalc?.serviceFee ?? 9.95,
-          bankFeePerPeriod: latestCalc?.monthlyBankFee ?? 9.95,
-          citadelFeePerPeriod: latestCalc?.citadelFee ?? 0,
-          paymentTerm: latestCalc?.programFeePeriod ?? 50,
-          frequency: (latestCalc?.frequency as "WEEKLY") ?? "WEEKLY",
+          totalDebt: latestCalc?.totalDebt ?? lead.totalDebtEst ?? 50000,
+          termMonths: latestCalc?.programFeePeriod ?? 6,
           firstPaymentDate: latestCalc?.firstPaymentDate
             ? latestCalc.firstPaymentDate.toISOString().slice(0, 10)
             : new Date().toISOString().slice(0, 10),
