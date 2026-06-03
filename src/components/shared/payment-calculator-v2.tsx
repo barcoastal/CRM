@@ -253,29 +253,50 @@ export function PaymentCalculatorV2({
         </div>
       </div>
 
-      {/* Schedule table — 6 columns matching SF exactly */}
+      {/* Schedule table — 6 columns, sortable headers, matching SF exactly */}
       <div style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, overflow: "auto", maxHeight: 600 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, tableLayout: "fixed" }}>
           <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6", position: "sticky", top: 0 }}>
-              <th style={{ ...th, width: 50 }}>#</th>
-              <th style={th}>Weekly Payment Amount</th>
-              <th style={th}>Setup Fee</th>
-              <th style={th}>Weekly Program Fee</th>
-              <th style={th}>Weekly Service Fee</th>
-              <th style={th}>Monthly Bank Fee</th>
-              <th style={th}>Weekly Savings</th>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6", position: "sticky", top: 0, zIndex: 1 }}>
+              {[
+                "Weekly Payment Amount",
+                "Setup Fee",
+                "Weekly Program Fee",
+                "Weekly Service Fee",
+                "Monthly Bank Fee",
+                "Weekly Savings",
+              ].map((h, i, arr) => (
+                <th
+                  key={h}
+                  style={{
+                    ...th,
+                    borderRight: i < arr.length - 1 ? "1px solid #d8dde6" : "none",
+                  }}
+                >
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    {h}
+                    <svg width="10" height="10" viewBox="0 0 12 12" style={{ fill: "#54698d", opacity: 0.6 }}>
+                      <path d="M3 4l3-3 3 3z M3 8l3 3 3-3z" />
+                    </svg>
+                  </span>
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {result.rows.map((r) => (
-              <tr key={r.index} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                <td style={{ ...td, color: "#706e6b" }}>{r.index}</td>
-                <td style={td}>{fmtMoney(r.weeklyPaymentAmount)}</td>
-                <td style={td}>{fmtMoney(r.setupFee)}</td>
-                <td style={td}>{fmtMoney(r.weeklyProgramFee)}</td>
-                <td style={td}>{fmtMoney(r.weeklyServiceFee)}</td>
-                <td style={td}>{fmtMoney(r.monthlyBankFee)}</td>
+            {result.rows.map((r, i) => (
+              <tr
+                key={r.index}
+                style={{
+                  borderBottom: "1px solid #f3f3f3",
+                  background: i % 2 === 1 ? "#fcfcfc" : "#fff",
+                }}
+              >
+                <td style={tdSep}>{fmtMoney(r.weeklyPaymentAmount)}</td>
+                <td style={tdSep}>{fmtMoney(r.setupFee)}</td>
+                <td style={tdSep}>{fmtMoney(r.weeklyProgramFee)}</td>
+                <td style={tdSep}>{fmtMoney(r.weeklyServiceFee)}</td>
+                <td style={tdSep}>{fmtMoney(r.monthlyBankFee)}</td>
                 <td style={td}>{fmtMoney(r.weeklySavings)}</td>
               </tr>
             ))}
@@ -369,4 +390,9 @@ const td: React.CSSProperties = {
   padding: "10px 12px",
   color: "#080707",
   whiteSpace: "nowrap",
+};
+
+const tdSep: React.CSSProperties = {
+  ...td,
+  borderRight: "1px solid #f3f3f3",
 };
