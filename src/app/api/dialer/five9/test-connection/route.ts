@@ -99,8 +99,8 @@ export async function GET() {
 
   // 1) getCampaigns
   try {
-    const xml = await soapCall("getCampaigns", "<namePattern>.*</namePattern>");
-    const names = extractNames(xml, "campaigns");
+    const xml = await soapCall("getCampaigns", "<campaignNamePattern>.*</campaignNamePattern>");
+    const names = extractNames(xml, "return");
     checks.campaigns = { ok: true, count: names.length, sample: names.slice(0, 10) };
   } catch (e: unknown) {
     checks.campaigns = { ok: false, error: e instanceof Error ? e.message : "fail" };
@@ -108,8 +108,8 @@ export async function GET() {
 
   // 2) getListsInfo
   try {
-    const xml = await soapCall("getListsInfo", "<namePattern>.*</namePattern>");
-    const names = extractNames(xml, "lists");
+    const xml = await soapCall("getListsInfo", "<listNamePattern>.*</listNamePattern>");
+    const names = extractNames(xml, "return");
     checks.lists = {
       ok: true,
       count: names.length,
@@ -125,8 +125,8 @@ export async function GET() {
 
   // 3) getDispositions
   try {
-    const xml = await soapCall("getDispositions", "<namePattern>.*</namePattern>");
-    const names = extractNames(xml, "dispositions");
+    const xml = await soapCall("getDispositions", "<dispositionNamePattern>.*</dispositionNamePattern>");
+    const names = extractNames(xml, "return");
     checks.dispositions = { ok: true, count: names.length, sample: names.slice(0, 20) };
   } catch (e: unknown) {
     checks.dispositions = { ok: false, error: e instanceof Error ? e.message : "fail" };
