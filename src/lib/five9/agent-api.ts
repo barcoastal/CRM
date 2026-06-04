@@ -203,7 +203,7 @@ export async function makeCall(userId: string, args: {
   skillId?: string;
   contactId?: string;
 }): Promise<{ ok: boolean; callId?: string }> {
-  const res = await agentFetch(userId, `/interactions/make_call`, {
+  const res = await agentFetch(userId, `/interactions/click_to_dial`, {
     method: "POST",
     body: JSON.stringify({
       number: args.number,
@@ -214,7 +214,7 @@ export async function makeCall(userId: string, args: {
   });
   if (!res.ok) {
     const t = await res.text().catch(() => "");
-    throw new Error(`make_call ${res.status}: ${t.slice(0, 300)}`);
+    throw new Error(`click_to_dial ${res.status}: ${t.slice(0, 500)}`);
   }
   const json = await res.json().catch(() => ({}));
   return { ok: true, callId: (json as { callId?: string }).callId };
