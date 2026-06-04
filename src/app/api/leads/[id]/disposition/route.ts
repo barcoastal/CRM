@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { LEAD_STATUSES } from "@/lib/sf-canonical";
 import { convertLead } from "@/lib/lead-conversion";
+import { makeCtx, triggerUpdate } from "@/lib/triggers/runner";
 
 const STATUS_MAP: Record<string, string> = {
   "Completed": "COMPLETED",
@@ -37,38 +38,31 @@ export async function POST(
   const oldStatus = lead.status;
   const taskStatus = STATUS_MAP[status] ?? "COMPLETED";
 
-  const [, , task] = await prisma.$transaction([
-    prisma.lead.update({
-      where: { id },
-      data: {
-        status: stage,
-        lastContactedAt: new Date(),
-      },
-    }),
-    prisma.leadHistory.create({
-      data: {
-        leadId: id,
-        field: "Status",
-        oldValue: oldStatus,
-        newValue: stage,
-        changedById: session.userId,
-      },
-    }),
-    prisma.task.create({
-      data: {
-        recordType: "DISPOSITION",
-        subject: subject || stage,
-        type: "CALL",
-        status: taskStatus,
-        leadId: id,
-        ownerId: session.userId,
-        disposition: subDisposition,
-        outcome: callResult || null,
-        notes: description || null,
-        completedAt: taskStatus === "COMPLETED" ? new Date() : null,
-      },
-    }),
-  ]);
+  // Create the disposition Task first so the LeadTrigger sees it and
+  // skips its own status-change Task creation (avoids dupes).
+  const task = await prisma.task.create({
+    data: {
+      recordType: "DISPOSITION",
+      subject: subject || stage,
+      type: "CALL",
+      status: taskStatus,
+      leadId: id,
+      ownerId: session.userId,
+      disposition: subDisposition,
+      outcome: callResult || null,
+      notes: description || null,
+      completedAt: taskStatus === "COMPLETED" ? new Date() : null,
+    },
+  });
+
+  // Update the Lead through the trigger runner → fires the LeadTrigger,
+  // which writes Lead.lastDisposition / lastDispositionAt and creates the
+  // LeadHistory entry automatically.
+  const ctx = makeCtx(session.userId, [`Lead:${id}:task`]);
+  await triggerUpdate("lead", id, {
+    status: stage,
+    lastContactedAt: new Date(),
+  }, ctx);
 
   // Auto-convert to Opportunity when stage flips to "Converted"
   let conversion: { accountId: string; contactId: string; opportunityId: string | null } | null = null;

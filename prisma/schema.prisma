@@ -461,6 +461,13 @@ model Lead {
   nextFollowUpAt  DateTime?
   assignedToId    String?
   assignedTo      User?     @relation(fields: [assignedToId], references: [id])
+  // SF parity: track last disposition + assignment date (via triggers)
+  lastDisposition       String?
+  lastSubDisposition    String?
+  lastDispositionAt     DateTime?
+  leadAssignmentDate    DateTime?
+  // Derived weekly payment from creditor / debt info
+  currentTotalWeeklyPayment Float?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
