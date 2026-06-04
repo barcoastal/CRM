@@ -74,7 +74,7 @@ async function soapCall(method: string, innerBody: Record<string, unknown>): Pro
     body: `<?xml version="1.0" encoding="UTF-8"?>${xml}`,
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`Five9 ${method} ${res.status}: ${text.slice(0, 200)}`);
+  if (!res.ok) throw new Error(`Five9 ${method} ${res.status}: ${text.slice(0, 1500)}`);
   const parsed = parser.parse(text) as { Envelope?: { Body?: Record<string, unknown> } };
   return parsed.Envelope?.Body ?? {};
 }
