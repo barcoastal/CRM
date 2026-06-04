@@ -119,9 +119,9 @@ export function NewEnvelopeModal({
         throw new Error(sendData.error ?? "Send failed");
       }
 
-      // Optionally fire the signing link email
+      // Optionally fire the signing link email — create then send immediately
       if (emailLink && signerEmail) {
-        await fetch("/api/emails", {
+        const emailRes = await fetch("/api/emails", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -131,11 +131,18 @@ export function NewEnvelopeModal({
             toAddresses: signerEmail,
             subject: `Action required: please sign — ${documentName}`,
             bodyText: `Hi ${signerName},\n\nYou have a document waiting for your signature:\n\n${documentName}\n\nClick to review and sign:\n${sendData.signingUrl}\n\nThanks,\nCoastal Debt`,
+            bodyHtml: `<p>Hi ${signerName},</p><p>You have a document waiting for your signature:</p><p><strong>${documentName}</strong></p><p><a href="${sendData.signingUrl}" style="display:inline-block;background:#0070d2;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;font-weight:600">Review & Sign</a></p><p>Or paste this link into your browser:<br><code>${sendData.signingUrl}</code></p><p>Thanks,<br>Coastal Debt</p>`,
             opportunityId: opportunityId ?? null,
             accountId: accountId ?? null,
             leadId: leadId ?? null,
           }),
-        }).catch(() => undefined);
+        }).catch(() => null);
+
+        // Fire the email immediately so the signer doesn't wait for the cron
+        if (emailRes?.ok) {
+          const emailMsg = await emailRes.json();
+          await fetch(`/api/emails/${emailMsg.id}/send`, { method: "POST" }).catch(() => undefined);
+        }
       }
 
       toast.success("Envelope sent");
