@@ -76,17 +76,16 @@ async function loginAgent(username: string, password: string): Promise<AgentSess
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      farmId: "aceyusf",
+      Accept: "application/json, text/plain",
     },
     body: JSON.stringify({
       passwordCredentials: { username, password },
-      policy: "Force",
-      appKey: "coastal-crm",
+      policy: "AttachExisting",
     }),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Five9 login ${res.status}: ${text.slice(0, 300)}`);
+    throw new Error(`Five9 login ${res.status}: ${text.slice(0, 500)}`);
   }
   const json = (await res.json()) as Five9LoginResponse;
   const dc = json.metadata?.dataCenters?.[0];
@@ -122,7 +121,6 @@ async function agentFetch(userId: string, path: string, init: RequestInit = {}):
       "Content-Type": "application/json",
       Accept: "application/json, text/plain",
       Authorization: `Bearer-${session.tokenId}`,
-      farmId: "aceyusf",
       ...(init.headers ?? {}),
     },
   });
@@ -215,7 +213,6 @@ export async function logoutAgent(userId: string): Promise<{ ok: boolean }> {
     method: "POST",
     headers: {
       Authorization: `Bearer-${session.tokenId}`,
-      farmId: "aceyusf",
     },
   }).catch(() => undefined);
   sessionCache.delete(userId);
