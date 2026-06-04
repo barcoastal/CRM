@@ -106,7 +106,7 @@ export async function addRecordToList(args: {
   //     <data>+15551234567</data>
   //     <data>First</data>...
   //   </record>
-  const data: string[] = [
+  const fields: string[] = [
     args.phone,
     args.firstName ?? "",
     args.lastName ?? "",
@@ -127,7 +127,7 @@ export async function addRecordToList(args: {
       crmAddMode: "ADD_NEW",
       crmUpdateMode: "UPDATE_FIRST",
     },
-    record: { data },
+    record: { fields },
   });
   return { ok: true };
 }
@@ -138,7 +138,7 @@ export async function removeRecordFromList(listName: string, phone: string): Pro
     listDeleteSettings: {
       fieldsMapping: [{ columnNumber: 1, fieldName: "number1", key: true }],
     },
-    record: { data: [phone] },
+    record: { fields: [phone] },
   });
   return { ok: true };
 }
