@@ -21,15 +21,22 @@ interface EnvStatus {
   FIVE9_PASSWORD: boolean;
   FIVE9_API_BASE_URL: string;
   FIVE9_DEFAULT_LIST: boolean;
+  FIVE9_SECURITY_ANSWERS_COUNT: number;
 }
 
 function envStatus(): EnvStatus {
+  const answerCount = [
+    process.env.FIVE9_SECURITY_ANSWER_1,
+    process.env.FIVE9_SECURITY_ANSWER_2,
+    process.env.FIVE9_SECURITY_ANSWER_3,
+  ].filter((a) => typeof a === "string" && a.length > 0).length;
   return {
     NEXT_PUBLIC_FIVE9_DOMAIN: !!process.env.NEXT_PUBLIC_FIVE9_DOMAIN,
     FIVE9_USERNAME: !!process.env.FIVE9_USERNAME,
     FIVE9_PASSWORD: !!process.env.FIVE9_PASSWORD,
     FIVE9_API_BASE_URL: process.env.FIVE9_API_BASE_URL ?? "https://api.five9.com (default)",
     FIVE9_DEFAULT_LIST: !!process.env.FIVE9_DEFAULT_LIST,
+    FIVE9_SECURITY_ANSWERS_COUNT: answerCount,
   };
 }
 
@@ -44,9 +51,24 @@ function endpoint(): string {
   return `${base.replace(/\/$/, "")}/wsadmin/v13/AdminWebService`;
 }
 
+function buildSecurityHeader(): string {
+  const answers = [
+    process.env.FIVE9_SECURITY_ANSWER_1,
+    process.env.FIVE9_SECURITY_ANSWER_2,
+    process.env.FIVE9_SECURITY_ANSWER_3,
+  ].filter((a): a is string => typeof a === "string" && a.length > 0);
+  if (answers.length === 0) return "";
+  const escape = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const answerEls = answers.map((a) => `<answer>${escape(a)}</answer>`).join("");
+  return `<soapenv:Header><ser:headerSecurityAnswers>${answerEls}</ser:headerSecurityAnswers></soapenv:Header>`;
+}
+
 async function soapCall(method: string, innerBody: string): Promise<string> {
+  const header = buildSecurityHeader();
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="${SOAP_NS}" xmlns:ser="${SER_NS}">
+  ${header}
   <soapenv:Body>
     <ser:${method}>${innerBody}</ser:${method}>
   </soapenv:Body>

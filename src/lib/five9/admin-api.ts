@@ -38,17 +38,32 @@ function getEnv() {
 const builder = new XMLBuilder({ ignoreAttributes: false, attributeNamePrefix: "@_", suppressEmptyNode: false });
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_", removeNSPrefix: true });
 
+function buildSecurityHeader(): Record<string, unknown> | undefined {
+  const answers = [
+    process.env.FIVE9_SECURITY_ANSWER_1,
+    process.env.FIVE9_SECURITY_ANSWER_2,
+    process.env.FIVE9_SECURITY_ANSWER_3,
+  ].filter((a): a is string => typeof a === "string" && a.length > 0);
+  if (answers.length === 0) return undefined;
+  return {
+    "ser:headerSecurityAnswers": { answer: answers },
+  };
+}
+
 async function soapCall(method: string, innerBody: Record<string, unknown>): Promise<unknown> {
   const env = getEnv();
-  const xml = builder.build({
-    "soapenv:Envelope": {
-      "@_xmlns:soapenv": SOAP_NS,
-      "@_xmlns:ser": SER_NS,
-      "soapenv:Body": {
-        [`ser:${method}`]: innerBody,
-      },
+  const securityHeader = buildSecurityHeader();
+  const envelope: Record<string, unknown> = {
+    "@_xmlns:soapenv": SOAP_NS,
+    "@_xmlns:ser": SER_NS,
+    "soapenv:Body": {
+      [`ser:${method}`]: innerBody,
     },
-  });
+  };
+  if (securityHeader) {
+    envelope["soapenv:Header"] = securityHeader;
+  }
+  const xml = builder.build({ "soapenv:Envelope": envelope });
   const res = await fetch(env.endpoint, {
     method: "POST",
     headers: {
