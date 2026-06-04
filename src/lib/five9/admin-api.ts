@@ -125,8 +125,7 @@ export async function addRecordToList(args: {
       ],
       cleanListBeforeUpdate: false,
       listAddMode: "ADD_NEW",
-      crmAddMode: "ADD_NEW",
-      crmUpdateMode: "UPDATE_FIRST",
+      listUpdateMode: "UPDATE_FIRST",
     },
     record: { fields },
   });
