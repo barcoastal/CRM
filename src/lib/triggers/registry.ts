@@ -8,6 +8,7 @@ import { contactTrigger } from "./contact-trigger";
 import { offerTrigger } from "./offer-trigger";
 import { eventTrigger } from "./event-trigger";
 import { feeTrigger } from "./fee-trigger";
+import { envelopeTrigger } from "./envelope-trigger";
 
 /**
  * Map of model name (lowercase Prisma model name) → trigger module.
@@ -23,6 +24,7 @@ export const TRIGGERS: Record<string, Trigger<unknown> | undefined> = {
   offer: offerTrigger as unknown as Trigger<unknown>,
   event: eventTrigger as unknown as Trigger<unknown>,
   fee: feeTrigger as unknown as Trigger<unknown>,
+  envelope: envelopeTrigger as unknown as Trigger<unknown>,
 };
 
 export function getTrigger(model: string): Trigger<unknown> | undefined {

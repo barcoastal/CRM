@@ -65,6 +65,7 @@ model User {
   oppPaymentCalcsSaved OpportunityPaymentCalculation[] @relation("OppPaymentCalcSavedBy")
   oppHistoryChanges OpportunityHistory[] @relation("OpportunityHistoryChangedBy")
   accountHistoryChanges AccountHistory[] @relation("AccountHistoryChangedBy")
+  envelopesCreated      Envelope[]       @relation("EnvelopeCreatedBy")
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
@@ -331,6 +332,9 @@ model Account {
   // Total current debt cached for display (computed from active opps)
   currentTotalDebt  Float?
 
+  // First contract signed timestamp (set by envelope-trigger on first COMPLETED envelope)
+  firstContractSignedDate DateTime?
+
   contacts          AccountContactRelation[]
   opportunities     Opportunity[]
   creditor          Creditor?
@@ -346,9 +350,84 @@ model Account {
   cases             Case[]                   @relation("AccountCases")
   history           AccountHistory[]
   documents         Document[]               @relation("AccountDocuments")
+  envelopes         Envelope[]               @relation("AccountEnvelopes")
 
   @@index([recordType])
   @@index([stage])
+}
+
+// ============ ENVELOPE / E-SIGNATURE (replaces SF DocuSign integration) ============
+
+model Envelope {
+  id              String   @id @default(cuid())
+  // What this envelope is for
+  recordType      String   @default("CONTRACT") // CONTRACT | BANK_CHANGE | DISCLOSURE | AMENDMENT | OTHER
+  opportunityId   String?
+  opportunity     Opportunity? @relation("OpportunityEnvelopes", fields: [opportunityId], references: [id], onDelete: Cascade)
+  accountId       String?
+  account         Account?  @relation("AccountEnvelopes", fields: [accountId], references: [id], onDelete: Cascade)
+  leadId          String?
+  lead            Lead?     @relation("LeadEnvelopes", fields: [leadId], references: [id], onDelete: Cascade)
+
+  // Status flow: DRAFT → SENT → VIEWED → SIGNED → COMPLETED
+  // VOIDED, DECLINED are terminal states from any non-COMPLETED state
+  status          String   @default("DRAFT") // DRAFT | SENT | VIEWED | SIGNED | COMPLETED | DECLINED | VOIDED
+
+  // Signer info
+  signerName      String
+  signerEmail     String
+  signerPhone     String?
+
+  // Public-access token for the signing page
+  signingToken    String   @unique @default(cuid())
+
+  // Document
+  templateName    String?           // e.g. "Engagement Agreement", "Bank Change Authorization"
+  documentName    String            // display name shown to signer
+  documentUrl     String?           // pre-signed S3 URL or relative path to PDF
+  signedDocumentUrl String?         // saved after signing
+  pages           Int?              // number of pages
+
+  // Signature capture (data URL or relative path to PNG)
+  signatureImage  String?           // base64 PNG of signature drawn on the public page
+  signatureIp     String?           // signer's IP at sign time (audit)
+  signatureUserAgent String?
+
+  // Lifecycle
+  sentAt          DateTime?
+  viewedAt        DateTime?
+  signedAt        DateTime?
+  completedAt     DateTime?
+  voidedAt        DateTime?
+  voidReason      String?
+  expiresAt       DateTime?
+
+  // Audit
+  createdById     String?
+  createdBy       User?    @relation("EnvelopeCreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  events          EnvelopeEvent[]
+
+  @@index([opportunityId])
+  @@index([accountId])
+  @@index([leadId])
+  @@index([status])
+  @@index([signingToken])
+}
+
+model EnvelopeEvent {
+  id          String   @id @default(cuid())
+  envelopeId  String
+  envelope    Envelope @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  eventType   String   // CREATED | SENT | VIEWED | SIGNED | COMPLETED | VOIDED | DECLINED | REMINDER_SENT
+  details     String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([envelopeId, createdAt])
 }
 
 // ============ ACCOUNT HISTORY (SF Account History parity) ============
@@ -491,6 +570,7 @@ model Lead {
   history             LeadHistory[]
   documents           Document[]               @relation("LeadDocuments")
   debts               LeadDebt[]
+  envelopes           Envelope[]               @relation("LeadEnvelopes")
 
   @@index([recordType])
   @@index([convertedAccountId])
@@ -618,6 +698,8 @@ model Opportunity {
   lastDisposition       String?
   lastSubDisposition    String?
   lastDispositionAt     DateTime?
+  // Bank-change envelope status (ported from SF: Bank_Change_Contract_Status__c)
+  bankChangeContractStatus String?  // null | "Pending" | "Completed"
   totalDebt         Float?
   expectedCloseDate DateTime?
   assignedToId      String?
@@ -640,6 +722,7 @@ model Opportunity {
   emails            EmailMessage[] @relation("OpportunityEmails")
   history           OpportunityHistory[]
   paymentCalculations OpportunityPaymentCalculation[]
+  envelopes         Envelope[]     @relation("OpportunityEnvelopes")
 
   @@index([recordType])
   @@index([accountId])
