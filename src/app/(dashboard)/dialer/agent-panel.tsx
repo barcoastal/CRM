@@ -81,6 +81,30 @@ export function AgentPanel() {
     }
   }
 
+  async function testLogin() {
+    setBusy(true);
+    try {
+      const hasNewCreds = credForm.username && credForm.password;
+      const res = await fetch("/api/dialer/five9/agent/test-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          hasNewCreds
+            ? { five9Username: credForm.username, five9Password: credForm.password }
+            : {},
+        ),
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string; apiHost?: string };
+      if (data.ok) {
+        toast.success(`Login OK — data center: ${data.apiHost ?? "?"}`);
+      } else {
+        toast.error(data.error ?? "Login failed", { duration: 8000 });
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function startSession() {
     setBusy(true);
     try {
@@ -170,6 +194,7 @@ export function AgentPanel() {
           form={credForm}
           setForm={setCredForm}
           onSave={saveCredentials}
+          onTest={testLogin}
           onCancel={() => setShowCredForm(false)}
           busy={busy}
         />
@@ -203,9 +228,12 @@ export function AgentPanel() {
             </div>
           </div>
 
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 16, display: "flex", gap: 16 }}>
             <button onClick={() => setShowCredForm(true)} style={btnLink}>
               Change Five9 credentials
+            </button>
+            <button onClick={testLogin} disabled={busy} style={btnLink}>
+              Test saved login
             </button>
           </div>
         </>
@@ -218,12 +246,14 @@ function CredForm({
   form,
   setForm,
   onSave,
+  onTest,
   onCancel,
   busy,
 }: {
   form: { username: string; password: string; stationId: string };
   setForm: (f: { username: string; password: string; stationId: string }) => void;
   onSave: () => void;
+  onTest: () => void;
   onCancel: () => void;
   busy: boolean;
 }) {
@@ -253,6 +283,9 @@ function CredForm({
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <button onClick={onSave} disabled={busy} style={btnPrimary}>
           Save
+        </button>
+        <button onClick={onTest} disabled={busy} style={btnSecondary}>
+          Test login
         </button>
         <button onClick={onCancel} disabled={busy} style={btnSecondary}>
           Cancel

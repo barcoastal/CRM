@@ -95,6 +95,21 @@ async function loginAgent(username: string, password: string): Promise<AgentSess
   return { tokenId: json.tokenId, apiHost, userId: json.userId, cachedAt: Date.now() };
 }
 
+/** Test if the stored credentials work — does a login then immediate logout. */
+export async function testCredentials(username: string, password: string): Promise<{ ok: boolean; error?: string; apiHost?: string }> {
+  try {
+    const session = await loginAgent(username, password);
+    // Logout right away
+    await fetch(`${session.apiHost}/auth/logout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer-${session.tokenId}` },
+    }).catch(() => undefined);
+    return { ok: true, apiHost: session.apiHost };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "login failed" };
+  }
+}
+
 async function getSession(userId: string): Promise<AgentSession> {
   const cached = sessionCache.get(userId);
   if (cached && Date.now() - cached.cachedAt < SESSION_TTL_MS) return cached;
