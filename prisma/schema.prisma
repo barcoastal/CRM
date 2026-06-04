@@ -66,6 +66,8 @@ model User {
   oppHistoryChanges OpportunityHistory[] @relation("OpportunityHistoryChangedBy")
   accountHistoryChanges AccountHistory[] @relation("AccountHistoryChangedBy")
   envelopesCreated      Envelope[]       @relation("EnvelopeCreatedBy")
+  suppressionsAdded     SuppressionEntry[] @relation("SuppressionAddedBy")
+  cadenceEnrollments    CadenceEnrollment[] @relation("CadenceEnrolledBy")
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
@@ -351,9 +353,93 @@ model Account {
   history           AccountHistory[]
   documents         Document[]               @relation("AccountDocuments")
   envelopes         Envelope[]               @relation("AccountEnvelopes")
+  cadenceEnrollments CadenceEnrollment[]     @relation("AccountCadenceEnrollments")
 
   @@index([recordType])
   @@index([stage])
+}
+
+// ============ DNC / SUPPRESSION LIST (replaces SF SuppressionList + Five9 DNC sync) ============
+
+model SuppressionEntry {
+  id          String   @id @default(cuid())
+  phone       String   @unique  // normalized: digits only, 10 chars (e.g. "5551234567")
+  reason      String   @default("Manual") // Manual | LeadArchived | DispositionDNC | Customer | LitigationHold | RegulatoryDNC | Imported
+  source      String?              // free-text source label (e.g. "CSV: 2026-06-04 cleanup")
+  leadId      String?
+  lead        Lead?    @relation("LeadSuppressionEntries", fields: [leadId], references: [id])
+  addedById   String?
+  addedBy     User?    @relation("SuppressionAddedBy", fields: [addedById], references: [id])
+  notes       String?
+  expiresAt   DateTime?            // optional; null = permanent
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([reason])
+  @@index([leadId])
+}
+
+// ============ CALL CADENCES (Five9 cadence equivalent) ============
+
+model CallCadence {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  recordType  String   @default("OUTBOUND") // OUTBOUND | NURTURE | FIRST_PAYMENT | WELCOME_CALL | CONTRACT_SIGNED
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  steps       CadenceStep[]
+  enrollments CadenceEnrollment[]
+
+  @@index([recordType])
+}
+
+model CadenceStep {
+  id          String      @id @default(cuid())
+  cadenceId   String
+  cadence     CallCadence @relation(fields: [cadenceId], references: [id], onDelete: Cascade)
+  stepOrder   Int                                       // 1-based
+  action      String                                    // CALL | EMAIL | SMS | TASK | WAIT
+  delayDays   Int         @default(0)                   // days after the previous step (or enrollment for step 1)
+  delayHours  Int         @default(0)
+  // Action-specific payloads:
+  emailTemplateId String?
+  emailTemplate   EmailTemplate? @relation("CadenceStepEmailTemplate", fields: [emailTemplateId], references: [id])
+  smsBodyTemplate String?
+  callScript      String?
+  taskSubject     String?
+  // Branching: if previous step's outcome equals this value, jump to stepOrder
+  branchOn        String?                               // e.g. "ANSWERED" | "VOICEMAIL" | null
+  branchToStep    Int?
+
+  @@unique([cadenceId, stepOrder])
+}
+
+model CadenceEnrollment {
+  id              String       @id @default(cuid())
+  cadenceId       String
+  cadence         CallCadence  @relation(fields: [cadenceId], references: [id], onDelete: Cascade)
+  leadId          String?
+  lead            Lead?        @relation("LeadCadenceEnrollments", fields: [leadId], references: [id], onDelete: Cascade)
+  opportunityId   String?
+  opportunity     Opportunity? @relation("OpportunityCadenceEnrollments", fields: [opportunityId], references: [id], onDelete: Cascade)
+  accountId       String?
+  account         Account?     @relation("AccountCadenceEnrollments", fields: [accountId], references: [id], onDelete: Cascade)
+  status          String       @default("ACTIVE") // ACTIVE | PAUSED | COMPLETED | UNENROLLED
+  currentStepOrder Int         @default(0)        // 0 = not started yet
+  nextRunAt       DateTime?                       // when the runner should look at this enrollment
+  lastStepAt      DateTime?
+  enrolledById    String?
+  enrolledBy      User?        @relation("CadenceEnrolledBy", fields: [enrolledById], references: [id])
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([status, nextRunAt])
+  @@index([leadId])
+  @@index([opportunityId])
+  @@index([accountId])
 }
 
 // ============ ENVELOPE / E-SIGNATURE (replaces SF DocuSign integration) ============
@@ -579,6 +665,8 @@ model Lead {
   documents           Document[]               @relation("LeadDocuments")
   debts               LeadDebt[]
   envelopes           Envelope[]               @relation("LeadEnvelopes")
+  suppressionEntries  SuppressionEntry[]       @relation("LeadSuppressionEntries")
+  cadenceEnrollments  CadenceEnrollment[]      @relation("LeadCadenceEnrollments")
 
   @@index([recordType])
   @@index([convertedAccountId])
@@ -731,6 +819,7 @@ model Opportunity {
   history           OpportunityHistory[]
   paymentCalculations OpportunityPaymentCalculation[]
   envelopes         Envelope[]     @relation("OpportunityEnvelopes")
+  cadenceEnrollments CadenceEnrollment[] @relation("OpportunityCadenceEnrollments")
 
   @@index([recordType])
   @@index([accountId])
@@ -1395,6 +1484,7 @@ model EmailTemplate {
   updatedAt DateTime @updatedAt
 
   emails EmailMessage[]
+  cadenceSteps CadenceStep[] @relation("CadenceStepEmailTemplate")
 }
 
 model IntegrationCredential {

@@ -3,6 +3,7 @@ import { getTelephonyProvider } from "@/lib/telephony";
 import type { CallSession } from "@/lib/telephony/types";
 import { MockTelephonyProvider } from "@/lib/telephony/mock-provider";
 import type { DialerSession, DialerContact } from "./types";
+import { isSuppressed } from "@/lib/dnc";
 
 function generateSessionId(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -104,6 +105,16 @@ export async function initiateCall(
 
   if (!campaignContact) {
     throw new Error("Campaign contact not found");
+  }
+
+  // TCPA compliance: refuse to dial any number on the suppression list.
+  if (await isSuppressed(campaignContact.lead.phone)) {
+    // Mark the contact as skipped so the dialer skips to the next one.
+    await prisma.campaignContact.update({
+      where: { id: contactId },
+      data: { status: "SKIPPED" },
+    });
+    throw new Error("This number is on the DNC list — call refused for TCPA compliance.");
   }
 
   const provider = getTelephonyProvider();

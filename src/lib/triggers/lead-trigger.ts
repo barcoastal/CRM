@@ -25,6 +25,7 @@
 
 import type { Lead } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
+import { addSuppression } from "@/lib/dnc";
 
 // Use a permissive shape so trigger writers can set FK columns directly.
 type LeadWrite = Partial<Lead> & Record<string, unknown>;
@@ -79,6 +80,19 @@ export const leadTrigger: Trigger<Lead, LeadWrite> = {
           completedAt: new Date(),
         },
       });
+    }
+
+    // Auto-DNC on Archive Disposition (TCPA compliance, port of SF
+    // LeadAfterTriggerHelper.addNumbersToFive9DNC). Anyone we archive
+    // shouldn't get dialed again.
+    if (row.status === "Archive Disposition" && row.phone) {
+      await addSuppression({
+        phone: row.phone,
+        reason: "LeadArchived",
+        source: `Lead ${row.id}`,
+        leadId: row.id,
+        addedById: ctx.userId,
+      }).catch(() => undefined);
     }
   },
 };
