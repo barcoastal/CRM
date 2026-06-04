@@ -136,5 +136,5 @@ export async function GET() {
     (checks.campaigns as { ok: boolean })?.ok &&
     (checks.lists as { ok: boolean })?.ok;
 
-  return NextResponse.json({ ok: !!allOk, ...checks });
+  return NextResponse.json({ ok: !!allOk, deployMarker: "v2-namePattern-fix", ...checks });
 }
