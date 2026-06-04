@@ -536,6 +536,14 @@ model Lead {
   redtrackClickId String?
   gclid           String?
   fbclid          String?
+  adClickId       String?     // SF: Ad_Click_Id__c (populated by inbound ad-click webhook)
+
+  // Ad attribution (SF parity: Lead_Vendor_Id_Text__c, Ad_Id__c, Campaign_Name__c)
+  leadVendorId    String?
+  adId            String?
+  campaignName    String?
+  hasMultipleMca  Boolean?
+  state           String?     // SF state code (NY, FL, etc.) for compliance routing
   lastContactedAt DateTime?
   nextFollowUpAt  DateTime?
   assignedToId    String?
