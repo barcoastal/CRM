@@ -5,6 +5,9 @@ import { accountTrigger } from "./account-trigger";
 import { draftTrigger } from "./draft-trigger";
 import { taskTrigger } from "./task-trigger";
 import { contactTrigger } from "./contact-trigger";
+import { offerTrigger } from "./offer-trigger";
+import { eventTrigger } from "./event-trigger";
+import { feeTrigger } from "./fee-trigger";
 
 /**
  * Map of model name (lowercase Prisma model name) → trigger module.
@@ -17,6 +20,9 @@ export const TRIGGERS: Record<string, Trigger<unknown> | undefined> = {
   draft: draftTrigger as unknown as Trigger<unknown>,
   task: taskTrigger as unknown as Trigger<unknown>,
   contact: contactTrigger as unknown as Trigger<unknown>,
+  offer: offerTrigger as unknown as Trigger<unknown>,
+  event: eventTrigger as unknown as Trigger<unknown>,
+  fee: feeTrigger as unknown as Trigger<unknown>,
 };
 
 export function getTrigger(model: string): Trigger<unknown> | undefined {
