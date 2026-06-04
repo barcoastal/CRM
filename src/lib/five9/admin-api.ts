@@ -79,6 +79,11 @@ async function soapCall(method: string, innerBody: Record<string, unknown>): Pro
   return parsed.Envelope?.Body ?? {};
 }
 
+export async function createList(listName: string): Promise<{ ok: boolean }> {
+  await soapCall("createList", { listName });
+  return { ok: true };
+}
+
 export async function addRecordToList(args: {
   listName: string;
   phone: string;
