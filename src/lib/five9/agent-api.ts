@@ -100,7 +100,7 @@ async function loginAgent(username: string, password: string): Promise<AgentSess
     },
     body: JSON.stringify({
       passwordCredentials: { username, password },
-      policy: "AttachExisting",
+      policy: "ForceIn",
     }),
   });
   if (!res.ok) {
