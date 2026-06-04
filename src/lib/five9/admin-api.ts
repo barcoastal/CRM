@@ -117,11 +117,11 @@ export async function addRecordToList(args: {
     listName: list,
     listUpdateSettings: {
       fieldsMapping: [
-        { fieldsMapping: { columnNumber: 1, fieldName: "number1", key: true } },
-        { fieldsMapping: { columnNumber: 2, fieldName: "first_name" } },
-        { fieldsMapping: { columnNumber: 3, fieldName: "last_name" } },
-        { fieldsMapping: { columnNumber: 4, fieldName: "email" } },
-        { fieldsMapping: { columnNumber: 5, fieldName: "state" } },
+        { columnNumber: 1, fieldName: "number1", key: true },
+        { columnNumber: 2, fieldName: "first_name", key: false },
+        { columnNumber: 3, fieldName: "last_name", key: false },
+        { columnNumber: 4, fieldName: "email", key: false },
+        { columnNumber: 5, fieldName: "state", key: false },
       ],
       cleanListBeforeUpdate: false,
       crmAddMode: "ADD_NEW",
@@ -136,7 +136,7 @@ export async function removeRecordFromList(listName: string, phone: string): Pro
   await soapCall("deleteRecordFromList", {
     listName,
     listDeleteSettings: {
-      fieldsMapping: [{ fieldsMapping: { columnNumber: 1, fieldName: "number1", key: true } }],
+      fieldsMapping: [{ columnNumber: 1, fieldName: "number1", key: true }],
     },
     record: { data: [phone] },
   });

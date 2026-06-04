@@ -33,13 +33,19 @@ export async function POST(request: NextRequest) {
 
   if (!body.name) return NextResponse.json({ error: "name required" }, { status: 400 });
 
+  let listCreated = false;
   try {
     await createList(body.name);
+    listCreated = true;
   } catch (e: unknown) {
-    return NextResponse.json(
-      { ok: false, step: "createList", error: e instanceof Error ? e.message : "fail" },
-      { status: 502 },
-    );
+    const msg = e instanceof Error ? e.message : "fail";
+    // "list already exists" is fine — keep going to add the record
+    if (!/already exist|duplicate/i.test(msg)) {
+      return NextResponse.json(
+        { ok: false, step: "createList", error: msg },
+        { status: 502 },
+      );
+    }
   }
 
   let addedPhone: string | undefined;
@@ -67,5 +73,5 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, name: body.name, addedPhone });
+  return NextResponse.json({ ok: true, name: body.name, listCreated, addedPhone });
 }
