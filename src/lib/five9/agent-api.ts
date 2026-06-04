@@ -37,6 +37,7 @@ interface AgentSession {
   tokenId: string;
   apiHost: string;
   userId: string;
+  cookies: string; // serialized Cookie header value from login response
   cachedAt: number;
 }
 
@@ -71,6 +72,24 @@ function loginBase(): string {
   return process.env.FIVE9_AGENT_LOGIN_URL ?? "https://app.five9.com/appsvcs/rs/svc";
 }
 
+/** Extract a `Cookie:` header value from a fetch Response's Set-Cookie headers. */
+function extractCookies(res: Response): string {
+  // Node fetch exposes getSetCookie() in newer runtimes
+  const set: string[] | undefined =
+    typeof (res.headers as { getSetCookie?: () => string[] }).getSetCookie === "function"
+      ? (res.headers as { getSetCookie: () => string[] }).getSetCookie()
+      : undefined;
+  const cookies = set ?? [];
+  if (cookies.length === 0) {
+    const single = res.headers.get("set-cookie");
+    if (single) cookies.push(single);
+  }
+  return cookies
+    .map((c) => c.split(";")[0]?.trim())
+    .filter((c): c is string => !!c)
+    .join("; ");
+}
+
 async function loginAgent(username: string, password: string): Promise<AgentSession> {
   const res = await fetch(`${loginBase()}/auth/login`, {
     method: "POST",
@@ -87,22 +106,22 @@ async function loginAgent(username: string, password: string): Promise<AgentSess
     const text = await res.text().catch(() => "");
     throw new Error(`Five9 login ${res.status}: ${text.slice(0, 500)}`);
   }
+  const cookies = extractCookies(res);
   const json = (await res.json()) as Five9LoginResponse;
   const dc = json.metadata?.dataCenters?.[0];
   const url = dc?.apiUrls?.[0];
   if (!url) throw new Error("Five9 login returned no data center URL");
   const apiHost = `https://${url.host}:${url.port}/appsvcs/rs/svc`;
-  return { tokenId: json.tokenId, apiHost, userId: json.userId, cachedAt: Date.now() };
+  return { tokenId: json.tokenId, apiHost, userId: json.userId, cookies, cachedAt: Date.now() };
 }
 
 /** Test if the stored credentials work — does a login then immediate logout. */
 export async function testCredentials(username: string, password: string): Promise<{ ok: boolean; error?: string; apiHost?: string }> {
   try {
     const session = await loginAgent(username, password);
-    // Logout right away
     await fetch(`${session.apiHost}/auth/logout`, {
       method: "POST",
-      headers: { Authorization: `Bearer-${session.tokenId}` },
+      headers: { Authorization: `Bearer-${session.tokenId}`, Cookie: session.cookies },
     }).catch(() => undefined);
     return { ok: true, apiHost: session.apiHost };
   } catch (e: unknown) {
@@ -136,6 +155,7 @@ async function agentFetch(userId: string, path: string, init: RequestInit = {}):
       "Content-Type": "application/json",
       Accept: "application/json, text/plain",
       Authorization: `Bearer-${session.tokenId}`,
+      Cookie: session.cookies,
       ...(init.headers ?? {}),
     },
   });
@@ -228,6 +248,7 @@ export async function logoutAgent(userId: string): Promise<{ ok: boolean }> {
     method: "POST",
     headers: {
       Authorization: `Bearer-${session.tokenId}`,
+      Cookie: session.cookies,
     },
   }).catch(() => undefined);
   sessionCache.delete(userId);
