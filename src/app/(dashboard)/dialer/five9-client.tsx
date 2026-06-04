@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { AgentPanel } from "./agent-panel";
 
 interface LeadContext {
   id: string;
@@ -33,8 +34,6 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
   const [lead, setLead] = useState<LeadContext | null>(null);
   const [loadingLead, setLoadingLead] = useState(false);
   const [currentPhone, setCurrentPhone] = useState<string | null>(null);
-
-  const iframeSrc = five9Domain ? `https://${five9Domain}/` : null;
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -94,43 +93,9 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
         </article>
       </div>
 
-      {/* Five9 dialer panel — right (custom CTI in progress) */}
+      {/* Five9 dialer — right (custom AgentREST panel) */}
       <div>
-        <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 24, minHeight: 600 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#3e3e3c", marginBottom: 12 }}>
-            Five9 Dialer
-          </h3>
-          <div style={{ background: "#f3f3f3", border: "1px solid #d8dde6", borderRadius: 4, padding: 16, marginBottom: 16 }}>
-            <p style={{ fontSize: 13, color: "#3e3e3c", margin: 0, marginBottom: 8 }}>
-              <strong>Custom dialer in build.</strong> Five9 blocks embedding their Agent Desktop in
-              a third-party iframe, so we&apos;re building a native panel on the Five9 REST API
-              with click-to-dial, hold, answer, transfer, and disposition.
-            </p>
-            <p style={{ fontSize: 12, color: "#706e6b", margin: 0 }}>
-              In the meantime, use the Five9 Agent Desktop in a separate tab. Calls placed there
-              still flow through our webhook → Call records + lead disposition pipeline.
-            </p>
-          </div>
-          {iframeSrc && (
-            <a
-              href={iframeSrc}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: "inline-block",
-                background: "#0070d2",
-                color: "#fff",
-                padding: "8px 16px",
-                borderRadius: 4,
-                fontSize: 13,
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Open Five9 Agent Desktop ↗
-            </a>
-          )}
-        </article>
+        <AgentPanel />
       </div>
     </div>
   );

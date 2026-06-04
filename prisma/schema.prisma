@@ -68,6 +68,14 @@ model User {
   envelopesCreated      Envelope[]       @relation("EnvelopeCreatedBy")
   suppressionsAdded     SuppressionEntry[] @relation("SuppressionAddedBy")
   cadenceEnrollments    CadenceEnrollment[] @relation("CadenceEnrolledBy")
+
+  // Five9 AgentREST credentials per user — used to log the agent into Five9
+  // and trigger click-to-dial on their behalf. Password is encrypted at rest
+  // with the FIVE9_AGENT_KEY env var.
+  five9Username        String?
+  five9PasswordEnc     String?
+  five9StationId       String?
+  five9Domain          String? // override the global FIVE9_API_BASE_URL per-user if needed
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
