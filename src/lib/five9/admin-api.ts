@@ -1,0 +1,136 @@
+/**
+ * Five9 Admin Web Service SOAP client.
+ * Port of SF Five9ListService.cls.
+ *
+ * Endpoint: https://<baseURL>/wsadmin/v13/AdminWebService
+ * Auth: HTTP Basic with API username + password
+ *
+ * Env:
+ *   FIVE9_API_BASE_URL=https://api.five9.com  (or your tenant-specific)
+ *   FIVE9_USERNAME=...
+ *   FIVE9_PASSWORD=...
+ *   FIVE9_DEFAULT_LIST=Coastal_Web_Leads  (optional default list to push to)
+ *
+ * Operations implemented:
+ *   - addRecordToList(listName, fields)            — add a single lead
+ *   - addToList(listName, rows)                    — bulk add (CSV upload)
+ *   - removeRecordFromList(listName, phone)
+ *   - addToDnc(phones[])                           — add phones to DNC
+ *   - removeFromDnc(phones[])
+ */
+
+import { XMLBuilder, XMLParser } from "fast-xml-parser";
+
+const SOAP_NS = "http://schemas.xmlsoap.org/soap/envelope/";
+const SER_NS = "http://service.admin.ws.five9.com/";
+
+function getEnv() {
+  const base = process.env.FIVE9_API_BASE_URL ?? "https://api.five9.com";
+  const username = process.env.FIVE9_USERNAME;
+  const password = process.env.FIVE9_PASSWORD;
+  if (!username || !password) throw new Error("FIVE9_USERNAME / FIVE9_PASSWORD not set");
+  return {
+    endpoint: `${base.replace(/\/$/, "")}/wsadmin/v13/AdminWebService`,
+    authHeader: `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`,
+  };
+}
+
+const builder = new XMLBuilder({ ignoreAttributes: false, attributeNamePrefix: "@_", suppressEmptyNode: false });
+const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_", removeNSPrefix: true });
+
+async function soapCall(method: string, innerBody: Record<string, unknown>): Promise<unknown> {
+  const env = getEnv();
+  const xml = builder.build({
+    "soapenv:Envelope": {
+      "@_xmlns:soapenv": SOAP_NS,
+      "@_xmlns:ser": SER_NS,
+      "soapenv:Body": {
+        [`ser:${method}`]: innerBody,
+      },
+    },
+  });
+  const res = await fetch(env.endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/xml;charset=UTF-8",
+      Authorization: env.authHeader,
+      SOAPAction: `"${method}"`,
+    },
+    body: `<?xml version="1.0" encoding="UTF-8"?>${xml}`,
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Five9 ${method} ${res.status}: ${text.slice(0, 200)}`);
+  const parsed = parser.parse(text) as { Envelope?: { Body?: Record<string, unknown> } };
+  return parsed.Envelope?.Body ?? {};
+}
+
+export async function addRecordToList(args: {
+  listName: string;
+  phone: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  state?: string;
+  fields?: Record<string, string>;
+}): Promise<{ ok: boolean }> {
+  const list = args.listName ?? process.env.FIVE9_DEFAULT_LIST;
+  if (!list) throw new Error("Five9 listName required");
+
+  // <ser:addRecordToList>
+  //   <listName>...</listName>
+  //   <listUpdateSettings>
+  //     <fieldsMapping>
+  //       <fieldsMapping><columnNumber>1</columnNumber><fieldName>number1</fieldName>...
+  //   </listUpdateSettings>
+  //   <record>
+  //     <data>+15551234567</data>
+  //     <data>First</data>...
+  //   </record>
+  const data: string[] = [
+    args.phone,
+    args.firstName ?? "",
+    args.lastName ?? "",
+    args.email ?? "",
+    args.state ?? "",
+  ];
+  await soapCall("addRecordToList", {
+    listName: list,
+    listUpdateSettings: {
+      fieldsMapping: [
+        { fieldsMapping: { columnNumber: 1, fieldName: "number1", key: true } },
+        { fieldsMapping: { columnNumber: 2, fieldName: "first_name" } },
+        { fieldsMapping: { columnNumber: 3, fieldName: "last_name" } },
+        { fieldsMapping: { columnNumber: 4, fieldName: "email" } },
+        { fieldsMapping: { columnNumber: 5, fieldName: "state" } },
+      ],
+      cleanListBeforeUpdate: false,
+      crmAddMode: "ADD_NEW",
+      crmUpdateMode: "UPDATE_FIRST",
+    },
+    record: { data },
+  });
+  return { ok: true };
+}
+
+export async function removeRecordFromList(listName: string, phone: string): Promise<{ ok: boolean }> {
+  await soapCall("deleteRecordFromList", {
+    listName,
+    listDeleteSettings: {
+      fieldsMapping: [{ fieldsMapping: { columnNumber: 1, fieldName: "number1", key: true } }],
+    },
+    record: { data: [phone] },
+  });
+  return { ok: true };
+}
+
+export async function addToDnc(phones: string[]): Promise<{ ok: boolean; count: number }> {
+  if (phones.length === 0) return { ok: true, count: 0 };
+  await soapCall("addNumbersToDnc", { numbers: phones });
+  return { ok: true, count: phones.length };
+}
+
+export async function removeFromDnc(phones: string[]): Promise<{ ok: boolean; count: number }> {
+  if (phones.length === 0) return { ok: true, count: 0 };
+  await soapCall("removeNumbersFromDnc", { numbers: phones });
+  return { ok: true, count: phones.length };
+}

@@ -745,6 +745,22 @@ model Call {
   transcript Transcript?
   feedback   CallFeedback?
   task       Task?
+
+  // Five9 webhook fields (port of five9_Call_Log__c)
+  five9CallId          String?  @unique
+  five9SessionId       String?
+  five9AgentFullName   String?
+  five9CampaignName    String?
+  five9DialerGroup     String?
+  five9DispositionName String?
+  five9Skill           String?
+  five9DnisAni         String?    // dialed-from (inbound) or dialed-to (outbound)
+  five9CallType        String?    // Manual | Outbound | Inbound | Internal
+  five9AttemptCount    Int?
+  five9HandleTime      Int?       // seconds
+  five9HoldTime        Int?
+  five9LastDisposition String?
+  five9LastDispositionDate DateTime?
 }
 
 // ============ AI: TRANSCRIPTION ============
