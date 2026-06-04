@@ -153,6 +153,15 @@ async function getSession(userId: string): Promise<AgentSession> {
 }
 
 async function agentFetch(userId: string, path: string, init: RequestInit = {}): Promise<Response> {
+  return agentFetchInternal(userId, path, init, /* allowMigrationRetry */ true);
+}
+
+async function agentFetchInternal(
+  userId: string,
+  path: string,
+  init: RequestInit,
+  allowMigrationRetry: boolean,
+): Promise<Response> {
   const session = await getSession(userId);
   const url = `${session.apiHost}/agents/${session.userId}${path}`;
   const headers: Record<string, string> = {
@@ -162,10 +171,29 @@ async function agentFetch(userId: string, path: string, init: RequestInit = {}):
     Cookie: session.cookies,
   };
   if (session.routeKey) headers.farmId = session.routeKey;
-  return fetch(url, {
+  const res = await fetch(url, {
     ...init,
     headers: { ...headers, ...(init.headers ?? {}) },
   });
+  if (res.ok || !allowMigrationRetry) return res;
+
+  // Five9 returns errorCode 5001 "Service migrated" with the correct
+  // apiRouteKey in context — pick it up and retry once.
+  const text = await res.clone().text();
+  try {
+    const parsed = JSON.parse(text) as {
+      five9ExceptionDetail?: { errorCode?: number; context?: { apiRouteKey?: string } };
+    };
+    const errorCode = parsed.five9ExceptionDetail?.errorCode;
+    const newRouteKey = parsed.five9ExceptionDetail?.context?.apiRouteKey;
+    if (errorCode === 5001 && newRouteKey) {
+      sessionCache.set(userId, { ...session, routeKey: newRouteKey });
+      return agentFetchInternal(userId, path, init, false);
+    }
+  } catch {
+    // Not JSON — fall through and return the original response
+  }
+  return res;
 }
 
 /** Start the agent's session inside Five9 — required before placing calls. */
