@@ -94,24 +94,41 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
         </article>
       </div>
 
-      {/* Five9 Agent Desktop — right (iframe) */}
+      {/* Five9 dialer panel — right (custom CTI in progress) */}
       <div>
-        <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 0, minHeight: 600, overflow: "hidden" }}>
-          {!iframeSrc && (
-            <div style={{ padding: 24, color: "#c23934", textAlign: "center" }}>
-              <h3 style={{ fontWeight: 700, marginBottom: 8 }}>Five9 not configured</h3>
-              <p style={{ fontSize: 13 }}>
-                Set <code>NEXT_PUBLIC_FIVE9_DOMAIN</code> on Railway (e.g. <code>us9.five9.com</code>).
-              </p>
-            </div>
-          )}
+        <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 24, minHeight: 600 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#3e3e3c", marginBottom: 12 }}>
+            Five9 Dialer
+          </h3>
+          <div style={{ background: "#f3f3f3", border: "1px solid #d8dde6", borderRadius: 4, padding: 16, marginBottom: 16 }}>
+            <p style={{ fontSize: 13, color: "#3e3e3c", margin: 0, marginBottom: 8 }}>
+              <strong>Custom dialer in build.</strong> Five9 blocks embedding their Agent Desktop in
+              a third-party iframe, so we&apos;re building a native panel on the Five9 REST API
+              with click-to-dial, hold, answer, transfer, and disposition.
+            </p>
+            <p style={{ fontSize: 12, color: "#706e6b", margin: 0 }}>
+              In the meantime, use the Five9 Agent Desktop in a separate tab. Calls placed there
+              still flow through our webhook → Call records + lead disposition pipeline.
+            </p>
+          </div>
           {iframeSrc && (
-            <iframe
-              src={iframeSrc}
-              title="Five9 Agent Desktop"
-              style={{ width: "100%", height: 700, border: 0, display: "block" }}
-              allow="microphone; camera; autoplay; clipboard-read; clipboard-write"
-            />
+            <a
+              href={iframeSrc}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: "inline-block",
+                background: "#0070d2",
+                color: "#fff",
+                padding: "8px 16px",
+                borderRadius: 4,
+                fontSize: 13,
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Open Five9 Agent Desktop ↗
+            </a>
           )}
         </article>
       </div>
