@@ -11,6 +11,7 @@ import { OppHeaderButtons } from "@/components/opportunities/opp-header-buttons"
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
 import { PaymentCalculatorV2 } from "@/components/shared/payment-calculator-v2";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
+import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-list";
 import { opportunityStageTone, settlementStatusTone, genericTone } from "@/lib/slds/status-tones";
 import { OPP_STAGES } from "@/lib/sf-canonical";
 
@@ -83,6 +84,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         include: { changedBy: { select: { name: true } } },
       },
       paymentCalculations: { orderBy: { savedAt: "desc" }, take: 1 },
+      envelopes: { orderBy: { createdAt: "desc" }, take: 30 },
     },
   });
   if (!opp) notFound();
@@ -318,19 +320,40 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   );
 
   const documentsPanel = (
-    <Section title={`Files (${opp.documents.length})`}>
-      <DocumentsUpload
-        endpoint={`/api/opportunities/${opp.id}/documents`}
-        items={opp.documents.map((d) => ({
-          id: d.id,
-          name: d.name,
-          type: d.type,
-          fileSize: d.fileSize,
-          createdAt: d.createdAt.toISOString(),
-          uploadedBy: d.uploadedBy ? { name: d.uploadedBy.name } : null,
+    <>
+      <EnvelopesRelatedList
+        envelopes={opp.envelopes.map((e) => ({
+          id: e.id,
+          recordType: e.recordType,
+          status: e.status,
+          signerName: e.signerName,
+          signerEmail: e.signerEmail,
+          templateName: e.templateName,
+          documentName: e.documentName,
+          signingToken: e.signingToken,
+          sentAt: e.sentAt?.toISOString() ?? null,
+          signedAt: e.signedAt?.toISOString() ?? null,
+          completedAt: e.completedAt?.toISOString() ?? null,
+          createdAt: e.createdAt.toISOString(),
         }))}
+        opportunityId={opp.id}
+        defaultSignerName={opp.primaryContact?.fullName}
+        defaultSignerEmail={opp.lead?.email ?? undefined}
       />
-    </Section>
+      <Section title={`Files (${opp.documents.length})`}>
+        <DocumentsUpload
+          endpoint={`/api/opportunities/${opp.id}/documents`}
+          items={opp.documents.map((d) => ({
+            id: d.id,
+            name: d.name,
+            type: d.type,
+            fileSize: d.fileSize,
+            createdAt: d.createdAt.toISOString(),
+            uploadedBy: d.uploadedBy ? { name: d.uploadedBy.name } : null,
+          }))}
+        />
+      </Section>
+    </>
   );
 
   const relatedPanel = (

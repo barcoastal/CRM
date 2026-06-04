@@ -14,6 +14,7 @@ import { EscrowBalanceCard } from "@/components/accounts/escrow-balance-card";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
 import { PaymentCalculatorV2 } from "@/components/shared/payment-calculator-v2";
+import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-list";
 import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
 import { genericTone } from "@/lib/slds/status-tones";
 
@@ -47,6 +48,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       sms: { orderBy: { createdAt: "desc" }, take: 30 },
       cases: { orderBy: { createdAt: "desc" }, take: 20 },
       history: { include: { changedBy: { select: { name: true } } }, orderBy: { changedAt: "desc" }, take: 100 },
+      envelopes: { orderBy: { createdAt: "desc" }, take: 30 },
     },
   });
   if (!account) notFound();
@@ -238,19 +240,40 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   );
 
   const documentsPanel = (
-    <Section title={`Files (${account.documents.length})`}>
-      <DocumentsUpload
-        endpoint={`/api/accounts/${account.id}/documents`}
-        items={account.documents.map((d) => ({
-          id: d.id,
-          name: d.name,
-          type: d.type,
-          fileSize: d.fileSize,
-          createdAt: d.createdAt.toISOString(),
-          uploadedBy: d.uploadedBy ? { name: d.uploadedBy.name } : null,
+    <>
+      <EnvelopesRelatedList
+        envelopes={account.envelopes.map((e) => ({
+          id: e.id,
+          recordType: e.recordType,
+          status: e.status,
+          signerName: e.signerName,
+          signerEmail: e.signerEmail,
+          templateName: e.templateName,
+          documentName: e.documentName,
+          signingToken: e.signingToken,
+          sentAt: e.sentAt?.toISOString() ?? null,
+          signedAt: e.signedAt?.toISOString() ?? null,
+          completedAt: e.completedAt?.toISOString() ?? null,
+          createdAt: e.createdAt.toISOString(),
         }))}
+        accountId={account.id}
+        defaultSignerName={account.contacts[0]?.contact.fullName}
+        defaultSignerEmail={account.contacts[0]?.contact.email ?? undefined}
       />
-    </Section>
+      <Section title={`Files (${account.documents.length})`}>
+        <DocumentsUpload
+          endpoint={`/api/accounts/${account.id}/documents`}
+          items={account.documents.map((d) => ({
+            id: d.id,
+            name: d.name,
+            type: d.type,
+            fileSize: d.fileSize,
+            createdAt: d.createdAt.toISOString(),
+            uploadedBy: d.uploadedBy ? { name: d.uploadedBy.name } : null,
+          }))}
+        />
+      </Section>
+    </>
   );
 
   const relatedPanel = (
