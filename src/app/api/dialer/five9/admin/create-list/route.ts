@@ -73,5 +73,5 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, name: body.name, listCreated, addedPhone });
+  return NextResponse.json({ ok: true, name: body.name, listCreated, addedPhone, deployMarker: "v5-listAddMode-only" });
 }
