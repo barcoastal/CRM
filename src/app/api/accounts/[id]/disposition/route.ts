@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
+import { makeCtx, triggerUpdate } from "@/lib/triggers/runner";
 
 const STATUS_MAP: Record<string, string> = {
   "Completed": "COMPLETED",
@@ -33,35 +34,25 @@ export async function POST(
   const acct = await prisma.account.findUnique({ where: { id } });
   if (!acct) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 
-  const oldStage = acct.stage;
   const taskStatus = STATUS_MAP[status] ?? "COMPLETED";
 
-  const [, , task] = await prisma.$transaction([
-    prisma.account.update({ where: { id }, data: { stage } }),
-    prisma.accountHistory.create({
-      data: {
-        accountId: id,
-        field: "Stage",
-        oldValue: oldStage,
-        newValue: stage,
-        changedById: session.userId,
-      },
-    }),
-    prisma.task.create({
-      data: {
-        recordType: "DISPOSITION",
-        subject: subject || stage,
-        type: "CALL",
-        status: taskStatus,
-        accountId: id,
-        ownerId: session.userId,
-        disposition: subDisposition,
-        outcome: callResult || null,
-        notes: description || null,
-        completedAt: taskStatus === "COMPLETED" ? new Date() : null,
-      },
-    }),
-  ]);
+  const task = await prisma.task.create({
+    data: {
+      recordType: "DISPOSITION",
+      subject: subject || stage,
+      type: "CALL",
+      status: taskStatus,
+      accountId: id,
+      ownerId: session.userId,
+      disposition: subDisposition,
+      outcome: callResult || null,
+      notes: description || null,
+      completedAt: taskStatus === "COMPLETED" ? new Date() : null,
+    },
+  });
+
+  const ctx = makeCtx(session.userId, [`Account:${id}:task`]);
+  await triggerUpdate("account", id, { stage }, ctx);
 
   return NextResponse.json({ ok: true, taskId: task.id, stage });
 }

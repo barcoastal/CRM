@@ -614,6 +614,10 @@ model Opportunity {
   primaryContactId  String?
   primaryContact    Contact?   @relation("OpportunityPrimaryContact", fields: [primaryContactId], references: [id])
   stage             String     @default("Working Opportunity")
+  // SF parity: track previous stage / sub-disposition (set by OpportunityTrigger)
+  lastDisposition       String?
+  lastSubDisposition    String?
+  lastDispositionAt     DateTime?
   totalDebt         Float?
   expectedCloseDate DateTime?
   assignedToId      String?
@@ -839,6 +843,10 @@ model ProgramPlan {
   monthlyAmount   Float                        // recurring draft amount
   totalProgramCost Float?                       // computed: termMonths * monthlyAmount + projected fees
   totalEnrolledDebt Float?
+  // Draft rollups maintained by draftTrigger
+  completedPaymentsCount Int @default(0)
+  failedPaymentsCount    Int @default(0)
+  firstDraftDate         DateTime?
 
   bankAccountLast4 String?
   bankRoutingLast4 String?

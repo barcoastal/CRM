@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { OPP_STAGES, OPP_STAGE_FINAL_WIN } from "@/lib/sf-canonical";
+import { makeCtx, triggerUpdate } from "@/lib/triggers/runner";
 
 const STATUS_MAP: Record<string, string> = {
   "Completed": "COMPLETED",
@@ -33,36 +34,29 @@ export async function POST(
   const opp = await prisma.opportunity.findUnique({ where: { id } });
   if (!opp) return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
 
-  const oldStage = opp.stage;
   const taskStatus = STATUS_MAP[status] ?? "COMPLETED";
 
-  const [, , task] = await prisma.$transaction([
-    prisma.opportunity.update({ where: { id }, data: { stage } }),
-    prisma.opportunityHistory.create({
-      data: {
-        opportunityId: id,
-        field: "Stage",
-        oldValue: oldStage,
-        newValue: stage,
-        changedById: session.userId,
-      },
-    }),
-    prisma.task.create({
-      data: {
-        recordType: "DISPOSITION",
-        subject: subject || stage,
-        type: "CALL",
-        status: taskStatus,
-        opportunityId: id,
-        leadId: opp.leadId,
-        ownerId: session.userId,
-        disposition: subDisposition,
-        outcome: callResult || null,
-        notes: description || null,
-        completedAt: taskStatus === "COMPLETED" ? new Date() : null,
-      },
-    }),
-  ]);
+  // Create the disposition Task first so OpportunityTrigger skips its own
+  const task = await prisma.task.create({
+    data: {
+      recordType: "DISPOSITION",
+      subject: subject || stage,
+      type: "CALL",
+      status: taskStatus,
+      opportunityId: id,
+      leadId: opp.leadId,
+      ownerId: session.userId,
+      disposition: subDisposition,
+      outcome: callResult || null,
+      notes: description || null,
+      completedAt: taskStatus === "COMPLETED" ? new Date() : null,
+    },
+  });
+
+  // Update stage via trigger runner → OpportunityHistory + lastDisposition
+  // are written automatically by opportunityTrigger.
+  const ctx = makeCtx(session.userId, [`Opportunity:${id}:task`]);
+  await triggerUpdate("opportunity", id, { stage }, ctx);
 
   // Auto-create Client when First Payment Completed — moves the user to "Account" land
   let redirectTo: string | undefined;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { makeCtx, triggerUpdate } from "@/lib/triggers/runner";
 
 export async function PATCH(
   request: NextRequest,
@@ -41,14 +42,19 @@ export async function PATCH(
     return NextResponse.json({ ok: true, changed: false });
   }
 
-  await prisma.$transaction([
-    prisma.account.update({ where: { id }, data: updates }),
-    ...history.map((h) =>
+  // accountTrigger flips bankAccountSyncStatus + processorStatus to "Sync Pending"
+  // automatically when any bank field changes (via beforeUpdate hook).
+  const ctx = makeCtx(session.userId);
+  await triggerUpdate("account", id, updates, ctx);
+
+  // Explicit per-field history rows
+  await Promise.all(
+    history.map((h) =>
       prisma.accountHistory.create({
         data: { accountId: id, ...h, changedById: session.userId },
       })
-    ),
-  ]);
+    )
+  );
 
   return NextResponse.json({ ok: true, changed: true });
 }
