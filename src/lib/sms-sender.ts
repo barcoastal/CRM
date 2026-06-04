@@ -1,13 +1,14 @@
 /**
- * Outbound SMS sender via Twilio.
- * Mirrors src/lib/email-sender.ts.
+ * Outbound SMS sender via SMS Magic (Conversive).
+ * SMS Magic was the SF integration ("smagicinteract" package).
+ *
+ * Docs: https://docs.sms-magic.com/docs/single-message-api
  *
  * Env:
- *   TWILIO_ACCOUNT_SID=AC...
- *   TWILIO_AUTH_TOKEN=...
- *   TWILIO_FROM_NUMBER=+18005551234           (E.164; can be overridden per message)
- *   TWILIO_MESSAGING_SERVICE_SID=MG...        (optional; preferred over FROM_NUMBER if set — enables A2P 10DLC pool)
- *   TWILIO_STATUS_CALLBACK_URL=https://crm-production-613a.up.railway.app/api/sms/webhook/twilio
+ *   SMS_MAGIC_API_KEY=<api key from SMS Magic portal>
+ *   SMS_MAGIC_SENDER_ID=<short code / long code / alphanumeric sender>
+ *   SMS_MAGIC_BASE_URL=https://api.sms-magic.com    (optional override)
+ *   SMS_MAGIC_CALLBACK_URL=https://crm-production-613a.up.railway.app/api/sms/webhook/sms-magic
  *
  * The same {{token}} merge from email-sender is reused for SMS bodies.
  */
@@ -33,51 +34,54 @@ export function toE164(raw: string): string {
   return `+${digits}`;
 }
 
-async function sendViaTwilio(args: {
+async function sendViaSmsMagic(args: {
   from?: string;
   to: string;
   body: string;
+  externalId: string;
 }): Promise<SendResult> {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = args.from ?? process.env.TWILIO_FROM_NUMBER;
-  const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
-  const statusCallback = process.env.TWILIO_STATUS_CALLBACK_URL;
+  const apiKey = process.env.SMS_MAGIC_API_KEY;
+  const senderId = args.from || process.env.SMS_MAGIC_SENDER_ID;
+  const base = process.env.SMS_MAGIC_BASE_URL ?? "https://api.sms-magic.com";
+  const callback = process.env.SMS_MAGIC_CALLBACK_URL;
 
-  if (!sid || !token) return { ok: false, error: "TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN not set" };
-  if (!fromNumber && !messagingServiceSid) {
-    return { ok: false, error: "Either TWILIO_FROM_NUMBER or TWILIO_MESSAGING_SERVICE_SID must be set" };
-  }
+  if (!apiKey) return { ok: false, error: "SMS_MAGIC_API_KEY not set" };
+  if (!senderId) return { ok: false, error: "SMS_MAGIC_SENDER_ID not set (and no fromNumber on row)" };
 
-  const form = new URLSearchParams();
-  form.set("To", toE164(args.to));
-  form.set("Body", args.body);
-  if (messagingServiceSid) form.set("MessagingServiceSid", messagingServiceSid);
-  else if (fromNumber) form.set("From", toE164(fromNumber));
-  if (statusCallback) form.set("StatusCallback", statusCallback);
+  const body: Record<string, unknown> = {
+    sender_id: senderId,
+    to: [toE164(args.to)],
+    text: args.body,
+    external_id: args.externalId,
+  };
+  if (callback) body.callback_url = callback;
 
   try {
-    const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+    const res = await fetch(`${base}/v1/send-message`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString("base64")}`,
+        "Content-Type": "application/json",
+        ApiKey: apiKey,
       },
-      body: form.toString(),
+      body: JSON.stringify(body),
     });
+    // SMS Magic returns 200 on success:
+    //   { status: "queued", message_id: "<uuid>", to: "+15551234567", ... }
+    // On failure: { error: "...", code: 4xx }
     const data = (await res.json().catch(() => ({}))) as {
-      sid?: string;
-      message?: string;
+      message_id?: string;
+      status?: string;
+      error?: string;
       code?: number;
     };
-    if (!res.ok) {
+    if (!res.ok || data.error) {
       return {
         ok: false,
-        error: data.message ?? `HTTP ${res.status}`,
+        error: data.error ?? `HTTP ${res.status}`,
         errorCode: data.code ? String(data.code) : undefined,
       };
     }
-    return { ok: true, providerMessageId: data.sid };
+    return { ok: true, providerMessageId: data.message_id };
   } catch (e: unknown) {
     return { ok: false, error: e instanceof Error ? e.message : "send failed" };
   }
@@ -119,7 +123,7 @@ async function buildSmsVars(msg: SmsMessage): Promise<Record<string, string | nu
   return vars;
 }
 
-/** Send a single queued SMS. Updates the row in place. */
+/** Send a single queued SMS via SMS Magic. Updates the row in place. */
 export async function sendQueuedSms(msgId: string): Promise<SendResult> {
   const msg = await prisma.smsMessage.findUnique({ where: { id: msgId } });
   if (!msg) return { ok: false, error: "Not found" };
@@ -136,10 +140,11 @@ export async function sendQueuedSms(msgId: string): Promise<SendResult> {
   const segmentSize = hasUnicode ? 70 : 160;
   const segments = Math.max(1, Math.ceil(body.length / segmentSize));
 
-  const result = await sendViaTwilio({
+  const result = await sendViaSmsMagic({
     from: msg.fromNumber || undefined,
     to: msg.toNumber,
     body,
+    externalId: msg.id,
   });
 
   await prisma.smsMessage.update({
@@ -149,7 +154,7 @@ export async function sendQueuedSms(msgId: string): Promise<SendResult> {
           status: "SENT",
           sentAt: new Date(),
           providerMessageId: result.providerMessageId ?? null,
-          provider: "TWILIO",
+          provider: "SMS_MAGIC",
           body,
           segments,
         }
