@@ -22,6 +22,8 @@ import { prisma } from "@/lib/prisma";
 import { makeCtx, triggerUpdate } from "@/lib/triggers/runner";
 import { addSuppression } from "@/lib/dnc";
 import type { Five9CallEvent } from "@/lib/five9/types";
+import { mapFive9Disposition } from "@/lib/five9/disposition-map";
+import { DISPOSITION_TO_STATUS, type LeadStatusV2 } from "@/lib/sf-canonical";
 
 function parsePhoneToLast10(raw: string | undefined): string {
   if (!raw) return "";
@@ -123,24 +125,21 @@ async function handleEvent(p: Five9CallEvent, request: NextRequest): Promise<{ o
     update: callData,
   });
 
-  // If Five9 sent a disposition, mirror it into our lead disposition flow
-  // so LeadHistory + auto-Task + DNC sync happen via the trigger pipeline.
+  // If Five9 sent a disposition that's in our explicit FIVE9_TO_CRM_DISPOSITION
+  // map, mirror it into the lead trigger pipeline (LeadHistory + auto-archive
+  // + DNC sync). Everything else stays Five9-side only — the raw value is
+  // still on Call.five9DispositionName for reporting.
   if (leadId && p.disposition_name) {
-    const dnc = p.disposition_name.toUpperCase().includes("DNC") || p.disposition_name.toUpperCase().includes("DO NOT CALL");
-    const archive =
-      dnc ||
-      p.disposition_name.toUpperCase().includes("NOT INTERESTED") ||
-      p.disposition_name.toUpperCase().includes("LOST") ||
-      p.disposition_name.toUpperCase().includes("DUPLICATE");
-
-    if (archive) {
+    const crmDisposition = mapFive9Disposition(p.disposition_name);
+    if (crmDisposition) {
+      const status: LeadStatusV2 = DISPOSITION_TO_STATUS[crmDisposition] ?? "Working Lead";
       const ctx = makeCtx(agentId);
       await triggerUpdate("lead", leadId, {
-        status: "Archive Disposition",
-        lastSubDisposition: p.disposition_name,
+        status,
+        lastSubDisposition: crmDisposition,
       }, ctx);
 
-      if (dnc) {
+      if (crmDisposition === "DNC (Do not call)") {
         const phoneRaw = p.phone_number ?? p.ani ?? p.dnis ?? "";
         if (phoneRaw) {
           await addSuppression({
