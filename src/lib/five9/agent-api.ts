@@ -36,6 +36,7 @@ interface Five9LoginResponse {
 interface AgentSession {
   tokenId: string;
   apiHost: string;
+  routeKey: string | null;
   userId: string;
   cookies: string; // serialized Cookie header value from login response
   cachedAt: number;
@@ -111,8 +112,13 @@ async function loginAgent(username: string, password: string): Promise<AgentSess
   const dc = json.metadata?.dataCenters?.[0];
   const url = dc?.apiUrls?.[0];
   if (!url) throw new Error("Five9 login returned no data center URL");
-  const apiHost = `https://${url.host}:${url.port}/appsvcs/rs/svc`;
-  return { tokenId: json.tokenId, apiHost, userId: json.userId, cookies, cachedAt: Date.now() };
+  // Stay on the SAME host the cookies came from (the login base) — Five9
+  // uses farmId routing instead of host switching. Otherwise the
+  // JSESSIONID cookie is domain-scoped to the login host and won't apply
+  // to the data-center host.
+  const apiHost = loginBase();
+  const routeKey = url.routeKey ?? null;
+  return { tokenId: json.tokenId, apiHost, routeKey, userId: json.userId, cookies, cachedAt: Date.now() };
 }
 
 /** Test if the stored credentials work — does a login then immediate logout. */
@@ -149,15 +155,16 @@ async function getSession(userId: string): Promise<AgentSession> {
 async function agentFetch(userId: string, path: string, init: RequestInit = {}): Promise<Response> {
   const session = await getSession(userId);
   const url = `${session.apiHost}/agents/${session.userId}${path}`;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json, text/plain",
+    Authorization: `Bearer-${session.tokenId}`,
+    Cookie: session.cookies,
+  };
+  if (session.routeKey) headers.farmId = session.routeKey;
   return fetch(url, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json, text/plain",
-      Authorization: `Bearer-${session.tokenId}`,
-      Cookie: session.cookies,
-      ...(init.headers ?? {}),
-    },
+    headers: { ...headers, ...(init.headers ?? {}) },
   });
 }
 
