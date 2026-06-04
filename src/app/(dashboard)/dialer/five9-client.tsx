@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 interface LeadContext {
@@ -22,65 +22,39 @@ interface Props {
 }
 
 /**
- * Five9 Embedded Agent client. Loads Five9's embedded.js widget into a
- * div on the right side of the dialer page; left side shows the lead
- * context auto-loaded by phone when a call connects.
+ * Five9 Agent Desktop embedded via iframe. Left pane shows the lead
+ * context auto-loaded by phone when Five9 posts a callConnected event;
+ * right pane hosts the full Five9 Agent Desktop the rep already uses.
  *
- * Five9 widget docs vary by tenant — common loader URL:
- *   https://<domain>.five9.com/embedded/embedded.js
- *
- * The widget exposes window.Five9 events. We listen for callConnected /
- * dispositionSaved to load the lead and mirror dispositions.
+ * Five9 publishes a postMessage API for the iframed Agent Desktop —
+ * events arrive as { type: "five9.callConnected", payload: { ani, dnis, ... } }.
  */
-export function Five9Client({ five9Domain, defaultStation }: Props) {
-  const widgetRef = useRef<HTMLDivElement>(null);
+export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Props) {
   const [lead, setLead] = useState<LeadContext | null>(null);
   const [loadingLead, setLoadingLead] = useState(false);
   const [currentPhone, setCurrentPhone] = useState<string | null>(null);
-  const [widgetState, setWidgetState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+
+  const iframeSrc = five9Domain ? `https://${five9Domain}/` : null;
 
   useEffect(() => {
-    if (!five9Domain) {
-      setWidgetState("error");
-      return;
-    }
-    setWidgetState("loading");
-    const script = document.createElement("script");
-    script.src = `https://${five9Domain}/embedded/embedded.js`;
-    script.async = true;
-    script.onload = () => {
-      // Initialize Five9 with the mount point + default station
-      const w = window as unknown as { Five9?: { init?: (cfg: Record<string, unknown>) => void; on?: (event: string, fn: (data: Record<string, unknown>) => void) => void } };
-      try {
-        if (w.Five9?.init && widgetRef.current) {
-          w.Five9.init({
-            container: widgetRef.current,
-            domain: five9Domain,
-            station: defaultStation ?? undefined,
-          });
-          // Subscribe to lifecycle events
-          w.Five9.on?.("callConnected", (data) => {
-            const phone = (data.ani as string) ?? (data.dnis as string) ?? (data.phoneNumber as string) ?? null;
-            if (phone) handlePhoneChange(phone);
-          });
-          w.Five9.on?.("dispositionSaved", (data) => {
-            void handleDispositionSaved(data);
-          });
-          setWidgetState("ready");
-        } else {
-          setWidgetState("error");
-        }
-      } catch (e) {
-        console.error("Five9 init failed", e);
-        setWidgetState("error");
+    function onMessage(event: MessageEvent) {
+      if (!five9Domain) return;
+      if (!event.origin.includes(five9Domain) && !event.origin.includes("five9.com")) return;
+      const data = event.data as { type?: string; payload?: Record<string, unknown> } | undefined;
+      if (!data || typeof data !== "object") return;
+      if (data.type === "five9.callConnected" || data.type === "callConnected") {
+        const payload = data.payload ?? {};
+        const phone =
+          (payload.ani as string) ??
+          (payload.dnis as string) ??
+          (payload.phoneNumber as string) ??
+          null;
+        if (phone) void handlePhoneChange(phone);
       }
-    };
-    script.onerror = () => setWidgetState("error");
-    document.body.appendChild(script);
-    return () => {
-      script.remove();
-    };
-  }, [five9Domain, defaultStation]);
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [five9Domain]);
 
   async function handlePhoneChange(phone: string) {
     setCurrentPhone(phone);
@@ -95,16 +69,6 @@ export function Five9Client({ five9Domain, defaultStation }: Props) {
     } finally {
       setLoadingLead(false);
     }
-  }
-
-  async function handleDispositionSaved(data: Record<string, unknown>) {
-    // Mirror Five9 disposition into our CRM disposition flow if we have a lead
-    if (!lead) return;
-    const disposition = (data.disposition as string) ?? (data.dispositionName as string) ?? null;
-    if (!disposition) return;
-    // We rely on the webhook for the canonical write; this is just a UI sync hint.
-    // If you want immediate UI: refetch the lead.
-    handlePhoneChange(lead.phone);
   }
 
   return (
@@ -130,24 +94,24 @@ export function Five9Client({ five9Domain, defaultStation }: Props) {
         </article>
       </div>
 
-      {/* Five9 widget — right */}
+      {/* Five9 Agent Desktop — right (iframe) */}
       <div>
         <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 0, minHeight: 600, overflow: "hidden" }}>
-          {widgetState === "error" && (
+          {!iframeSrc && (
             <div style={{ padding: 24, color: "#c23934", textAlign: "center" }}>
-              <h3 style={{ fontWeight: 700, marginBottom: 8 }}>Five9 widget not available</h3>
+              <h3 style={{ fontWeight: 700, marginBottom: 8 }}>Five9 not configured</h3>
               <p style={{ fontSize: 13 }}>
-                Make sure you&apos;ve set <code>NEXT_PUBLIC_FIVE9_DOMAIN</code> on Railway and that the
-                Embedded Agent feature is enabled in your Five9 tenant.
+                Set <code>NEXT_PUBLIC_FIVE9_DOMAIN</code> on Railway (e.g. <code>us9.five9.com</code>).
               </p>
             </div>
           )}
-          {widgetState !== "error" && (
-            <div ref={widgetRef} id="five9-widget" style={{ width: "100%", minHeight: 600 }}>
-              {widgetState !== "ready" && (
-                <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>Loading Five9…</div>
-              )}
-            </div>
+          {iframeSrc && (
+            <iframe
+              src={iframeSrc}
+              title="Five9 Agent Desktop"
+              style={{ width: "100%", height: 700, border: 0, display: "block" }}
+              allow="microphone; camera; autoplay; clipboard-read; clipboard-write"
+            />
           )}
         </article>
       </div>
