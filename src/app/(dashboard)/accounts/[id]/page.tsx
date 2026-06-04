@@ -460,6 +460,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             firstPaymentReceived={account.firstPaymentReceived}
           />
           <EscrowBalanceCard
+            accountId={account.id}
             balance={account.escrowBalance}
             pulledAt={account.escrowPulledAt}
             feePaidInFull={account.feePaidInFull}

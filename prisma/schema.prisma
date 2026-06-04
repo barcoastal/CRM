@@ -298,8 +298,10 @@ model Account {
 
   // External system IDs
   externalSasId     String?
+  externalRamId     String?            // SF: External_RAM_Id__c (Reliant)
   uccFilingId       String?
   bankAccountSyncStatus String?
+  paymentProcessor  String?            // RAM | SAS | RELIANT (chosen processor for this account)
 
   // File Status
   qualifiedStatus   String?
