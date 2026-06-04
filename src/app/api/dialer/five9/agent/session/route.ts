@@ -29,10 +29,10 @@ export async function POST(request: NextRequest) {
   if (!stationId) return NextResponse.json({ error: "stationId required" }, { status: 400 });
   try {
     await startAgentSession(session.user.id, stationId);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, deployMarker: "v3-5001-retry" });
   } catch (e: unknown) {
     return NextResponse.json(
-      { ok: false, error: e instanceof Error ? e.message : "fail" },
+      { ok: false, deployMarker: "v3-5001-retry", error: e instanceof Error ? e.message : "fail" },
       { status: 502 },
     );
   }
