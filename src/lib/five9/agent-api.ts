@@ -25,10 +25,12 @@ import crypto from "node:crypto";
 interface Five9LoginResponse {
   tokenId: string;
   userId: string;
+  orgId: string;
+  context?: { farmId?: string };
   metadata: {
     dataCenters: Array<{
       name: string;
-      apiUrls: Array<{ host: string; port: number; version: string; routeKey: string }>;
+      apiUrls: Array<{ host: string; port: number | string; version: string; routeKey: string }>;
     }>;
   };
 }
@@ -36,9 +38,10 @@ interface Five9LoginResponse {
 interface AgentSession {
   tokenId: string;
   apiHost: string;
-  routeKey: string | null;
+  farmId: string | null; // numeric farm id from context (e.g. "252")
   userId: string;
-  cookies: string; // serialized Cookie header value from login response
+  orgId: string;
+  cookies: string; // serialized Cookie header from login (BIGipServer + others)
   cachedAt: number;
 }
 
@@ -112,13 +115,20 @@ async function loginAgent(username: string, password: string): Promise<AgentSess
   const dc = json.metadata?.dataCenters?.[0];
   const url = dc?.apiUrls?.[0];
   if (!url) throw new Error("Five9 login returned no data center URL");
-  // Stay on the SAME host the cookies came from (the login base) — Five9
-  // uses farmId routing instead of host switching. Otherwise the
-  // JSESSIONID cookie is domain-scoped to the login host and won't apply
-  // to the data-center host.
-  const apiHost = loginBase();
-  const routeKey = url.routeKey ?? null;
-  return { tokenId: json.tokenId, apiHost, routeKey, userId: json.userId, cookies, cachedAt: Date.now() };
+  // Cookies are Domain=five9.com, so they apply to the discovered data-center
+  // subdomain. The farmId header is the numeric value from context, NOT the
+  // string routeKey.
+  const apiHost = `https://${url.host}:${url.port}/appsvcs/rs/svc`;
+  const farmId = json.context?.farmId ?? null;
+  return {
+    tokenId: json.tokenId,
+    apiHost,
+    farmId,
+    userId: json.userId,
+    orgId: json.orgId,
+    cookies,
+    cachedAt: Date.now(),
+  };
 }
 
 /** Test if the stored credentials work — does a login then immediate logout. */
@@ -170,28 +180,28 @@ async function agentFetchInternal(
     Authorization: `Bearer-${session.tokenId}`,
     Cookie: session.cookies,
   };
-  if (session.routeKey) headers.farmId = session.routeKey;
+  if (session.farmId) headers.farmId = session.farmId;
   const res = await fetch(url, {
     ...init,
     headers: { ...headers, ...(init.headers ?? {}) },
   });
   if (res.ok || !allowMigrationRetry) return res;
 
-  // Five9 returns errorCode 5001 "Service migrated" with the correct
-  // apiRouteKey in context — pick it up and retry once.
+  // 5001 retry path is no longer needed once we use the right host + farmId,
+  // but keep it as a defensive fallback.
   const text = await res.clone().text();
   try {
     const parsed = JSON.parse(text) as {
-      five9ExceptionDetail?: { errorCode?: number; context?: { apiRouteKey?: string } };
+      five9ExceptionDetail?: { errorCode?: number; context?: { farmId?: string } };
     };
     const errorCode = parsed.five9ExceptionDetail?.errorCode;
-    const newRouteKey = parsed.five9ExceptionDetail?.context?.apiRouteKey;
-    if (errorCode === 5001 && newRouteKey) {
-      sessionCache.set(userId, { ...session, routeKey: newRouteKey });
+    const newFarmId = parsed.five9ExceptionDetail?.context?.farmId;
+    if (errorCode === 5001 && newFarmId) {
+      sessionCache.set(userId, { ...session, farmId: newFarmId });
       return agentFetchInternal(userId, path, init, false);
     }
   } catch {
-    // Not JSON — fall through and return the original response
+    // not JSON, ignore
   }
   return res;
 }
