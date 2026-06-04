@@ -124,7 +124,7 @@ export async function addRecordToList(args: {
         { columnNumber: 5, fieldName: "state", key: false },
       ],
       cleanListBeforeUpdate: false,
-      listAddMode: "ADD_NEW",
+      listAddMode: "ADD_FIRST",
       crmAddMode: "ADD_NEW",
       crmUpdateMode: "UPDATE_FIRST",
     },
