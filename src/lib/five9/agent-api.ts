@@ -253,7 +253,7 @@ export async function makeCall(userId: string, args: {
   });
 
   let res = await agentFetch(userId, `/interactions/click_to_dial`, {
-    method: "POST",
+    method: "PUT",
     body,
   });
 
@@ -265,7 +265,7 @@ export async function makeCall(userId: string, args: {
       sessionCache.delete(userId);
       const stationId = args.stationId ?? "";
       await startAgentSession(userId, stationId).catch(() => undefined);
-      res = await agentFetch(userId, `/interactions/click_to_dial`, { method: "POST", body });
+      res = await agentFetch(userId, `/interactions/click_to_dial`, { method: "PUT", body });
     }
   }
 
