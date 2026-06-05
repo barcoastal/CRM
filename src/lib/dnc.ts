@@ -62,3 +62,45 @@ export async function removeSuppression(phone: string): Promise<boolean> {
   const res = await prisma.suppressionEntry.deleteMany({ where: { phone: key } });
   return res.count > 0;
 }
+
+/**
+ * Bulk-add suppressions from CSV input. Port of SF SuppressionListTrigger:
+ * accepts a CSV string with one phone per line (or per first column) and
+ * adds each one. Returns { added, skipped, invalid }.
+ */
+export async function bulkAddSuppression(args: {
+  csv: string;
+  reason?: string;
+  source?: string;
+  addedById?: string | null;
+}): Promise<{ added: number; skipped: number; invalid: number }> {
+  const lines = args.csv.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  let added = 0;
+  let skipped = 0;
+  let invalid = 0;
+  for (const line of lines) {
+    const firstCol = line.split(",")[0]?.trim() ?? "";
+    if (!firstCol) {
+      invalid++;
+      continue;
+    }
+    const key = normalizePhone(firstCol);
+    if (!key) {
+      invalid++;
+      continue;
+    }
+    try {
+      const result = await addSuppression({
+        phone: key,
+        reason: args.reason ?? "Bulk Import",
+        source: args.source ?? "CSV upload",
+        addedById: args.addedById ?? null,
+      });
+      if (result.alreadyOnList) skipped++;
+      else added++;
+    } catch {
+      invalid++;
+    }
+  }
+  return { added, skipped, invalid };
+}

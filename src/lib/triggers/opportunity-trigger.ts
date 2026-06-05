@@ -35,6 +35,15 @@ export const opportunityTrigger: Trigger<Opportunity, OppWrite> = {
   },
 
   async afterUpdate({ row, prev, ctx }) {
+    // Primary contact changed → mirror to Account.primaryContactId
+    // Port of SF OpportunityContactRoleTriggerHandler.assignPrimaryContactInAccount
+    if (row.primaryContactId !== prev.primaryContactId && row.primaryContactId && row.accountId) {
+      await ctx.prisma.account.update({
+        where: { id: row.accountId },
+        data: { primaryContactId: row.primaryContactId },
+      }).catch(() => undefined);
+    }
+
     const stageChanged = row.stage !== prev.stage;
     if (!stageChanged) return;
 

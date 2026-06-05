@@ -276,6 +276,8 @@ model Account {
   parentAccountId String?
   parentAccount   Account? @relation("AccountHierarchy", fields: [parentAccountId], references: [id])
   childAccounts   Account[] @relation("AccountHierarchy")
+  primaryContactId String?
+  primaryContact  Contact? @relation("AccountPrimaryContact", fields: [primaryContactId], references: [id])
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -569,6 +571,7 @@ model Contact {
 
   accountRelations    AccountContactRelation[]
   primaryForOpportunity Opportunity[]          @relation("OpportunityPrimaryContact")
+  primaryForAccount   Account[]                @relation("AccountPrimaryContact")
   convertedFromLead   Lead[]                   @relation("LeadConvertedContact")
   tasks               Task[]                   @relation("ContactTasks")
   events              Event[]                  @relation("ContactEvents")
