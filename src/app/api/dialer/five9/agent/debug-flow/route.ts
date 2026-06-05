@@ -33,30 +33,46 @@ export async function POST() {
   }
   const password = decryptPassword(user.five9PasswordEnc);
 
-  // 1. Fresh login (ForceIn).
-  const loginRes = await fetch(`${LOGIN_BASE}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json, text/plain" },
-    body: JSON.stringify({ passwordCredentials: { username: user.five9Username, password }, policy: "ForceIn" }),
-  });
-  let jar = parseSetCookies(loginRes, hostOf(LOGIN_BASE));
-  const lg = (await loginRes.json()) as {
-    tokenId?: string;
-    userId?: string;
-    context?: { farmId?: string };
-    metadata?: { dataCenters?: Array<{ active?: boolean; apiUrls?: Array<{ host: string; port: string }> }> };
+  // Two-phase login with tracing.
+  const logins: Array<Record<string, unknown>> = [];
+  async function loginOn(base: string) {
+    const r = await fetch(`${base}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json, text/plain" },
+      body: JSON.stringify({ passwordCredentials: { username: user!.five9Username, password }, policy: "ForceIn" }),
+    });
+    const ck = parseSetCookies(r, hostOf(base));
+    const j = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+    logins.push({ host: hostOf(base), status: r.status, cookies: ck.map((c) => `${c.name}${c.domain ? "" : "(host-only)"}`) });
+    return { r, ck, j };
+  }
+
+  // Phase 1: discover the active data center on app.five9.com.
+  const p1 = await loginOn(LOGIN_BASE);
+  const lg = p1.j as {
+    metadata?: { dataCenters?: Array<{ active?: boolean; apiUrls?: Array<{ host: string; port: string }>; loginUrls?: Array<{ host: string; port: string }> }> };
   };
-  const tokenId = lg.tokenId;
-  const userId = lg.userId;
-  const farmId = lg.context?.farmId;
-  const dcs = lg.metadata?.dataCenters ?? [];
-  const dc = dcs.find((d) => d.active) ?? dcs[0];
+  const dc = (lg.metadata?.dataCenters ?? []).find((d) => d.active) ?? (lg.metadata?.dataCenters ?? [])[0];
   const api = dc?.apiUrls?.[0];
-  if (loginRes.status !== 200 || !tokenId || !userId || !api) {
-    return NextResponse.json({ ok: false, step: "login", loginStatus: loginRes.status, lg }, { status: 500 });
+  const loginUrl = dc?.loginUrls?.[0];
+  if (p1.r.status !== 200 || !api) {
+    return NextResponse.json({ ok: false, step: "phase1-login", logins, lg }, { status: 500 });
   }
   const apiHost = `https://${api.host}:${api.port}/appsvcs/rs/svc`;
   const host = hostOf(apiHost);
+
+  // Phase 2: re-login on the data center's own login host (if different).
+  let active = p1;
+  let jar = parseSetCookies(p1.r, hostOf(LOGIN_BASE));
+  if (loginUrl && loginUrl.host !== hostOf(LOGIN_BASE)) {
+    const dcLoginBase = `https://${loginUrl.host}:${loginUrl.port}/appsvcs/rs/svc`;
+    active = await loginOn(dcLoginBase);
+    jar = parseSetCookies(active.r, hostOf(dcLoginBase));
+  }
+  const aj = active.j as { userId?: string; context?: { farmId?: string } };
+  const userId = aj.userId;
+  const farmId = aj.context?.farmId;
+  if (!userId) return NextResponse.json({ ok: false, step: "no-userId", logins }, { status: 500 });
 
   // Match the official Five9 client: cookies-only auth (NO Authorization
   // header), lowercase farmid + x-requested-with headers.
@@ -85,8 +101,8 @@ export async function POST() {
   for (let i = 0; i < 8; i++) {
     const st = await call("GET", "/login_state");
     const state = st.text.trim().replace(/^"|"$/g, "");
-    trace.push({ step: `login_state#${i}`, status: st.status, state: st.status === 200 ? state : st.text.slice(0, 200) });
-    if (st.status !== 200) break;
+    trace.push({ step: `login_state#${i}`, status: st.status, state: st.status === 200 ? state : st.text.slice(0, 160) });
+    if (st.status !== 200) continue; // retry — each call accumulates DC cookies (affinity test)
     if (state === "WORKING") { reached = "WORKING"; break; }
     if (state === "SELECT_STATION") {
       const ss = await call("PUT", "/session_start?force=true", { stationId: "", stationType: "EMPTY" });
@@ -110,5 +126,5 @@ export async function POST() {
     break;
   }
 
-  return NextResponse.json({ ok: reached === "WORKING", reached, apiHost, trace });
+  return NextResponse.json({ ok: reached === "WORKING", reached, apiHost, logins, trace });
 }
