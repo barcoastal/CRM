@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { DispositionModal } from "@/components/leads/disposition-modal";
+import { LEAD_STATUSES, STAGE_TO_SUB_DISPOSITIONS } from "@/lib/sf-canonical";
 
 interface CredentialsState {
   configured: boolean;
@@ -35,7 +37,9 @@ export function AgentPanel() {
   const [showCredForm, setShowCredForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [recentCalls, setRecentCalls] = useState<RecentCall[]>([]);
-  const [activeCall, setActiveCall] = useState<{ callId: string; phone: string } | null>(null);
+  const [activeCall, setActiveCall] = useState<{ callId: string; phone: string; leadId: string | null } | null>(null);
+  const [dispoOpen, setDispoOpen] = useState(false);
+  const [dispoLead, setDispoLead] = useState<{ id: string; status: string } | null>(null);
 
   async function loadCreds() {
     const res = await fetch("/api/dialer/five9/agent/credentials");
@@ -186,11 +190,13 @@ export function AgentPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ number: dialNumber }),
       });
-      const data = (await res.json()) as { ok: boolean; error?: string; callId?: string };
+      const data = (await res.json()) as { ok: boolean; error?: string; callId?: string; leadId?: string | null };
       if (!data.ok) toast.error(data.error ?? "Failed to place call");
       else {
         toast.success(`Calling ${dialNumber}`);
-        if (data.callId) setActiveCall({ callId: data.callId, phone: dialNumber });
+        if (data.callId) {
+          setActiveCall({ callId: data.callId, phone: dialNumber, leadId: data.leadId ?? null });
+        }
         setDialNumber("");
         void refreshSession();
         void refreshRecent();
@@ -213,6 +219,15 @@ export function AgentPanel() {
       if (!data.ok) toast.error(data.error ?? "Failed to hang up");
       else {
         toast.success("Call ended");
+        // If the call was tied to a lead, pop the disposition modal
+        if (activeCall.leadId) {
+          const leadRes = await fetch(`/api/leads/${activeCall.leadId}`);
+          if (leadRes.ok) {
+            const lead = (await leadRes.json()) as { id: string; status: string };
+            setDispoLead({ id: lead.id, status: lead.status });
+            setDispoOpen(true);
+          }
+        }
         setActiveCall(null);
         void refreshRecent();
       }
@@ -222,6 +237,17 @@ export function AgentPanel() {
   }
 
   return (
+    <>
+    {dispoLead && (
+      <DispositionModal
+        endpoint={`/api/leads/${dispoLead.id}/disposition`}
+        stages={LEAD_STATUSES}
+        subDispositionsByStage={STAGE_TO_SUB_DISPOSITIONS as unknown as Record<string, readonly string[]>}
+        currentStage={dispoLead.status}
+        open={dispoOpen}
+        onClose={() => { setDispoOpen(false); setDispoLead(null); }}
+      />
+    )}
     <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 16, minHeight: 600 }}>
       <h3 style={{ fontSize: 14, fontWeight: 700, color: "#3e3e3c", marginBottom: 16 }}>Five9 Dialer</h3>
 
@@ -334,6 +360,7 @@ export function AgentPanel() {
         </>
       )}
     </article>
+    </>
   );
 }
 

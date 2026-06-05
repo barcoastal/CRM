@@ -36,6 +36,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Phone is on DNC list" }, { status: 403 });
   }
 
+  // If no explicit leadId, try to resolve the call to a lead by phone so
+  // the disposition modal on hangup can write the right lead's pipeline.
+  let leadId = body.leadId ?? null;
+  if (!leadId) {
+    const last10 = normalized.slice(-10);
+    const lead = await prisma.lead.findFirst({
+      where: { phone: { contains: last10 } },
+      orderBy: { updatedAt: "desc" },
+      select: { id: true },
+    });
+    leadId = lead?.id ?? null;
+  }
+
   try {
     const result = await makeCall(session.user.id, {
       number: body.number,
@@ -49,7 +62,7 @@ export async function POST(request: NextRequest) {
       data: {
         direction: "OUTBOUND",
         status: "INITIATED",
-        leadId: body.leadId ?? null,
+        leadId,
         agentId: session.user.id,
         phoneNumber: body.number,
         startedAt: new Date(),
@@ -58,7 +71,7 @@ export async function POST(request: NextRequest) {
       select: { id: true },
     });
 
-    return NextResponse.json({ ok: true, callId: result.callId, crmCallId: call.id });
+    return NextResponse.json({ ok: true, callId: result.callId, crmCallId: call.id, leadId });
   } catch (e: unknown) {
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : "fail" },
