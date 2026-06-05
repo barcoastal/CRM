@@ -15,6 +15,18 @@ interface SessionState {
   activeCalls?: number;
 }
 
+interface RecentCall {
+  id: string;
+  phoneNumber: string;
+  direction: string;
+  status: string;
+  disposition: string | null;
+  duration: number | null;
+  startedAt: string;
+  leadId: string | null;
+  lead?: { id: string; contactName: string; businessName: string } | null;
+}
+
 export function AgentPanel() {
   const [creds, setCreds] = useState<CredentialsState | null>(null);
   const [sessionState, setSessionState] = useState<SessionState | null>(null);
@@ -22,6 +34,7 @@ export function AgentPanel() {
   const [dialNumber, setDialNumber] = useState("");
   const [showCredForm, setShowCredForm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [recentCalls, setRecentCalls] = useState<RecentCall[]>([]);
 
   async function loadCreds() {
     const res = await fetch("/api/dialer/five9/agent/credentials");
@@ -48,9 +61,21 @@ export function AgentPanel() {
   useEffect(() => {
     if (!creds?.configured) return;
     void refreshSession();
-    const interval = setInterval(refreshSession, 10_000);
+    void refreshRecent();
+    const interval = setInterval(() => {
+      void refreshSession();
+      void refreshRecent();
+    }, 10_000);
     return () => clearInterval(interval);
   }, [creds?.configured]);
+
+  async function refreshRecent() {
+    const res = await fetch("/api/calls?limit=10");
+    if (res.ok) {
+      const data = (await res.json()) as { calls?: RecentCall[] };
+      setRecentCalls(data.calls ?? []);
+    }
+  }
 
   async function saveCredentials() {
     if (!credForm.username || !credForm.password) {
@@ -235,6 +260,37 @@ export function AgentPanel() {
             <button onClick={testLogin} disabled={busy} style={btnLink}>
               Test saved login
             </button>
+          </div>
+
+          <hr style={{ margin: "16px 0", border: 0, borderTop: "1px solid #ecebea" }} />
+
+          <div>
+            <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#3e3e3c" }}>Recent Calls</h4>
+            {recentCalls.length === 0 && (
+              <div style={{ fontSize: 12, color: "#706e6b" }}>No recent calls.</div>
+            )}
+            {recentCalls.length > 0 && (
+              <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #ecebea", color: "#706e6b" }}>
+                    <th style={{ textAlign: "left", padding: "4px 0", fontWeight: 600 }}>Phone</th>
+                    <th style={{ textAlign: "left", padding: "4px 0", fontWeight: 600 }}>Disposition</th>
+                    <th style={{ textAlign: "right", padding: "4px 0", fontWeight: 600 }}>Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentCalls.map((c) => (
+                    <tr key={c.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
+                      <td style={{ padding: "6px 0" }}>{c.phoneNumber}</td>
+                      <td style={{ padding: "6px 0" }}>{c.disposition ?? c.status}</td>
+                      <td style={{ padding: "6px 0", textAlign: "right" }}>
+                        {c.duration ? `${Math.floor(c.duration / 60)}:${String(c.duration % 60).padStart(2, "0")}` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </>
       )}
