@@ -24,6 +24,7 @@
 
 import type { Account } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
+import { onAccountStageChange } from "./email-automation";
 
 type AccountWrite = Partial<Account> & Record<string, unknown>;
 
@@ -47,7 +48,7 @@ export const accountTrigger: Trigger<Account, AccountWrite> = {
   },
 
   async afterUpdate({ row, prev, ctx }) {
-    // Stage change → AccountHistory entry
+    // Stage change → AccountHistory entry + lifecycle email
     if (row.stage !== prev.stage) {
       await ctx.prisma.accountHistory.create({
         data: {
@@ -58,6 +59,7 @@ export const accountTrigger: Trigger<Account, AccountWrite> = {
           changedById: ctx.userId,
         },
       });
+      await onAccountStageChange(row.id, prev.stage ?? "", row.stage ?? "").catch(() => undefined);
     }
 
     // Client status flipped to Cancelled or Graduated → close cases + tasks

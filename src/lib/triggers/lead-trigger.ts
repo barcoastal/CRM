@@ -26,6 +26,7 @@
 import type { Lead } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
 import { addSuppression } from "@/lib/dnc";
+import { onLeadStatusChange } from "./email-automation";
 
 // Use a permissive shape so trigger writers can set FK columns directly.
 type LeadWrite = Partial<Lead> & Record<string, unknown>;
@@ -94,5 +95,8 @@ export const leadTrigger: Trigger<Lead, LeadWrite> = {
         addedById: ctx.userId,
       }).catch(() => undefined);
     }
+
+    // Lifecycle email — welcome on conversion
+    await onLeadStatusChange(row.id, prev.status ?? "", row.status ?? "").catch(() => undefined);
   },
 };
