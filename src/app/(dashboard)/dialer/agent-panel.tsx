@@ -35,6 +35,7 @@ export function AgentPanel() {
   const [showCredForm, setShowCredForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [recentCalls, setRecentCalls] = useState<RecentCall[]>([]);
+  const [activeCall, setActiveCall] = useState<{ callId: string; phone: string } | null>(null);
 
   async function loadCreds() {
     const res = await fetch("/api/dialer/five9/agent/credentials");
@@ -185,12 +186,35 @@ export function AgentPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ number: dialNumber }),
       });
-      const data = (await res.json()) as { ok: boolean; error?: string };
+      const data = (await res.json()) as { ok: boolean; error?: string; callId?: string };
       if (!data.ok) toast.error(data.error ?? "Failed to place call");
       else {
         toast.success(`Calling ${dialNumber}`);
+        if (data.callId) setActiveCall({ callId: data.callId, phone: dialNumber });
         setDialNumber("");
         void refreshSession();
+        void refreshRecent();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function hangup() {
+    if (!activeCall) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/dialer/five9/agent/hangup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callId: activeCall.callId }),
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (!data.ok) toast.error(data.error ?? "Failed to hang up");
+      else {
+        toast.success("Call ended");
+        setActiveCall(null);
+        void refreshRecent();
       }
     } finally {
       setBusy(false);
@@ -235,6 +259,21 @@ export function AgentPanel() {
             onNotReady={() => setState("NOT_READY")}
             busy={busy}
           />
+
+          {activeCall && (
+            <>
+              <hr style={{ margin: "16px 0", border: 0, borderTop: "1px solid #ecebea" }} />
+              <div style={{ background: "#eaf5fe", border: "1px solid #1589ee", borderRadius: 4, padding: 12 }}>
+                <div style={{ fontSize: 11, color: "#0070d2", fontWeight: 600, marginBottom: 4 }}>
+                  ON CALL
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{activeCall.phone}</div>
+                <button onClick={hangup} disabled={busy} style={{ ...btnPrimary, background: "#c23934" }}>
+                  Hang up
+                </button>
+              </div>
+            </>
+          )}
 
           <hr style={{ margin: "16px 0", border: 0, borderTop: "1px solid #ecebea" }} />
 

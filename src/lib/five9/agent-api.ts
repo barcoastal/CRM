@@ -295,7 +295,7 @@ export async function getAgentSessionState(userId: string): Promise<{
 /** Hang up the active call on the agent's session. */
 export async function hangupCall(userId: string, callId: string): Promise<{ ok: boolean }> {
   const res = await agentFetch(userId, `/interactions/calls/${callId}/disconnect`, {
-    method: "POST",
+    method: "PUT",
   });
   if (!res.ok) {
     const t = await res.text().catch(() => "");
