@@ -375,6 +375,19 @@ export async function muteCall(userId: string, callId: string, action: "mute" | 
   return { ok: true };
 }
 
+/** Set the disposition on the agent's active call. Five9 stores it in their reporting. */
+export async function setCallDisposition(userId: string, callId: string, dispositionName: string, notes?: string): Promise<{ ok: boolean }> {
+  const res = await agentFetch(userId, `/interactions/calls/${callId}/disposition`, {
+    method: "PUT",
+    body: JSON.stringify({ dispositionName, notes: notes ?? "" }),
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`set_disposition ${res.status}: ${t.slice(0, 300)}`);
+  }
+  return { ok: true };
+}
+
 /** Transfer a call to a number / queue / agent. */
 export async function transferCall(userId: string, callId: string, args: {
   destination: string;

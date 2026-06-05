@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { DispositionModal } from "@/components/leads/disposition-modal";
-import { LEAD_STATUSES, STAGE_TO_SUB_DISPOSITIONS } from "@/lib/sf-canonical";
+import { Five9DispositionModal } from "@/components/dialer/five9-disposition-modal";
 
 interface CredentialsState {
   configured: boolean;
@@ -43,7 +42,7 @@ export function AgentPanel() {
   const [transferTo, setTransferTo] = useState("");
   const [showTransfer, setShowTransfer] = useState(false);
   const [dispoOpen, setDispoOpen] = useState(false);
-  const [dispoLead, setDispoLead] = useState<{ id: string; status: string } | null>(null);
+  const [dispoContext, setDispoContext] = useState<{ callId: string; phone: string; leadId: string | null } | null>(null);
 
   async function loadCreds() {
     const res = await fetch("/api/dialer/five9/agent/credentials");
@@ -257,15 +256,10 @@ export function AgentPanel() {
         toast.success("Call ended");
         setOnHold(false);
         setMuted(false);
-        // If the call was tied to a lead, pop the disposition modal
-        if (activeCall.leadId) {
-          const leadRes = await fetch(`/api/leads/${activeCall.leadId}`);
-          if (leadRes.ok) {
-            const lead = (await leadRes.json()) as { id: string; status: string };
-            setDispoLead({ id: lead.id, status: lead.status });
-            setDispoOpen(true);
-          }
-        }
+        // Pop the Five9-native disposition modal — it always shows so reps
+        // log every call, lead-tied or not.
+        setDispoContext({ callId: activeCall.callId, phone: activeCall.phone, leadId: activeCall.leadId });
+        setDispoOpen(true);
         setActiveCall(null);
         void refreshRecent();
       }
@@ -276,14 +270,14 @@ export function AgentPanel() {
 
   return (
     <>
-    {dispoLead && (
-      <DispositionModal
-        endpoint={`/api/leads/${dispoLead.id}/disposition`}
-        stages={LEAD_STATUSES}
-        subDispositionsByStage={STAGE_TO_SUB_DISPOSITIONS as unknown as Record<string, readonly string[]>}
-        currentStage={dispoLead.status}
+    {dispoContext && (
+      <Five9DispositionModal
         open={dispoOpen}
-        onClose={() => { setDispoOpen(false); setDispoLead(null); }}
+        callId={dispoContext.callId}
+        leadId={dispoContext.leadId}
+        phone={dispoContext.phone}
+        onClose={() => { setDispoOpen(false); setDispoContext(null); }}
+        onSaved={() => void refreshRecent()}
       />
     )}
     <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 16, minHeight: 600 }}>
