@@ -21,12 +21,13 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { five9Username: true, five9StationId: true, five9PasswordEnc: true },
+    select: { five9Username: true, five9StationId: true, five9StationType: true, five9PasswordEnc: true },
   });
   return NextResponse.json({
     configured: !!(user?.five9Username && user.five9PasswordEnc),
     five9Username: user?.five9Username ?? null,
     five9StationId: user?.five9StationId ?? null,
+    five9StationType: user?.five9StationType ?? "EMPTY",
   });
 }
 
@@ -34,7 +35,12 @@ export async function PUT(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: { five9Username?: string; five9Password?: string; five9StationId?: string };
+  let body: {
+    five9Username?: string;
+    five9Password?: string;
+    five9StationId?: string;
+    five9StationType?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -51,6 +57,7 @@ export async function PUT(request: NextRequest) {
       five9Username: body.five9Username,
       five9PasswordEnc: enc,
       five9StationId: body.five9StationId ?? undefined,
+      five9StationType: body.five9StationType ?? undefined,
     },
   });
   return NextResponse.json({ ok: true });

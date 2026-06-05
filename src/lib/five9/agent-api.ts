@@ -253,14 +253,39 @@ async function agentFetchInternal(
   return res;
 }
 
+/** Get the session start configuration — tells us which stationTypes the agent can use. */
+export async function getSessionStartConfig(userId: string): Promise<{
+  stationTypes: string[];
+  defaultStationId?: string;
+}> {
+  const res = await agentFetch(userId, `/session_start/config`);
+  if (!res.ok) {
+    // Different Five9 versions use different paths; try alternates
+    const alt1 = await agentFetch(userId, `/session_start_config`);
+    if (alt1.ok) return (await alt1.json()) as { stationTypes: string[]; defaultStationId?: string };
+    const alt2 = await agentFetch(userId, `/sessionStartConfig`);
+    if (alt2.ok) return (await alt2.json()) as { stationTypes: string[]; defaultStationId?: string };
+    // Fall back to the static list
+    return { stationTypes: ["EMPTY", "SOFTPHONE", "STATION"] };
+  }
+  return (await res.json()) as { stationTypes: string[]; defaultStationId?: string };
+}
+
 /** Start the agent's session inside Five9 — required before placing calls. */
-export async function startAgentSession(userId: string, stationId: string): Promise<{ ok: boolean }> {
-  // For REST-driven click-to-dial without a softphone, stationType=EMPTY +
-  // empty stationId. Five9 will route call audio through whichever station
-  // the agent's profile defaults to (or none if pure click-to-dial).
+export async function startAgentSession(
+  userId: string,
+  stationId: string,
+  stationType: "EMPTY" | "SOFTPHONE" | "STATION" = "EMPTY",
+): Promise<{ ok: boolean }> {
+  // stationType=EMPTY: REST-driven click-to-dial (audio goes nowhere)
+  // stationType=SOFTPHONE: Five9's softphone — requires WebRTC bridge (TBD)
+  // stationType=STATION: agent's physical desk phone (needs stationId)
+  const body = stationType === "STATION"
+    ? { stationId, stationType }
+    : { stationId: "", stationType };
   const res = await agentFetch(userId, `/session_start`, {
     method: "PUT",
-    body: JSON.stringify({ stationId: "", stationType: "EMPTY" }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const t = await res.text().catch(() => "");
@@ -326,6 +351,27 @@ export async function makeCall(userId: string, args: {
   }
   const json = await res.json().catch(() => ({}));
   return { ok: true, callId: (json as { callId?: string }).callId };
+}
+
+/** Get the agent's currently active calls — used to surface inbound calls. */
+export async function getActiveCalls(userId: string): Promise<Array<{
+  callId: string;
+  direction: "INBOUND" | "OUTBOUND";
+  phone: string;
+  state: string;
+  startedAt: string;
+}>> {
+  const res = await agentFetch(userId, `/interactions/calls`);
+  if (!res.ok) return [];
+  const json = (await res.json()) as Array<Record<string, unknown>>;
+  if (!Array.isArray(json)) return [];
+  return json.map((c) => ({
+    callId: (c.id as string) ?? (c.callId as string) ?? "",
+    direction: ((c.type as string)?.toLowerCase().includes("inbound") ? "INBOUND" : "OUTBOUND") as "INBOUND" | "OUTBOUND",
+    phone: (c.ani as string) ?? (c.dnis as string) ?? (c.number as string) ?? "",
+    state: (c.state as string) ?? "UNKNOWN",
+    startedAt: (c.startTime as string) ?? new Date().toISOString(),
+  }));
 }
 
 /** Read the agent's current session state — used by the dialer UI to refresh. */

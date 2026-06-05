@@ -23,16 +23,18 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { five9StationId: true },
+    select: { five9StationId: true, five9StationType: true },
   });
-  const stationId = (body as { stationId?: string }).stationId ?? user?.five9StationId;
-  if (!stationId) return NextResponse.json({ error: "stationId required" }, { status: 400 });
+  const stationId = (body as { stationId?: string }).stationId ?? user?.five9StationId ?? "";
+  const stationType = ((body as { stationType?: string }).stationType ??
+    user?.five9StationType ??
+    "EMPTY") as "EMPTY" | "SOFTPHONE" | "STATION";
   try {
-    await startAgentSession(session.user.id, stationId);
-    return NextResponse.json({ ok: true, deployMarker: "v3-5001-retry" });
+    await startAgentSession(session.user.id, stationId, stationType);
+    return NextResponse.json({ ok: true });
   } catch (e: unknown) {
     return NextResponse.json(
-      { ok: false, deployMarker: "v3-5001-retry", error: e instanceof Error ? e.message : "fail" },
+      { ok: false, error: e instanceof Error ? e.message : "fail" },
       { status: 502 },
     );
   }

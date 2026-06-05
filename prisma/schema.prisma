@@ -75,6 +75,7 @@ model User {
   five9Username        String?
   five9PasswordEnc     String?
   five9StationId       String?
+  five9StationType     String? // EMPTY | SOFTPHONE | STATION — picked by user when configuring
   five9Domain          String? // override the global FIVE9_API_BASE_URL per-user if needed
 
   // Persisted Five9 REST session — shared across Railway instances so a

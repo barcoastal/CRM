@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Five9DispositionModal } from "@/components/dialer/five9-disposition-modal";
+import { SoftphoneStatus } from "@/components/dialer/softphone-status";
 
 interface CredentialsState {
   configured: boolean;
   five9Username: string | null;
   five9StationId: string | null;
+  five9StationType: string | null;
 }
 
 interface SessionState {
@@ -31,7 +33,7 @@ interface RecentCall {
 export function AgentPanel() {
   const [creds, setCreds] = useState<CredentialsState | null>(null);
   const [sessionState, setSessionState] = useState<SessionState | null>(null);
-  const [credForm, setCredForm] = useState({ username: "", password: "", stationId: "" });
+  const [credForm, setCredForm] = useState({ username: "", password: "", stationId: "", stationType: "EMPTY" });
   const [dialNumber, setDialNumber] = useState("");
   const [showCredForm, setShowCredForm] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -51,6 +53,7 @@ export function AgentPanel() {
       setCreds(data);
       if (data.five9Username) setCredForm((f) => ({ ...f, username: data.five9Username ?? "" }));
       if (data.five9StationId) setCredForm((f) => ({ ...f, stationId: data.five9StationId ?? "" }));
+      if (data.five9StationType) setCredForm((f) => ({ ...f, stationType: data.five9StationType ?? "EMPTY" }));
     }
   }
 
@@ -70,10 +73,12 @@ export function AgentPanel() {
     if (!creds?.configured) return;
     void refreshSession();
     void refreshRecent();
+    void refreshActiveCalls();
     const interval = setInterval(() => {
       void refreshSession();
       void refreshRecent();
-    }, 10_000);
+      void refreshActiveCalls();
+    }, 5_000); // poll faster for inbound calls
     return () => clearInterval(interval);
   }, [creds?.configured]);
 
@@ -82,6 +87,30 @@ export function AgentPanel() {
     if (res.ok) {
       const data = (await res.json()) as { calls?: RecentCall[] };
       setRecentCalls(data.calls ?? []);
+    }
+  }
+
+  async function refreshActiveCalls() {
+    // Only poll if we don't already know about an active call locally
+    if (activeCall) return;
+    const res = await fetch("/api/dialer/five9/agent/active-calls");
+    if (!res.ok) return;
+    const data = (await res.json()) as {
+      ok: boolean;
+      calls?: Array<{ callId: string; direction: string; phone: string; state: string; lead: { id: string } | null }>;
+    };
+    if (!data.ok || !data.calls?.length) return;
+    // Pick the first active call (most agents only have one at a time)
+    const inbound = data.calls[0];
+    if (inbound.callId && inbound.phone) {
+      setActiveCall({
+        callId: inbound.callId,
+        phone: inbound.phone,
+        leadId: inbound.lead?.id ?? null,
+      });
+      if (inbound.direction === "INBOUND") {
+        toast.info(`Incoming call from ${inbound.phone}`);
+      }
     }
   }
 
@@ -99,6 +128,7 @@ export function AgentPanel() {
           five9Username: credForm.username,
           five9Password: credForm.password,
           five9StationId: credForm.stationId || undefined,
+          five9StationType: credForm.stationType || "EMPTY",
         }),
       });
       if (!res.ok) {
@@ -385,6 +415,8 @@ export function AgentPanel() {
             </button>
           </div>
 
+          <SoftphoneStatus stationType={creds?.five9StationType ?? null} />
+
           <hr style={{ margin: "16px 0", border: 0, borderTop: "1px solid #ecebea" }} />
 
           <div>
@@ -430,8 +462,8 @@ function CredForm({
   onCancel,
   busy,
 }: {
-  form: { username: string; password: string; stationId: string };
-  setForm: (f: { username: string; password: string; stationId: string }) => void;
+  form: { username: string; password: string; stationId: string; stationType: string };
+  setForm: (f: { username: string; password: string; stationId: string; stationType: string }) => void;
   onSave: () => void;
   onTest: () => void;
   onCancel: () => void;
@@ -453,13 +485,28 @@ function CredForm({
         onChange={(e) => setForm({ ...form, password: e.target.value })}
         style={input}
       />
-      <label style={lbl}>Station ID (optional — your softphone or station)</label>
-      <input
-        value={form.stationId}
-        onChange={(e) => setForm({ ...form, stationId: e.target.value })}
+      <label style={lbl}>Station Type</label>
+      <select
+        value={form.stationType}
+        onChange={(e) => setForm({ ...form, stationType: e.target.value })}
         style={input}
-        placeholder="e.g. softphone or 1001"
-      />
+      >
+        <option value="EMPTY">REST-only (click-to-dial, no audio in browser)</option>
+        <option value="SOFTPHONE">Browser softphone (WebRTC — coming soon)</option>
+        <option value="STATION">Physical station (desk phone)</option>
+      </select>
+
+      {form.stationType === "STATION" && (
+        <>
+          <label style={lbl}>Station ID</label>
+          <input
+            value={form.stationId}
+            onChange={(e) => setForm({ ...form, stationId: e.target.value })}
+            style={input}
+            placeholder="e.g. 1001 or your extension"
+          />
+        </>
+      )}
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <button onClick={onSave} disabled={busy} style={btnPrimary}>
           Save
