@@ -271,31 +271,95 @@ export async function getSessionStartConfig(userId: string): Promise<{
   return (await res.json()) as { stationTypes: string[]; defaultStationId?: string };
 }
 
-/** Start the agent's session inside Five9 — required before placing calls. */
+/**
+ * Read the agent's current login state on the data-center host.
+ * Five9 returns a bare quoted JSON string, e.g. "SELECT_STATION" / "WORKING".
+ * This is ALSO the call that binds the freshly-issued login token to the
+ * data-center node — skipping it makes session_start 401 "User is not logged
+ * in", because /auth/login happens on app.five9.com but agent calls go to the
+ * data center (e.g. app-atl.five9.com).
+ */
+async function getLoginState(userId: string): Promise<string> {
+  const res = await agentFetch(userId, `/login_state`);
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`login_state ${res.status}: ${t.slice(0, 300)}`);
+  }
+  const text = await res.text();
+  return text.trim().replace(/^"|"$/g, "");
+}
+
+/** Accept all pending Five9 maintenance notices (blocks reaching WORKING). */
+async function acceptMaintenanceNotices(userId: string): Promise<void> {
+  const res = await agentFetch(userId, `/maintenance_notices`);
+  if (!res.ok) return;
+  const notices = (await res.json().catch(() => [])) as Array<{ id?: string | number }>;
+  if (!Array.isArray(notices)) return;
+  for (const n of notices) {
+    if (n.id == null) continue;
+    await agentFetch(userId, `/maintenance_notices/${n.id}/accept`, { method: "PUT" }).catch(
+      () => undefined,
+    );
+  }
+}
+
+/**
+ * Start the agent's session inside Five9 — required before placing calls.
+ *
+ * Five9 agent login is a STATE MACHINE, not a single call. After /auth/login
+ * we poll /login_state on the data-center host and drive it to WORKING:
+ *   SELECT_STATION -> PUT /session_start?force=true  (select the station)
+ *   ACCEPT_NOTICE  -> accept each maintenance notice
+ *   WORKING        -> done
+ * Reference: github.com/a1comms/go-five9-api/blob/master/login.go
+ */
 export async function startAgentSession(
   userId: string,
   stationId: string,
   stationType: "EMPTY" | "SOFTPHONE" | "STATION" = "EMPTY",
-): Promise<{ ok: boolean }> {
+): Promise<{ ok: boolean; state?: string }> {
   // stationType=EMPTY: REST-driven click-to-dial (audio goes nowhere)
   // stationType=SOFTPHONE: Five9's softphone — requires WebRTC bridge (TBD)
   // stationType=STATION: agent's physical desk phone (needs stationId)
   const body = stationType === "STATION"
     ? { stationId, stationType }
     : { stationId: "", stationType };
-  const res = await agentFetch(userId, `/session_start`, {
-    method: "PUT",
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(`session_start ${res.status}: ${t.slice(0, 500)}`);
+
+  let lastState = "";
+  for (let i = 0; i < 6; i++) {
+    const state = await getLoginState(userId);
+    lastState = state;
+
+    if (state === "WORKING") {
+      // Persist the session so click_to_dial on a different Railway pod sees
+      // this exact token + cookies.
+      const session = sessionCache.get(userId);
+      if (session) await persistSession(userId, session).catch(() => undefined);
+      return { ok: true, state };
+    }
+
+    if (state === "SELECT_STATION") {
+      const res = await agentFetch(userId, `/session_start?force=true`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(`session_start ${res.status}: ${t.slice(0, 500)}`);
+      }
+      continue;
+    }
+
+    if (state === "ACCEPT_NOTICE") {
+      await acceptMaintenanceNotices(userId);
+      continue;
+    }
+
+    // SELECT_SKILLS and any other state are not handled yet — surface the raw
+    // state so we know exactly what to add next instead of silently hanging.
+    throw new Error(`Unexpected Five9 login state: ${state}`);
   }
-  // Persist the session post-session_start so click_to_dial on a different
-  // Railway pod sees this exact token + cookies.
-  const session = sessionCache.get(userId);
-  if (session) await persistSession(userId, session).catch(() => undefined);
-  return { ok: true };
+  throw new Error(`Five9 did not reach WORKING state (last: ${lastState})`);
 }
 
 /** Change the agent's ready state — values: READY, NOT_READY, ON_CALL, WORK */
