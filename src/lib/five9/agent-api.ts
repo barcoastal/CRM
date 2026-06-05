@@ -48,6 +48,42 @@ interface AgentSession {
 const sessionCache = new Map<string, AgentSession>();
 const SESSION_TTL_MS = 30 * 60 * 1000; // 30 min
 
+/** Persist the session to the DB so other Railway instances see it. */
+async function persistSession(userId: string, s: AgentSession): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      five9SessionJson: JSON.stringify(s),
+      five9SessionAt: new Date(s.cachedAt),
+    },
+  });
+}
+
+/** Load a previously-persisted session from the DB (if still fresh). */
+async function loadPersistedSession(userId: string): Promise<AgentSession | null> {
+  const u = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { five9SessionJson: true, five9SessionAt: true },
+  });
+  if (!u?.five9SessionJson || !u.five9SessionAt) return null;
+  const age = Date.now() - u.five9SessionAt.getTime();
+  if (age > SESSION_TTL_MS) return null;
+  try {
+    return JSON.parse(u.five9SessionJson) as AgentSession;
+  } catch {
+    return null;
+  }
+}
+
+async function clearPersistedSession(userId: string): Promise<void> {
+  await prisma.user
+    .update({
+      where: { id: userId },
+      data: { five9SessionJson: null, five9SessionAt: null },
+    })
+    .catch(() => undefined);
+}
+
 function getEncryptionKey(): Buffer {
   const raw = process.env.FIVE9_AGENT_KEY;
   if (!raw) throw new Error("FIVE9_AGENT_KEY env var not set");
@@ -146,9 +182,19 @@ export async function testCredentials(username: string, password: string): Promi
 }
 
 async function getSession(userId: string): Promise<AgentSession> {
+  // 1. Process-local cache (fastest path on the same Railway pod)
   const cached = sessionCache.get(userId);
   if (cached && Date.now() - cached.cachedAt < SESSION_TTL_MS) return cached;
 
+  // 2. DB-backed cache (shared across Railway pods so a session_start on
+  //    one pod is visible to a click_to_dial on another pod)
+  const persisted = await loadPersistedSession(userId);
+  if (persisted) {
+    sessionCache.set(userId, persisted);
+    return persisted;
+  }
+
+  // 3. Fresh login
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { five9Username: true, five9PasswordEnc: true },
@@ -159,6 +205,7 @@ async function getSession(userId: string): Promise<AgentSession> {
   const password = decryptPassword(user.five9PasswordEnc);
   const session = await loginAgent(user.five9Username, password);
   sessionCache.set(userId, session);
+  await persistSession(userId, session).catch(() => undefined);
   return session;
 }
 
@@ -219,6 +266,10 @@ export async function startAgentSession(userId: string, stationId: string): Prom
     const t = await res.text().catch(() => "");
     throw new Error(`session_start ${res.status}: ${t.slice(0, 500)}`);
   }
+  // Persist the session post-session_start so click_to_dial on a different
+  // Railway pod sees this exact token + cookies.
+  const session = sessionCache.get(userId);
+  if (session) await persistSession(userId, session).catch(() => undefined);
   return { ok: true };
 }
 
@@ -257,12 +308,12 @@ export async function makeCall(userId: string, args: {
     body,
   });
 
-  // If 401, the agent session may have lapsed (or this Railway instance is
-  // different from the one that ran session_start). Start a session and retry.
+  // If 401, the agent session may have lapsed. Clear caches and re-login + start.
   if (res.status === 401 || res.status === 435) {
     const text = await res.clone().text();
     if (text.includes("not logged in") || text.includes("\"401\"")) {
       sessionCache.delete(userId);
+      await clearPersistedSession(userId);
       const stationId = args.stationId ?? "";
       await startAgentSession(userId, stationId).catch(() => undefined);
       res = await agentFetch(userId, `/interactions/click_to_dial`, { method: "PUT", body });
@@ -304,17 +355,19 @@ export async function hangupCall(userId: string, callId: string): Promise<{ ok: 
   return { ok: true };
 }
 
-/** Logout the agent. Clears the session cache. */
+/** Logout the agent. Clears the session cache (memory + DB). */
 export async function logoutAgent(userId: string): Promise<{ ok: boolean }> {
-  const session = sessionCache.get(userId);
-  if (!session) return { ok: true };
-  await fetch(`${session.apiHost}/auth/logout`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer-${session.tokenId}`,
-      Cookie: session.cookies,
-    },
-  }).catch(() => undefined);
+  const session = sessionCache.get(userId) ?? (await loadPersistedSession(userId));
+  if (session) {
+    await fetch(`${session.apiHost}/auth/logout`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer-${session.tokenId}`,
+        Cookie: session.cookies,
+      },
+    }).catch(() => undefined);
+  }
   sessionCache.delete(userId);
+  await clearPersistedSession(userId);
   return { ok: true };
 }

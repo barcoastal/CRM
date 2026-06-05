@@ -76,6 +76,12 @@ model User {
   five9PasswordEnc     String?
   five9StationId       String?
   five9Domain          String? // override the global FIVE9_API_BASE_URL per-user if needed
+
+  // Persisted Five9 REST session — shared across Railway instances so a
+  // session_start on one pod is visible to a click_to_dial on another.
+  // Serialized AgentSession JSON.
+  five9SessionJson     String?
+  five9SessionAt       DateTime?
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
