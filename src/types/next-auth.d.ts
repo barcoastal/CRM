@@ -10,6 +10,7 @@ declare module "next-auth" {
       role: string;
       profileName: string | null;
       permissions: string[];
+      mustResetPassword: boolean;
     };
   }
 
@@ -17,6 +18,7 @@ declare module "next-auth" {
     role: string;
     profileName?: string | null;
     permissions?: string[];
+    mustResetPassword?: boolean;
   }
 }
 
@@ -26,5 +28,6 @@ declare module "next-auth/jwt" {
     role: string;
     profileName: string | null;
     permissions: string[];
+    mustResetPassword: boolean;
   }
 }

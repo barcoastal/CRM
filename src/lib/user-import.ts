@@ -177,6 +177,7 @@ export async function importUsersFromCSV(csv: string, options?: {
             email: row.email,
             name: row.name,
             passwordHash: defaultHash,
+            mustResetPassword: true,
             isActive: row.active,
             profileId: profile?.id ?? null,
           },

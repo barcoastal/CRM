@@ -13,8 +13,9 @@ model User {
   id           String    @id @default(cuid())
   name         String
   email        String    @unique
-  passwordHash String
-  role         String    @default("SALES_REP") // LEGACY string role — replaced by profileId in Phase 2
+  passwordHash       String
+  mustResetPassword  Boolean  @default(false) // set true on bulk import; cleared after user picks a new password
+  role               String   @default("SALES_REP") // LEGACY string role — replaced by profileId in Phase 2
   avatar       String?
   isActive     Boolean   @default(true)
   lastLoginAt  DateTime?

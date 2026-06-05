@@ -9,6 +9,7 @@ export default async function DashboardLayout({
 }) {
   const session = await auth();
   if (!session) redirect("/login");
+  if (session.user?.mustResetPassword) redirect("/reset-password");
 
   return <SldsShell userName={session.user?.name ?? undefined}>{children}</SldsShell>;
 }

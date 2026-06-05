@@ -40,6 +40,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           role: user.role,
           profileName: user.profile?.name ?? null,
           permissions,
+          mustResetPassword: user.mustResetPassword,
         };
       },
     }),
@@ -53,6 +54,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = (user as { role: string }).role;
         token.profileName = (user as { profileName: string | null }).profileName ?? null;
         token.permissions = (user as { permissions: string[] }).permissions ?? [];
+        token.mustResetPassword = (user as { mustResetPassword?: boolean }).mustResetPassword ?? false;
       }
       return token;
     },
@@ -62,6 +64,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.role = token.role;
         session.user.profileName = token.profileName;
         session.user.permissions = token.permissions ?? [];
+        session.user.mustResetPassword = token.mustResetPassword ?? false;
       }
       return session;
     },
