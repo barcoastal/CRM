@@ -254,6 +254,7 @@ model AsyncOperation {
 model Account {
   id              String   @id @default(cuid())
   sfId            String?  @unique // Salesforce 18-char ID, populated on migration
+  sfDataJson      String?  // Lossless SF row snapshot
   recordType      String   @default("CLIENT") // CLIENT | CREDITOR | VENDOR | BUSINESS_ACCOUNT | PERSON_ACCOUNT | BUYOUT | OTHER
   name            String                       // org name OR person full name
   type            String   @default("ORG")     // ORG | PERSON
@@ -556,6 +557,7 @@ model AccountHistory {
 model Contact {
   id            String   @id @default(cuid())
   sfId          String?  @unique // Salesforce 18-char ID
+  sfDataJson    String?  // Lossless SF row snapshot
   firstName     String
   lastName      String
   fullName      String                          // derived; stored for sort/search
@@ -619,6 +621,7 @@ model Creditor {
 model Lead {
   id            String  @id @default(cuid())
   sfId          String? @unique // Salesforce 18-char ID, populated on migration
+  sfDataJson    String? // Lossless SF row snapshot
   recordType    String  @default("WEB") // WEB | DIRECT_MAIL | LIST | BUSINESS | ARCHIVED_WEB | ARCHIVED_DIRECT_MAIL | ARCHIVED_LIST
   businessName  String
   contactName   String
@@ -821,6 +824,9 @@ model CallFeedback {
 model Opportunity {
   id                String     @id @default(cuid())
   sfId              String?    @unique // Salesforce 18-char ID
+  // Lossless JSON snapshot of the SF row — every SF field captured here even if
+  // we don't have a typed column yet. Use Postgres -> '$.field' for ad-hoc reads.
+  sfDataJson        String?
   recordType        String     @default("DEBT_SETTLEMENT") // DEBT_SETTLEMENT | BUYOUT | RESTRUCTURE | LIMITED_ASSET_PROTECTION
   name              String?    // canonical SF Opportunity Name; defaults to "<Account> — <Product>"
   version           String     @default("1.0") // SF Version field, bumps on Amend
@@ -838,7 +844,65 @@ model Opportunity {
   // Bank-change envelope status (ported from SF: Bank_Change_Contract_Status__c)
   bankChangeContractStatus String?  // null | "Pending" | "Completed"
   totalDebt         Float?
+  currentTotalDebt  Float?  // SF Current_Total_Debt__c
+  estimatedTotalDebt Float? // SF Estimated_Total_Debt__c
+  currentWeeklyPayment  Float? // SF Current_Weekly_Payment__c
+  currentMonthlyPayment Float? // SF Current_Monthly_Payment__c
+  weeklyPaymentToDebtRatio Float? // SF Weekly_Payment_To_Debt_Ratio__c
   expectedCloseDate DateTime?
+  closeDate         DateTime? // SF CloseDate (separate from expectedCloseDate)
+  firstDraftDate    DateTime? // SF First_Draft_Date__c
+  firstContractSignedDateOpp DateTime? // SF First_Contract_Signed_Date__c
+  lastContactedAt   DateTime? // SF Last_Contacted_DateTime__c
+  lastCallAt        DateTime? // SF Last_Call__c
+  lastEmailAt       DateTime? // SF Last_Email__c
+  lastSmsAt         DateTime? // SF Last_SMS__c
+  probability       Float?    // SF Probability
+  // Contact info (denormalized from primary contact / lead)
+  oppPhone          String?   // SF Phone__c
+  oppEmail          String?   // SF Email__c
+  // Sub-disposition + call flow
+  subDisposition    String?
+  fronter           String?
+  closer            String?
+  callTransferStatus String?
+  transferQualification String?
+  // SF Lead_Id__c — links opp to its source lead
+  sfLeadIdText      String?
+  // Source / category
+  leadSource        String?   // SF LeadSource (picklist)
+  leadSourceCategory String?  // SF Lead_Source_Category__c
+  // Risk / requirements
+  legalPlanRequired   Boolean? // SF Legal_Plan_Required__c
+  addendumRequired    Boolean? // SF Addendum_Required__c
+  securedParty        String?  // SF Secured_Party__c
+  highUccRisk         Boolean? // SF HIGH_UCC_RISK__c
+  // Misc
+  timezone            String?  // SF Timezone__c
+  preferredLanguage   String?  // SF Preferred_Language__c
+  preferredMethodOfContact String? // SF Preferred_method_of_Contact__c
+  dialerGroup         String?  // SF Dialer_Group__c
+  businessStartDate   DateTime? // SF Business_Start_Date__c
+  // Client Questionnaire (more)
+  processorInfo       String?  // SF Processor_Info__c
+  lenderAgreementsCollected String? // SF Lender_Agreements_Collected__c
+  statusWithLenders   String?  // SF Status_with_Lender_s__c
+  firstPaymentToLegal Boolean? // SF First_Payment_to_Legal__c
+  welcomeCallScheduled DateTime? // SF Welcome_Call_Scheduled__c
+  whatWasExplainedToClient String? // SF What_was_explained_to_client__c
+  mainCompetitors     String?  // SF MainCompetitors__c
+  deliveryInstallationStatus String? // SF DeliveryInstallationStatus__c
+  cojOrTro            String?  // SF COJ_or_TRO__c
+  summonsOrJudgment   String?  // SF Summons_or_Judgment__c
+  orderNumber         String?  // SF OrderNumber__c
+  currentGenerators   String?  // SF CurrentGenerators__c
+  trackingNumber      String?  // SF TrackingNumber__c
+  lossReason          String?  // SF Loss_Reason__c
+  // Standard SF fields
+  nextStep            String?  // SF NextStep
+  isClosed            Boolean? // SF IsClosed
+  isWon               Boolean? // SF IsWon
+  amount              Float?   // SF Amount
   assignedToId      String?
   assignedTo        User?      @relation("OpportunityAssignee", fields: [assignedToId], references: [id])
   // SF Client Questionnaire

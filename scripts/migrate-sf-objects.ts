@@ -20,7 +20,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import readline from "node:readline";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 20 });
 const prisma = new PrismaClient({ adapter, log: ["warn", "error"] });
 
 const ENTITY = process.argv[2];
@@ -203,32 +203,30 @@ async function migrateOpportunities(headers: string[], rl: readline.Interface): 
   const I = {
     Id: idx("Id"), Name: idx("Name"), StageName: idx("StageName"), Amount: idx("Amount"),
     CloseDate: idx("CloseDate"), AccountId: idx("AccountId"), Description: idx("Description"),
-    LeadSource: idx("LeadSource"), Probability: idx("Probability"),
   };
+  console.log(`[${new Date().toISOString()}] Loading account map…`);
   const accountMap = new Map<string, string>();
   const accounts = await prisma.account.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
   for (const a of accounts) if (a.sfId) accountMap.set(a.sfId, a.id);
+  console.log(`[${new Date().toISOString()}] ${accountMap.size} accounts loaded.`);
 
-  let batch: Array<Record<string, unknown>> = [];
+  let batch: Array<{ sfId: string; accountId: string; name: string; stage: string; totalDebt: number | null; expectedCloseDate: Date | null; notes: string | null }> = [];
   let count = 0;
   let skipped = 0;
 
   async function flush() {
     if (batch.length === 0) return;
-    const oResults = await Promise.allSettled(
-      batch.map((o) =>
-        prisma.opportunity.upsert({
-          where: { sfId: o.sfId as string },
-          update: o,
-          create: o as never,
-        }),
-      ),
-    );
-    const oFail = oResults.filter((r) => r.status === "rejected");
-    if (oFail.length > 0) console.error(`[${new Date().toISOString()}] ${oFail.length} opp fails:`, (oFail[0] as PromiseRejectedResult).reason?.message);
-    count += batch.length;
+    try {
+      const res = await prisma.opportunity.createMany({
+        data: batch,
+        skipDuplicates: true,
+      });
+      count += res.count;
+    } catch (e: unknown) {
+      console.error(`[${new Date().toISOString()}] batch fail:`, e instanceof Error ? e.message : "fail");
+    }
     batch = [];
-    if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] Opportunity: ${count} imported, ${skipped} skipped`);
+    if (count % 5000 < 1000) console.log(`[${new Date().toISOString()}] Opportunity: ${count} imported, ${skipped} skipped`);
   }
 
   for await (const line of rl) {
@@ -238,19 +236,17 @@ async function migrateOpportunities(headers: string[], rl: readline.Interface): 
     if (!sfId) continue;
     const sfAccountId = cells[I.AccountId];
     const accountId = sfAccountId ? accountMap.get(sfAccountId) : null;
-    if (!accountId) { skipped++; continue; } // FK constraint — Opp requires accountId
+    if (!accountId) { skipped++; continue; }
     batch.push({
       sfId,
       accountId,
       name: cells[I.Name] || "Unnamed Opp",
       stage: cells[I.StageName] || "Working Opportunity",
-      amount: cells[I.Amount] ? Number(cells[I.Amount]) : null,
-      closeDate: cells[I.CloseDate] ? new Date(cells[I.CloseDate]) : null,
-      description: cells[I.Description] || null,
-      leadSource: cells[I.LeadSource] || null,
-      probability: cells[I.Probability] ? Number(cells[I.Probability]) : null,
+      totalDebt: cells[I.Amount] ? Number(cells[I.Amount]) : null,
+      expectedCloseDate: cells[I.CloseDate] ? new Date(cells[I.CloseDate]) : null,
+      notes: cells[I.Description] || null,
     });
-    if (batch.length >= 50) await flush();
+    if (batch.length >= 1000) await flush();
   }
   await flush();
   console.log(`[${new Date().toISOString()}] DONE Opportunity: ${count} total, ${skipped} skipped (no matching Account)`);
@@ -269,20 +265,17 @@ async function migrateLeads(headers: string[], rl: readline.Interface): Promise<
 
   async function flush() {
     if (batch.length === 0) return;
-    const lResults = await Promise.allSettled(
-      batch.map((l) =>
-        prisma.lead.upsert({
-          where: { sfId: l.sfId as string },
-          update: l,
-          create: l as never,
-        }),
-      ),
-    );
-    const lFail = lResults.filter((r) => r.status === "rejected");
-    if (lFail.length > 0) console.error(`[${new Date().toISOString()}] ${lFail.length} lead fails:`, (lFail[0] as PromiseRejectedResult).reason?.message);
-    count += batch.length;
+    try {
+      const res = await prisma.lead.createMany({
+        data: batch as never[],
+        skipDuplicates: true,
+      });
+      count += res.count;
+    } catch (e: unknown) {
+      console.error(`[${new Date().toISOString()}] lead batch fail:`, e instanceof Error ? e.message : "fail");
+    }
     batch = [];
-    if (count % 10000 === 0) console.log(`[${new Date().toISOString()}] Lead: ${count} imported`);
+    if (count % 50000 < 1000) console.log(`[${new Date().toISOString()}] Lead: ${count} imported`);
   }
 
   for await (const line of rl) {
