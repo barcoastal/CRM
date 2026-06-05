@@ -7,7 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { holdCall, muteCall, transferCall } from "@/lib/five9/agent-api";
+import { holdCall, muteCall, transferCall, sendDTMF } from "@/lib/five9/agent-api";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
     action?: string;
     destination?: string;
     type?: "AGENT" | "SKILL" | "EXTERNAL";
+    digits?: string;
   };
   if (!body.callId || !body.action) {
     return NextResponse.json({ error: "callId and action required" }, { status: 400 });
@@ -31,6 +32,9 @@ export async function POST(request: NextRequest) {
     } else if (body.action === "transfer") {
       if (!body.destination) return NextResponse.json({ error: "destination required" }, { status: 400 });
       await transferCall(session.user.id, body.callId, { destination: body.destination, type: body.type });
+    } else if (body.action === "dtmf") {
+      if (!body.digits) return NextResponse.json({ error: "digits required" }, { status: 400 });
+      await sendDTMF(session.user.id, body.callId, body.digits);
     } else {
       return NextResponse.json({ error: `unknown action ${body.action}` }, { status: 400 });
     }

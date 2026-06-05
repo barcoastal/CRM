@@ -421,6 +421,19 @@ export async function muteCall(userId: string, callId: string, action: "mute" | 
   return { ok: true };
 }
 
+/** Send DTMF tones during a call (1, 2, *, #, etc). */
+export async function sendDTMF(userId: string, callId: string, digits: string): Promise<{ ok: boolean }> {
+  const res = await agentFetch(userId, `/interactions/calls/${callId}/dtmf`, {
+    method: "PUT",
+    body: JSON.stringify({ digits }),
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`dtmf ${res.status}: ${t.slice(0, 300)}`);
+  }
+  return { ok: true };
+}
+
 /** Set the disposition on the agent's active call. Five9 stores it in their reporting. */
 export async function setCallDisposition(userId: string, callId: string, dispositionName: string, notes?: string): Promise<{ ok: boolean }> {
   const res = await agentFetch(userId, `/interactions/calls/${callId}/disposition`, {

@@ -9,6 +9,7 @@ interface Props {
   callId: string;
   leadId?: string | null;
   phone: string;
+  initialNotes?: string;
   onClose: () => void;
   onSaved?: () => void;
 }
@@ -19,9 +20,9 @@ interface Props {
  * Selecting a mapped one fires the CRM lead pipeline; selecting an unmapped
  * one just saves to Five9.
  */
-export function Five9DispositionModal({ open, callId, leadId, phone, onClose, onSaved }: Props) {
+export function Five9DispositionModal({ open, callId, leadId, phone, initialNotes, onClose, onSaved }: Props) {
   const [selected, setSelected] = useState<string>("");
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(initialNotes ?? "");
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState("");
 

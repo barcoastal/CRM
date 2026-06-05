@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Five9DispositionModal } from "@/components/dialer/five9-disposition-modal";
 import { SoftphoneStatus } from "@/components/dialer/softphone-status";
@@ -38,13 +39,26 @@ export function AgentPanel() {
   const [showCredForm, setShowCredForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [recentCalls, setRecentCalls] = useState<RecentCall[]>([]);
-  const [activeCall, setActiveCall] = useState<{ callId: string; phone: string; leadId: string | null } | null>(null);
+  const [activeCall, setActiveCall] = useState<{
+    callId: string;
+    phone: string;
+    leadId: string | null;
+    startedAt: number;
+  } | null>(null);
+  const [callElapsed, setCallElapsed] = useState(0);
   const [onHold, setOnHold] = useState(false);
   const [muted, setMuted] = useState(false);
   const [transferTo, setTransferTo] = useState("");
   const [showTransfer, setShowTransfer] = useState(false);
+  const [showKeypad, setShowKeypad] = useState(false);
+  const [callNotes, setCallNotes] = useState("");
   const [dispoOpen, setDispoOpen] = useState(false);
-  const [dispoContext, setDispoContext] = useState<{ callId: string; phone: string; leadId: string | null } | null>(null);
+  const [dispoContext, setDispoContext] = useState<{
+    callId: string;
+    phone: string;
+    leadId: string | null;
+    initialNotes: string;
+  } | null>(null);
 
   async function loadCreds() {
     const res = await fetch("/api/dialer/five9/agent/credentials");
@@ -91,7 +105,6 @@ export function AgentPanel() {
   }
 
   async function refreshActiveCalls() {
-    // Only poll if we don't already know about an active call locally
     if (activeCall) return;
     const res = await fetch("/api/dialer/five9/agent/active-calls");
     if (!res.ok) return;
@@ -100,18 +113,37 @@ export function AgentPanel() {
       calls?: Array<{ callId: string; direction: string; phone: string; state: string; lead: { id: string } | null }>;
     };
     if (!data.ok || !data.calls?.length) return;
-    // Pick the first active call (most agents only have one at a time)
     const inbound = data.calls[0];
     if (inbound.callId && inbound.phone) {
       setActiveCall({
         callId: inbound.callId,
         phone: inbound.phone,
         leadId: inbound.lead?.id ?? null,
+        startedAt: Date.now(),
       });
-      if (inbound.direction === "INBOUND") {
-        toast.info(`Incoming call from ${inbound.phone}`);
-      }
+      if (inbound.direction === "INBOUND") toast.info(`Incoming call from ${inbound.phone}`);
     }
+  }
+
+  // Call timer — ticks every second while a call is active
+  useEffect(() => {
+    if (!activeCall) {
+      setCallElapsed(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setCallElapsed(Math.floor((Date.now() - activeCall.startedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeCall]);
+
+  async function sendDigit(digit: string) {
+    if (!activeCall) return;
+    await fetch("/api/dialer/five9/agent/call-action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ callId: activeCall.callId, action: "dtmf", digits: digit }),
+    });
   }
 
   async function saveCredentials() {
@@ -228,7 +260,8 @@ export function AgentPanel() {
       else {
         toast.success(`Calling ${dialNumber}`);
         if (data.callId) {
-          setActiveCall({ callId: data.callId, phone: dialNumber, leadId: data.leadId ?? null });
+          setActiveCall({ callId: data.callId, phone: dialNumber, leadId: data.leadId ?? null, startedAt: Date.now() });
+          setCallNotes("");
         }
         setDialNumber("");
         void refreshSession();
@@ -286,11 +319,16 @@ export function AgentPanel() {
         toast.success("Call ended");
         setOnHold(false);
         setMuted(false);
-        // Pop the Five9-native disposition modal — it always shows so reps
-        // log every call, lead-tied or not.
-        setDispoContext({ callId: activeCall.callId, phone: activeCall.phone, leadId: activeCall.leadId });
+        setShowKeypad(false);
+        setDispoContext({
+          callId: activeCall.callId,
+          phone: activeCall.phone,
+          leadId: activeCall.leadId,
+          initialNotes: callNotes,
+        });
         setDispoOpen(true);
         setActiveCall(null);
+        setCallNotes("");
         void refreshRecent();
       }
     } finally {
@@ -306,6 +344,7 @@ export function AgentPanel() {
         callId={dispoContext.callId}
         leadId={dispoContext.leadId}
         phone={dispoContext.phone}
+        initialNotes={dispoContext.initialNotes}
         onClose={() => { setDispoOpen(false); setDispoContext(null); }}
         onSaved={() => void refreshRecent()}
       />
@@ -352,8 +391,13 @@ export function AgentPanel() {
             <>
               <hr style={{ margin: "16px 0", border: 0, borderTop: "1px solid #ecebea" }} />
               <div style={{ background: onHold ? "#fef0e8" : "#eaf5fe", border: `1px solid ${onHold ? "#fe9339" : "#1589ee"}`, borderRadius: 4, padding: 12 }}>
-                <div style={{ fontSize: 11, color: onHold ? "#fe9339" : "#0070d2", fontWeight: 600, marginBottom: 4 }}>
-                  {onHold ? "ON HOLD" : "ON CALL"}{muted ? " · MUTED" : ""}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, color: onHold ? "#fe9339" : "#0070d2", fontWeight: 600 }}>
+                    {onHold ? "ON HOLD" : "ON CALL"}{muted ? " · MUTED" : ""}
+                  </div>
+                  <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", color: "#3e3e3c", fontWeight: 600 }}>
+                    {formatElapsed(callElapsed)}
+                  </div>
                 </div>
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{activeCall.phone}</div>
 
@@ -364,6 +408,9 @@ export function AgentPanel() {
                   <button onClick={() => callAction(muted ? "unmute" : "mute")} disabled={busy} style={btnSecondary}>
                     {muted ? "Unmute" : "Mute"}
                   </button>
+                  <button onClick={() => setShowKeypad(!showKeypad)} disabled={busy} style={btnSecondary}>
+                    {showKeypad ? "Hide keys" : "Keypad"}
+                  </button>
                   <button onClick={() => setShowTransfer(!showTransfer)} disabled={busy} style={btnSecondary}>
                     Transfer
                   </button>
@@ -371,6 +418,22 @@ export function AgentPanel() {
                     Hang up
                   </button>
                 </div>
+
+                {showKeypad && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4, marginTop: 8 }}>
+                    {["1","2","3","4","5","6","7","8","9","*","0","#"].map((d) => (
+                      <button
+                        key={d}
+                        onClick={() => void sendDigit(d)}
+                        style={{
+                          padding: 10, fontSize: 16, fontWeight: 600,
+                          border: "1px solid #d8dde6", borderRadius: 4,
+                          background: "#fff", cursor: "pointer",
+                        }}
+                      >{d}</button>
+                    ))}
+                  </div>
+                )}
 
                 {showTransfer && (
                   <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
@@ -385,6 +448,17 @@ export function AgentPanel() {
                     </button>
                   </div>
                 )}
+
+                <div style={{ marginTop: 10 }}>
+                  <label style={{ fontSize: 11, color: "#706e6b", display: "block", marginBottom: 4 }}>Call notes (saved with disposition)</label>
+                  <textarea
+                    value={callNotes}
+                    onChange={(e) => setCallNotes(e.target.value)}
+                    placeholder="Type while you talk…"
+                    rows={3}
+                    style={{ ...input, height: "auto", fontFamily: "inherit", resize: "vertical" }}
+                  />
+                </div>
               </div>
             </>
           )}
@@ -425,26 +499,43 @@ export function AgentPanel() {
               <div style={{ fontSize: 12, color: "#706e6b" }}>No recent calls.</div>
             )}
             {recentCalls.length > 0 && (
-              <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #ecebea", color: "#706e6b" }}>
-                    <th style={{ textAlign: "left", padding: "4px 0", fontWeight: 600 }}>Phone</th>
-                    <th style={{ textAlign: "left", padding: "4px 0", fontWeight: 600 }}>Disposition</th>
-                    <th style={{ textAlign: "right", padding: "4px 0", fontWeight: 600 }}>Duration</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentCalls.map((c) => (
-                    <tr key={c.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                      <td style={{ padding: "6px 0" }}>{c.phoneNumber}</td>
-                      <td style={{ padding: "6px 0" }}>{c.disposition ?? c.status}</td>
-                      <td style={{ padding: "6px 0", textAlign: "right" }}>
+              <div>
+                {recentCalls.map((c) => {
+                  const arrow = c.direction === "INBOUND" ? "↓" : "↑";
+                  const arrowColor = c.direction === "INBOUND" ? "#04844b" : "#0070d2";
+                  const name = c.lead?.contactName ?? c.lead?.businessName ?? c.phoneNumber;
+                  const subtitle = c.lead ? c.phoneNumber : null;
+                  const row = (
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "16px 1fr auto",
+                      gap: 8,
+                      padding: "6px 0",
+                      borderBottom: "1px solid #f3f3f3",
+                      alignItems: "center",
+                    }}>
+                      <span style={{ color: arrowColor, fontWeight: 700 }}>{arrow}</span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#080707", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+                        <div style={{ fontSize: 11, color: "#706e6b" }}>
+                          {subtitle ?? c.disposition ?? c.status}
+                          {subtitle && c.disposition ? ` · ${c.disposition}` : ""}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#706e6b", fontVariantNumeric: "tabular-nums" }}>
                         {c.duration ? `${Math.floor(c.duration / 60)}:${String(c.duration % 60).padStart(2, "0")}` : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                  );
+                  return c.lead ? (
+                    <Link key={c.id} href={`/leads/${c.lead.id}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+                      {row}
+                    </Link>
+                  ) : (
+                    <div key={c.id}>{row}</div>
+                  );
+                })}
+              </div>
             )}
           </div>
         </>
@@ -569,6 +660,12 @@ function SessionPanel({
       )}
     </div>
   );
+}
+
+function formatElapsed(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 const lbl: React.CSSProperties = { display: "block", fontSize: 11, color: "#706e6b", marginBottom: 4, marginTop: 12 };
