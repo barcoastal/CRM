@@ -209,12 +209,12 @@ async function agentFetchInternal(
 /** Start the agent's session inside Five9 — required before placing calls. */
 export async function startAgentSession(userId: string, stationId: string): Promise<{ ok: boolean }> {
   const res = await agentFetch(userId, `/session_start`, {
-    method: "POST",
-    body: JSON.stringify({ stationId, stationType: "softphone", forceLogoutAgent: true }),
+    method: "PUT",
+    body: JSON.stringify({ stationId, stationType: "EMPTY", forceLogoutAgent: true }),
   });
   if (!res.ok) {
     const t = await res.text().catch(() => "");
-    throw new Error(`session_start ${res.status}: ${t.slice(0, 300)}`);
+    throw new Error(`session_start ${res.status}: ${t.slice(0, 500)}`);
   }
   return { ok: true };
 }
