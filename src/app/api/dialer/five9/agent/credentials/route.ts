@@ -49,6 +49,9 @@ export async function PUT(request: NextRequest) {
   if (!body.five9Username || !body.five9Password) {
     return NextResponse.json({ error: "five9Username and five9Password required" }, { status: 400 });
   }
+  if (body.five9StationType === "PSTN" && !body.five9StationId) {
+    return NextResponse.json({ error: "PSTN station requires a phone number" }, { status: 400 });
+  }
 
   const enc = encryptPassword(body.five9Password);
   await prisma.user.update({
