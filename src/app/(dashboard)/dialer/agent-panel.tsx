@@ -582,19 +582,19 @@ function CredForm({
         onChange={(e) => setForm({ ...form, stationType: e.target.value })}
         style={input}
       >
-        <option value="EMPTY">REST-only (click-to-dial, no audio in browser)</option>
-        <option value="SOFTPHONE">Browser softphone (WebRTC — coming soon)</option>
-        <option value="STATION">Physical station (desk phone)</option>
+        <option value="EMPTY">REST-only (click-to-dial, no audio)</option>
+        <option value="PSTN">Phone (PSTN) — Five9 calls my phone</option>
+        <option value="SOFTPHONE" disabled>Browser softphone (coming soon)</option>
       </select>
 
-      {form.stationType === "STATION" && (
+      {(form.stationType === "STATION" || form.stationType === "PSTN") && (
         <>
-          <label style={lbl}>Station ID</label>
+          <label style={lbl}>{form.stationType === "PSTN" ? "Your phone number" : "Station ID"}</label>
           <input
             value={form.stationId}
             onChange={(e) => setForm({ ...form, stationId: e.target.value })}
             style={input}
-            placeholder="e.g. 1001 or your extension"
+            placeholder={form.stationType === "PSTN" ? "+1 904 555 1234" : "e.g. 1001"}
           />
         </>
       )}
