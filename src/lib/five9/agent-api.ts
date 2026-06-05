@@ -323,9 +323,19 @@ async function agentFetchInternal(
 
   if (res.ok || !allowMigrationRetry) return res;
 
-  // 5001 retry path is no longer needed once we use the right host + farmId,
-  // but keep it as a defensive fallback.
   const text = await res.clone().text();
+
+  // Stale / invalidated session: the cached or DB-persisted session token is
+  // dead (e.g. a later ForceIn login elsewhere kicked it out, or it expired
+  // server-side). Five9 answers 401 "User is not logged in". Clear it and
+  // retry ONCE with a guaranteed-fresh login.
+  if (res.status === 401 && (text.includes("not logged in") || text.includes('"errorCode":401'))) {
+    sessionCache.delete(userId);
+    await clearPersistedSession(userId);
+    return agentFetchInternal(userId, path, init, false);
+  }
+
+  // 5001 "service migrated" — retry against the farmId Five9 returned.
   try {
     const parsed = JSON.parse(text) as {
       five9ExceptionDetail?: { errorCode?: number; context?: { farmId?: string } };
@@ -413,6 +423,12 @@ export async function startAgentSession(
   const body = stationType === "STATION"
     ? { stationId, stationType }
     : { stationId: "", stationType };
+
+  // Start Session is an explicit "begin" action — never reuse a cached or
+  // persisted session that a later ForceIn login may have invalidated. Force
+  // a fresh login so the state machine starts from a live token.
+  sessionCache.delete(userId);
+  await clearPersistedSession(userId);
 
   let lastState = "";
   for (let i = 0; i < 6; i++) {
