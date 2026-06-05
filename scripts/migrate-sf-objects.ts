@@ -14,12 +14,14 @@
  *   5. Resume-safe: re-running picks up where it left off (upsert by sfId)
  */
 
-import { PrismaClient } from "@prisma/client";
-import { spawnSync, execSync } from "node:child_process";
+import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import readline from "node:readline";
 
-const prisma = new PrismaClient({ log: ["warn", "error"] });
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter, log: ["warn", "error"] });
 
 const ENTITY = process.argv[2];
 if (!ENTITY || !["contact", "account", "opportunity", "lead"].includes(ENTITY)) {
@@ -28,7 +30,7 @@ if (!ENTITY || !["contact", "account", "opportunity", "lead"].includes(ENTITY)) 
 }
 
 const SOQL: Record<string, string> = {
-  contact: `SELECT Id, FirstName, LastName, Email, Phone, MobilePhone, Title, Birthdate, AccountId, OwnerId, IsActive__c FROM Contact`,
+  contact: `SELECT Id, FirstName, LastName, Email, Phone, MobilePhone, Title, Birthdate, AccountId, OwnerId FROM Contact`,
   account: `SELECT Id, Name, Phone, Website, Industry, AnnualRevenue, NumberOfEmployees, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry, OwnerId, ParentId FROM Account`,
   opportunity: `SELECT Id, Name, StageName, Amount, CloseDate, AccountId, OwnerId, Description, LeadSource, Probability FROM Opportunity`,
   lead: `SELECT Id, FirstName, LastName, Company, Email, Phone, Status, LeadSource, Industry, AnnualRevenue, OwnerId, IsConverted, ConvertedDate FROM Lead`,
@@ -37,17 +39,23 @@ const SOQL: Record<string, string> = {
 const CSV_PATH = `/tmp/sf-${ENTITY}.csv`;
 
 function exportFromSF(): void {
-  console.log(`[${new Date().toISOString()}] Exporting ${ENTITY} from Salesforce…`);
+  console.log(`[${new Date().toISOString()}] Exporting ${ENTITY} from Salesforce (bulk API)…`);
   const result = spawnSync(
     "sf",
-    ["data", "query", "--target-org", "coastal", "--query", SOQL[ENTITY], "--result-format", "csv", "--bulk", "--wait", "60"],
-    { stdio: ["ignore", "pipe", "inherit"], maxBuffer: 5 * 1024 * 1024 * 1024 },
+    [
+      "data", "export", "bulk",
+      "--target-org", "coastal",
+      "--query", SOQL[ENTITY],
+      "--result-format", "csv",
+      "--output-file", CSV_PATH,
+      "--wait", "120",
+    ],
+    { stdio: "inherit" },
   );
   if (result.status !== 0) {
     console.error("SF export failed");
     process.exit(1);
   }
-  fs.writeFileSync(CSV_PATH, result.stdout);
   const size = fs.statSync(CSV_PATH).size;
   console.log(`[${new Date().toISOString()}] CSV written: ${(size / 1024 / 1024).toFixed(1)} MB`);
 }
@@ -84,14 +92,14 @@ async function migrateContacts(headers: string[], rl: readline.Interface): Promi
   const I = {
     Id: idx("Id"), FirstName: idx("FirstName"), LastName: idx("LastName"),
     Email: idx("Email"), Phone: idx("Phone"), MobilePhone: idx("MobilePhone"),
-    Title: idx("Title"), Birthdate: idx("Birthdate"), IsActive: idx("IsActive__c"),
+    Title: idx("Title"), Birthdate: idx("Birthdate"),
   };
   let batch: Array<{ sfId: string; firstName: string; lastName: string; fullName: string; email?: string | null; phone?: string | null; mobilePhone?: string | null; title?: string | null; birthdate?: Date | null; isActive: boolean }> = [];
   let count = 0;
 
   async function flush() {
     if (batch.length === 0) return;
-    await prisma.$transaction(
+    const results = await Promise.allSettled(
       batch.map((c) =>
         prisma.contact.upsert({
           where: { sfId: c.sfId },
@@ -99,8 +107,12 @@ async function migrateContacts(headers: string[], rl: readline.Interface): Promi
           create: c,
         }),
       ),
-      { timeout: 60000 },
     );
+    const failures = results.filter((r) => r.status === "rejected");
+    if (failures.length > 0) {
+      console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} contact upserts failed`);
+      console.error((failures[0] as PromiseRejectedResult).reason?.message);
+    }
     count += batch.length;
     batch = [];
     if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] Contact: ${count} imported`);
@@ -123,9 +135,9 @@ async function migrateContacts(headers: string[], rl: readline.Interface): Promi
       mobilePhone: cells[I.MobilePhone] || null,
       title: cells[I.Title] || null,
       birthdate: cells[I.Birthdate] ? new Date(cells[I.Birthdate]) : null,
-      isActive: cells[I.IsActive] !== "false",
+      isActive: true,
     });
-    if (batch.length >= 500) await flush();
+    if (batch.length >= 50) await flush();
   }
   await flush();
   console.log(`[${new Date().toISOString()}] DONE Contact: ${count} total`);
@@ -145,7 +157,7 @@ async function migrateAccounts(headers: string[], rl: readline.Interface): Promi
 
   async function flush() {
     if (batch.length === 0) return;
-    await prisma.$transaction(
+    const aResults = await Promise.allSettled(
       batch.map((a) =>
         prisma.account.upsert({
           where: { sfId: a.sfId as string },
@@ -153,8 +165,9 @@ async function migrateAccounts(headers: string[], rl: readline.Interface): Promi
           create: a as never,
         }),
       ),
-      { timeout: 60000 },
     );
+    const aFail = aResults.filter((r) => r.status === "rejected");
+    if (aFail.length > 0) console.error(`[${new Date().toISOString()}] ${aFail.length} account fails:`, (aFail[0] as PromiseRejectedResult).reason?.message);
     count += batch.length;
     batch = [];
     if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] Account: ${count} imported`);
@@ -179,7 +192,7 @@ async function migrateAccounts(headers: string[], rl: readline.Interface): Promi
       billingZip: cells[I.BillingPostalCode] || null,
       billingCountry: cells[I.BillingCountry] || "US",
     });
-    if (batch.length >= 500) await flush();
+    if (batch.length >= 50) await flush();
   }
   await flush();
   console.log(`[${new Date().toISOString()}] DONE Account: ${count} total`);
@@ -202,7 +215,7 @@ async function migrateOpportunities(headers: string[], rl: readline.Interface): 
 
   async function flush() {
     if (batch.length === 0) return;
-    await prisma.$transaction(
+    const oResults = await Promise.allSettled(
       batch.map((o) =>
         prisma.opportunity.upsert({
           where: { sfId: o.sfId as string },
@@ -210,8 +223,9 @@ async function migrateOpportunities(headers: string[], rl: readline.Interface): 
           create: o as never,
         }),
       ),
-      { timeout: 60000 },
     );
+    const oFail = oResults.filter((r) => r.status === "rejected");
+    if (oFail.length > 0) console.error(`[${new Date().toISOString()}] ${oFail.length} opp fails:`, (oFail[0] as PromiseRejectedResult).reason?.message);
     count += batch.length;
     batch = [];
     if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] Opportunity: ${count} imported, ${skipped} skipped`);
@@ -236,7 +250,7 @@ async function migrateOpportunities(headers: string[], rl: readline.Interface): 
       leadSource: cells[I.LeadSource] || null,
       probability: cells[I.Probability] ? Number(cells[I.Probability]) : null,
     });
-    if (batch.length >= 500) await flush();
+    if (batch.length >= 50) await flush();
   }
   await flush();
   console.log(`[${new Date().toISOString()}] DONE Opportunity: ${count} total, ${skipped} skipped (no matching Account)`);
@@ -255,7 +269,7 @@ async function migrateLeads(headers: string[], rl: readline.Interface): Promise<
 
   async function flush() {
     if (batch.length === 0) return;
-    await prisma.$transaction(
+    const lResults = await Promise.allSettled(
       batch.map((l) =>
         prisma.lead.upsert({
           where: { sfId: l.sfId as string },
@@ -263,8 +277,9 @@ async function migrateLeads(headers: string[], rl: readline.Interface): Promise<
           create: l as never,
         }),
       ),
-      { timeout: 60000 },
     );
+    const lFail = lResults.filter((r) => r.status === "rejected");
+    if (lFail.length > 0) console.error(`[${new Date().toISOString()}] ${lFail.length} lead fails:`, (lFail[0] as PromiseRejectedResult).reason?.message);
     count += batch.length;
     batch = [];
     if (count % 10000 === 0) console.log(`[${new Date().toISOString()}] Lead: ${count} imported`);
