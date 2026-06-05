@@ -304,7 +304,10 @@ async function agentFetchInternal(
   };
   const cookieHeader = cookieHeaderFor(session.cookies, host);
   if (cookieHeader) headers.Cookie = cookieHeader;
-  if (session.farmId) headers.farmId = session.farmId;
+  // Do NOT send a farmId request header. Five9 rejects Bearer-token auth with
+  // 401 "User is not logged in" when a farmId header is also present (proven
+  // via the debug-flow probe: identical request 401s with the header, 200s
+  // without it). farmId is already carried by the farmId cookie in the jar.
   const res = await fetch(url, {
     ...init,
     headers: { ...headers, ...(init.headers ?? {}) },
