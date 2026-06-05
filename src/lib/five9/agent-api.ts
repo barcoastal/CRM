@@ -39,6 +39,12 @@ export function buildSessionStartBody(
   }
 }
 
+interface Five9Url {
+  host: string;
+  port: number | string;
+  version: string;
+  routeKey: string;
+}
 interface Five9LoginResponse {
   tokenId: string;
   userId: string;
@@ -47,7 +53,9 @@ interface Five9LoginResponse {
   metadata: {
     dataCenters: Array<{
       name: string;
-      apiUrls: Array<{ host: string; port: number | string; version: string; routeKey: string }>;
+      active?: boolean;
+      apiUrls: Five9Url[];
+      loginUrls?: Five9Url[];
     }>;
   };
 }
@@ -214,44 +222,52 @@ function hostOf(url: string): string {
   }
 }
 
-async function loginAgent(username: string, password: string): Promise<AgentSession> {
-  const res = await fetch(`${loginBase()}/auth/login`, {
+async function doLogin(base: string, username: string, password: string): Promise<{ res: Response; json: Five9LoginResponse }> {
+  const res = await fetch(`${base}/auth/login`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json, text/plain",
-    },
-    body: JSON.stringify({
-      passwordCredentials: { username, password },
-      policy: "ForceIn",
-    }),
+    headers: { "Content-Type": "application/json", Accept: "application/json, text/plain" },
+    body: JSON.stringify({ passwordCredentials: { username, password }, policy: "ForceIn" }),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`Five9 login ${res.status}: ${text.slice(0, 500)}`);
   }
-  const cookies = parseSetCookies(res, hostOf(loginBase()));
   const json = (await res.json()) as Five9LoginResponse;
-  // Use the ACTIVE data center (orgs can list a primary + DR standby); fall
-  // back to index 0 if none is flagged active.
+  return { res, json };
+}
+
+async function loginAgent(username: string, password: string): Promise<AgentSession> {
+  // Phase 1: log in on app.five9.com to DISCOVER the active data center.
+  const disc = await doLogin(loginBase(), username, password);
   const dc =
-    json.metadata?.dataCenters?.find((d) => (d as { active?: boolean }).active) ??
-    json.metadata?.dataCenters?.[0];
-  const url = dc?.apiUrls?.[0];
-  if (!url) throw new Error("Five9 login returned no data center URL");
-  // The session rides in the Domain=five9.com cookies (apiRouteKey, Authorization,
-  // f9-sessionId, …); cookieHeaderFor() drops the app.five9.com host-only cookies
-  // so the data center routes us correctly. farmId header is the numeric value
-  // from context, NOT the string routeKey.
-  const apiHost = `https://${url.host}:${url.port}/appsvcs/rs/svc`;
-  const farmId = json.context?.farmId ?? null;
+    disc.json.metadata?.dataCenters?.find((d) => d.active) ??
+    disc.json.metadata?.dataCenters?.[0];
+  const apiUrl = dc?.apiUrls?.[0];
+  if (!apiUrl) throw new Error("Five9 login returned no data center URL");
+  const apiHost = `https://${apiUrl.host}:${apiUrl.port}/appsvcs/rs/svc`;
+
+  // Phase 2: RE-LOGIN on the data center's own login host. Logging in only on
+  // app.five9.com yields cookies that lack the data-center affinity cookie
+  // (BIGipServer~…), so the very first login_state misroutes → 401 "User is
+  // not logged in". Re-logging-in on the DC host returns cookies (incl. that
+  // affinity cookie) valid on the DC. Confirmed via the debug-flow probe G.
+  const loginUrl = dc?.loginUrls?.[0];
+  const dcLoginBase = loginUrl ? `https://${loginUrl.host}:${loginUrl.port}/appsvcs/rs/svc` : null;
+
+  let active = disc;
+  let cookieHost = hostOf(loginBase());
+  if (dcLoginBase && hostOf(dcLoginBase) !== hostOf(loginBase())) {
+    active = await doLogin(dcLoginBase, username, password);
+    cookieHost = hostOf(dcLoginBase);
+  }
+
   return {
-    tokenId: json.tokenId,
+    tokenId: active.json.tokenId,
     apiHost,
-    farmId,
-    userId: json.userId,
-    orgId: json.orgId,
-    cookies,
+    farmId: active.json.context?.farmId ?? disc.json.context?.farmId ?? null,
+    userId: active.json.userId,
+    orgId: active.json.orgId,
+    cookies: parseSetCookies(active.res, cookieHost),
     cachedAt: Date.now(),
   };
 }
