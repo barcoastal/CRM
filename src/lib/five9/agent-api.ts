@@ -355,6 +355,42 @@ export async function hangupCall(userId: string, callId: string): Promise<{ ok: 
   return { ok: true };
 }
 
+/** Put a call on hold (or unhold). Action: "hold" | "unhold". */
+export async function holdCall(userId: string, callId: string, action: "hold" | "unhold"): Promise<{ ok: boolean }> {
+  const res = await agentFetch(userId, `/interactions/calls/${callId}/${action}`, { method: "PUT" });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`${action} ${res.status}: ${t.slice(0, 300)}`);
+  }
+  return { ok: true };
+}
+
+/** Mute or unmute the agent's mic on a call. */
+export async function muteCall(userId: string, callId: string, action: "mute" | "unmute"): Promise<{ ok: boolean }> {
+  const res = await agentFetch(userId, `/interactions/calls/${callId}/${action}`, { method: "PUT" });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`${action} ${res.status}: ${t.slice(0, 300)}`);
+  }
+  return { ok: true };
+}
+
+/** Transfer a call to a number / queue / agent. */
+export async function transferCall(userId: string, callId: string, args: {
+  destination: string;
+  type?: "AGENT" | "SKILL" | "EXTERNAL";
+}): Promise<{ ok: boolean }> {
+  const res = await agentFetch(userId, `/interactions/calls/${callId}/transfer`, {
+    method: "PUT",
+    body: JSON.stringify({ destination: args.destination, type: args.type ?? "EXTERNAL" }),
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`transfer ${res.status}: ${t.slice(0, 300)}`);
+  }
+  return { ok: true };
+}
+
 /** Logout the agent. Clears the session cache (memory + DB). */
 export async function logoutAgent(userId: string): Promise<{ ok: boolean }> {
   const session = sessionCache.get(userId) ?? (await loadPersistedSession(userId));

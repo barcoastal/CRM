@@ -38,6 +38,10 @@ export function AgentPanel() {
   const [busy, setBusy] = useState(false);
   const [recentCalls, setRecentCalls] = useState<RecentCall[]>([]);
   const [activeCall, setActiveCall] = useState<{ callId: string; phone: string; leadId: string | null } | null>(null);
+  const [onHold, setOnHold] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [transferTo, setTransferTo] = useState("");
+  const [showTransfer, setShowTransfer] = useState(false);
   const [dispoOpen, setDispoOpen] = useState(false);
   const [dispoLead, setDispoLead] = useState<{ id: string; status: string } | null>(null);
 
@@ -206,6 +210,38 @@ export function AgentPanel() {
     }
   }
 
+  async function callAction(action: "hold" | "unhold" | "mute" | "unmute" | "transfer", destination?: string) {
+    if (!activeCall) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/dialer/five9/agent/call-action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callId: activeCall.callId, action, destination }),
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (!data.ok) {
+        toast.error(data.error ?? `Failed to ${action}`);
+        return;
+      }
+      if (action === "hold") setOnHold(true);
+      if (action === "unhold") setOnHold(false);
+      if (action === "mute") setMuted(true);
+      if (action === "unmute") setMuted(false);
+      if (action === "transfer") {
+        toast.success(`Transferring to ${destination}`);
+        setShowTransfer(false);
+        setTransferTo("");
+        // Transfer hangs up the agent's leg, so clear active state
+        setActiveCall(null);
+        setOnHold(false);
+        setMuted(false);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function hangup() {
     if (!activeCall) return;
     setBusy(true);
@@ -219,6 +255,8 @@ export function AgentPanel() {
       if (!data.ok) toast.error(data.error ?? "Failed to hang up");
       else {
         toast.success("Call ended");
+        setOnHold(false);
+        setMuted(false);
         // If the call was tied to a lead, pop the disposition modal
         if (activeCall.leadId) {
           const leadRes = await fetch(`/api/leads/${activeCall.leadId}`);
@@ -289,14 +327,40 @@ export function AgentPanel() {
           {activeCall && (
             <>
               <hr style={{ margin: "16px 0", border: 0, borderTop: "1px solid #ecebea" }} />
-              <div style={{ background: "#eaf5fe", border: "1px solid #1589ee", borderRadius: 4, padding: 12 }}>
-                <div style={{ fontSize: 11, color: "#0070d2", fontWeight: 600, marginBottom: 4 }}>
-                  ON CALL
+              <div style={{ background: onHold ? "#fef0e8" : "#eaf5fe", border: `1px solid ${onHold ? "#fe9339" : "#1589ee"}`, borderRadius: 4, padding: 12 }}>
+                <div style={{ fontSize: 11, color: onHold ? "#fe9339" : "#0070d2", fontWeight: 600, marginBottom: 4 }}>
+                  {onHold ? "ON HOLD" : "ON CALL"}{muted ? " · MUTED" : ""}
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{activeCall.phone}</div>
-                <button onClick={hangup} disabled={busy} style={{ ...btnPrimary, background: "#c23934" }}>
-                  Hang up
-                </button>
+                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{activeCall.phone}</div>
+
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                  <button onClick={() => callAction(onHold ? "unhold" : "hold")} disabled={busy} style={btnSecondary}>
+                    {onHold ? "Resume" : "Hold"}
+                  </button>
+                  <button onClick={() => callAction(muted ? "unmute" : "mute")} disabled={busy} style={btnSecondary}>
+                    {muted ? "Unmute" : "Mute"}
+                  </button>
+                  <button onClick={() => setShowTransfer(!showTransfer)} disabled={busy} style={btnSecondary}>
+                    Transfer
+                  </button>
+                  <button onClick={hangup} disabled={busy} style={{ ...btnPrimary, background: "#c23934" }}>
+                    Hang up
+                  </button>
+                </div>
+
+                {showTransfer && (
+                  <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                    <input
+                      value={transferTo}
+                      onChange={(e) => setTransferTo(e.target.value)}
+                      placeholder="Transfer to: number, skill, or agent"
+                      style={input}
+                    />
+                    <button onClick={() => callAction("transfer", transferTo)} disabled={busy || !transferTo} style={btnPrimary}>
+                      Send
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}
