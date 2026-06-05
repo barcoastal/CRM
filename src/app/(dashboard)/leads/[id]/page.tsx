@@ -11,6 +11,7 @@ import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { DebtInformation } from "@/components/leads/debt-information";
 import { LeadRelated } from "@/components/leads/lead-related";
 import { ConvertLeadButton } from "@/components/leads/convert-lead-button";
+import { CallButton } from "@/components/dialer/call-button";
 import { leadStatusTone } from "@/lib/slds/status-tones";
 import { LEAD_STATUSES, type LeadStatusV2 } from "@/lib/sf-canonical";
 
@@ -130,7 +131,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           fields={[
             ["Business Name", lead.businessName],
             ["Contact Name", lead.contactName],
-            ["Phone", lead.phone],
+            ["Phone", <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{lead.phone}<CallButton phone={lead.phone} leadId={lead.id} /></span>],
             ["Email", lead.email],
             ["EIN", lead.ein],
             ["Industry", lead.industry],
