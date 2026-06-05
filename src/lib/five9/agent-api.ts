@@ -237,37 +237,25 @@ async function doLogin(base: string, username: string, password: string): Promis
 }
 
 async function loginAgent(username: string, password: string): Promise<AgentSession> {
-  // Phase 1: log in on app.five9.com to DISCOVER the active data center.
-  const disc = await doLogin(loginBase(), username, password);
+  // Single login on app.five9.com. Its cookies (apiRouteKey routes to the DC's
+  // API pool, plus the session cookies) work directly against the data-center
+  // host — verified end-to-end (login_state → session_start → WORKING). Do NOT
+  // re-login on the DC host: that produces a session login_state rejects.
+  const { res, json } = await doLogin(loginBase(), username, password);
   const dc =
-    disc.json.metadata?.dataCenters?.find((d) => d.active) ??
-    disc.json.metadata?.dataCenters?.[0];
+    json.metadata?.dataCenters?.find((d) => d.active) ??
+    json.metadata?.dataCenters?.[0];
   const apiUrl = dc?.apiUrls?.[0];
   if (!apiUrl) throw new Error("Five9 login returned no data center URL");
   const apiHost = `https://${apiUrl.host}:${apiUrl.port}/appsvcs/rs/svc`;
 
-  // Phase 2: RE-LOGIN on the data center's own login host. Logging in only on
-  // app.five9.com yields cookies that lack the data-center affinity cookie
-  // (BIGipServer~…), so the very first login_state misroutes → 401 "User is
-  // not logged in". Re-logging-in on the DC host returns cookies (incl. that
-  // affinity cookie) valid on the DC. Confirmed via the debug-flow probe G.
-  const loginUrl = dc?.loginUrls?.[0];
-  const dcLoginBase = loginUrl ? `https://${loginUrl.host}:${loginUrl.port}/appsvcs/rs/svc` : null;
-
-  let active = disc;
-  let cookieHost = hostOf(loginBase());
-  if (dcLoginBase && hostOf(dcLoginBase) !== hostOf(loginBase())) {
-    active = await doLogin(dcLoginBase, username, password);
-    cookieHost = hostOf(dcLoginBase);
-  }
-
   return {
-    tokenId: active.json.tokenId,
+    tokenId: json.tokenId,
     apiHost,
-    farmId: active.json.context?.farmId ?? disc.json.context?.farmId ?? null,
-    userId: active.json.userId,
-    orgId: active.json.orgId,
-    cookies: parseSetCookies(active.res, cookieHost),
+    farmId: json.context?.farmId ?? null,
+    userId: json.userId,
+    orgId: json.orgId,
+    cookies: parseSetCookies(res, hostOf(loginBase())),
     cachedAt: Date.now(),
   };
 }
