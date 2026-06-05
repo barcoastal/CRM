@@ -364,16 +364,13 @@ async function agentFetchInternal(
 
   const text = await res.clone().text();
 
-  // Stale / invalidated session: the cached or DB-persisted session token is
-  // dead (e.g. a later ForceIn login elsewhere kicked it out, or it expired
-  // server-side). Five9 answers 401 "User is not logged in". Clear it and
-  // retry ONCE with a guaranteed-fresh login — but ONLY for explicit actions.
-  // Background polls (ensureLogin=false) must never trigger a login, or they
-  // re-create the ForceIn churn this whole change exists to prevent.
+  // 401 "User is not logged in": right after login the session often hasn't
+  // propagated to the data-center node yet (intermittent). Retry ONCE with the
+  // SAME session — cookies have accumulated and the round-trip gives it time.
+  // Do NOT clear + re-login: a fresh ForceIn login restarts the propagation
+  // delay (and churns sessions). startAgentSession's loop retries further.
   if (ensureLogin && res.status === 401 && (text.includes("not logged in") || text.includes('"errorCode":401'))) {
-    sessionCache.delete(userId);
-    await clearPersistedSession(userId);
-    return agentFetchInternal(userId, path, init, false);
+    return agentFetchInternal(userId, path, init, false, ensureLogin);
   }
 
   // 5001 "service migrated" — retry against the farmId Five9 returned.
@@ -419,14 +416,10 @@ export async function getSessionStartConfig(userId: string): Promise<{
  * in", because /auth/login happens on app.five9.com but agent calls go to the
  * data center (e.g. app-atl.five9.com).
  */
-async function getLoginState(userId: string): Promise<string> {
+async function getLoginState(userId: string): Promise<{ status: number; state: string }> {
   const res = await agentFetch(userId, `/login_state`);
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(`login_state ${res.status}: ${t.slice(0, 300)}`);
-  }
-  const text = await res.text();
-  return text.trim().replace(/^"|"$/g, "");
+  const text = await res.text().catch(() => "");
+  return { status: res.status, state: text.trim().replace(/^"|"$/g, "") };
 }
 
 /** Accept all pending Five9 maintenance notices (blocks reaching WORKING). */
@@ -470,10 +463,17 @@ export async function startAgentSession(
   sessionCache.delete(userId);
   await clearPersistedSession(userId);
 
+  // Loop generously: right after login, login_state intermittently returns 401
+  // "not logged in" until the session propagates to the data-center node. We
+  // retry the SAME session (no re-login) until it settles, then drive states.
   let lastState = "";
-  for (let i = 0; i < 6; i++) {
-    const state = await getLoginState(userId);
-    lastState = state;
+  for (let i = 0; i < 12; i++) {
+    const { status, state } = await getLoginState(userId);
+    lastState = `${status}:${state}`;
+
+    // Not propagated yet — keep polling the same session.
+    if (status === 401) continue;
+    if (status !== 200) throw new Error(`login_state ${status}: ${state.slice(0, 300)}`);
 
     if (state === "WORKING") {
       // Persist the session so click_to_dial on a different Railway pod sees
