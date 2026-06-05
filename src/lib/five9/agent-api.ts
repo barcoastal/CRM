@@ -22,6 +22,23 @@
 import { prisma } from "@/lib/prisma";
 import crypto from "node:crypto";
 
+/** Build the session_start body for a station type. PSTN/STATION carry the
+ * stationId (PSTN = the agent's phone number); EMPTY/SOFTPHONE/unknown send
+ * an empty station. Confirmed against the live Five9 client (Task 1 spike). */
+export function buildSessionStartBody(
+  stationType: "EMPTY" | "SOFTPHONE" | "STATION" | "PSTN",
+  stationId: string,
+): { stationId: string; stationType: string } {
+  switch (stationType) {
+    case "PSTN":
+      return { stationId, stationType: "PSTN" };
+    case "STATION":
+      return { stationId, stationType: "STATION" };
+    default:
+      return { stationId: "", stationType: "EMPTY" };
+  }
+}
+
 interface Five9LoginResponse {
   tokenId: string;
   userId: string;
@@ -435,14 +452,13 @@ async function acceptMaintenanceNotices(userId: string): Promise<void> {
 export async function startAgentSession(
   userId: string,
   stationId: string,
-  stationType: "EMPTY" | "SOFTPHONE" | "STATION" = "EMPTY",
+  stationType: "EMPTY" | "SOFTPHONE" | "STATION" | "PSTN" = "EMPTY",
 ): Promise<{ ok: boolean; state?: string }> {
   // stationType=EMPTY: REST-driven click-to-dial (audio goes nowhere)
   // stationType=SOFTPHONE: Five9's softphone — requires WebRTC bridge (TBD)
   // stationType=STATION: agent's physical desk phone (needs stationId)
-  const body = stationType === "STATION"
-    ? { stationId, stationType }
-    : { stationId: "", stationType };
+  // stationType=PSTN: Five9 calls the agent's phone number (stationId)
+  const body = buildSessionStartBody(stationType as "EMPTY" | "SOFTPHONE" | "STATION" | "PSTN", stationId);
 
   // Start Session is an explicit "begin" action — never reuse a cached or
   // persisted session that a later ForceIn login may have invalidated. Force
