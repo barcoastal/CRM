@@ -243,16 +243,32 @@ export async function makeCall(userId: string, args: {
   campaignId?: string;
   skillId?: string;
   contactId?: string;
+  stationId?: string;
 }): Promise<{ ok: boolean; callId?: string }> {
-  const res = await agentFetch(userId, `/interactions/click_to_dial`, {
-    method: "POST",
-    body: JSON.stringify({
-      number: args.number,
-      campaignId: args.campaignId ?? undefined,
-      skillId: args.skillId ?? undefined,
-      contactId: args.contactId ?? undefined,
-    }),
+  const body = JSON.stringify({
+    number: args.number,
+    campaignId: args.campaignId ?? undefined,
+    skillId: args.skillId ?? undefined,
+    contactId: args.contactId ?? undefined,
   });
+
+  let res = await agentFetch(userId, `/interactions/click_to_dial`, {
+    method: "POST",
+    body,
+  });
+
+  // If 401, the agent session may have lapsed (or this Railway instance is
+  // different from the one that ran session_start). Start a session and retry.
+  if (res.status === 401 || res.status === 435) {
+    const text = await res.clone().text();
+    if (text.includes("not logged in") || text.includes("\"401\"")) {
+      sessionCache.delete(userId);
+      const stationId = args.stationId ?? "";
+      await startAgentSession(userId, stationId).catch(() => undefined);
+      res = await agentFetch(userId, `/interactions/click_to_dial`, { method: "POST", body });
+    }
+  }
+
   if (!res.ok) {
     const t = await res.text().catch(() => "");
     throw new Error(`click_to_dial ${res.status}: ${t.slice(0, 500)}`);
@@ -267,10 +283,10 @@ export async function getAgentSessionState(userId: string): Promise<{
   stationId?: string;
   activeCalls?: number;
 }> {
-  const res = await agentFetch(userId, `/session_state`);
+  const res = await agentFetch(userId, `/session_metadata`);
   if (!res.ok) {
     const t = await res.text().catch(() => "");
-    throw new Error(`session_state ${res.status}: ${t.slice(0, 300)}`);
+    throw new Error(`session_metadata ${res.status}: ${t.slice(0, 300)}`);
   }
   const json = await res.json().catch(() => ({}));
   return json as { state: string; stationId?: string; activeCalls?: number };
