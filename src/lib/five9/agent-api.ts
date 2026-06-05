@@ -256,7 +256,17 @@ export async function testCredentials(username: string, password: string): Promi
   }
 }
 
-async function getSession(userId: string): Promise<AgentSession> {
+/** Sentinel thrown when a read-only call finds no live session and must NOT log in. */
+export const NO_SESSION = "NO_FIVE9_SESSION";
+
+/**
+ * @param createIfMissing when false (background polls), NEVER log in — just
+ * return the existing session or throw NO_SESSION. Logging in on every poll
+ * causes ForceIn logins to invalidate each other every few seconds → endless
+ * "User is not logged in". Only explicit actions (Start Session, click-to-dial)
+ * may create a session.
+ */
+async function getSession(userId: string, createIfMissing = true): Promise<AgentSession> {
   // 1. Process-local cache (fastest path on the same Railway pod)
   const cached = sessionCache.get(userId);
   if (cached && Date.now() - cached.cachedAt < SESSION_TTL_MS) return cached;
@@ -268,6 +278,8 @@ async function getSession(userId: string): Promise<AgentSession> {
     sessionCache.set(userId, persisted);
     return persisted;
   }
+
+  if (!createIfMissing) throw new Error(NO_SESSION);
 
   // 3. Fresh login
   const user = await prisma.user.findUnique({
@@ -284,8 +296,13 @@ async function getSession(userId: string): Promise<AgentSession> {
   return session;
 }
 
-async function agentFetch(userId: string, path: string, init: RequestInit = {}): Promise<Response> {
-  return agentFetchInternal(userId, path, init, /* allowMigrationRetry */ true);
+async function agentFetch(
+  userId: string,
+  path: string,
+  init: RequestInit = {},
+  ensureLogin = true,
+): Promise<Response> {
+  return agentFetchInternal(userId, path, init, /* allowMigrationRetry */ true, ensureLogin);
 }
 
 async function agentFetchInternal(
@@ -293,8 +310,9 @@ async function agentFetchInternal(
   path: string,
   init: RequestInit,
   allowMigrationRetry: boolean,
+  ensureLogin = true,
 ): Promise<Response> {
-  const session = await getSession(userId);
+  const session = await getSession(userId, ensureLogin);
   const host = hostOf(session.apiHost);
   const url = `${session.apiHost}/agents/${session.userId}${path}`;
   const headers: Record<string, string> = {
@@ -328,8 +346,10 @@ async function agentFetchInternal(
   // Stale / invalidated session: the cached or DB-persisted session token is
   // dead (e.g. a later ForceIn login elsewhere kicked it out, or it expired
   // server-side). Five9 answers 401 "User is not logged in". Clear it and
-  // retry ONCE with a guaranteed-fresh login.
-  if (res.status === 401 && (text.includes("not logged in") || text.includes('"errorCode":401'))) {
+  // retry ONCE with a guaranteed-fresh login — but ONLY for explicit actions.
+  // Background polls (ensureLogin=false) must never trigger a login, or they
+  // re-create the ForceIn churn this whole change exists to prevent.
+  if (ensureLogin && res.status === 401 && (text.includes("not logged in") || text.includes('"errorCode":401'))) {
     sessionCache.delete(userId);
     await clearPersistedSession(userId);
     return agentFetchInternal(userId, path, init, false);
@@ -530,7 +550,13 @@ export async function getActiveCalls(userId: string): Promise<Array<{
   state: string;
   startedAt: string;
 }>> {
-  const res = await agentFetch(userId, `/interactions/calls`);
+  // Read-only poll: never log in (ensureLogin=false). No session → no calls.
+  let res: Response;
+  try {
+    res = await agentFetch(userId, `/interactions/calls`, {}, false);
+  } catch {
+    return [];
+  }
   if (!res.ok) return [];
   const json = (await res.json()) as Array<Record<string, unknown>>;
   if (!Array.isArray(json)) return [];
@@ -543,17 +569,23 @@ export async function getActiveCalls(userId: string): Promise<Array<{
   }));
 }
 
-/** Read the agent's current session state — used by the dialer UI to refresh. */
+/**
+ * Read the agent's current session state — used by the dialer UI to poll.
+ * Read-only: NEVER logs in (ensureLogin=false). If there's no live session,
+ * report DISCONNECTED instead of throwing/502ing or kicking off a login.
+ */
 export async function getAgentSessionState(userId: string): Promise<{
   state: string;
   stationId?: string;
   activeCalls?: number;
 }> {
-  const res = await agentFetch(userId, `/session_metadata`);
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(`session_metadata ${res.status}: ${t.slice(0, 300)}`);
+  let res: Response;
+  try {
+    res = await agentFetch(userId, `/session_metadata`, {}, false);
+  } catch {
+    return { state: "DISCONNECTED" };
   }
+  if (!res.ok) return { state: "DISCONNECTED" };
   const json = await res.json().catch(() => ({}));
   return json as { state: string; stationId?: string; activeCalls?: number };
 }

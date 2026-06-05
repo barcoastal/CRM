@@ -628,7 +628,7 @@ function SessionPanel({
   onNotReady: () => void;
   busy: boolean;
 }) {
-  const connected = !!state?.state;
+  const connected = !!state?.state && state.state !== "DISCONNECTED";
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
