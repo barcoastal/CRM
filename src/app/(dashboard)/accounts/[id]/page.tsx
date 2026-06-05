@@ -16,6 +16,7 @@ import { OppDebtInformation } from "@/components/opportunities/opp-debt-informat
 import { PaymentCalculatorV2 } from "@/components/shared/payment-calculator-v2";
 import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-list";
 import { CallButton } from "@/components/dialer/call-button";
+import { ComposeEmailButton } from "@/components/emails/compose-email-button";
 import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
 import { genericTone } from "@/lib/slds/status-tones";
 
@@ -124,7 +125,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["External SAS ID", account.externalSasId],
             ["EIN", account.ein],
             ["Phone", <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{account.phone}<CallButton phone={account.phone} accountId={account.id} /></span>],
-            ["Email", account.email],
+            ["Email", <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{account.email}{account.email && <ComposeEmailButton defaultTo={account.email} accountId={account.id} label="Email" />}</span>],
             ["Owner", account.owner?.name],
             ["Business Start Date", account.businessStartDate?.toLocaleDateString()],
             ["UCC Filing Date", account.uccFilingDate?.toLocaleDateString()],
