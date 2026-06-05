@@ -245,10 +245,7 @@ export async function testCredentials(username: string, password: string): Promi
     const session = await loginAgent(username, password);
     await fetch(`${session.apiHost}/auth/logout`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer-${session.tokenId}`,
-        Cookie: cookieHeaderFor(session.cookies, hostOf(session.apiHost)),
-      },
+      headers: { Cookie: cookieHeaderFor(session.cookies, hostOf(session.apiHost)) },
     }).catch(() => undefined);
     return { ok: true, apiHost: session.apiHost };
   } catch (e: unknown) {
@@ -315,17 +312,20 @@ async function agentFetchInternal(
   const session = await getSession(userId, ensureLogin);
   const host = hostOf(session.apiHost);
   const url = `${session.apiHost}/agents/${session.userId}${path}`;
+  // Match the official Five9 Agent Desktop EXACTLY (captured from its live,
+  // working requests via Playwright): authenticate by session COOKIES only.
+  // The official client sends NO Authorization header — sending
+  // `Authorization: Bearer-<token>` is what triggers 401 "User is not logged
+  // in". It includes a lowercase `farmid` header + `x-requested-with`, and
+  // only sets Content-Type when there's a body.
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Accept: "application/json, text/plain",
-    Authorization: `Bearer-${session.tokenId}`,
+    Accept: "application/json, text/javascript, */*; q=0.01",
+    "X-Requested-With": "XMLHttpRequest",
   };
   const cookieHeader = cookieHeaderFor(session.cookies, host);
   if (cookieHeader) headers.Cookie = cookieHeader;
-  // Do NOT send a farmId request header. Five9 rejects Bearer-token auth with
-  // 401 "User is not logged in" when a farmId header is also present (proven
-  // via the debug-flow probe: identical request 401s with the header, 200s
-  // without it). farmId is already carried by the farmId cookie in the jar.
+  if (session.farmId) headers.farmid = session.farmId;
+  if (init.body !== undefined) headers["Content-Type"] = "application/json";
   const res = await fetch(url, {
     ...init,
     headers: { ...headers, ...(init.headers ?? {}) },
@@ -670,10 +670,7 @@ export async function logoutAgent(userId: string): Promise<{ ok: boolean }> {
   if (session) {
     await fetch(`${session.apiHost}/auth/logout`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer-${session.tokenId}`,
-        Cookie: cookieHeaderFor(session.cookies, hostOf(session.apiHost)),
-      },
+      headers: { Cookie: cookieHeaderFor(session.cookies, hostOf(session.apiHost)) },
     }).catch(() => undefined);
   }
   sessionCache.delete(userId);

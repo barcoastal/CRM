@@ -43,10 +43,12 @@ export async function POST() {
   const lg = (await loginRes.json()) as {
     tokenId?: string;
     userId?: string;
+    context?: { farmId?: string };
     metadata?: { dataCenters?: Array<{ active?: boolean; apiUrls?: Array<{ host: string; port: string }> }> };
   };
   const tokenId = lg.tokenId;
   const userId = lg.userId;
+  const farmId = lg.context?.farmId;
   const dcs = lg.metadata?.dataCenters ?? [];
   const dc = dcs.find((d) => d.active) ?? dcs[0];
   const api = dc?.apiUrls?.[0];
@@ -56,11 +58,13 @@ export async function POST() {
   const apiHost = `https://${api.host}:${api.port}/appsvcs/rs/svc`;
   const host = hostOf(apiHost);
 
-  // Proven request config: Bearer-token + jar cookies, NO farmId header.
+  // Match the official Five9 client: cookies-only auth (NO Authorization
+  // header), lowercase farmid + x-requested-with headers.
   async function call(method: string, path: string, body?: unknown) {
     const headers: Record<string, string> = {
-      Accept: "application/json, text/plain",
-      Authorization: `Bearer-${tokenId}`,
+      Accept: "application/json, text/javascript, */*; q=0.01",
+      "X-Requested-With": "XMLHttpRequest",
+      farmid: farmId ?? "",
       Cookie: cookieHeaderFor(jar, host),
     };
     if (body !== undefined) headers["Content-Type"] = "application/json";
