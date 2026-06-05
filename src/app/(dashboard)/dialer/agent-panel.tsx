@@ -96,6 +96,12 @@ export function AgentPanel() {
     return () => clearInterval(interval);
   }, [creds?.configured]);
 
+  useEffect(() => {
+    if (sessionState?.state !== "WORKING" && sessionState?.state !== "READY" && sessionState?.state !== "NOT_READY") return;
+    const id = setInterval(() => { void refreshSession(); }, 45_000);
+    return () => clearInterval(id);
+  }, [sessionState?.state]);
+
   async function refreshRecent() {
     const res = await fetch("/api/calls?limit=10");
     if (res.ok) {
