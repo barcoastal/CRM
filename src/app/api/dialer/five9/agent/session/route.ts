@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   const stationId = (body as { stationId?: string }).stationId ?? user?.five9StationId ?? "";
   const stationType = ((body as { stationType?: string }).stationType ??
     user?.five9StationType ??
-    "EMPTY") as "EMPTY" | "SOFTPHONE" | "STATION";
+    "EMPTY") as "EMPTY" | "SOFTPHONE" | "STATION" | "PSTN";
   try {
     await startAgentSession(session.user.id, stationId, stationType);
     return NextResponse.json({ ok: true });
