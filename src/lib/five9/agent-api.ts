@@ -208,9 +208,12 @@ async function agentFetchInternal(
 
 /** Start the agent's session inside Five9 — required before placing calls. */
 export async function startAgentSession(userId: string, stationId: string): Promise<{ ok: boolean }> {
+  // For REST-driven click-to-dial without a softphone, stationType=EMPTY +
+  // empty stationId. Five9 will route call audio through whichever station
+  // the agent's profile defaults to (or none if pure click-to-dial).
   const res = await agentFetch(userId, `/session_start`, {
     method: "PUT",
-    body: JSON.stringify({ stationId, stationType: "EMPTY", forceLogoutAgent: true }),
+    body: JSON.stringify({ stationId: "", stationType: "EMPTY" }),
   });
   if (!res.ok) {
     const t = await res.text().catch(() => "");
