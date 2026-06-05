@@ -1,7 +1,9 @@
 /**
- * DIAGNOSTIC: run GET /login_state several ways and dump the real request +
- * response for each, so we can see exactly what Five9 accepts instead of
- * guessing. Remove once the dialer login works.
+ * DIAGNOSTIC: run the COMPLETE agent login flow (fresh login → login_state →
+ * session_start → loop to WORKING) with the proven config (Bearer-token,
+ * jar-scoped cookies, NO farmId header) and report every step, so we can
+ * confirm the flow reaches WORKING before trusting the UI. Remove once the
+ * dialer login works.
  *
  * POST /api/dialer/five9/agent/debug-flow  (uses saved creds)
  */
@@ -9,46 +11,15 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { decryptPassword, parseSetCookies, cookieHeaderFor } from "@/lib/five9/agent-api";
+import {
+  decryptPassword,
+  parseSetCookies,
+  cookieHeaderFor,
+  mergeCookies,
+} from "@/lib/five9/agent-api";
 
 const LOGIN_BASE = process.env.FIVE9_AGENT_LOGIN_URL ?? "https://app.five9.com/appsvcs/rs/svc";
 const hostOf = (u: string) => { try { return new URL(u).hostname; } catch { return u; } };
-
-async function login(username: string, password: string) {
-  const res = await fetch(`${LOGIN_BASE}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json, text/plain" },
-    body: JSON.stringify({ passwordCredentials: { username, password }, policy: "ForceIn" }),
-  });
-  const cookies = parseSetCookies(res, hostOf(LOGIN_BASE));
-  const json = (await res.json()) as Record<string, unknown>;
-  return { status: res.status, json, cookies };
-}
-
-async function probe(label: string, url: string, headers: Record<string, string>) {
-  let status = 0;
-  let body = "";
-  let setCookie: string[] = [];
-  try {
-    const res = await fetch(url, { method: "GET", headers });
-    status = res.status;
-    body = (await res.text()).slice(0, 300);
-    const getter = (res.headers as { getSetCookie?: () => string[] }).getSetCookie;
-    setCookie = typeof getter === "function" ? getter.call(res.headers).map((c) => c.split("=")[0]) : [];
-  } catch (e) {
-    body = `THREW: ${e instanceof Error ? e.message : String(e)}`;
-  }
-  return {
-    label,
-    url,
-    sentHeaderKeys: Object.keys(headers),
-    sentCookieNames: (headers.Cookie ?? "").split(";").map((c) => c.split("=")[0].trim()).filter(Boolean),
-    authHeader: headers.Authorization ? `${headers.Authorization.slice(0, 8)}…(len ${headers.Authorization.length})` : null,
-    status,
-    respSetCookieNames: setCookie,
-    body,
-  };
-}
 
 export async function POST() {
   const session = await auth();
@@ -62,80 +33,78 @@ export async function POST() {
   }
   const password = decryptPassword(user.five9PasswordEnc);
 
-  const lg = await login(user.five9Username, password);
-  const tokenId = lg.json.tokenId as string | undefined;
-  const userId = lg.json.userId as string | undefined;
-  const farmId = (lg.json.context as { farmId?: string } | undefined)?.farmId;
-  const meta = lg.json.metadata as { dataCenters?: Array<Record<string, unknown>> } | undefined;
-  const dcs = meta?.dataCenters ?? [];
-  const dc = (dcs.find((d) => (d as { active?: boolean }).active) ?? dcs[0]) as
-    | { apiUrls?: Array<{ host: string; port: string }>; loginUrls?: Array<{ host: string; port: string }> }
-    | undefined;
+  // 1. Fresh login (ForceIn).
+  const loginRes = await fetch(`${LOGIN_BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json, text/plain" },
+    body: JSON.stringify({ passwordCredentials: { username: user.five9Username, password }, policy: "ForceIn" }),
+  });
+  let jar = parseSetCookies(loginRes, hostOf(LOGIN_BASE));
+  const lg = (await loginRes.json()) as {
+    tokenId?: string;
+    userId?: string;
+    metadata?: { dataCenters?: Array<{ active?: boolean; apiUrls?: Array<{ host: string; port: string }> }> };
+  };
+  const tokenId = lg.tokenId;
+  const userId = lg.userId;
+  const dcs = lg.metadata?.dataCenters ?? [];
+  const dc = dcs.find((d) => d.active) ?? dcs[0];
   const api = dc?.apiUrls?.[0];
-  if (!tokenId || !userId || !api) {
-    return NextResponse.json({ error: "login missing token/userId/dc", login: lg }, { status: 500 });
+  if (loginRes.status !== 200 || !tokenId || !userId || !api) {
+    return NextResponse.json({ ok: false, step: "login", loginStatus: loginRes.status, lg }, { status: 500 });
   }
   const apiHost = `https://${api.host}:${api.port}/appsvcs/rs/svc`;
-  const dcHostname = hostOf(apiHost);
-  const stateUrl = `${apiHost}/agents/${userId}/login_state`;
+  const host = hostOf(apiHost);
 
-  const jarCookies = cookieHeaderFor(lg.cookies, dcHostname);
-  const allCookies = lg.cookies.map((c) => `${c.name}=${c.value}`).join("; ");
-  const authCookie = lg.cookies.find((c) => c.name === "Authorization")?.value;
-
-  const base = { Accept: "application/json, text/plain" };
-  const probes = [];
-
-  // A: current behavior — Bearer-token header + jar cookies + farmId header
-  probes.push(await probe("A bearer+jar+farmId", stateUrl, {
-    ...base, Authorization: `Bearer-${tokenId}`, Cookie: jarCookies, ...(farmId ? { farmId } : {}),
-  }));
-  // B: Bearer + ALL cookies (incl host-only)
-  probes.push(await probe("B bearer+allCookies+farmId", stateUrl, {
-    ...base, Authorization: `Bearer-${tokenId}`, Cookie: allCookies, ...(farmId ? { farmId } : {}),
-  }));
-  // C: cookies only, NO Authorization header
-  probes.push(await probe("C jarCookies only (no auth header)", stateUrl, {
-    ...base, Cookie: jarCookies, ...(farmId ? { farmId } : {}),
-  }));
-  // D: Authorization header = the Authorization cookie value, Bearer- prefixed
-  if (authCookie) probes.push(await probe("D bearer(authCookie)+jar", stateUrl, {
-    ...base, Authorization: `Bearer-${authCookie}`, Cookie: jarCookies, ...(farmId ? { farmId } : {}),
-  }));
-  // E: Authorization header = raw token, no Bearer- prefix
-  probes.push(await probe("E rawToken+jar", stateUrl, {
-    ...base, Authorization: tokenId, Cookie: jarCookies, ...(farmId ? { farmId } : {}),
-  }));
-  // F: Bearer + jar, NO farmId header
-  probes.push(await probe("F bearer+jar (no farmId)", stateUrl, {
-    ...base, Authorization: `Bearer-${tokenId}`, Cookie: jarCookies,
-  }));
-
-  // G: re-login directly on the DC loginUrl host, then login_state with those cookies
-  const loginUrl = dc?.loginUrls?.[0];
-  let gResult: unknown = "no loginUrl in metadata";
-  if (loginUrl) {
-    const dcLoginBase = `https://${loginUrl.host}:${loginUrl.port}/appsvcs/rs/svc`;
-    const res = await fetch(`${dcLoginBase}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json, text/plain" },
-      body: JSON.stringify({ passwordCredentials: { username: user.five9Username, password }, policy: "ForceIn" }),
-    }).catch((e) => ({ status: 0, _err: String(e) } as unknown as Response));
-    const dcCookies = "headers" in res ? parseSetCookies(res as Response, hostOf(dcLoginBase)) : [];
-    const dcJson = "json" in res ? await (res as Response).json().catch(() => ({})) : {};
-    const dcToken = (dcJson as { tokenId?: string }).tokenId ?? tokenId;
-    gResult = await probe("G reLoginOnDC+jar", stateUrl, {
-      ...base, Authorization: `Bearer-${dcToken}`, Cookie: cookieHeaderFor(dcCookies, dcHostname), ...(farmId ? { farmId } : {}),
+  // Proven request config: Bearer-token + jar cookies, NO farmId header.
+  async function call(method: string, path: string, body?: unknown) {
+    const headers: Record<string, string> = {
+      Accept: "application/json, text/plain",
+      Authorization: `Bearer-${tokenId}`,
+      Cookie: cookieHeaderFor(jar, host),
+    };
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const res = await fetch(`${apiHost}/agents/${userId}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
     });
+    const fresh = parseSetCookies(res, host);
+    if (fresh.length) jar = mergeCookies(jar, fresh);
+    const text = await res.text().catch(() => "");
+    return { status: res.status, text };
   }
 
-  return NextResponse.json({
-    loginStatus: lg.status,
-    apiHost,
-    userId,
-    farmId,
-    loginCookieNames: lg.cookies.map((c) => `${c.name}${c.domain ? `(.${c.domain})` : "(host-only)"}`),
-    probes,
-    G: gResult,
-  });
+  // 2. Drive the state machine to WORKING.
+  const trace: Array<Record<string, unknown>> = [];
+  let reached = "";
+  for (let i = 0; i < 8; i++) {
+    const st = await call("GET", "/login_state");
+    const state = st.text.trim().replace(/^"|"$/g, "");
+    trace.push({ step: `login_state#${i}`, status: st.status, state: st.status === 200 ? state : st.text.slice(0, 200) });
+    if (st.status !== 200) break;
+    if (state === "WORKING") { reached = "WORKING"; break; }
+    if (state === "SELECT_STATION") {
+      const ss = await call("PUT", "/session_start?force=true", { stationId: "", stationType: "EMPTY" });
+      trace.push({ step: "session_start?force=true", status: ss.status, body: ss.text.slice(0, 200) });
+      continue;
+    }
+    if (state === "ACCEPT_NOTICE") {
+      const gn = await call("GET", "/maintenance_notices");
+      trace.push({ step: "GET maintenance_notices", status: gn.status, body: gn.text.slice(0, 300) });
+      try {
+        const notices = JSON.parse(gn.text) as Array<{ id?: string | number }>;
+        for (const n of Array.isArray(notices) ? notices : []) {
+          if (n.id == null) continue;
+          const ac = await call("PUT", `/maintenance_notices/${n.id}/accept`);
+          trace.push({ step: `accept notice ${n.id}`, status: ac.status });
+        }
+      } catch { /* ignore */ }
+      continue;
+    }
+    reached = `UNHANDLED:${state}`;
+    break;
+  }
+
+  return NextResponse.json({ ok: reached === "WORKING", reached, apiHost, trace });
 }
