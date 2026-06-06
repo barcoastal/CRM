@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { RecordPage, StatusPill } from "@/components/slds/record-page";
-import { Section, FieldGrid } from "@/components/slds/section";
+import { Section, FieldGrid, E } from "@/components/slds/section";
 import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activity-chatter-rail";
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { RelatedList } from "@/components/slds/related-list";
@@ -163,41 +163,47 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           Tuples render row-by-row across two columns: left first, then right. */}
       <Section title="Account Information">
         <FieldGrid
+          entityType="account"
+          entityId={account.id}
           fields={[
             // Row 1: Account Name | Rating
-            ["Account Name", account.name ?? acctSf("Name")],
+            E("Account Name", account.name ?? acctSf("Name"), "name", "text", { rawValue: account.name }),
             ["Rating", acctSf("Rating")],
             // Row 2: Account Owner | Owner Full Name
             ["Account Owner", ownerName],
             ["Owner Full Name", acctSf("Owner_Full_Name__c") ?? ownerName],
             // Row 3: Parent Account | Phone
             ["Parent Account", parentAcctNode],
-            ["Phone", phoneVal ? (
-              <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                {phoneVal}
-                <CallButton phone={phoneVal} accountId={account.id} />
-              </span>
-            ) : null],
+            [
+              "Phone",
+              phoneVal ? (
+                <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  {phoneVal}
+                  <CallButton phone={phoneVal} accountId={account.id} />
+                </span>
+              ) : null,
+              { fieldKey: "phone", type: "phone", rawValue: account.phone ?? phoneVal },
+            ],
             // Row 4: Account Number | Fax
             ["Account Number", acctSf("AccountNumber") ?? account.id.slice(-8).toUpperCase()],
-            ["Account Fax", acctSf("Fax")],
+            E("Account Fax", acctSf("Fax"), "Fax"),
             // Row 5: Account Site | Website
-            ["Account Site", acctSf("Site")],
-            ["Website", acctSf("Website")],
+            E("Account Site", acctSf("Site"), "Site"),
+            E("Website", acctSf("Website"), "website", "text", { rawValue: account.website }),
             // Row 6: Type | Ticker Symbol
-            ["Type", acctSf("Type") ?? account.recordType.replace(/_/g, " ")],
-            ["Ticker Symbol", acctSf("TickerSymbol")],
+            E("Type", acctSf("Type") ?? account.recordType.replace(/_/g, " "), "type", "text", { rawValue: account.type }),
+            E("Ticker Symbol", acctSf("TickerSymbol"), "TickerSymbol"),
             // Row 7: Industry | Ownership
-            ["Industry", account.industry ?? acctSf("Industry")],
-            ["Ownership", acctSf("Ownership")],
+            E("Industry", account.industry ?? acctSf("Industry"), "industry", "text", { rawValue: account.industry }),
+            E("Ownership", acctSf("Ownership"), "Ownership"),
             // Row 8: Annual Revenue | Employees
-            ["Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : acctSfDollar("AnnualRevenue")],
-            ["Employees", acctSf("NumberOfEmployees")],
+            E("Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : acctSfDollar("AnnualRevenue"), "annualRevenue", "number", { rawValue: account.annualRevenue ?? null }),
+            E("Employees", acctSf("NumberOfEmployees"), "numberOfEmployees", "number", { rawValue: account.numberOfEmployees ?? null }),
             // Row 9: SSN | SIC Code
-            ["SSN", acctSf("SSN__c")],
-            ["SIC Code", acctSf("Sic") ?? acctSf("SicCode")],
+            E("SSN", acctSf("SSN__c"), "SSN__c"),
+            E("SIC Code", acctSf("Sic") ?? acctSf("SicCode"), "Sic"),
             // Row 10: EIN Number / Tax Id | Total Debt
-            ["EIN Number / Tax Id", account.ein ?? acctSf("EIN_Number_Tax_Id__c")],
+            E("EIN Number / Tax Id", account.ein ?? acctSf("EIN_Number_Tax_Id__c"), "ein", "text", { rawValue: account.ein }),
             ["Total Debt", acctSfDollar("Total_Debt__c")],
             // Row 11: Lead Id | Current Balance
             ["Lead Id", acctSf("Lead_Id__c") ?? acctSf("LeadId")],
@@ -275,13 +281,15 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
 
       <Section title="Billing Address" defaultOpen={false}>
         <FieldGrid
+          entityType="account"
+          entityId={account.id}
           fields={[
-            ["Billing Street", account.billingStreet ?? acctSf("BillingStreet")],
-            ["Billing City", account.billingCity ?? acctSf("BillingCity")],
-            ["Billing State/Province", account.billingState ?? acctSf("BillingState")],
-            ["Billing Zip/Postal Code", account.billingZip ?? acctSf("BillingPostalCode")],
-            ["Billing Country", account.billingCountry ?? acctSf("BillingCountry")],
-            ["Billing County", acctSf("BillingCounty__c")],
+            E("Billing Street", account.billingStreet ?? acctSf("BillingStreet"), "billingStreet", "text", { rawValue: account.billingStreet }),
+            E("Billing City", account.billingCity ?? acctSf("BillingCity"), "billingCity", "text", { rawValue: account.billingCity }),
+            E("Billing State/Province", account.billingState ?? acctSf("BillingState"), "billingState", "text", { rawValue: account.billingState }),
+            E("Billing Zip/Postal Code", account.billingZip ?? acctSf("BillingPostalCode"), "billingZip", "text", { rawValue: account.billingZip }),
+            E("Billing Country", account.billingCountry ?? acctSf("BillingCountry"), "billingCountry", "text", { rawValue: account.billingCountry }),
+            E("Billing County", acctSf("BillingCounty__c"), "BillingCounty__c"),
           ]}
         />
       </Section>

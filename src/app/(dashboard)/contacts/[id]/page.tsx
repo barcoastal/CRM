@@ -9,7 +9,7 @@ import { SfDataSection } from "@/components/slds/sf-data-section";
 import { ContactTabs } from "@/components/contacts/contact-tabs";
 import { ContactHeaderButtons } from "@/components/contacts/contact-header-buttons";
 import { ContactSection } from "@/components/contacts/contact-section";
-import { ContactFieldGrid } from "@/components/contacts/contact-field-grid";
+import { ContactFieldGrid, CE } from "@/components/contacts/contact-field-grid";
 import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
 
@@ -179,7 +179,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     </Link>
   ) : null;
 
-  const contactInformationFields: [string, React.ReactNode][] = [
+  const contactInformationFields: import("@/components/contacts/contact-field-grid").ContactGridField[] = [
     ["Contact Owner", ownerNode],
     [
       "Business Phone",
@@ -189,16 +189,17 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           <CallButton phone={phoneVal} />
         </span>
       ) : null,
+      { fieldKey: "phone", type: "phone", rawValue: contact.phone ?? phoneVal },
     ],
-    ["Full Name", nameNode],
-    ["Home Phone", sfc("HomePhone")],
+    CE("Full Name", nameNode, "fullName", "text", { rawValue: contact.fullName }),
+    CE("Home Phone", sfc("HomePhone"), "HomePhone", "phone"),
     ["Account Name", accountNameNode],
-    ["Mobile Phone", contact.mobilePhone ?? sfc("MobilePhone")],
-    ["Title", contact.title ?? sfc("Title")],
-    ["Other Phone", sfc("OtherPhone")],
-    ["Department", sfc("Department")],
-    ["Business Fax", sfc("Fax")],
-    ["Birthdate", contact.birthdate?.toLocaleDateString() ?? sfcDate("Birthdate")],
+    CE("Mobile Phone", contact.mobilePhone ?? sfc("MobilePhone"), "mobilePhone", "phone", { rawValue: contact.mobilePhone }),
+    CE("Title", contact.title ?? sfc("Title"), "title", "text", { rawValue: contact.title }),
+    CE("Other Phone", sfc("OtherPhone"), "OtherPhone", "phone"),
+    CE("Department", sfc("Department"), "Department"),
+    CE("Business Fax", sfc("Fax"), "Fax"),
+    CE("Birthdate", contact.birthdate?.toLocaleDateString() ?? sfcDate("Birthdate"), "birthdate", "date", { rawValue: contact.birthdate ?? null }),
     [
       "Email",
       emailVal ? (
@@ -207,16 +208,17 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           <ComposeEmailButton defaultTo={emailVal} label="" />
         </span>
       ) : null,
+      { fieldKey: "email", type: "email", rawValue: contact.email ?? emailVal },
     ],
     ["Reports To", reportsToNode],
-    ["SSN", sfc("SSN__c") ?? sfc("SSN_Encrypted__c") ?? sfc("SSN")],
-    ["Lead Source", sfc("LeadSource")],
-    ["Preferred Method of Contact", sfc("Preferred_Method_of_Contact__c") ?? sfc("Preferred_Method__c")],
+    CE("SSN", sfc("SSN__c") ?? sfc("SSN_Encrypted__c") ?? sfc("SSN"), "SSN__c"),
+    CE("Lead Source", sfc("LeadSource"), "LeadSource"),
+    CE("Preferred Method of Contact", sfc("Preferred_Method_of_Contact__c") ?? sfc("Preferred_Method__c"), "Preferred_Method_of_Contact__c"),
     ["Lead Id", sfc("Lead_Number__c") ?? sfc("Lead_Id__c") ?? sfc("LeadId__c") ?? sfc("Lead_ID__c")],
-    ["Assistant's Name", sfc("AssistantName")],
-    ["Verified Phone Number", sfcBool("Verified_Phone_Number__c")],
-    ["Asst. Phone", sfc("AssistantPhone")],
-    ["Sync To Account Engagement", sfcBool("Sync_To_Account_Engagement__c") ?? sfcBool("Sync_to_Pardot__c")],
+    CE("Assistant's Name", sfc("AssistantName"), "AssistantName"),
+    CE("Verified Phone Number", sfcBool("Verified_Phone_Number__c"), "Verified_Phone_Number__c", "checkbox"),
+    CE("Asst. Phone", sfc("AssistantPhone"), "AssistantPhone", "phone"),
+    CE("Sync To Account Engagement", sfcBool("Sync_To_Account_Engagement__c") ?? sfcBool("Sync_to_Pardot__c"), "Sync_To_Account_Engagement__c", "checkbox"),
     ["__PAD__", null], // empty right-column cell so Mailing/Other align side-by-side
     ["Mailing Address", mailingAddress],
     ["Other Address", otherAddress],
@@ -225,7 +227,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   const detailsPanel = (
     <>
       <ContactSection title="Contact Information">
-        <ContactFieldGrid fields={contactInformationFields} />
+        <ContactFieldGrid fields={contactInformationFields} entityType="contact" entityId={contact.id} />
       </ContactSection>
 
       {contact.primaryAccount && (
@@ -256,19 +258,21 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
 
       <ContactSection title="Additional Information" defaultOpen={false}>
         <ContactFieldGrid
+          entityType="contact"
+          entityId={contact.id}
           fields={[
-            ["First Name", sfc("FirstName")],
-            ["Last Name", sfc("LastName")],
-            ["Middle Name", sfc("MiddleName")],
-            ["Salutation", sfc("Salutation")],
-            ["Suffix", sfc("Suffix")],
+            CE("First Name", sfc("FirstName"), "firstName", "text", { rawValue: contact.firstName }),
+            CE("Last Name", sfc("LastName"), "lastName", "text", { rawValue: contact.lastName }),
+            CE("Middle Name", sfc("MiddleName"), "MiddleName"),
+            CE("Salutation", sfc("Salutation"), "Salutation"),
+            CE("Suffix", sfc("Suffix"), "Suffix"),
             ["First Call Date", sfcDate("FirstCallDateTime")],
             ["First Email Date", sfcDate("FirstEmailDateTime")],
-            ["High UCC RISK", sfcBool("High_UCC_RISK__c")],
-            ["Closer FIrst Name`", sfc("Closer_FIrst_Name__c")],
-            ["SMS Opt Out", sfcBool("smagicinteract__SMSOptOut__c")],
-            ["External Legacy CRM Id", sfc("External_Legacy_CRM_Id__c")],
-            ["Important", sfcBool("IsPriorityRecord")],
+            CE("High UCC RISK", sfcBool("High_UCC_RISK__c"), "High_UCC_RISK__c", "checkbox"),
+            CE("Closer FIrst Name`", sfc("Closer_FIrst_Name__c"), "Closer_FIrst_Name__c"),
+            CE("SMS Opt Out", sfcBool("smagicinteract__SMSOptOut__c"), "smagicinteract__SMSOptOut__c", "checkbox"),
+            CE("External Legacy CRM Id", sfc("External_Legacy_CRM_Id__c"), "External_Legacy_CRM_Id__c"),
+            CE("Important", sfcBool("IsPriorityRecord"), "IsPriorityRecord", "checkbox"),
             ["Is Email Bounced", sfcBool("IsEmailBounced")],
             ["Is Person Account", sfcBool("IsPersonAccount")],
           ]}

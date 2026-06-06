@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { RecordPage, StatusPill } from "@/components/slds/record-page";
-import { Section, FieldGrid } from "@/components/slds/section";
+import { Section, FieldGrid, E } from "@/components/slds/section";
 import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activity-chatter-rail";
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { LeadTabs } from "@/components/leads/lead-tabs";
@@ -209,42 +209,56 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const leadInformation = (
     <Section title="Lead Information">
       <FieldGrid
+        entityType="lead"
+        entityId={lead.id}
         fields={[
-          ["Name", displayContactName],
-          ["Salutation", sf("Salutation")],
-          ["Title", sf("Title")],
-          ["Phone", <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{phoneVal ?? "-"}{phoneVal && <CallButton phone={phoneVal} leadId={lead.id} />}</span>],
-          ["Mobile Phone", mobileVal],
+          E("Name", displayContactName, "contactName", "text", { rawValue: lead.contactName }),
+          E("Salutation", sf("Salutation"), "Salutation"),
+          E("Title", sf("Title"), "Title"),
+          [
+            "Phone",
+            <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{phoneVal ?? "-"}{phoneVal && <CallButton phone={phoneVal} leadId={lead.id} />}</span>,
+            { fieldKey: "phone", type: "phone", rawValue: lead.phone ?? phoneVal },
+          ],
+          E("Mobile Phone", mobileVal, "MobilePhone", "phone"),
           ["Formated Phone", sf("Formated_Phone__c")],
-          ["Email", <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{emailVal ?? "-"}{emailVal && <ComposeEmailButton defaultTo={emailVal} leadId={lead.id} label="Email" />}</span>],
-          ["Preferred Language", sf("Preferred_Language__c")],
-          ["Timezone", sf("Timezone__c")],
-          ["Lead Source", lead.source ?? sf("LeadSource")],
-          ["Lead Source Category", sf("Lead_Source_Category__c")],
-          ["Lead Vendor ID", sf("Lead_Vendor_ID__c")],
-          ["Lead Vendor Id Text", sf("Lead_Vendor_Id_Text__c")],
-          ["Campaign Name", sf("Campaign_Name__c")],
-          ["Keyword", sf("Keyword__c")],
-          ["Status", <StatusPill key="st" label={lead.status} tone={leadStatusTone(lead.status)} />],
-          ["Sub Disposition", sf("Sub_Disposition__c")],
-          ["Last Disposition", lead.lastDisposition ?? sf("Last_Disposition__c")],
-          ["Last Sub Disposition", lead.lastSubDisposition ?? sf("Last_Sub_Disposition__c")],
-          ["Transfer Qualification", sf("Transfer_Qualification__c")],
+          [
+            "Email",
+            <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{emailVal ?? "-"}{emailVal && <ComposeEmailButton defaultTo={emailVal} leadId={lead.id} label="Email" />}</span>,
+            { fieldKey: "email", type: "email", rawValue: lead.email ?? emailVal },
+          ],
+          E("Preferred Language", sf("Preferred_Language__c"), "Preferred_Language__c"),
+          E("Timezone", sf("Timezone__c"), "Timezone__c"),
+          E("Lead Source", lead.source ?? sf("LeadSource"), "source", "text", { rawValue: lead.source }),
+          E("Lead Source Category", sf("Lead_Source_Category__c"), "Lead_Source_Category__c"),
+          E("Lead Vendor ID", sf("Lead_Vendor_ID__c"), "Lead_Vendor_ID__c"),
+          E("Lead Vendor Id Text", sf("Lead_Vendor_Id_Text__c"), "Lead_Vendor_Id_Text__c"),
+          E("Campaign Name", sf("Campaign_Name__c"), "Campaign_Name__c"),
+          E("Keyword", sf("Keyword__c"), "Keyword__c"),
+          [
+            "Status",
+            <StatusPill key="st" label={lead.status} tone={leadStatusTone(lead.status)} />,
+            { fieldKey: "status", type: "select", rawValue: lead.status, options: LEAD_STATUSES.map((s) => ({ label: s, value: s })) },
+          ],
+          E("Sub Disposition", sf("Sub_Disposition__c"), "Sub_Disposition__c"),
+          E("Last Disposition", lead.lastDisposition ?? sf("Last_Disposition__c"), "lastDisposition", "text", { rawValue: lead.lastDisposition }),
+          E("Last Sub Disposition", lead.lastSubDisposition ?? sf("Last_Sub_Disposition__c"), "lastSubDisposition", "text", { rawValue: lead.lastSubDisposition }),
+          E("Transfer Qualification", sf("Transfer_Qualification__c"), "Transfer_Qualification__c"),
           ["Owner", ownerName],
           ["Owner Full Name", sf("Owner_Full_Name__c")],
           ["Owner Username", sf("Owner_Username__c")],
-          ["Agent", sf("Agent__c")],
-          ["Agent Location", sf("Agent_Location__c")],
-          ["Fronter", sf("Fronter__c")],
+          E("Agent", sf("Agent__c"), "Agent__c"),
+          E("Agent Location", sf("Agent_Location__c"), "Agent_Location__c"),
+          E("Fronter", sf("Fronter__c"), "Fronter__c"),
           ["Lead Assignment Date", lead.leadAssignmentDate?.toLocaleDateString() ?? sfDate("Lead_Assignment_Date__c")],
-          ["Last Contacted DateTime", lead.lastContactedAt?.toLocaleString() ?? sfDate("Last_Contacted_DateTime__c")],
+          E("Last Contacted DateTime", lead.lastContactedAt?.toLocaleString() ?? sfDate("Last_Contacted_DateTime__c"), "lastContactedAt", "datetime", { rawValue: lead.lastContactedAt ?? null }),
           ["Last Disposition DateTime", lead.lastDispositionAt?.toLocaleString() ?? sfDate("Last_Disposition_DateTime__c")],
           ["Week Days Between Last Contacted Date", sf("Week_Days_Between_Last_Contacted_Date__c")],
-          ["Next Follow-up", lead.nextFollowUpAt?.toLocaleDateString()],
+          E("Next Follow-up", lead.nextFollowUpAt?.toLocaleDateString(), "nextFollowUpAt", "date", { rawValue: lead.nextFollowUpAt ?? null }),
           ["Call counter", sf("Call_counter__c")],
-          ["Hopper Priority", sf("Hopper_Priority__c")],
-          ["Hopper", yesNo(sf("Hopper__c"))],
-          ["Call ASAP", yesNo(sf("Call_ASAP__c"))],
+          E("Hopper Priority", sf("Hopper_Priority__c"), "Hopper_Priority__c"),
+          E("Hopper", yesNo(sf("Hopper__c")), "Hopper__c"),
+          E("Call ASAP", yesNo(sf("Call_ASAP__c")), "Call_ASAP__c"),
           ["DNC", yesNo(sf("DNC__c"))],
           ["Check DNC", yesNo(sf("Check_DNC__c"))],
           ["Address", [sf("Street"), sf("City"), sf("State"), sf("PostalCode"), sf("Country")].filter(Boolean).join(", ") || null],
@@ -274,15 +288,17 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const companyInformation = (
     <Section title="Company Information">
       <FieldGrid
+        entityType="lead"
+        entityId={lead.id}
         fields={[
-          ["Company", lead.businessName ?? sf("Company")],
-          ["EIN Number / Tax Id", lead.ein ?? sf("EIN_Number_Tax_Id__c")],
-          ["Industry", lead.industry ?? sf("Industry")],
-          ["Other Industry", sf("Other_Industry__c")],
-          ["Annual Revenue", lead.annualRevenue ? `$${lead.annualRevenue.toLocaleString()}` : sfDollar("AnnualRevenue")],
-          ["Monthly Revenue", sfDollar("Monthly_Revenue__c")],
-          ["Has Multiple MCA’s", yesNo(sf("Has_Multiple_MCA_s__c"))],
-          ["Business Start Date", sfDate("Business_Start_Date__c")],
+          E("Company", lead.businessName ?? sf("Company"), "businessName", "text", { rawValue: lead.businessName }),
+          E("EIN Number / Tax Id", lead.ein ?? sf("EIN_Number_Tax_Id__c"), "ein", "text", { rawValue: lead.ein }),
+          E("Industry", lead.industry ?? sf("Industry"), "industry", "text", { rawValue: lead.industry }),
+          E("Other Industry", sf("Other_Industry__c"), "Other_Industry__c"),
+          E("Annual Revenue", lead.annualRevenue ? `$${lead.annualRevenue.toLocaleString()}` : sfDollar("AnnualRevenue"), "annualRevenue", "number", { rawValue: lead.annualRevenue ?? null }),
+          E("Monthly Revenue", sfDollar("Monthly_Revenue__c"), "Monthly_Revenue__c", "number"),
+          E("Has Multiple MCA’s", yesNo(sf("Has_Multiple_MCA_s__c")), "Has_Multiple_MCA_s__c", "checkbox"),
+          E("Business Start Date", sfDate("Business_Start_Date__c"), "Business_Start_Date__c", "date"),
         ]}
       />
     </Section>
@@ -291,11 +307,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const currentDebtInformation = (
     <Section title="Current Debt Information">
       <FieldGrid
+        entityType="lead"
+        entityId={lead.id}
         fields={[
-          ["MCA Amount", sfDollar("MCA_Amount__c")],
-          ["MCA Amount Requested", sfDollar("MCA_Amount_Requested__c")],
-          ["Estimated Total Debt", lead.totalDebtEst ? `$${lead.totalDebtEst.toLocaleString()}` : sf("Estimated_Total_Debt__c")],
-          ["Current Total Debt Amount", sfDollar("Current_Total_Debt_Amount__c")],
+          E("MCA Amount", sfDollar("MCA_Amount__c"), "MCA_Amount__c", "number"),
+          E("MCA Amount Requested", sfDollar("MCA_Amount_Requested__c"), "MCA_Amount_Requested__c", "number"),
+          E("Estimated Total Debt", lead.totalDebtEst ? `$${lead.totalDebtEst.toLocaleString()}` : sf("Estimated_Total_Debt__c"), "totalDebtEst", "number", { rawValue: lead.totalDebtEst ?? null }),
+          E("Current Total Debt Amount", sfDollar("Current_Total_Debt_Amount__c"), "Current_Total_Debt_Amount__c", "number"),
           ["Current Total Monthly Payment", sfDollar("Current_Total_Monthly_Payment__c") ?? sfDollar("Current_Total_Monthly_Payment_Formula__c")],
           ["Current Total Weekly Payment", lead.currentTotalWeeklyPayment ? `$${lead.currentTotalWeeklyPayment.toLocaleString()}` : sfDollar("Current_Total_Weekly_Payment__c")],
           ["Current Total Daily Payment", sfDollar("Current_Total_Daily_Payment__c")],

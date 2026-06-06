@@ -1,6 +1,58 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { InlineEditableField, type EntityType, type FieldType } from "./inline-editable-field";
+
+/**
+ * Edit metadata appended to a FieldGrid tuple to make the row inline-editable.
+ * When present (and entityType + entityId are provided to the FieldGrid), the
+ * row renders an InlineEditableField with a pencil next to the value. Without
+ * meta, the row stays read-only.
+ */
+export interface FieldEditMeta {
+  fieldKey: string;
+  type?: FieldType;
+  rawValue?: string | number | boolean | Date | null;
+  options?: { label: string; value: string }[];
+  editable?: boolean;
+}
+
+export type GridField =
+  | [label: string, value: ReactNode]
+  | [label: string, value: ReactNode, edit: FieldEditMeta];
+
+/**
+ * Build a 3-tuple `[label, value, edit]` for inline editing. Helps keep the
+ * call sites readable.
+ *
+ *   E("Phone", phone, "phone", "phone")
+ *   E("Lead Source", source, "source", "select", { options: SOURCES })
+ */
+export function E(
+  label: string,
+  value: ReactNode,
+  fieldKey: string,
+  type: FieldType = "text",
+  opts?: { rawValue?: string | number | boolean | Date | null; options?: { label: string; value: string }[]; editable?: boolean },
+): GridField {
+  return [
+    label,
+    value,
+    {
+      fieldKey,
+      type,
+      rawValue: opts?.rawValue ?? extractRaw(value),
+      options: opts?.options,
+      editable: opts?.editable,
+    },
+  ];
+}
+
+function extractRaw(v: ReactNode): string | number | boolean | null {
+  if (v == null || typeof v === "boolean") return v as boolean | null;
+  if (typeof v === "string" || typeof v === "number") return v;
+  return null;
+}
 
 /**
  * SF Lightning record-page section: collapsible title bar with a chevron,
@@ -65,14 +117,22 @@ export function Section({
 
 /**
  * 2-column field grid as used on SF record pages. Pass an array of
- * [label, value] tuples.
+ * [label, value] (read-only) or [label, value, edit] (inline-editable) tuples.
+ *
+ * When `entityType` + `entityId` are provided, any row carrying edit metadata
+ * renders as an InlineEditableField — the pencil sits next to the value and
+ * click swaps to an input with save / cancel buttons (SF Lightning parity).
  */
 export function FieldGrid({
   fields,
   columns = 2,
+  entityType,
+  entityId,
 }: {
-  fields: [string, ReactNode][];
+  fields: GridField[];
   columns?: 1 | 2;
+  entityType?: EntityType;
+  entityId?: string;
 }) {
   return (
     <div
@@ -83,9 +143,27 @@ export function FieldGrid({
         columnGap: 0,
       }}
     >
-      {fields.map(([label, value], i) => (
-        <Field key={i} label={label} value={value} />
-      ))}
+      {fields.map((row, i) => {
+        const [label, value, edit] = row;
+        if (edit && entityType && entityId) {
+          const raw = edit.rawValue instanceof Date ? edit.rawValue.toISOString() : edit.rawValue ?? null;
+          return (
+            <InlineEditableField
+              key={i}
+              label={label}
+              value={raw}
+              displayNode={value}
+              fieldKey={edit.fieldKey}
+              entityType={entityType}
+              entityId={entityId}
+              type={edit.type ?? "text"}
+              options={edit.options}
+              editable={edit.editable !== false}
+            />
+          );
+        }
+        return <Field key={i} label={label} value={value} />;
+      })}
       <style jsx>{`
         /* SF Lightning: vertical separator between the two columns.
            Left column (odd cells) gets a right border + right padding;
@@ -150,7 +228,7 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
           border: 0,
           cursor: "pointer",
           padding: 4,
-          opacity: 0,
+          opacity: 0.55,
           transition: "opacity .15s",
           display: "inline-flex",
           alignItems: "center",

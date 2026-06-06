@@ -101,7 +101,7 @@ export function InlineEditableField({
     setCommittedNode(undefined); // fall back to raw value during save
     setEditing(false);
     try {
-      const res = await fetch(`/api/${entityType}s/${entityId}/field`, {
+      const res = await fetch(`/api/${pluralize(entityType)}/${entityId}/field`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [fieldKey]: parsed }),
@@ -336,6 +336,12 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
   minWidth: 0,
 };
+
+function pluralize(entity: EntityType): string {
+  // Routes live at /api/leads, /api/opportunities, /api/accounts, /api/contacts.
+  // Simple lookup keeps us from needing an "ies" pluralizer.
+  return entity === "opportunity" ? "opportunities" : `${entity}s`;
+}
 
 function inputHtmlType(t: FieldType): string {
   switch (t) {

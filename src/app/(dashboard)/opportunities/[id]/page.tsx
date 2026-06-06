@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { RecordPage, StatusPill } from "@/components/slds/record-page";
-import { Section, FieldGrid } from "@/components/slds/section";
+import { Section, FieldGrid, E } from "@/components/slds/section";
 import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activity-chatter-rail";
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { RelatedList } from "@/components/slds/related-list";
@@ -275,55 +275,63 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       <Section title="Opportunity Information">
         {/* Labels are kept IDENTICAL to the Salesforce label strings produced
             by scripts/list-sf-vs-crm-fields-v2.ts so the Kenya Palmer detail
-            page is a true 1:1 parity match with the SF Lightning UI. */}
+            page is a true 1:1 parity match with the SF Lightning UI.
+            Rows with E(...) are inline-editable. System / formula / lookup
+            rows fall back to plain [label, value] tuples (no pencil). */}
         <FieldGrid
+          entityType="opportunity"
+          entityId={opp.id}
           fields={[
-            ["Name", oppSf("Name") ?? oppName],
-            ["Opportunity Name", oppName],
+            E("Name", oppSf("Name") ?? oppName, "name", "text", { rawValue: opp.name ?? oppName }),
+            E("Opportunity Name", oppName, "name", "text", { rawValue: opp.name ?? oppName }),
             ["Opportunity ID", oppSf("Id") ?? opp.sfId],
             ["Account Name", accountLink],
-            ["Close Date", closeDateDisplay],
+            E("Close Date", closeDateDisplay, "expectedCloseDate", "date", { rawValue: opp.expectedCloseDate ?? null }),
             ["Opportunity Owner", ownerDisplay],
             ["Total Debt Including Fees", totalDebtDisplay],
-            ["Probability", probabilityDisplay],
-            ["Lead Source", opp.lead?.source ?? oppSf("LeadSource")],
+            E("Probability", probabilityDisplay, "probability", "number", { rawValue: opp.probability ?? null }),
+            E("Lead Source", opp.lead?.source ?? oppSf("LeadSource"), "leadSource"),
             ["Created By", createdByDisplay],
-            ["Stage", <StatusPill key="s" label={opp.stage} tone={opportunityStageTone(opp.stage)} />],
-            ["Sub-Disposition", oppSf("Sub_Disposition__c")],
-            ["Lead Source Category", oppSf("Lead_Source_Category__c")],
-            ["Current Total Debt", oppSfDollar("Current_Total_Debt__c") ?? totalDebtDisplay],
-            ["Estimated Total Debt", oppSfDollar("Estimated_Total_Debt__c")],
-            ["Current Weekly Payment", oppSfDollar("Current_Weekly_Payment__c")],
-            ["Current Monthly Payment", oppSfDollar("Current_Monthly_Payment__c")],
-            ["Weekly Payment to Debt Ratio", oppSf("Weekly_Payment_To_Debt_Ratio__c")],
-            ["Amount", oppSfDollar("Amount")],
-            ["First Draft Date", oppSfDate("First_Draft_Date__c")],
-            ["First Contract Signed Date", oppSfDate("First_Contract_Signed_Date__c")],
+            [
+              "Stage",
+              <StatusPill key="s" label={opp.stage} tone={opportunityStageTone(opp.stage)} />,
+              { fieldKey: "stage", type: "select", rawValue: opp.stage, options: PATH_HAPPY.map((s) => ({ label: s, value: s })) },
+            ],
+            E("Sub-Disposition", oppSf("Sub_Disposition__c"), "subDisposition"),
+            E("Lead Source Category", oppSf("Lead_Source_Category__c"), "leadSourceCategory"),
+            E("Current Total Debt", oppSfDollar("Current_Total_Debt__c") ?? totalDebtDisplay, "currentTotalDebt", "number", { rawValue: opp.currentTotalDebt ?? null }),
+            E("Estimated Total Debt", oppSfDollar("Estimated_Total_Debt__c"), "estimatedTotalDebt", "number", { rawValue: opp.estimatedTotalDebt ?? null }),
+            E("Current Weekly Payment", oppSfDollar("Current_Weekly_Payment__c"), "currentWeeklyPayment", "number", { rawValue: opp.currentWeeklyPayment ?? null }),
+            E("Current Monthly Payment", oppSfDollar("Current_Monthly_Payment__c"), "currentMonthlyPayment", "number", { rawValue: opp.currentMonthlyPayment ?? null }),
+            E("Weekly Payment to Debt Ratio", oppSf("Weekly_Payment_To_Debt_Ratio__c"), "weeklyPaymentToDebtRatio", "number", { rawValue: opp.weeklyPaymentToDebtRatio ?? null }),
+            E("Amount", oppSfDollar("Amount"), "amount", "number", { rawValue: opp.amount ?? null }),
+            E("First Draft Date", oppSfDate("First_Draft_Date__c"), "firstDraftDate", "date", { rawValue: opp.firstDraftDate ?? null }),
+            E("First Contract Signed Date", oppSfDate("First_Contract_Signed_Date__c"), "firstContractSignedDateOpp", "date", { rawValue: opp.firstContractSignedDateOpp ?? null }),
             ["Owner Email", oppSf("Owner_Username__c")],
-            ["Fronter", oppSf("Fronter__c")],
-            ["Closer", oppSf("Closer__c")],
-            ["Call Transfer Status", oppSf("Call_Transfer_Status__c")],
-            ["Transfer Qualification", oppSf("Transfer_Qualification__c")],
-            ["Version", opp.version],
-            ["Version Status", oppSf("Version_Status__c")],
+            E("Fronter", oppSf("Fronter__c"), "fronter"),
+            E("Closer", oppSf("Closer__c"), "closer"),
+            E("Call Transfer Status", oppSf("Call_Transfer_Status__c"), "callTransferStatus"),
+            E("Transfer Qualification", oppSf("Transfer_Qualification__c"), "transferQualification"),
+            E("Version", opp.version, "version"),
+            E("Version Status", oppSf("Version_Status__c"), "Version_Status__c"),
             ["Product", opp.recordType.replace(/_/g, " ")],
             ["Primary Contact", opp.primaryContact?.fullName],
-            ["Phone", oppSf("Phone__c") ?? oppSf("Phone")],
+            E("Phone", oppSf("Phone__c") ?? oppSf("Phone"), "oppPhone", "phone", { rawValue: opp.oppPhone ?? oppSf("Phone__c") ?? oppSf("Phone") }),
             ["Formatted Phone", oppSf("Formatted_Phone__c")],
-            ["Verified Phone Number", oppSf("Verified_Phone_Number__c")],
-            ["Email", oppSf("Email__c") ?? oppSf("Email")],
-            ["Last Contacted", oppSfDate("Last_Contacted_DateTime__c")],
+            E("Verified Phone Number", oppSf("Verified_Phone_Number__c"), "Verified_Phone_Number__c"),
+            E("Email", oppSf("Email__c") ?? oppSf("Email"), "oppEmail", "email", { rawValue: opp.oppEmail ?? oppSf("Email__c") ?? oppSf("Email") }),
+            E("Last Contacted", oppSfDate("Last_Contacted_DateTime__c"), "lastContactedAt", "datetime", { rawValue: opp.lastContactedAt ?? null }),
             ["Last Call", oppSfDate("Last_Call_DateTime__c")],
             ["Last Email", oppSfDate("Last_Email_DateTime__c")],
             ["Last SMS", oppSfDate("Last_SMS_DateTime__c")],
-            ["Timezone", oppSf("Timezone__c")],
-            ["Preferred Contact Method", oppSf("Preferred_Method_Of_Contact__c")],
-            ["Preferred Language", oppSf("Preferred_Language__c")],
-            ["Dialer Group", oppSf("Dialer_Group__c")],
-            ["Business Start Date", oppSfDate("Business_Start_Date__c")],
-            ["Account Status", oppSf("Account_Status__c")],
-            ["DNC", oppSf("DNC__c")],
-            ["Call ASAP", oppSf("Call_ASAP__c")],
+            E("Timezone", oppSf("Timezone__c"), "timezone"),
+            E("Preferred Contact Method", oppSf("Preferred_Method_Of_Contact__c"), "preferredMethodOfContact"),
+            E("Preferred Language", oppSf("Preferred_Language__c"), "preferredLanguage"),
+            E("Dialer Group", oppSf("Dialer_Group__c"), "dialerGroup"),
+            E("Business Start Date", oppSfDate("Business_Start_Date__c"), "businessStartDate", "date", { rawValue: opp.businessStartDate ?? null }),
+            E("Account Status", oppSf("Account_Status__c"), "Account_Status__c"),
+            E("DNC", oppSf("DNC__c"), "DNC__c"),
+            E("Call ASAP", oppSf("Call_ASAP__c"), "Call_ASAP__c"),
             ["Created", opp.createdAt.toLocaleString()],
           ]}
         />
@@ -384,29 +392,31 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
       <Section title="Lender / Legal" defaultOpen={false}>
         <FieldGrid
+          entityType="opportunity"
+          entityId={opp.id}
           fields={[
-            ["Processor", oppSf("Processor__c")],
-            ["Processor Info", oppSf("Processor_Info__c")],
+            E("Processor", oppSf("Processor__c"), "Processor__c"),
+            E("Processor Info", oppSf("Processor_Info__c"), "processorInfo"),
             ["Processor Contract Formula", oppSf("Processor_Contract_Formula__c")],
-            ["Legal Network", oppSf("Legal_Network__c")],
-            ["Lender Agreements Collected", oppSf("Lender_Agreements_Collected__c")],
-            ["Status with Lenders", oppSf("Status_with_Lenders__c")],
-            ["First Payment to Legal", oppSfDate("First_Payment_to_Legal__c")],
-            ["Legal Plan Required", oppSf("Legal_Plan_Required__c")],
-            ["Addendum Required", oppSf("Addendum_Required__c")],
-            ["Secured Party", oppSf("Secured_Party__c")],
-            ["HIGH UCC RISK", oppSf("HIGH_UCC_RISK__c") ?? oppSf("High_UCC_Risk__c")],
-            ["COJ / TRO", oppSf("COJ_or_TRO__c")],
-            ["Summons / Judgment", oppSf("Summons_or_Judgment__c")],
-            ["Order Number", oppSf("Order_Number__c")],
-            ["Current Generators", oppSf("Current_Generators__c")],
-            ["Tracking Number", oppSf("Tracking_Number__c")],
-            ["Welcome Call Scheduled", oppSfDate("Welcome_Call_Scheduled__c")],
-            ["Loss Reason", oppSf("Loss_Reason__c")],
-            ["Next Step", oppSf("Next_Step__c") ?? oppSf("NextStep")],
-            ["What was explained to client?", oppSf("What_was_explained_to_client__c") ?? oppSf("What_Was_Explained_to_Client__c")],
-            ["Main Competitors", oppSf("Main_Competitors__c")],
-            ["Delivery Installation Status", oppSf("Delivery_Installation_Status__c")],
+            E("Legal Network", oppSf("Legal_Network__c"), "Legal_Network__c"),
+            E("Lender Agreements Collected", oppSf("Lender_Agreements_Collected__c"), "lenderAgreementsCollected"),
+            E("Status with Lenders", oppSf("Status_with_Lenders__c"), "statusWithLenders"),
+            E("First Payment to Legal", oppSfDate("First_Payment_to_Legal__c"), "firstPaymentToLegal", "checkbox", { rawValue: opp.firstPaymentToLegal ?? null }),
+            E("Legal Plan Required", oppSf("Legal_Plan_Required__c"), "legalPlanRequired", "checkbox", { rawValue: opp.legalPlanRequired ?? null }),
+            E("Addendum Required", oppSf("Addendum_Required__c"), "addendumRequired", "checkbox", { rawValue: opp.addendumRequired ?? null }),
+            E("Secured Party", oppSf("Secured_Party__c"), "securedParty"),
+            E("HIGH UCC RISK", oppSf("HIGH_UCC_RISK__c") ?? oppSf("High_UCC_Risk__c"), "highUccRisk", "checkbox", { rawValue: opp.highUccRisk ?? null }),
+            E("COJ / TRO", oppSf("COJ_or_TRO__c"), "cojOrTro"),
+            E("Summons / Judgment", oppSf("Summons_or_Judgment__c"), "summonsOrJudgment"),
+            E("Order Number", oppSf("Order_Number__c"), "orderNumber"),
+            E("Current Generators", oppSf("Current_Generators__c"), "currentGenerators"),
+            E("Tracking Number", oppSf("Tracking_Number__c"), "trackingNumber"),
+            E("Welcome Call Scheduled", oppSfDate("Welcome_Call_Scheduled__c"), "welcomeCallScheduled", "date", { rawValue: opp.welcomeCallScheduled ?? null }),
+            E("Loss Reason", oppSf("Loss_Reason__c"), "lossReason"),
+            E("Next Step", oppSf("Next_Step__c") ?? oppSf("NextStep"), "nextStep"),
+            E("What was explained to client?", oppSf("What_was_explained_to_client__c") ?? oppSf("What_Was_Explained_to_Client__c"), "whatWasExplainedToClient", "textarea"),
+            E("Main Competitors", oppSf("Main_Competitors__c"), "mainCompetitors"),
+            E("Delivery Installation Status", oppSf("Delivery_Installation_Status__c"), "deliveryInstallationStatus"),
             ["RT Debt Amount Opportunity Events", oppSfDollar("RT_Debt_Amount_Opportunity_Events__c")],
           ]}
         />
@@ -494,11 +504,13 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
       <Section title="Client Questionnaire" defaultOpen={false}>
         <FieldGrid
+          entityType="opportunity"
+          entityId={opp.id}
           fields={[
-            ["Type of Business", opp.typeOfBusiness],
-            ["Receivables Collection Method", opp.receivablesCollectionMethod],
-            ["Bank Change", opp.bankChange],
-            ["High Lien Risk", opp.highLienRisk],
+            E("Type of Business", opp.typeOfBusiness, "typeOfBusiness"),
+            E("Receivables Collection Method", opp.receivablesCollectionMethod, "receivablesCollectionMethod"),
+            E("Bank Change", opp.bankChange, "bankChange"),
+            E("High Lien Risk", opp.highLienRisk, "highLienRisk"),
           ]}
         />
       </Section>
