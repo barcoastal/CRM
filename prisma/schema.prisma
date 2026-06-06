@@ -11,6 +11,7 @@ datasource db {
 
 model User {
   id           String    @id @default(cuid())
+  sfId         String?   @unique // Salesforce 18-char User ID, populated by backfill-user-sfid.ts
   name         String
   email        String    @unique
   passwordHash       String
