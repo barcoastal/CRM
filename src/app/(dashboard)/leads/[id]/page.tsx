@@ -6,6 +6,7 @@ import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activit
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { LeadTabs } from "@/components/leads/lead-tabs";
 import { LeadHeaderButtons } from "@/components/leads/lead-header-buttons";
+import { LeadHealthCheckCard } from "@/components/leads/lead-health-check-card";
 import { PaymentCalculatorV2 } from "@/components/shared/payment-calculator-v2";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { DebtInformation } from "@/components/leads/debt-information";
@@ -165,7 +166,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             ["Est. Total Debt", lead.totalDebtEst ? `$${lead.totalDebtEst.toLocaleString()}` : sfDollar("Estimated_Total_Debt__c") ?? sfDollar("Total_Debt_Amount__c")],
             ["Current Total Debt", sfDollar("Current_Total_Debt_Amount__c")],
             ["Current Monthly Payment", sfDollar("Current_Total_Monthly_Payment__c") ?? sfDollar("Current_Total_Monthly_Payment_Formula__c")],
-            ["Current Weekly Payment", sfDollar("Current_Total_Weekly_Payment__c")],
+            ["Current Weekly Payment", lead.currentTotalWeeklyPayment ? `$${lead.currentTotalWeeklyPayment.toLocaleString()}` : sfDollar("Current_Total_Weekly_Payment__c")],
             ["Current Daily Payment", sfDollar("Current_Total_Daily_Payment__c")],
             ["MCA Amount", sfDollar("MCA_Amount__c")],
             ["MCA Amount Requested", sfDollar("MCA_Amount_Requested__c")],
@@ -175,12 +176,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             ["Lead Vendor ID", sf("Lead_Vendor_ID__c")],
             ["Status", <StatusPill key="s" label={lead.status} tone={leadStatusTone(lead.status)} />],
             ["Sub-Disposition", sf("Sub_Disposition__c")],
-            ["Last Disposition", sf("Last_Disposition__c")],
+            ["Last Disposition", lead.lastDisposition ?? sf("Last_Disposition__c")],
+            ["Last Sub Disposition", lead.lastSubDisposition ?? sf("Last_Sub_Disposition__c")],
             ["Disqualification Reason", sf("Reason_for_Disqualification__c")],
             ["Owner", lead.assignedTo?.name ?? sf("Owner_Full_Name__c")],
             ["Owner Email", sf("Owner_Username__c")],
+            ["Lead Assignment Date", lead.leadAssignmentDate?.toLocaleDateString() ?? sfDate("Lead_Assignment_Date__c")],
             ["Last Contacted", lead.lastContactedAt?.toLocaleDateString() ?? sfDate("Last_Contacted_DateTime__c")],
-            ["Last Disposition Time", sfDate("Last_Disposition_DateTime__c")],
+            ["Last Disposition Time", lead.lastDispositionAt?.toLocaleString() ?? sfDate("Last_Disposition_DateTime__c")],
             ["Days Since Last Contact", sf("Week_Days_Between_Last_Contacted_Date__c")],
             ["Next Follow-up", lead.nextFollowUpAt?.toLocaleDateString()],
             ["Score", lead.score ? `${lead.score}/100` : null],
@@ -301,9 +304,67 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     </Section>
   );
 
+  const openActivities = [
+    ...lead.tasks
+      .filter((t) => t.status !== "COMPLETED")
+      .map((t) => ({
+        id: t.id,
+        kind: (t.type === "CALL" ? "CALL" : "TASK") as "TASK" | "CALL",
+        subject: t.subject,
+        status: t.status,
+        dueDate: t.dueDate,
+        assignedTo: null,
+      })),
+    ...lead.events
+      .filter((e) => e.status !== "COMPLETED")
+      .map((e) => ({
+        id: e.id,
+        kind: "EVENT" as const,
+        subject: e.subject,
+        status: e.status,
+        dueDate: e.startAt,
+        assignedTo: null,
+      })),
+  ];
+
+  const activityHistory = [
+    ...lead.tasks
+      .filter((t) => t.status === "COMPLETED")
+      .map((t) => ({
+        id: t.id,
+        kind: (t.type === "CALL" ? "CALL" : "TASK") as "TASK" | "CALL",
+        subject: t.subject,
+        outcome: t.outcome ?? t.disposition,
+        completedAt: t.completedAt ?? t.createdAt,
+      })),
+    ...lead.calls.map((c) => ({
+      id: c.id,
+      kind: "CALL" as const,
+      subject: `Call to ${c.phoneNumber}`,
+      outcome: c.disposition,
+      completedAt: c.startedAt,
+    })),
+    ...lead.emails.map((m) => ({
+      id: m.id,
+      kind: "EMAIL" as const,
+      subject: m.subject,
+      outcome: m.status,
+      completedAt: m.sentAt ?? m.createdAt,
+    })),
+    ...lead.sms.map((m) => ({
+      id: m.id,
+      kind: "SMS" as const,
+      subject: m.body.slice(0, 80),
+      outcome: m.status,
+      completedAt: m.sentAt ?? m.createdAt,
+    })),
+  ].sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+
   const related = (
     <LeadRelated
       asyncOps={[]}
+      openActivities={openActivities}
+      activityHistory={activityHistory}
       files={lead.documents.map((d) => ({
         id: d.id,
         name: d.name,
@@ -389,7 +450,31 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           }}
         />
       }
-      rail={<ActivityChatterRail activities={activity} chatter={chatter} />}
+      rail={
+        <>
+          <LeadHealthCheckCard
+            status={lead.status}
+            businessName={lead.businessName}
+            contactName={lead.contactName}
+            industry={lead.industry}
+            totalDebtEst={lead.totalDebtEst}
+            source={lead.source}
+            leadSourceLabel={sf("LeadSource")}
+            isPaymentAmountPopulated={
+              sf("Is_Payment_Amount_Populated__c") === "true" ||
+              sfData["Is_Payment_Amount_Populated__c"] === true
+            }
+            hasCreditorInfo={lead.debts.length > 0 || (lead.totalDebtEst ?? 0) > 0}
+            callDispositionPopulated={
+              !!sf("CloserLookup__c") &&
+              !!sf("Call_Transfer_Status__c") &&
+              !!sf("Call_Received_By_Lookup__c") &&
+              !!sf("Call_Received_Date__c")
+            }
+          />
+          <ActivityChatterRail activities={activity} chatter={chatter} />
+        </>
+      }
     />
   );
 }

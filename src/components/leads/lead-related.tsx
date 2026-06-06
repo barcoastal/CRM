@@ -38,21 +38,73 @@ export type LeadHistoryRow = {
   changedAt: Date | string;
 };
 
+export type OpenActivityRow = {
+  id: string;
+  kind: "TASK" | "EVENT" | "CALL";
+  subject: string;
+  status: string | null;
+  dueDate: Date | string | null;
+  assignedTo: string | null;
+};
+
+export type ActivityHistoryRow = {
+  id: string;
+  kind: "TASK" | "EVENT" | "CALL" | "EMAIL" | "SMS";
+  subject: string;
+  outcome: string | null;
+  completedAt: Date | string;
+};
+
 export function LeadRelated({
   asyncOps,
   files,
   notes,
   campaignHistory,
   leadHistory,
+  openActivities = [],
+  activityHistory = [],
 }: {
   asyncOps: AsyncOpRow[];
   files: FileRow[];
   notes: NoteRow[];
   campaignHistory: CampaignHistoryRow[];
   leadHistory: LeadHistoryRow[];
+  openActivities?: OpenActivityRow[];
+  activityHistory?: ActivityHistoryRow[];
 }) {
   return (
     <div>
+      <RelatedList
+        entity="Account"
+        title="Open Activities"
+        items={openActivities}
+        emptyHint="No open activities"
+        renderItem={(a) => (
+          <div style={{ display: "grid", gridTemplateColumns: "80px 2fr 1fr 1fr 1fr", gap: 12 }}>
+            <div style={{ color: "#706e6b" }}>{a.kind}</div>
+            <div>{a.subject}</div>
+            <div>{a.status ?? "-"}</div>
+            <div>{a.dueDate ? new Date(a.dueDate).toLocaleDateString() : "-"}</div>
+            <div>{a.assignedTo ?? "-"}</div>
+          </div>
+        )}
+      />
+
+      <RelatedList
+        entity="Account"
+        title="Activity History"
+        items={activityHistory}
+        emptyHint="No past activities"
+        renderItem={(h) => (
+          <div style={{ display: "grid", gridTemplateColumns: "80px 2fr 1fr 1fr", gap: 12 }}>
+            <div style={{ color: "#706e6b" }}>{h.kind}</div>
+            <div>{h.subject}</div>
+            <div>{h.outcome ?? "-"}</div>
+            <div>{new Date(h.completedAt).toLocaleString()}</div>
+          </div>
+        )}
+      />
+
       <RelatedList
         entity="Account"
         title="Async Operations"
