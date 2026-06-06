@@ -35,7 +35,7 @@ export function ContactSection({
         style={{
           width: "100%",
           textAlign: "left",
-          background: "transparent",
+          background: "#fafaf9",
           border: 0,
           padding: "8px 16px",
           display: "flex",

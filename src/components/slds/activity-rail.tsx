@@ -41,42 +41,58 @@ export function ActivityRail({ items }: { items: readonly ActivityItem[] }) {
     pastByMonth.set(key, arr);
   }
 
+  // SF Lightning composer icons: Email, Log a Call, New Task, New Event
+  const COMPOSERS: { key: "Email" | "New Task" | "New Event"; label: string; icon: string }[] = [
+    { key: "Email", label: "Email", icon: "M2 4l8 5 8-5v10H2z M2 4l8 5 8-5" },
+    { key: "New Task", label: "New Task", icon: "M3 3h14v14H3z M7 9l3 3 5-5" },
+    { key: "New Event", label: "New Event", icon: "M4 5h12v11H4z M4 8h12 M7 3v3 M13 3v3" },
+  ];
+
   return (
     <article
       style={{
         background: "#fff",
-        border: "1px solid #d8dde6",
+        border: "1px solid #dddbda",
         borderRadius: 4,
       }}
     >
-      {/* Sub-tabs */}
+      {/* Composer icon strip — SF Lightning style */}
       <div
         style={{
           display: "flex",
-          borderBottom: "1px solid #d8dde6",
-          padding: "0 12px",
-          gap: 0,
+          alignItems: "center",
+          padding: "6px 12px",
+          borderBottom: "1px solid #dddbda",
+          gap: 4,
+          background: "#fff",
         }}
       >
-        {(["Email", "New Task", "New Event"] as const).map((t) => {
-          const active = composer === t;
+        {COMPOSERS.map((c) => {
+          const active = composer === c.key;
           return (
             <button
-              key={t}
-              onClick={() => setComposer(t)}
+              key={c.key}
+              onClick={() => setComposer(c.key)}
+              title={c.label}
               style={{
-                background: "transparent",
-                border: 0,
-                padding: "10px 12px",
+                background: active ? "#eaf5fe" : "transparent",
+                border: active ? "1px solid #1589ee" : "1px solid transparent",
+                padding: "4px 8px",
                 fontSize: 12,
-                fontWeight: active ? 700 : 400,
-                color: active ? "#16325c" : "#3e3e3c",
-                borderBottom: active ? "3px solid #1589ee" : "3px solid transparent",
-                marginBottom: -1,
+                fontWeight: 400,
+                color: active ? "#0176d3" : "#3e3e3c",
+                borderRadius: 4,
                 cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                lineHeight: 1.2,
               }}
             >
-              {t}
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke={active ? "#0176d3" : "#54698d"} strokeWidth="1.5">
+                <path d={c.icon} />
+              </svg>
+              {c.label}
             </button>
           );
         })}
@@ -85,30 +101,40 @@ export function ActivityRail({ items }: { items: readonly ActivityItem[] }) {
       {/* Composer placeholder */}
       <div
         style={{
-          padding: 12,
+          padding: "10px 12px",
           fontSize: 12,
           color: "#706e6b",
-          borderBottom: "1px solid #f3f3f3",
+          borderBottom: "1px solid #ecebea",
         }}
       >
-        Click here to log a new {composer.toLowerCase().replace("new ", "")}
+        {composer === "Email"
+          ? "Click here to log a new email"
+          : composer === "New Task"
+          ? "Click here to log a new task"
+          : "Click here to log a new event"}
       </div>
 
-      {/* Filter row */}
+      {/* Filter / actions row */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          padding: "8px 12px",
-          borderBottom: "1px solid #f3f3f3",
-          gap: 8,
+          padding: "6px 12px",
+          borderBottom: "1px solid #ecebea",
+          gap: 6,
+          background: "#fafaf9",
         }}
       >
-        <span style={{ fontSize: 11, color: "#706e6b" }}>
-          Filters: Within 3 months · All activities · All types
-        </span>
-        <span style={{ marginLeft: "auto", fontSize: 11, color: "#1589ee", cursor: "pointer" }}>
-          Refresh · Expand All · View All
+        <label style={{ display: "inline-flex", alignItems: "center", fontSize: 11, color: "#3e3e3c", gap: 6, cursor: "pointer" }}>
+          <input type="checkbox" style={{ margin: 0 }} />
+          Only show activities with insights
+        </label>
+        <span style={{ marginLeft: "auto", display: "inline-flex", gap: 8, fontSize: 11, color: "#0176d3" }}>
+          <button style={{ background: "transparent", border: 0, color: "#0176d3", cursor: "pointer", padding: 0, fontSize: 11 }}>Refresh</button>
+          <span style={{ color: "#dddbda" }}>·</span>
+          <button style={{ background: "transparent", border: 0, color: "#0176d3", cursor: "pointer", padding: 0, fontSize: 11 }}>Expand All</button>
+          <span style={{ color: "#dddbda" }}>·</span>
+          <button style={{ background: "transparent", border: 0, color: "#0176d3", cursor: "pointer", padding: 0, fontSize: 11 }}>View All</button>
         </span>
       </div>
 
