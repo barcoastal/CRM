@@ -121,7 +121,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           id: `lead-call-${c.id}`,
           type: "CALL" as const,
           subject: `Call to ${c.phoneNumber}`,
-          meta: `${c.disposition ?? "—"} · ${c.agent.name} (lead-era)`,
+          meta: `${c.disposition ?? "-"} · ${c.agent.name} (lead-era)`,
           date: c.startedAt,
           done: c.status === "COMPLETED",
         })),
@@ -208,9 +208,9 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     setupFee: latestCalc?.setupFee ?? null,
     monthlyBankFee: latestCalc?.monthlyBankFee ?? null,
     serviceFee: latestCalc?.serviceFee ?? null,
-    // SF default estimated settlement percent is 50% — overridable when SF
-    // data carries an explicit value.
-    estimatedSettlementPercent: 50,
+    // SF default estimated settlement percent is 50% — overridable when the
+    // calculator carries an explicit value.
+    estimatedSettlementPercent: latestCalc?.settlementPercentage ?? 50,
     buyoutFeePercent: null,
     buyoutLoanAmount: null,
   });
@@ -369,7 +369,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
                   <td style={td}>{a.date.toLocaleString()}</td>
                   <td style={td}>{a.type}</td>
                   <td style={td}>{a.subject}</td>
-                  <td style={td}>{a.meta ?? "—"}</td>
+                  <td style={td}>{a.meta ?? "-"}</td>
                 </tr>
               ))}
           </tbody>
@@ -510,8 +510,8 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             <div>{new Date(h.changedAt).toLocaleString()}</div>
             <div>{h.field}</div>
             <div>{h.changedBy?.name ?? "System"}</div>
-            <div style={{ color: "#706e6b" }}>{h.oldValue ?? "—"}</div>
-            <div>{h.newValue ?? "—"}</div>
+            <div style={{ color: "#706e6b" }}>{h.oldValue ?? "-"}</div>
+            <div>{h.newValue ?? "-"}</div>
           </div>
         )}
       />
