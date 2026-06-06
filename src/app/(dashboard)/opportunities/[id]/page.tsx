@@ -273,14 +273,19 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           Including Fees → Probability → Lead Source → Created By, then the
           remaining SF detail rows in the same two-column rhythm. */}
       <Section title="Opportunity Information">
+        {/* Labels are kept IDENTICAL to the Salesforce label strings produced
+            by scripts/list-sf-vs-crm-fields-v2.ts so the Kenya Palmer detail
+            page is a true 1:1 parity match with the SF Lightning UI. */}
         <FieldGrid
           fields={[
+            ["Name", oppSf("Name") ?? oppName],
             ["Opportunity Name", oppName],
+            ["Opportunity ID", oppSf("Id") ?? opp.sfId],
             ["Account Name", accountLink],
             ["Close Date", closeDateDisplay],
             ["Opportunity Owner", ownerDisplay],
             ["Total Debt Including Fees", totalDebtDisplay],
-            ["Probability (%)", probabilityDisplay],
+            ["Probability", probabilityDisplay],
             ["Lead Source", opp.lead?.source ?? oppSf("LeadSource")],
             ["Created By", createdByDisplay],
             ["Stage", <StatusPill key="s" label={opp.stage} tone={opportunityStageTone(opp.stage)} />],
@@ -290,19 +295,22 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             ["Estimated Total Debt", oppSfDollar("Estimated_Total_Debt__c")],
             ["Current Weekly Payment", oppSfDollar("Current_Weekly_Payment__c")],
             ["Current Monthly Payment", oppSfDollar("Current_Monthly_Payment__c")],
-            ["Weekly Payment/Debt Ratio", oppSf("Weekly_Payment_To_Debt_Ratio__c")],
+            ["Weekly Payment to Debt Ratio", oppSf("Weekly_Payment_To_Debt_Ratio__c")],
             ["Amount", oppSfDollar("Amount")],
             ["First Draft Date", oppSfDate("First_Draft_Date__c")],
-            ["First Contract Signed", oppSfDate("First_Contract_Signed_Date__c")],
+            ["First Contract Signed Date", oppSfDate("First_Contract_Signed_Date__c")],
             ["Owner Email", oppSf("Owner_Username__c")],
             ["Fronter", oppSf("Fronter__c")],
             ["Closer", oppSf("Closer__c")],
             ["Call Transfer Status", oppSf("Call_Transfer_Status__c")],
             ["Transfer Qualification", oppSf("Transfer_Qualification__c")],
             ["Version", opp.version],
+            ["Version Status", oppSf("Version_Status__c")],
             ["Product", opp.recordType.replace(/_/g, " ")],
             ["Primary Contact", opp.primaryContact?.fullName],
             ["Phone", oppSf("Phone__c") ?? oppSf("Phone")],
+            ["Formatted Phone", oppSf("Formatted_Phone__c")],
+            ["Verified Phone Number", oppSf("Verified_Phone_Number__c")],
             ["Email", oppSf("Email__c") ?? oppSf("Email")],
             ["Last Contacted", oppSfDate("Last_Contacted_DateTime__c")],
             ["Last Call", oppSfDate("Last_Call_DateTime__c")],
@@ -313,7 +321,63 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             ["Preferred Language", oppSf("Preferred_Language__c")],
             ["Dialer Group", oppSf("Dialer_Group__c")],
             ["Business Start Date", oppSfDate("Business_Start_Date__c")],
+            ["Account Status", oppSf("Account_Status__c")],
+            ["DNC", oppSf("DNC__c")],
+            ["Call ASAP", oppSf("Call_ASAP__c")],
             ["Created", opp.createdAt.toLocaleString()],
+          ]}
+        />
+      </Section>
+
+      <Section title="Lock & Lifecycle" defaultOpen={false}>
+        {/* SF-side lock + assignment lifecycle flags. */}
+        <FieldGrid
+          fields={[
+            ["Active Opportunity", oppSf("Active_Opportunity__c")],
+            ["Active Opportunity Test", oppSf("Active_Opportunity_Test__c")],
+            ["Lock Opportunity", oppSf("Lock_Opportunity__c")],
+            ["Opportunity Lock Criteria", oppSf("Opportunity_Lock_Criteria__c")],
+            ["Re-shuffle Opportunity", oppSf("Re_shuffle_Opportunity__c")],
+            ["Fee Paid in Full", oppSf("Fee_Paid_in_Full__c")],
+            ["Qualified Financial", oppSf("Qualified_Financial_Formula__c")],
+            ["Opportunity Assignment Date", oppSfDate("Opportunity_Assignment_Date__c")],
+            ["Lead Created Date", oppSfDate("Lead_Created_Date__c")],
+            ["Number Of Days From First ContractSigned", oppSf("Number_Of_Days_From_First_ContractSigned__c")],
+          ]}
+        />
+      </Section>
+
+      <Section title="Closer / Fronter" defaultOpen={false}>
+        {/* SF user-lookup references (raw SF user IDs from sfDataJson). */}
+        <FieldGrid
+          fields={[
+            ["Closer Reference", oppSf("CloserLookup__c")],
+            ["Fronter Reference", oppSf("FronterLookup__c")],
+            ["Call Received By Reference", oppSf("Call_Received_By_Lookup__c")],
+            ["Call Transferred By Reference", oppSf("Call_Transferred_By_Lookup__c")],
+            ["Has Closer Notes", oppSf("Has_Closer_Notes__c")],
+            ["Latest Closer Notes", oppSf("Latest_Closer_Notes__c")],
+          ]}
+        />
+      </Section>
+
+      <Section title="Engagement Timestamps" defaultOpen={false}>
+        {/* Raw SF event timestamps (in addition to *_DateTime__c shown above). */}
+        <FieldGrid
+          fields={[
+            ["Last Called Time", oppSfDate("Last_Call__c")],
+            ["Last SMS Time", oppSfDate("Last_SMS__c")],
+          ]}
+        />
+      </Section>
+
+      <Section title="Marketing / Lead Trace" defaultOpen={false}>
+        {/* Tracks the originating tracking IDs from SF. */}
+        <FieldGrid
+          fields={[
+            ["Ad Click Id", oppSf("Ad_Click_Id__c")],
+            ["Lead Id", oppSf("Lead_Id__c")],
+            ["Individual", oppSf("Individual__c")],
           ]}
         />
       </Section>
@@ -321,14 +385,17 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       <Section title="Lender / Legal" defaultOpen={false}>
         <FieldGrid
           fields={[
+            ["Processor", oppSf("Processor__c")],
             ["Processor Info", oppSf("Processor_Info__c")],
+            ["Processor Contract Formula", oppSf("Processor_Contract_Formula__c")],
+            ["Legal Network", oppSf("Legal_Network__c")],
             ["Lender Agreements Collected", oppSf("Lender_Agreements_Collected__c")],
             ["Status with Lenders", oppSf("Status_with_Lenders__c")],
             ["First Payment to Legal", oppSfDate("First_Payment_to_Legal__c")],
             ["Legal Plan Required", oppSf("Legal_Plan_Required__c")],
             ["Addendum Required", oppSf("Addendum_Required__c")],
             ["Secured Party", oppSf("Secured_Party__c")],
-            ["High UCC Risk", oppSf("High_UCC_Risk__c")],
+            ["HIGH UCC RISK", oppSf("HIGH_UCC_RISK__c") ?? oppSf("High_UCC_Risk__c")],
             ["COJ / TRO", oppSf("COJ_or_TRO__c")],
             ["Summons / Judgment", oppSf("Summons_or_Judgment__c")],
             ["Order Number", oppSf("Order_Number__c")],
@@ -337,14 +404,17 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             ["Welcome Call Scheduled", oppSfDate("Welcome_Call_Scheduled__c")],
             ["Loss Reason", oppSf("Loss_Reason__c")],
             ["Next Step", oppSf("Next_Step__c") ?? oppSf("NextStep")],
-            ["What Was Explained to Client", oppSf("What_Was_Explained_to_Client__c")],
+            ["What was explained to client?", oppSf("What_was_explained_to_client__c") ?? oppSf("What_Was_Explained_to_Client__c")],
             ["Main Competitors", oppSf("Main_Competitors__c")],
             ["Delivery Installation Status", oppSf("Delivery_Installation_Status__c")],
+            ["RT Debt Amount Opportunity Events", oppSfDollar("RT_Debt_Amount_Opportunity_Events__c")],
           ]}
         />
       </Section>
 
       <Section title="DocuSign / Settlement Formulas" defaultOpen={false}>
+        {/* CRM-computed DS_* formulas (live, sourced from CRM data) sit next to
+            their SF snapshot counterparts so users can sanity-check parity. */}
         <FieldGrid
           fields={[
             ["DS Estimated Settlement", fmtMoney(formulas.estimatedSettlement)],
@@ -355,6 +425,69 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             ["DS Total Buyout Amount", fmtMoney(formulas.totalBuyoutAmount)],
             ["DS Total Savings", fmtMoney(formulas.totalSavings)],
             ["DS Total Savings %", fmtPercent(formulas.totalSavingsPercent)],
+          ]}
+        />
+      </Section>
+
+      <Section title="DS Settlement Details" defaultOpen={false}>
+        {/* Salesforce snapshot of all DS_*__c fields exactly as SF surfaces them.
+            Labels are kept verbatim from the SF describe (e.g. "DS Total Fee
+            Percentage" already includes a "%" suffix in its SF value, so we
+            render the raw string). */}
+        <FieldGrid
+          fields={[
+            ["DS Estimated Amount You Save", oppSfDollar("DS_Estimated_Amount_You_Save__c")],
+            ["DS Estimated Program Fee", oppSfDollar("DS_Estimated_Program_Fee__c")],
+            ["DS Estimated Retainer Fee", oppSfDollar("DS_Estimated_Retainer_Fee__c")],
+            ["DS First Deposit Amount", oppSfDollar("DS_First_Deposit_Amount__c")],
+            ["DS First Retainer/Setup Fee", oppSfDollar("DS_First_Retainer_Setup_Fee__c")],
+            ["DS Monthly Service Fee", oppSfDollar("DS_Monthly_Service_Fee__c")],
+            ["DS Weekly Service Fee", oppSfDollar("DS_Weekly_Service_Fee__c")],
+            ["DS Payment Frequency", oppSf("DS_Payment_Frequency__c")],
+            ["DS Program Fee Percentage", oppSf("DS_Program_Fee_Percentage__c")],
+            ["DS Retainer Percentage", oppSf("DS_Retainer_Percentage__c")],
+            ["DS Settlement Percentage", oppSf("DS_Settlement_Percentage__c")],
+            ["DS Total Citadel Fee", oppSfDollar("DS_Total_Citadel_Fee__c")],
+            ["DS Total Draft Amount", oppSfDollar("DS_Total_Draft_Amount__c")],
+            ["DS Total Escrow Amount", oppSfDollar("DS_Total_Escrow_Amount__c")],
+            ["DS Total Fee Percentage", oppSf("DS_Total_Fee_Percentage__c")],
+            ["DS Total Processor Fee", oppSfDollar("DS_Total_Processor_Fee__c")],
+            ["DS Total Retainer Fee", oppSfDollar("DS_Total_Retainer_Fee__c")],
+            ["DS Total Service Fee", oppSfDollar("DS_Total_Service_Fee__c")],
+            ["DS Total Setup Fee", oppSfDollar("DS_Total_Setup_Fee__c")],
+            ["DS RAM Contract Rule", oppSf("DS_RAM_Contract_Rule__c")],
+            ["DS Current Day", oppSf("DS_Current_Day__c")],
+            ["DS Current Month", oppSf("DS_Current_Month__c")],
+            ["DS Current Year", oppSf("DS_Current_Year__c")],
+          ]}
+        />
+      </Section>
+
+      <Section title="DS Buyout Details" defaultOpen={false}>
+        <FieldGrid
+          fields={[
+            ["DS Buyout Savings", oppSfDollar("DS_Buyout_Savings__c")],
+            ["DS Buyout Settlement to Creditors", oppSfDollar("DS_Buyout_Settlement_to_Creditors__c")],
+            ["DS Buyout Total Program Cost", oppSfDollar("DS_Buyout_Total_Program_Cost__c")],
+          ]}
+        />
+      </Section>
+
+      <Section title="Payment Calculator (SF Report Link)" defaultOpen={false}>
+        {/* SF stores this as an HTML anchor blob; render the raw markup so the
+            embedded report link stays clickable for parity with SF. */}
+        <FieldGrid
+          fields={[
+            ["Payment Calculator Drafts View", oppSf("Payment_Calculator_Drafts_View__c") ? (
+              <div
+                key="pcv"
+                style={{ fontSize: 13 }}
+                // Render SF HTML anchor exactly as SF stores it. The script
+                // already prints this as a fragment so we let SF retain its own
+                // styling/href.
+                dangerouslySetInnerHTML={{ __html: oppSf("Payment_Calculator_Drafts_View__c") ?? "" }}
+              />
+            ) : null],
           ]}
         />
       </Section>
