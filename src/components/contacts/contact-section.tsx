@@ -1,0 +1,65 @@
+"use client";
+
+import { useState, type ReactNode } from "react";
+
+/**
+ * SF Lightning record-page section card for the Contact detail.
+ * White card, thin border, expandable chevron + title at the top.
+ * Body padding mirrors SF — 16px horizontal, 8px vertical.
+ */
+export function ContactSection({
+  title,
+  children,
+  defaultOpen = true,
+  bodyStyle,
+}: {
+  title: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+  bodyStyle?: React.CSSProperties;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #d8dde6",
+        borderRadius: 4,
+        marginBottom: 8,
+        overflow: "hidden",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: "100%",
+          textAlign: "left",
+          background: "transparent",
+          border: 0,
+          padding: "8px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          cursor: "pointer",
+          borderBottom: open ? "1px solid #ecebea" : "none",
+        }}
+      >
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 10 10"
+          style={{
+            transform: open ? "rotate(90deg)" : "rotate(0deg)",
+            transition: "transform .15s",
+            fill: "#3e3e3c",
+          }}
+        >
+          <path d="M2 0l6 5-6 5z" />
+        </svg>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#080707" }}>{title}</span>
+      </button>
+      {open && <div style={{ padding: "4px 16px 12px", ...bodyStyle }}>{children}</div>}
+    </div>
+  );
+}

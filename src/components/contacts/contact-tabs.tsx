@@ -2,22 +2,17 @@
 
 import { useState, type ReactNode } from "react";
 
-export type ContactTabKey =
-  | "Details"
-  | "Marketing"
-  | "Activities"
-  | "Related Records"
-  | "All SF Fields";
+export type ContactTabKey = "Details" | "Marketing";
 
-const TABS: ContactTabKey[] = [
-  "Details",
-  "Marketing",
-  "Activities",
-  "Related Records",
-  "All SF Fields",
-];
+const TABS: ContactTabKey[] = ["Details", "Marketing"];
 
-export function ContactTabs({ panels }: { panels: Record<ContactTabKey, ReactNode> }) {
+export function ContactTabs({
+  panels,
+  detailsFooter,
+}: {
+  panels: Record<ContactTabKey, ReactNode>;
+  detailsFooter?: ReactNode;
+}) {
   const [tab, setTab] = useState<ContactTabKey>("Details");
   return (
     <div>
@@ -26,7 +21,8 @@ export function ContactTabs({ panels }: { panels: Record<ContactTabKey, ReactNod
           display: "flex",
           gap: 0,
           background: "#fff",
-          borderBottom: "1px solid #d8dde6",
+          border: "1px solid #d8dde6",
+          borderRadius: 4,
           padding: "0 12px",
           marginBottom: 8,
           overflowX: "auto",
@@ -37,13 +33,14 @@ export function ContactTabs({ panels }: { panels: Record<ContactTabKey, ReactNod
           return (
             <button
               key={t}
+              type="button"
               onClick={() => setTab(t)}
               style={{
                 background: "transparent",
                 border: 0,
-                padding: "12px 18px",
+                padding: "10px 16px",
                 fontSize: 13,
-                fontWeight: active ? 700 : 600,
+                fontWeight: active ? 700 : 400,
                 color: active ? "#16325c" : "#3e3e3c",
                 borderBottom: active ? "3px solid #1589ee" : "3px solid transparent",
                 marginBottom: -1,
@@ -57,6 +54,9 @@ export function ContactTabs({ panels }: { panels: Record<ContactTabKey, ReactNod
         })}
       </div>
       <div>{panels[tab]}</div>
+      {tab === "Details" && detailsFooter && (
+        <div style={{ marginTop: 4, padding: "8px 4px", fontSize: 12 }}>{detailsFooter}</div>
+      )}
     </div>
   );
 }

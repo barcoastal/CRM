@@ -2,13 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { RecordPage } from "@/components/slds/record-page";
-import { Section, FieldGrid } from "@/components/slds/section";
 import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activity-chatter-rail";
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { RelatedList } from "@/components/slds/related-list";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { ContactTabs } from "@/components/contacts/contact-tabs";
 import { ContactHeaderButtons } from "@/components/contacts/contact-header-buttons";
+import { ContactSection } from "@/components/contacts/contact-section";
+import { ContactFieldGrid } from "@/components/contacts/contact-field-grid";
 import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
 
@@ -45,6 +46,62 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   });
   if (!contact) notFound();
 
+  // ---------- sfDataJson helpers ----------
+  let ctSf: Record<string, unknown> = {};
+  try {
+    ctSf = contact.sfDataJson ? (JSON.parse(contact.sfDataJson) as Record<string, unknown>) : {};
+  } catch {
+    /* empty */
+  }
+  const sfc = (k: string): string | null => {
+    const v = ctSf[k];
+    if (v == null || v === "") return null;
+    return String(v);
+  };
+  const sfcDate = (k: string): string | null => {
+    const v = sfc(k);
+    if (!v) return null;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString();
+  };
+  const sfcBool = (k: string): string | null => {
+    const v = sfc(k);
+    if (v == null) return null;
+    const lower = v.toLowerCase();
+    if (lower === "true" || lower === "1") return "Yes";
+    if (lower === "false" || lower === "0") return "No";
+    return v;
+  };
+
+  // ---------- Resolve Reports To via SF id ----------
+  let reportsToNode: React.ReactNode = null;
+  const reportsToSfId = sfc("ReportsToId");
+  const reportsToCachedName = sfc("ReportsTo_Full_Name__c") ?? sfc("ReportsTo_Name__c");
+  if (reportsToSfId) {
+    const reportsTo = await prisma.contact.findUnique({
+      where: { sfId: reportsToSfId },
+      select: { id: true, fullName: true },
+    });
+    if (reportsTo) {
+      reportsToNode = (
+        <Link href={`/contacts/${reportsTo.id}`} style={{ color: "#1589ee" }}>
+          {reportsTo.fullName}
+        </Link>
+      );
+    } else if (reportsToCachedName) {
+      reportsToNode = reportsToCachedName;
+    }
+    // Otherwise leave null so the dash renders (avoid leaking a raw SF id).
+  } else if (reportsToCachedName) {
+    reportsToNode = reportsToCachedName;
+  }
+
+  // ---------- Owner cleanup ----------
+  // Bar saw "1.0" showing in Owner — guard against numeric fallthrough from JSON.
+  const ownerName = contact.owner?.name ?? sfc("Owner_Full_Name__c") ?? sfc("Owner_Name__c");
+  const ownerNode: React.ReactNode = ownerName && !/^[0-9.]+$/.test(ownerName) ? ownerName : null;
+
+  // ---------- Activities & Chatter ----------
   const activity: ActivityItem[] = [
     ...contact.tasks.map((t) => ({
       id: t.id,
@@ -87,77 +144,95 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     createdAt: m.sentAt ?? m.createdAt,
   }));
 
-  let ctSf: Record<string, unknown> = {};
-  try {
-    ctSf = contact.sfDataJson ? (JSON.parse(contact.sfDataJson) as Record<string, unknown>) : {};
-  } catch {
-    /* empty */
-  }
-  const sfc = (k: string): string | null => {
-    const v = ctSf[k];
-    if (v == null || v === "") return null;
-    return String(v);
-  };
-  const sfcDate = (k: string): string | null => {
-    const v = sfc(k);
-    if (!v) return null;
-    const d = new Date(v);
-    return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString();
-  };
+  // ---------- Address composition ----------
+  const mailingLines = [
+    sfc("MailingStreet"),
+    [sfc("MailingCity"), sfc("MailingState"), sfc("MailingPostalCode")].filter(Boolean).join(", "),
+    sfc("MailingCountry"),
+  ].filter((l) => l && l.length > 0);
+  const mailingAddress = mailingLines.length > 0 ? (
+    <div style={{ color: "#1589ee", whiteSpace: "pre-line" }}>{mailingLines.join("\n")}</div>
+  ) : null;
+
+  const otherLines = [
+    sfc("OtherStreet"),
+    [sfc("OtherCity"), sfc("OtherState"), sfc("OtherPostalCode")].filter(Boolean).join(", "),
+    sfc("OtherCountry"),
+  ].filter((l) => l && l.length > 0);
+  const otherAddress = otherLines.length > 0 ? (
+    <div style={{ color: "#1589ee", whiteSpace: "pre-line" }}>{otherLines.join("\n")}</div>
+  ) : null;
+
+  // ---------- Contact Information fields — order matches SF screenshot ----------
+  // Left col then right col, interleaved (FieldGrid renders in row-major order).
+  const phoneVal = contact.phone ?? sfc("Phone");
+  const emailVal = contact.email ?? sfc("Email");
+  const nameNode = (
+    <span>
+      {contact.fullName}
+      {sfc("Salutation") ? "" : ""}
+    </span>
+  );
+  const accountNameNode = contact.primaryAccount ? (
+    <Link href={`/accounts/${contact.primaryAccount.id}`} style={{ color: "#1589ee" }}>
+      {contact.primaryAccount.name}
+    </Link>
+  ) : null;
+
+  const contactInformationFields: [string, React.ReactNode][] = [
+    ["Contact Owner", ownerNode],
+    [
+      "Phone",
+      phoneVal ? (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <span style={{ color: "#1589ee" }}>{phoneVal}</span>
+          <CallButton phone={phoneVal} />
+        </span>
+      ) : null,
+    ],
+    ["Name", nameNode],
+    ["Home Phone", sfc("HomePhone")],
+    ["Account Name", accountNameNode],
+    ["Mobile", contact.mobilePhone ?? sfc("MobilePhone")],
+    ["Title", contact.title ?? sfc("Title")],
+    ["Other Phone", sfc("OtherPhone")],
+    ["Department", sfc("Department")],
+    ["Fax", sfc("Fax")],
+    ["Birthdate", contact.birthdate?.toLocaleDateString() ?? sfcDate("Birthdate")],
+    [
+      "Email",
+      emailVal ? (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <a href={`mailto:${emailVal}`} style={{ color: "#1589ee" }}>{emailVal}</a>
+          <ComposeEmailButton defaultTo={emailVal} label="" />
+        </span>
+      ) : null,
+    ],
+    ["Reports To", reportsToNode],
+    ["SSN", sfc("SSN__c") ?? sfc("SSN")],
+    ["Lead Source", sfc("LeadSource")],
+    ["Preferred Method of Contact", sfc("Preferred_Method_of_Contact__c") ?? sfc("Preferred_Method__c")],
+    ["Lead Id", sfc("Lead_Id__c") ?? sfc("LeadId__c") ?? sfc("Lead_ID__c")],
+    ["Assistant", sfc("AssistantName")],
+    ["Verified Phone Number", sfcBool("Verified_Phone_Number__c")],
+    ["Asst. Phone", sfc("AssistantPhone")],
+    ["Sync To Account Engagement", sfcBool("pi__pardot_hard_bounced__c") ?? sfcBool("Sync_to_Pardot__c") ?? sfcBool("Sync_To_Account_Engagement__c")],
+    ["", null], // pad right col so Mailing/Other line up
+    ["Mailing Address", mailingAddress],
+    ["Other Address", otherAddress],
+  ];
 
   const detailsPanel = (
     <>
-      <Section title="Contact Information">
-        <FieldGrid
-          fields={[
-            ["Name", contact.fullName],
-            ["Salutation", sfc("Salutation")],
-            ["First Name", contact.firstName ?? sfc("FirstName")],
-            ["Last Name", contact.lastName ?? sfc("LastName")],
-            ["Title", contact.title ?? sfc("Title")],
-            ["Department", sfc("Department")],
-            [
-              "Phone",
-              <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                {contact.phone ?? sfc("Phone")}
-                {(contact.phone ?? sfc("Phone")) && (
-                  <CallButton phone={contact.phone ?? sfc("Phone")} />
-                )}
-              </span>,
-            ],
-            ["Mobile Phone", contact.mobilePhone ?? sfc("MobilePhone")],
-            ["Home Phone", sfc("HomePhone")],
-            ["Other Phone", sfc("OtherPhone")],
-            ["Fax", sfc("Fax")],
-            [
-              "Email",
-              <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                {contact.email ?? sfc("Email")}
-                {(contact.email ?? sfc("Email")) && (
-                  <ComposeEmailButton defaultTo={(contact.email ?? sfc("Email"))!} label="Email" />
-                )}
-              </span>,
-            ],
-            ["Birthdate", contact.birthdate?.toLocaleDateString() ?? sfcDate("Birthdate")],
-            ["Reports To", sfc("ReportsToId")],
-            ["Owner", contact.owner?.name ?? sfc("Owner_Full_Name__c")],
-            ["Owner Email", contact.owner?.email ?? sfc("Owner_Username__c")],
-            ["Lead Source", sfc("LeadSource")],
-            ["Description", sfc("Description")],
-          ]}
-        />
-      </Section>
+      <ContactSection title="Contact Information">
+        <ContactFieldGrid fields={contactInformationFields} />
+      </ContactSection>
 
       {contact.primaryAccount && (
-        <Section title="Account Information">
-          <FieldGrid
+        <ContactSection title="Account Information" defaultOpen={false}>
+          <ContactFieldGrid
             fields={[
-              [
-                "Primary Account",
-                <Link key="a" href={`/accounts/${contact.primaryAccount.id}`} style={{ color: "#1589ee" }}>
-                  {contact.primaryAccount.name}
-                </Link>,
-              ],
+              ["Primary Account", accountNameNode],
               ["Account Type", contact.primaryAccount.recordType.replace(/_/g, " ")],
               ["Client Status", contact.primaryAccount.clientStatus],
               ["Stage", contact.primaryAccount.stage],
@@ -165,100 +240,62 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
               ["Account Email", contact.primaryAccount.email],
               [
                 "Parent Account",
-                contact.primaryAccount.parentAccount?.name && (
+                contact.primaryAccount.parentAccount?.name ? (
                   <Link
-                    key="parent"
                     href={`/accounts/${contact.primaryAccount.parentAccount.id}`}
                     style={{ color: "#1589ee" }}
                   >
                     {contact.primaryAccount.parentAccount.name}
                   </Link>
-                ),
+                ) : null,
               ],
             ]}
           />
-        </Section>
+        </ContactSection>
       )}
 
-      <Section title="Address" defaultOpen={false}>
-        <FieldGrid
+      <ContactSection title="System Information" defaultOpen={false}>
+        <ContactFieldGrid
           fields={[
-            ["Mailing Street", sfc("MailingStreet")],
-            ["Mailing City", sfc("MailingCity")],
-            ["Mailing State", sfc("MailingState")],
-            ["Mailing Postal Code", sfc("MailingPostalCode")],
-            ["Mailing Country", sfc("MailingCountry")],
-            ["Other Street", sfc("OtherStreet")],
-            ["Other City", sfc("OtherCity")],
-            ["Other State", sfc("OtherState")],
-            ["Other Postal Code", sfc("OtherPostalCode")],
-            ["Other Country", sfc("OtherCountry")],
+            ["Owner Email", contact.owner?.email ?? sfc("Owner_Username__c")],
+            ["Created Date", sfcDate("CreatedDate") ?? contact.createdAt.toLocaleDateString()],
+            ["Last Modified", sfcDate("LastModifiedDate") ?? contact.updatedAt.toLocaleDateString()],
+            ["Description", sfc("Description")],
           ]}
         />
-      </Section>
+      </ContactSection>
     </>
   );
 
   const marketingPanel = (
-    <>
-      <Section title="Account Engagement (Pardot)">
-        <FieldGrid
-          fields={[
-            ["Email Opt Out", sfc("HasOptedOutOfEmail") === "true" ? "Yes" : sfc("HasOptedOutOfEmail")],
-            ["Email Bounced Reason", sfc("EmailBouncedReason")],
-            ["Email Bounced Date", sfcDate("EmailBouncedDate")],
-            ["Last Activity Date", sfcDate("LastActivityDate")],
-            ["Account Engagement Score", sfc("pi__score__c")],
-            ["Account Engagement Grade", sfc("pi__grade__c")],
-            ["Account Engagement Campaign", sfc("pi__campaign__c")],
-            ["Account Engagement First Activity", sfcDate("pi__first_activity__c")],
-            ["Account Engagement Last Activity", sfcDate("pi__last_activity__c")],
-            ["Account Engagement Comments", sfc("pi__comments__c")],
-            ["Notes", sfc("pi__notes__c")],
-            ["Created from URL", sfc("pi__created_from_url__c")],
-            ["Conversion Date", sfcDate("pi__conversion_date__c")],
-            ["DNC Email", sfc("HasOptedOutOfEmail")],
-            ["DNC Fax", sfc("HasOptedOutOfFax")],
-            ["Do Not Call", sfc("DoNotCall")],
-          ]}
-        />
-      </Section>
-    </>
+    <ContactSection title="Account Engagement">
+      <ContactFieldGrid
+        fields={[
+          ["Email Opt Out", sfcBool("HasOptedOutOfEmail")],
+          ["Account Engagement Grade", sfc("pi__grade__c")],
+          ["Account Engagement Campaign", sfc("pi__campaign__c")],
+          ["First Referrer Type", sfc("pi__first_touch_url__c") ?? sfc("pi__first_referrer_type__c")],
+          ["Account Engagement Comments", sfc("pi__comments__c")],
+          ["Hard Bounced", sfcBool("pi__pardot_hard_bounced__c")],
+          ["Last Activity", sfcDate("pi__last_activity__c")],
+          ["Account Engagement Score", sfc("pi__score__c")],
+          ["First Activity", sfcDate("pi__first_activity__c")],
+          ["Conversion Date", sfcDate("pi__conversion_date__c")],
+          ["Created from URL", sfc("pi__created_from_url__c")],
+          ["Notes", sfc("pi__notes__c")],
+          ["Email Bounced Reason", sfc("EmailBouncedReason")],
+          ["Email Bounced Date", sfcDate("EmailBouncedDate")],
+          ["Last Activity Date", sfcDate("LastActivityDate")],
+          ["DNC Email", sfcBool("HasOptedOutOfEmail")],
+          ["DNC Fax", sfcBool("HasOptedOutOfFax")],
+          ["Do Not Call", sfcBool("DoNotCall")],
+        ]}
+      />
+    </ContactSection>
   );
 
-  const activitiesPanel = (
-    <Section title={`Activities (${activity.length})`}>
-      {activity.length === 0 ? (
-        <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>No activity recorded.</div>
-      ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
-              <th style={th}>Date</th>
-              <th style={th}>Type</th>
-              <th style={th}>Subject</th>
-              <th style={th}>Detail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...activity]
-              .sort((a, b) => b.date.getTime() - a.date.getTime())
-              .map((a) => (
-                <tr key={a.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                  <td style={td}>{a.date.toLocaleString()}</td>
-                  <td style={td}>{a.type}</td>
-                  <td style={td}>{a.subject}</td>
-                  <td style={td}>{a.meta ?? ""}</td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
-      )}
-    </Section>
-  );
-
-  const relatedPanel = (
-    <>
+  const relatedFooter = (
+    <ContactSection title="Related Records" defaultOpen={false}>
       <RelatedList
         entity="Opportunity"
         title={`Opportunities as Primary Contact (${contact.primaryForOpportunity.length})`}
@@ -317,10 +354,26 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
         )}
         emptyHint="No open tasks."
       />
-    </>
+    </ContactSection>
   );
 
-  const sfPanel = <SfDataSection sfDataJson={contact.sfDataJson} sfId={contact.sfId} />;
+  const allSfFooter = (
+    <details style={{ marginTop: 8 }}>
+      <summary style={{ cursor: "pointer", color: "#1589ee", fontSize: 12, padding: "4px 0" }}>
+        View all Salesforce fields
+      </summary>
+      <div style={{ marginTop: 8 }}>
+        <SfDataSection sfDataJson={contact.sfDataJson} sfId={contact.sfId} />
+      </div>
+    </details>
+  );
+
+  const detailsFooter = (
+    <>
+      {relatedFooter}
+      {allSfFooter}
+    </>
+  );
 
   return (
     <RecordPage
@@ -330,12 +383,17 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       recordSubtitle={contact.title ?? undefined}
       highlights={[
         { label: "Title", value: contact.title },
-        { label: "Account Name", value: contact.primaryAccount?.name && (
-          <Link href={`/accounts/${contact.primaryAccount.id}`} style={{ color: "#1589ee" }}>{contact.primaryAccount.name}</Link>
-        ) },
+        {
+          label: "Account Name",
+          value: contact.primaryAccount?.name && (
+            <Link href={`/accounts/${contact.primaryAccount.id}`} style={{ color: "#1589ee" }}>
+              {contact.primaryAccount.name}
+            </Link>
+          ),
+        },
         { label: "Phone", value: contact.phone ?? sfc("Phone") },
         { label: "Email", value: contact.email ?? sfc("Email") },
-        { label: "Contact Owner", value: contact.owner?.name },
+        { label: "Contact Owner", value: ownerNode },
       ]}
       actions={<ContactHeaderButtons contactId={contact.id} />}
       details={
@@ -343,60 +401,15 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           panels={{
             Details: detailsPanel,
             Marketing: marketingPanel,
-            Activities: activitiesPanel,
-            "Related Records": relatedPanel,
-            "All SF Fields": sfPanel,
           }}
+          detailsFooter={detailsFooter}
         />
       }
       rail={
         <>
-          <RelatedList
-            entity="Account"
-            title="Account Hierarchy"
-            items={contact.accountRelations.map((r) => ({ id: r.id, role: r.role, account: r.account }))}
-            renderItem={(r) => (
-              <div>
-                <Link href={`/accounts/${r.account.id}`} style={{ color: "#1589ee", fontWeight: 600 }}>
-                  {r.account.name}
-                </Link>
-                {r.role && <div style={{ fontSize: 11, color: "#706e6b" }}>{r.role}</div>}
-              </div>
-            )}
-            emptyHint="No other accounts."
-          />
-          <RelatedList
-            entity="Opportunity"
-            title="Primary Opportunities"
-            items={contact.primaryForOpportunity}
-            renderItem={(o) => (
-              <div>
-                <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee", fontWeight: 600 }}>
-                  {o.name ?? o.recordType.replace(/_/g, " ")}
-                </Link>
-                <div style={{ fontSize: 11, color: "#706e6b" }}>v{o.version} · {o.stage}</div>
-              </div>
-            )}
-            emptyHint="No opportunities."
-          />
           <ActivityChatterRail activities={activity} chatter={chatter} />
         </>
       }
     />
   );
 }
-
-const th: React.CSSProperties = {
-  textAlign: "left",
-  padding: "8px 12px",
-  fontWeight: 700,
-  fontSize: 12,
-  color: "#3e3e3c",
-  textTransform: "uppercase",
-  letterSpacing: 0.3,
-};
-const td: React.CSSProperties = {
-  padding: "10px 12px",
-  color: "#080707",
-  fontSize: 13,
-};
