@@ -808,26 +808,42 @@ function ContactRolesCard({
     <article
       style={{
         background: "#fff",
-        border: "1px solid #d8dde6",
+        border: "1px solid #dddbda",
         borderRadius: 4,
-        padding: 12,
-        marginBottom: 8,
+        marginBottom: 12,
+        boxShadow: "0 2px 2px 0 rgba(0,0,0,0.05)",
       }}
     >
-      <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: "#080707" }}>
-        Contact Roles (1)
-      </h3>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-        <Link href={`/contacts/${primary.id}`} style={{ color: "#1589ee" }}>
-          {primary.fullName}
-        </Link>
-        <span style={{ color: "#706e6b" }}>Primary</span>
+      <header
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "8px 12px",
+          background: "#fafaf9",
+          borderBottom: "1px solid #ecebea",
+        }}
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10" style={{ fill: "#706e6b", transform: "rotate(90deg)" }}>
+          <path d="M2 0l6 5-6 5z" />
+        </svg>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+          Contact Roles (1)
+        </h3>
+      </header>
+      <div style={{ padding: "8px 12px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0" }}>
+          <Link href={`/contacts/${primary.id}`} style={{ color: "#0070d2" }}>
+            {primary.fullName}
+          </Link>
+          <span style={{ color: "#3e3e3c" }}>Primary</span>
+        </div>
       </div>
       {accountId && (
-        <div style={{ textAlign: "right", marginTop: 6 }}>
+        <div style={{ textAlign: "center", padding: "8px 12px", borderTop: "1px solid #ecebea" }}>
           <Link
             href={`/accounts/${accountId}`}
-            style={{ color: "#1589ee", fontSize: 12 }}
+            style={{ color: "#0070d2", fontSize: 12 }}
           >
             View All
           </Link>

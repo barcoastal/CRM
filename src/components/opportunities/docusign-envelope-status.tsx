@@ -66,10 +66,10 @@ export function DocusignEnvelopeStatus({
     <article
       style={{
         background: "#fff",
-        border: "1px solid #d8dde6",
+        border: "1px solid #dddbda",
         borderRadius: 4,
-        padding: 12,
-        marginBottom: 8,
+        marginBottom: 12,
+        boxShadow: "0 2px 2px 0 rgba(0,0,0,0.05)",
       }}
     >
       <header
@@ -77,15 +77,22 @@ export function DocusignEnvelopeStatus({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: 8,
+          padding: "8px 12px",
+          background: "#fafaf9",
+          borderBottom: "1px solid #ecebea",
         }}
       >
-        <h3 style={{ fontSize: 13, fontWeight: 700, color: "#080707" }}>
-          DocuSign Envelope Status
-        </h3>
-        <span style={{ fontSize: 11, color: "#706e6b" }}>({envelopes.length})</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <svg width="10" height="10" viewBox="0 0 10 10" style={{ fill: "#706e6b", transform: "rotate(90deg)" }}>
+            <path d="M2 0l6 5-6 5z" />
+          </svg>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+            DocuSign Envelope Status
+          </h3>
+        </div>
+        <span style={{ fontSize: 12, color: "#706e6b" }}>({envelopes.length})</span>
       </header>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+      <ul style={{ listStyle: "none", padding: "4px 12px 4px", margin: 0 }}>
         {top.map((e) => {
           const icon = statusIcon(e.status);
           const when = e.completedAt ?? e.signedAt ?? e.sentAt ?? e.createdAt;
@@ -152,8 +159,8 @@ export function DocusignEnvelopeStatus({
         })}
       </ul>
       {envelopes.length > top.length && (
-        <div style={{ textAlign: "right", marginTop: 6 }}>
-          <Link href="#envelopes" style={{ color: "#1589ee", fontSize: 12 }}>
+        <div style={{ textAlign: "center", padding: "8px 12px", borderTop: "1px solid #ecebea" }}>
+          <Link href="#envelopes" style={{ color: "#0070d2", fontSize: 12 }}>
             View All ({envelopes.length})
           </Link>
         </div>

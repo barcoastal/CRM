@@ -28,16 +28,30 @@ export function OppReportsCard({ opportunityId }: { opportunityId: string }) {
     <article
       style={{
         background: "#fff",
-        border: "1px solid #d8dde6",
+        border: "1px solid #dddbda",
         borderRadius: 4,
-        padding: 12,
-        marginBottom: 8,
+        marginBottom: 12,
+        boxShadow: "0 2px 2px 0 rgba(0,0,0,0.05)",
       }}
     >
-      <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: "#080707" }}>
-        Reports
-      </h3>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+      <header
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "8px 12px",
+          background: "#fafaf9",
+          borderBottom: "1px solid #ecebea",
+        }}
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10" style={{ fill: "#706e6b", transform: "rotate(90deg)" }}>
+          <path d="M2 0l6 5-6 5z" />
+        </svg>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+          Reports
+        </h3>
+      </header>
+      <ul style={{ listStyle: "none", padding: "4px 12px 8px", margin: 0 }}>
         {reports.map((r) => (
           <li
             key={r.label}
@@ -46,12 +60,12 @@ export function OppReportsCard({ opportunityId }: { opportunityId: string }) {
               justifyContent: "space-between",
               alignItems: "center",
               padding: "6px 0",
-              borderBottom: "1px solid #f3f3f3",
+              borderBottom: "1px solid #f3f2f2",
               fontSize: 12,
             }}
           >
-            <span>{r.label}</span>
-            <Link href={r.href} style={{ color: "#1589ee", fontSize: 12 }}>
+            <span style={{ color: "#080707" }}>{r.label}</span>
+            <Link href={r.href} style={{ color: "#0070d2", fontSize: 12 }}>
               View Report
             </Link>
           </li>
