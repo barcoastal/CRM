@@ -177,6 +177,26 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     return s + ((d.paymentAmount * (perYear[d.paymentFrequency] ?? 0)) / 52);
   }, 0);
 
+  let oppSfData: Record<string, unknown> = {};
+  try { oppSfData = opp.sfDataJson ? JSON.parse(opp.sfDataJson) as Record<string, unknown> : {}; } catch { /* empty */ }
+  const oppSf = (k: string): string | null => {
+    const v = oppSfData[k];
+    if (v == null || v === "") return null;
+    return String(v);
+  };
+  const oppSfDollar = (k: string): string | null => {
+    const v = oppSf(k);
+    if (!v) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? `$${n.toLocaleString()}` : v;
+  };
+  const oppSfDate = (k: string): string | null => {
+    const v = oppSf(k);
+    if (!v) return null;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString();
+  };
+
   const detailsPanel = (
     <>
       <Section title="Opportunity Information">
@@ -187,15 +207,67 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
               <Link href={`/accounts/${opp.account.id}`} style={{ color: "#1589ee" }}>{opp.account.name}</Link>
             )],
             ["Stage", <StatusPill key="s" label={opp.stage} tone={opportunityStageTone(opp.stage)} />],
-            ["Lead Source", opp.lead?.source ?? null],
+            ["Sub-Disposition", oppSf("Sub_Disposition__c")],
+            ["Lead Source", opp.lead?.source ?? oppSf("LeadSource")],
+            ["Lead Source Category", oppSf("Lead_Source_Category__c")],
             ["Total Debt", `$${totalDebtVal.toLocaleString()}`],
-            ["Expected Close Date", opp.expectedCloseDate?.toLocaleDateString()],
-            ["Owner", opp.assignedTo?.name],
+            ["Current Total Debt", oppSfDollar("Current_Total_Debt__c")],
+            ["Estimated Total Debt", oppSfDollar("Estimated_Total_Debt__c")],
+            ["Current Weekly Payment", oppSfDollar("Current_Weekly_Payment__c")],
+            ["Current Monthly Payment", oppSfDollar("Current_Monthly_Payment__c")],
+            ["Weekly Payment/Debt Ratio", oppSf("Weekly_Payment_To_Debt_Ratio__c")],
+            ["Amount", oppSfDollar("Amount")],
+            ["Expected Close Date", opp.expectedCloseDate?.toLocaleDateString() ?? oppSfDate("CloseDate")],
+            ["First Draft Date", oppSfDate("First_Draft_Date__c")],
+            ["First Contract Signed", oppSfDate("First_Contract_Signed_Date__c")],
+            ["Probability", oppSf("Probability")],
+            ["Owner", opp.assignedTo?.name ?? oppSf("Owner_Full_Name__c")],
+            ["Owner Email", oppSf("Owner_Username__c")],
+            ["Fronter", oppSf("Fronter__c")],
+            ["Closer", oppSf("Closer__c")],
+            ["Call Transfer Status", oppSf("Call_Transfer_Status__c")],
+            ["Transfer Qualification", oppSf("Transfer_Qualification__c")],
             ["Version", opp.version],
-            ["Lead Id", opp.lead?.id ? opp.lead.id.slice(-8).toUpperCase() : null],
             ["Product", opp.recordType.replace(/_/g, " ")],
             ["Primary Contact", opp.primaryContact?.fullName],
+            ["Phone", oppSf("Phone__c") ?? oppSf("Phone")],
+            ["Email", oppSf("Email__c") ?? oppSf("Email")],
+            ["Last Contacted", oppSfDate("Last_Contacted_DateTime__c")],
+            ["Last Call", oppSfDate("Last_Call_DateTime__c")],
+            ["Last Email", oppSfDate("Last_Email_DateTime__c")],
+            ["Last SMS", oppSfDate("Last_SMS_DateTime__c")],
+            ["Timezone", oppSf("Timezone__c")],
+            ["Preferred Contact Method", oppSf("Preferred_Method_Of_Contact__c")],
+            ["Preferred Language", oppSf("Preferred_Language__c")],
+            ["Dialer Group", oppSf("Dialer_Group__c")],
+            ["Business Start Date", oppSfDate("Business_Start_Date__c")],
             ["Created", opp.createdAt.toLocaleString()],
+          ]}
+        />
+      </Section>
+
+      <Section title="Lender / Legal" defaultOpen={false}>
+        <FieldGrid
+          fields={[
+            ["Processor Info", oppSf("Processor_Info__c")],
+            ["Lender Agreements Collected", oppSf("Lender_Agreements_Collected__c")],
+            ["Status with Lenders", oppSf("Status_with_Lenders__c")],
+            ["First Payment to Legal", oppSfDate("First_Payment_to_Legal__c")],
+            ["Legal Plan Required", oppSf("Legal_Plan_Required__c")],
+            ["Addendum Required", oppSf("Addendum_Required__c")],
+            ["Secured Party", oppSf("Secured_Party__c")],
+            ["High UCC Risk", oppSf("High_UCC_Risk__c")],
+            ["COJ / TRO", oppSf("COJ_or_TRO__c")],
+            ["Summons / Judgment", oppSf("Summons_or_Judgment__c")],
+            ["Order Number", oppSf("Order_Number__c")],
+            ["Current Generators", oppSf("Current_Generators__c")],
+            ["Tracking Number", oppSf("Tracking_Number__c")],
+            ["Welcome Call Scheduled", oppSfDate("Welcome_Call_Scheduled__c")],
+            ["Loss Reason", oppSf("Loss_Reason__c")],
+            ["Next Step", oppSf("Next_Step__c") ?? oppSf("NextStep")],
+            ["What Was Explained to Client", oppSf("What_Was_Explained_to_Client__c")],
+            ["Main Competitors", oppSf("Main_Competitors__c")],
+            ["Delivery Installation Status", oppSf("Delivery_Installation_Status__c")],
           ]}
         />
       </Section>

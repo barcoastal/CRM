@@ -111,36 +111,61 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     return "neutral";
   };
 
+  let acctSfData: Record<string, unknown> = {};
+  try { acctSfData = account.sfDataJson ? JSON.parse(account.sfDataJson) as Record<string, unknown> : {}; } catch { /* empty */ }
+  const acctSf = (k: string): string | null => {
+    const v = acctSfData[k];
+    if (v == null || v === "") return null;
+    return String(v);
+  };
+  const acctSfDollar = (k: string): string | null => {
+    const v = acctSf(k);
+    if (!v) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? `$${n.toLocaleString()}` : v;
+  };
+  const acctSfDate = (k: string): string | null => {
+    const v = acctSf(k);
+    if (!v) return null;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString();
+  };
+
   const detailsPanel = (
     <>
       <Section title="Account Information">
         <FieldGrid
           fields={[
-            ["Account Name", account.name],
+            ["Account Name", account.name ?? acctSf("Name")],
             ["Parent Account", account.parentAccount?.name && (
               <Link href={`/accounts/${account.parentAccount.id}`} style={{ color: "#1589ee" }}>{account.parentAccount.name}</Link>
             )],
-            ["Industry", account.industry],
-            ["Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : null],
+            ["Industry", account.industry ?? acctSf("Industry")],
+            ["Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : acctSfDollar("AnnualRevenue")],
+            ["Number of Employees", acctSf("NumberOfEmployees")],
+            ["Website", acctSf("Website")],
             ["Account ID", account.id.slice(-8).toUpperCase()],
-            ["External SAS ID", account.externalSasId],
-            ["EIN", account.ein],
-            ["Phone", <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{account.phone}<CallButton phone={account.phone} accountId={account.id} /></span>],
-            ["Email", <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{account.email}{account.email && <ComposeEmailButton defaultTo={account.email} accountId={account.id} label="Email" />}</span>],
-            ["Owner", account.owner?.name],
-            ["Business Start Date", account.businessStartDate?.toLocaleDateString()],
-            ["UCC Filing Date", account.uccFilingDate?.toLocaleDateString()],
-            ["Program Start Date", account.programStartDate?.toLocaleDateString()],
-            ["Program End Date", account.programEndDate?.toLocaleDateString()],
-            ["Bank Account Sync Status", account.bankAccountSyncStatus],
-            ["Cancellation Date", account.cancellationDate?.toLocaleDateString()],
-            ["Cancellation Reason", account.cancellationReason],
-            ["Legal Status", account.legalStatus],
-            ["Submitted by Legal", account.submittedByLegal],
-            ["Reschedule Status", account.rescheduleStatus],
-            ["Conversion Reason", account.conversionReason],
-            ["Loan Provider", account.loanProvider],
-            ["Collection Agency", account.collectionAgency],
+            ["External SAS ID", account.externalSasId ?? acctSf("External_SAS_Id__c")],
+            ["EIN", account.ein ?? acctSf("EIN_Number_Tax_Id__c")],
+            ["DBA Name", acctSf("DBA_Name__c")],
+            ["Phone", <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{account.phone ?? acctSf("Phone")}<CallButton phone={account.phone ?? acctSf("Phone") ?? ""} accountId={account.id} /></span>],
+            ["Email", <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{account.email ?? acctSf("Email__c")}{(account.email ?? acctSf("Email__c")) && <ComposeEmailButton defaultTo={(account.email ?? acctSf("Email__c"))!} accountId={account.id} label="Email" />}</span>],
+            ["Owner", account.owner?.name ?? acctSf("Owner_Full_Name__c")],
+            ["Owner Email", acctSf("Owner_Username__c")],
+            ["Business Start Date", account.businessStartDate?.toLocaleDateString() ?? acctSfDate("Business_Start_Date__c")],
+            ["UCC Filing Date", account.uccFilingDate?.toLocaleDateString() ?? acctSfDate("UCC_Filing_Date__c")],
+            ["Program Start Date", account.programStartDate?.toLocaleDateString() ?? acctSfDate("Program_Start_Date__c")],
+            ["Program End Date", account.programEndDate?.toLocaleDateString() ?? acctSfDate("Program_End_Date__c")],
+            ["First Payment Date", acctSfDate("First_Payment_Date__c")],
+            ["Bank Account Sync Status", account.bankAccountSyncStatus ?? acctSf("Bank_Account_Sync_Status__c")],
+            ["Cancellation Date", account.cancellationDate?.toLocaleDateString() ?? acctSfDate("Cancellation_Date__c")],
+            ["Cancellation Reason", account.cancellationReason ?? acctSf("Cancellation_Reason__c")],
+            ["Legal Status", account.legalStatus ?? acctSf("Legal_Status__c")],
+            ["Submitted by Legal", account.submittedByLegal ?? acctSf("Submitted_By_Legal__c")],
+            ["Reschedule Status", account.rescheduleStatus ?? acctSf("Reschedule_Status__c")],
+            ["Conversion Reason", account.conversionReason ?? acctSf("Conversion_Reason__c")],
+            ["Loan Provider", account.loanProvider ?? acctSf("Loan_Provider__c")],
+            ["Collection Agency", account.collectionAgency ?? acctSf("Collection_Agency__c")],
           ]}
         />
       </Section>
@@ -148,11 +173,35 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       <Section title="Billing Address" defaultOpen={false}>
         <FieldGrid
           fields={[
-            ["Street", account.billingStreet],
-            ["City", account.billingCity],
-            ["State", account.billingState],
-            ["Zip", account.billingZip],
-            ["Country", account.billingCountry],
+            ["Street", account.billingStreet ?? acctSf("BillingStreet")],
+            ["City", account.billingCity ?? acctSf("BillingCity")],
+            ["State", account.billingState ?? acctSf("BillingState")],
+            ["Zip", account.billingZip ?? acctSf("BillingPostalCode")],
+            ["Country", account.billingCountry ?? acctSf("BillingCountry")],
+          ]}
+        />
+      </Section>
+
+      <Section title="Program & Financial (from SF)" defaultOpen={false}>
+        <FieldGrid
+          fields={[
+            ["Total Debt", acctSfDollar("Total_Debt__c")],
+            ["Current Total Debt", acctSfDollar("Current_Total_Debt_Amount__c")],
+            ["Settled Total", acctSfDollar("Total_Settled__c")],
+            ["Total Paid to Date", acctSfDollar("Total_Paid_to_Date__c")],
+            ["Active Settlements", acctSf("Active_Settlements__c")],
+            ["Escrow Balance", acctSfDollar("Escrow_Balance__c")],
+            ["Total Fees Collected", acctSfDollar("Total_Fees_Collected__c")],
+            ["Number of Drafts", acctSf("Number_of_Drafts__c")],
+            ["Missed Drafts", acctSf("Missed_Drafts__c")],
+            ["First Draft Date", acctSfDate("First_Draft_Date__c")],
+            ["Last Draft Date", acctSfDate("Last_Draft_Date__c")],
+            ["Welcome Call Completed", acctSf("Welcome_Call_Completed__c")],
+            ["Bank Verification Status", acctSf("Bank_Verification_Status__c")],
+            ["Routing Number", acctSf("Routing_Number__c")],
+            ["Account Number (masked)", acctSf("Account_Number_Masked__c")],
+            ["Processor", acctSf("Processor__c")],
+            ["RAM/SAS Status", acctSf("RAM_SAS_Status__c")],
           ]}
         />
       </Section>

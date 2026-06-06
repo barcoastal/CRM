@@ -62,19 +62,52 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       actions={
         <HeaderActions buttons={[{ label: "+ Follow" }, { label: "Edit" }, { label: "New Task" }, { label: "New Event" }]} />
       }
-      details={
+      details={(() => {
+        let ctSf: Record<string, unknown> = {};
+        try { ctSf = contact.sfDataJson ? JSON.parse(contact.sfDataJson) as Record<string, unknown> : {}; } catch { /* empty */ }
+        const sfc = (k: string): string | null => {
+          const v = ctSf[k];
+          if (v == null || v === "") return null;
+          return String(v);
+        };
+        const sfcDate = (k: string): string | null => {
+          const v = sfc(k);
+          if (!v) return null;
+          const d = new Date(v);
+          return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString();
+        };
+        return (
         <>
           <Section title="Contact Information">
             <FieldGrid
               fields={[
-                ["First Name", contact.firstName],
-                ["Last Name", contact.lastName],
-                ["Title", contact.title],
-                ["Email", contact.email],
-                ["Phone", contact.phone],
-                ["Mobile Phone", contact.mobilePhone],
-                ["Birthdate", contact.birthdate?.toLocaleDateString()],
-                ["Owner", contact.owner?.name],
+                ["First Name", contact.firstName ?? sfc("FirstName")],
+                ["Last Name", contact.lastName ?? sfc("LastName")],
+                ["Salutation", sfc("Salutation")],
+                ["Title", contact.title ?? sfc("Title")],
+                ["Department", sfc("Department")],
+                ["Email", contact.email ?? sfc("Email")],
+                ["Phone", contact.phone ?? sfc("Phone")],
+                ["Mobile Phone", contact.mobilePhone ?? sfc("MobilePhone")],
+                ["Other Phone", sfc("OtherPhone")],
+                ["Home Phone", sfc("HomePhone")],
+                ["Fax", sfc("Fax")],
+                ["Birthdate", contact.birthdate?.toLocaleDateString() ?? sfcDate("Birthdate")],
+                ["Reports To", sfc("ReportsToId")],
+                ["Owner", contact.owner?.name ?? sfc("Owner_Full_Name__c")],
+                ["Owner Email", sfc("Owner_Username__c")],
+                ["Lead Source", sfc("LeadSource")],
+                ["Description", sfc("Description")],
+                ["Mailing Street", sfc("MailingStreet")],
+                ["Mailing City", sfc("MailingCity")],
+                ["Mailing State", sfc("MailingState")],
+                ["Mailing Postal Code", sfc("MailingPostalCode")],
+                ["Mailing Country", sfc("MailingCountry")],
+                ["Other Street", sfc("OtherStreet")],
+                ["Other City", sfc("OtherCity")],
+                ["Email Bounced Date", sfcDate("EmailBouncedDate")],
+                ["Last Activity Date", sfcDate("LastActivityDate")],
+                ["DNC Email", sfc("HasOptedOutOfEmail")],
               ]}
             />
           </Section>
@@ -92,7 +125,8 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           )}
           <SfDataSection sfDataJson={contact.sfDataJson} sfId={contact.sfId} />
         </>
-      }
+        );
+      })()}
       rail={
         <>
           <RelatedList
