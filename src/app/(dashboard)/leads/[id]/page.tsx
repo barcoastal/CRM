@@ -12,7 +12,6 @@ import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { DebtInformation } from "@/components/leads/debt-information";
 import { LeadRelated } from "@/components/leads/lead-related";
 import { SfDataSection } from "@/components/slds/sf-data-section";
-import { ConvertLeadButton } from "@/components/leads/convert-lead-button";
 import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
 import { leadStatusTone } from "@/lib/slds/status-tones";
@@ -485,9 +484,35 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     </Section>
   );
 
+  // SF Lead detail does NOT show a giant in-body "Convert" call-to-action — the
+  // Convert action is the header button. We surface a slim post-conversion
+  // breadcrumb at the very top of Details so users can jump to the converted
+  // Account / Opportunity, but skip the big CTA banner entirely.
   const details = (
     <>
-      <ConvertLeadButton leadId={lead.id} converted={converted} />
+      {converted && (
+        <div
+          style={{
+            background: "#f0f9f4",
+            border: "1px solid #c4e4cf",
+            borderRadius: 4,
+            padding: "10px 14px",
+            marginBottom: 12,
+            fontSize: 13,
+            color: "#08503e",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <span style={{ fontWeight: 700 }}>Converted.</span>
+          <Link href={`/accounts/${converted.accountId}`} style={{ color: "#0070d2" }}>View account</Link>
+          <Link href={`/contacts/${converted.contactId}`} style={{ color: "#0070d2" }}>View contact</Link>
+          {converted.opportunityId && (
+            <Link href={`/opportunities/${converted.opportunityId}`} style={{ color: "#0070d2" }}>View opportunity</Link>
+          )}
+        </div>
+      )}
       {leadInformation}
       {companyInformation}
       {currentDebtInformation}
@@ -721,7 +746,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         { label: "Mobile", value: mobileVal },
         { label: "Lead Id", value: displayLeadId },
       ]}
-      actions={<LeadHeaderButtons leadId={lead.id} currentStage={stage} />}
+      actions={<LeadHeaderButtons leadId={lead.id} currentStage={stage} converted={!!converted} />}
       pathStages={LEAD_PATH}
       pathCurrentIndex={Math.max(0, leadPathIndex(lead.status))}
       pathActionLabel={converted ? "Converted" : "Mark Status as Complete"}
