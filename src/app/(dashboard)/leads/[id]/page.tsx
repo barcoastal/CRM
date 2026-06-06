@@ -210,9 +210,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     <Section title="Lead Information">
       <FieldGrid
         fields={[
-          ["Full Name", displayContactName],
-          ["First Name", sf("FirstName")],
-          ["Last Name", sf("LastName")],
+          ["Name", displayContactName],
           ["Salutation", sf("Salutation")],
           ["Title", sf("Title")],
           ["Phone", <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{phoneVal ?? "-"}{phoneVal && <CallButton phone={phoneVal} leadId={lead.id} />}</span>],
