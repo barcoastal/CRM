@@ -21,11 +21,12 @@ export function ContactTabs({
           display: "flex",
           gap: 0,
           background: "#fff",
-          border: "1px solid #d8dde6",
+          border: "1px solid #dddbda",
           borderRadius: 4,
           padding: "0 12px",
           marginBottom: 8,
           overflowX: "auto",
+          boxShadow: "0 2px 2px 0 rgba(0,0,0,0.05)",
         }}
       >
         {TABS.map((t) => {
