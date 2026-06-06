@@ -135,38 +135,93 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString();
   };
 
+  const phoneVal = account.phone ?? acctSf("Phone");
+  const emailVal = account.email ?? acctSf("Email__c");
+  const ownerName = account.owner?.name ?? acctSf("Owner_Full_Name__c") ?? acctSf("OwnerName");
+  const parentAcctNode = account.parentAccount?.name
+    ? <Link href={`/accounts/${account.parentAccount.id}`} style={{ color: "#1589ee" }}>{account.parentAccount.name}</Link>
+    : acctSf("Parent_Account_Name__c") ?? acctSf("ParentName") ?? acctSf("Parent_Account__c");
+
   const detailsPanel = (
     <>
+      {/* SF Account Information — field pairs match Lightning layout exactly.
+          Tuples render row-by-row across two columns: left first, then right. */}
       <Section title="Account Information">
         <FieldGrid
           fields={[
+            // Row 1: Account Name | Rating
             ["Account Name", account.name ?? acctSf("Name")],
-            ["Parent Account", account.parentAccount?.name && (
-              <Link href={`/accounts/${account.parentAccount.id}`} style={{ color: "#1589ee" }}>{account.parentAccount.name}</Link>
-            )],
-            ["Industry", account.industry ?? acctSf("Industry")],
-            ["Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : acctSfDollar("AnnualRevenue")],
-            ["Number of Employees", acctSf("NumberOfEmployees")],
+            ["Rating", acctSf("Rating")],
+            // Row 2: Account Owner | Owner Full Name
+            ["Account Owner", ownerName],
+            ["Owner Full Name", acctSf("Owner_Full_Name__c") ?? ownerName],
+            // Row 3: Parent Account | Phone
+            ["Parent Account", parentAcctNode],
+            ["Phone", phoneVal ? (
+              <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                {phoneVal}
+                <CallButton phone={phoneVal} accountId={account.id} />
+              </span>
+            ) : null],
+            // Row 4: Account Number | Fax
+            ["Account Number", acctSf("AccountNumber") ?? account.id.slice(-8).toUpperCase()],
+            ["Fax", acctSf("Fax")],
+            // Row 5: Account Site | Website
+            ["Account Site", acctSf("Site")],
             ["Website", acctSf("Website")],
-            ["Account ID", account.id.slice(-8).toUpperCase()],
-            ["External SAS ID", account.externalSasId ?? acctSf("External_SAS_Id__c")],
-            ["EIN", account.ein ?? acctSf("EIN_Number_Tax_Id__c")],
-            ["DBA Name", acctSf("DBA_Name__c")],
-            ["Phone", <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{account.phone ?? acctSf("Phone")}<CallButton phone={account.phone ?? acctSf("Phone") ?? ""} accountId={account.id} /></span>],
-            ["Email", <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{account.email ?? acctSf("Email__c")}{(account.email ?? acctSf("Email__c")) && <ComposeEmailButton defaultTo={(account.email ?? acctSf("Email__c"))!} accountId={account.id} label="Email" />}</span>],
-            ["Owner", account.owner?.name ?? acctSf("Owner_Full_Name__c")],
-            ["Owner Email", account.owner?.email ?? acctSf("Owner_Username__c")],
+            // Row 6: Type | Ticker Symbol
+            ["Type", acctSf("Type") ?? account.recordType.replace(/_/g, " ")],
+            ["Ticker Symbol", acctSf("TickerSymbol")],
+            // Row 7: Industry | Ownership
+            ["Industry", account.industry ?? acctSf("Industry")],
+            ["Ownership", acctSf("Ownership")],
+            // Row 8: Annual Revenue | Employees
+            ["Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : acctSfDollar("AnnualRevenue")],
+            ["Employees", acctSf("NumberOfEmployees")],
+            // Row 9: SSN | SIC Code
+            ["SSN", acctSf("SSN__c")],
+            ["SIC Code", acctSf("Sic") ?? acctSf("SicCode")],
+            // Row 10: EIN Number / Tax Id | Total Debt
+            ["EIN Number / Tax Id", account.ein ?? acctSf("EIN_Number_Tax_Id__c")],
+            ["Total Debt", acctSfDollar("Total_Debt__c")],
+            // Row 11: Lead Id | Current Balance
+            ["Lead Id", acctSf("Lead_Id__c") ?? acctSf("LeadId")],
+            ["Current Balance", acctSfDollar("Current_Total_Debt_Amount__c") ?? acctSfDollar("Current_Balance__c")],
+            // Row 12: Program Start Date | Account Record Type
+            ["Program Start Date", account.programStartDate?.toLocaleDateString() ?? acctSfDate("Program_Start_Date__c")],
+            ["Account Record Type", account.recordType.replace(/_/g, " ")],
+            // Row 13: Program End Date | Creation Date
+            ["Program End Date", account.programEndDate?.toLocaleDateString() ?? acctSfDate("Program_End_Date__c")],
+            ["Creation Date", account.createdAt.toLocaleDateString()],
+            // Row 14: External SAS Id | Primary Contact
+            ["External SAS Id", account.externalSasId ?? acctSf("External_SAS_Id__c")],
             ["Primary Contact", account.primaryContact?.fullName ? (
               <Link key="pc" href={`/contacts/${account.primaryContact.id}`} style={{ color: "#1589ee" }}>{account.primaryContact.fullName}</Link>
             ) : acctSf("Primary_Contact__c")],
+            // Row 15: External RAM Id | Closer
+            ["External RAM Id", acctSf("External_RAM_Id__c") ?? acctSf("RAM_Id__c")],
             ["Closer", account.opportunities[0]?.closer ?? acctSf("Closer__c")],
+            // Row 16: External Citadel Id | Created Date Time
+            ["External Citadel Id", acctSf("External_Citadel_Id__c")],
+            ["Created Date Time", account.createdAt.toLocaleString()],
+            // Row 17: Sync Status | First Draft Date
+            ["Sync Status", account.bankAccountSyncStatus ?? acctSf("Sync_Status__c") ?? acctSf("Bank_Account_Sync_Status__c")],
+            ["First Draft Date", acctSfDate("First_Draft_Date__c")],
+            // Row 18: Bank Account Sync | (blank right)
+            ["Bank Account Sync", account.bankAccountSyncStatus ?? acctSf("Bank_Account_Sync_Status__c")],
+            ["", null],
+            // Email + supporting fields (not in SF screenshot but useful)
+            ["Email", emailVal ? (
+              <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                {emailVal}
+                <ComposeEmailButton defaultTo={emailVal} accountId={account.id} label="Email" />
+              </span>
+            ) : null],
+            ["Owner Email", account.owner?.email ?? acctSf("Owner_Username__c")],
             ["Fronter", account.opportunities[0]?.fronter ?? acctSf("Fronter__c")],
             ["Business Start Date", account.businessStartDate?.toLocaleDateString() ?? acctSfDate("Business_Start_Date__c")],
             ["UCC Filing Date", account.uccFilingDate?.toLocaleDateString() ?? acctSfDate("UCC_Filing_Date__c")],
-            ["Program Start Date", account.programStartDate?.toLocaleDateString() ?? acctSfDate("Program_Start_Date__c")],
-            ["Program End Date", account.programEndDate?.toLocaleDateString() ?? acctSfDate("Program_End_Date__c")],
             ["First Payment Date", acctSfDate("First_Payment_Date__c")],
-            ["Bank Account Sync Status", account.bankAccountSyncStatus ?? acctSf("Bank_Account_Sync_Status__c")],
             ["Cancellation Date", account.cancellationDate?.toLocaleDateString() ?? acctSfDate("Cancellation_Date__c")],
             ["Cancellation Reason", account.cancellationReason ?? acctSf("Cancellation_Reason__c")],
             ["Legal Status", account.legalStatus ?? acctSf("Legal_Status__c")],
@@ -360,11 +415,10 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         title="Opportunities"
         items={account.opportunities}
         renderItem={(o) => (
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
-            <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee" }}>{o.name ?? o.recordType}</Link>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12 }}>
+            <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee" }}>{o.name ?? o.recordType.replace(/_/g, " ")}</Link>
             <span>{o.stage}</span>
-            <span>v{o.version}</span>
-            <span>${o.totalDebt?.toLocaleString() ?? "—"}</span>
+            <span>${(o.totalDebt ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         emptyHint="No opportunities."
@@ -451,8 +505,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           <thead>
             <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
               <th style={th}>Opportunity Name</th>
-              <th style={th}>Version</th>
-              <th style={th}>Stage</th>
+              <th style={th}>Version Status</th>
+              <th style={th}>Total Debt Included</th>
               <th style={th}>Current Total Debt</th>
             </tr>
           </thead>
@@ -462,9 +516,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
                 <td style={td}>
                   <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee" }}>{o.name ?? o.recordType.replace(/_/g, " ")}</Link>
                 </td>
-                <td style={td}>v{o.version}</td>
                 <td style={td}>{o.stage}</td>
-                <td style={td}>${o.totalDebt?.toLocaleString() ?? "—"}</td>
+                <td style={td}>${(o.totalDebt ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td style={td}>${(o.totalDebt ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
               </tr>
             ))}
           </tbody>
@@ -585,6 +639,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       }
       rail={
         <>
+          {/* SF rail order — Health Check, Escrow Balance, Bank Details, Opportunities, Contacts */}
           <HealthCheckCard
             welcomeCallCompleted={account.welcomeCallCompleted}
             firstPaymentReceived={account.firstPaymentReceived}
@@ -604,21 +659,25 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
               bankAccountType: account.bankAccountType,
             }}
           />
-          <AccountTeamCard
-            ownerName={account.owner?.name ?? null}
-            ownerEmail={account.owner?.email ?? null}
-            members={teamMembers}
-          />
           <RelatedList
             entity="Opportunity"
             title="Opportunities"
             items={account.opportunities}
             renderItem={(o) => (
-              <div>
-                <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee", fontWeight: 600 }}>
+              <div style={{ fontSize: 12, lineHeight: 1.5 }}>
+                <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee", fontWeight: 600, fontSize: 13 }}>
                   {o.name ?? o.recordType.replace(/_/g, " ")}
                 </Link>
-                <div style={{ fontSize: 11, color: "#706e6b" }}>v{o.version} · {o.stage}</div>
+                <div style={{ color: "#3e3e3c", marginTop: 4 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0 8px" }}>
+                    <span style={{ fontWeight: 700 }}>Version Status:</span>
+                    <span>{o.stage}</span>
+                    <span style={{ fontWeight: 700 }}>Total Debt Included:</span>
+                    <span>${(o.totalDebt ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span style={{ fontWeight: 700 }}>Current Total Debt:</span>
+                    <span>${(o.totalDebt ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
               </div>
             )}
             emptyHint="No opportunities."
@@ -641,6 +700,11 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
               </div>
             )}
             emptyHint="No contacts."
+          />
+          <AccountTeamCard
+            ownerName={account.owner?.name ?? null}
+            ownerEmail={account.owner?.email ?? null}
+            members={teamMembers}
           />
           <ActivityChatterRail activities={activity} chatter={chatter} />
         </>
