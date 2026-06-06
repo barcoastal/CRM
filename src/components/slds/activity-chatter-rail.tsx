@@ -21,13 +21,21 @@ export function ActivityChatterRail({
   const [tab, setTab] = useState<"Activity" | "Chatter">("Activity");
 
   return (
-    <div>
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #dddbda",
+        borderRadius: 4,
+        marginBottom: 12,
+        boxShadow: "0 2px 2px 0 rgba(0,0,0,0.05)",
+      }}
+    >
       <div
         style={{
           display: "flex",
           gap: 0,
           borderBottom: "1px solid #d8dde6",
-          marginBottom: 8,
+          padding: "0 8px",
         }}
       >
         {(["Activity", "Chatter"] as const).map((t) => {
@@ -39,11 +47,11 @@ export function ActivityChatterRail({
               style={{
                 background: "transparent",
                 border: 0,
-                padding: "10px 16px",
+                padding: "10px 14px",
                 fontSize: 13,
                 fontWeight: active ? 700 : 600,
-                color: active ? "#16325c" : "#3e3e3c",
-                borderBottom: active ? "3px solid #1589ee" : "3px solid transparent",
+                color: active ? "#080707" : "#3e3e3c",
+                borderBottom: active ? "3px solid #0070d2" : "3px solid transparent",
                 marginBottom: -1,
                 cursor: "pointer",
               }}
@@ -54,11 +62,13 @@ export function ActivityChatterRail({
         })}
       </div>
 
-      {tab === "Activity" ? (
-        <ActivityRail items={activities} />
-      ) : (
-        <ChatterFeed posts={chatter} />
-      )}
+      <div style={{ padding: 8 }}>
+        {tab === "Activity" ? (
+          <ActivityRail items={activities} />
+        ) : (
+          <ChatterFeed posts={chatter} />
+        )}
+      </div>
     </div>
   );
 }
