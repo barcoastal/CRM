@@ -1,31 +1,27 @@
 import { prisma } from "@/lib/prisma";
-import { ListView, type ListViewColumn } from "@/components/slds/list-view";
-import { StatusPill } from "@/components/slds/record-page";
-import { opportunityStageTone } from "@/lib/slds/status-tones";
+import { SfListPage, ownerAlias, type SfColumn, type SfListViewOption } from "@/components/slds/sf-list-page";
 
 interface OpportunitiesPageProps {
-  searchParams: Promise<{ recordType?: string; stage?: string }>;
+  searchParams: Promise<{ view?: string }>;
 }
 
 type OppRow = {
   id: string;
   sfId: string | null;
   name: string | null;
-  recordType: string;
   stage: string;
   totalDebt: number | null;
-  expectedCloseDate: Date | null;
+  expectedCloseDate: string | null;
   account: { id: string; name: string } | null;
-  primaryContact: { id: string; fullName: string } | null;
-  assignedTo: { id: string; name: string } | null;
-  lead: { id: string } | null;
+  assignedTo: { id: string; name: string; email: string } | null;
+  lead: { id: string; sfId: string | null } | null;
 };
 
 export default async function OpportunitiesPage({ searchParams }: OpportunitiesPageProps) {
   const params = await searchParams;
+  const view = params.view ?? "";
+
   const where: Record<string, unknown> = {};
-  if (params.recordType) where.recordType = params.recordType;
-  if (params.stage) where.stage = params.stage;
 
   const [items, total] = await Promise.all([
     prisma.opportunity.findMany({
@@ -34,76 +30,124 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         id: true,
         sfId: true,
         name: true,
-        recordType: true,
         stage: true,
         totalDebt: true,
         expectedCloseDate: true,
         account: { select: { id: true, name: true } },
-        primaryContact: { select: { id: true, fullName: true } },
-        assignedTo: { select: { id: true, name: true } },
-        lead: { select: { id: true } },
+        assignedTo: { select: { id: true, name: true, email: true } },
+        lead: { select: { id: true, sfId: true } },
       },
-      orderBy: { updatedAt: "desc" },
+      orderBy: view === "all_opportunities"
+        ? { name: "asc" }
+        : { updatedAt: "desc" },
       take: 50,
     }),
     prisma.opportunity.count({ where }),
   ]);
 
-  // SF list columns reference: docs/sf-screenshots/sf-opp-list.png
-  // Opportunity Name | Account Name | Stage | Close Date | Total Debt Including Fees | Lead Id | Opp ID | Owner
-  const columns: ListViewColumn<OppRow>[] = [
+  const rows: OppRow[] = items.map((o) => ({
+    id: o.id,
+    sfId: o.sfId,
+    name: o.name,
+    stage: o.stage,
+    totalDebt: o.totalDebt,
+    expectedCloseDate: o.expectedCloseDate ? o.expectedCloseDate.toISOString() : null,
+    account: o.account,
+    assignedTo: o.assignedTo,
+    lead: o.lead,
+  }));
+
+  const columns: SfColumn<OppRow>[] = [
     {
       key: "name",
       label: "Opportunity Name",
       render: (o) => o.name ?? o.account?.name ?? "(no name)",
+      sortValue: (o) => o.name ?? o.account?.name ?? "",
+      searchText: (o) => o.name ?? o.account?.name,
     },
     {
       key: "account",
       label: "Account Name",
-      render: (o) => o.account?.name ?? "-",
+      render: (o) => o.account?.name ?? "",
+      sortValue: (o) => o.account?.name,
+      searchText: (o) => o.account?.name,
     },
     {
       key: "stage",
       label: "Stage",
-      render: (o) => <StatusPill label={o.stage} tone={opportunityStageTone(o.stage)} />,
+      render: (o) => o.stage,
+      sortValue: (o) => o.stage,
+      searchText: (o) => o.stage,
     },
     {
-      key: "close",
+      key: "closeDate",
       label: "Close Date",
-      render: (o) => o.expectedCloseDate?.toLocaleDateString() ?? "-",
+      render: (o) =>
+        o.expectedCloseDate
+          ? new Date(o.expectedCloseDate).toLocaleDateString("en-US")
+          : "",
+      sortValue: (o) => o.expectedCloseDate ?? "",
     },
     {
-      key: "debt",
+      key: "totalDebt",
       label: "Total Debt Including Fees",
-      render: (o) => (o.totalDebt ? `$${o.totalDebt.toLocaleString()}` : "-"),
+      align: "left",
+      render: (o) =>
+        o.totalDebt != null
+          ? `$${o.totalDebt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : "",
+      sortValue: (o) => o.totalDebt ?? 0,
     },
     {
       key: "leadId",
       label: "Lead Id",
-      render: (o) => (o.lead?.id ? o.lead.id.slice(-8).toUpperCase() : "-"),
+      render: (o) => (o.lead?.sfId ?? (o.lead?.id ? o.lead.id.slice(-7) : "")),
+      sortValue: (o) => o.lead?.sfId ?? o.lead?.id ?? "",
+      searchText: (o) => o.lead?.sfId,
     },
     {
       key: "oppId",
       label: "Opp ID",
-      render: (o) => (o.sfId ?? o.id.slice(-8).toUpperCase()),
+      render: (o) => o.sfId ?? o.id.slice(-7),
+      sortValue: (o) => o.sfId ?? o.id,
+      searchText: (o) => o.sfId,
     },
     {
-      key: "owner",
-      label: "Owner",
-      render: (o) => o.assignedTo?.name ?? "-",
+      key: "ownerAlias",
+      label: "Owner Alias",
+      render: (o) => (
+        <span style={{ color: "#1589ee" }}>{ownerAlias(o.assignedTo)}</span>
+      ),
+      sortValue: (o) => ownerAlias(o.assignedTo),
+      searchText: (o) => ownerAlias(o.assignedTo),
     },
   ];
 
+  const views: SfListViewOption[] = [
+    { label: "Recently Viewed", value: "", active: view === "" },
+    { label: "All Opportunities", value: "all_opportunities", active: view === "all_opportunities" },
+    { label: "My Opportunities", value: "my_opportunities", active: view === "my_opportunities" },
+    { label: "Closing This Month", value: "closing_this_month", active: view === "closing_this_month" },
+  ];
+
   return (
-    <ListView
-      entity="Opportunity"
-      entityLabel="Opportunities"
-      viewName={params.stage ? params.stage : "Recently Viewed"}
-      totalCount={total}
-      rows={items as OppRow[]}
-      columns={columns}
+    <SfListPage
+      entity="opportunity"
+      iconSlug="opportunity"
+      iconColor="#fcb95b"
+      title="Opportunities"
+      subtitle={views.find((v) => v.active)?.label ?? "Recently Viewed"}
+      count={total}
+      actions={[
+        { label: "New", href: "/opportunities/new" },
+        { label: "Change Owner" },
+        { label: "Change Stage" },
+        { label: "Send Email" },
+      ]}
       rowHref={(o) => `/opportunities/${o.id}`}
-      newHref="/opportunities/new"
+      columns={columns}
+      rows={rows}
+      views={views}
     />
   );
 }

@@ -1,122 +1,160 @@
 import { prisma } from "@/lib/prisma";
-import { ACCOUNT_RECORD_TYPES } from "@/lib/record-types";
-import { ListView, type ListViewColumn } from "@/components/slds/list-view";
+import { SfListPage, ownerAlias, type SfColumn, type SfListViewOption } from "@/components/slds/sf-list-page";
 
 interface AccountsPageProps {
-  searchParams: Promise<{ recordType?: string; q?: string; page?: string }>;
+  searchParams: Promise<{ view?: string }>;
 }
 
-const LIMIT = 25;
+const LIMIT = 50;
 
 const RECORD_TYPE_LABEL: Record<string, string> = {
-  CLIENT: "Client", CREDITOR: "Creditor", VENDOR: "Vendor",
-  BUSINESS_ACCOUNT: "Business", PERSON_ACCOUNT: "Person", BUYOUT: "Buyout", OTHER: "Other",
+  CLIENT: "Client",
+  CREDITOR: "Creditor",
+  VENDOR: "Vendor",
+  BUSINESS_ACCOUNT: "Business",
+  PERSON_ACCOUNT: "Person",
+  BUYOUT: "Buyout",
+  OTHER: "Other",
 };
 
 type AccountRow = {
   id: string;
   name: string;
   recordType: string;
-  email: string | null;
   phone: string | null;
-  owner: { id: string; name: string } | null;
   industry: string | null;
-  updatedAt: Date;
-  _count: { contacts: number; opportunities: number };
+  billingState: string | null;
+  billingCity: string | null;
+  website: string | null;
+  owner: { id: string; name: string; email: string } | null;
 };
+
+function formatPhone(phone: string | null): string {
+  if (!phone) return "";
+  const cleaned = phone.replace(/\D/g, "");
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  }
+  if (cleaned.length === 11 && cleaned.startsWith("1")) {
+    return `(${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+  }
+  return phone;
+}
 
 export default async function AccountsPage({ searchParams }: AccountsPageProps) {
   const params = await searchParams;
-  const page = Math.max(1, parseInt(params.page || "1"));
-  const recordType =
-    params.recordType && (ACCOUNT_RECORD_TYPES as readonly string[]).includes(params.recordType)
-      ? params.recordType
-      : undefined;
-  const q = params.q?.trim() || undefined;
+  const view = params.view ?? "";
 
   const where: Record<string, unknown> = { isActive: true };
-  if (recordType) where.recordType = recordType;
-  if (q) {
-    where.OR = [
-      { name: { contains: q, mode: "insensitive" } },
-      { email: { contains: q, mode: "insensitive" } },
-      { phone: { contains: q } },
-      { ein: { contains: q } },
-    ];
-  }
 
   const [items, total] = await Promise.all([
     prisma.account.findMany({
       where,
-      include: {
-        owner: { select: { id: true, name: true } },
-        _count: { select: { contacts: true, opportunities: true } },
+      select: {
+        id: true,
+        name: true,
+        recordType: true,
+        phone: true,
+        industry: true,
+        billingState: true,
+        billingCity: true,
+        website: true,
+        owner: { select: { id: true, name: true, email: true } },
       },
-      orderBy: { updatedAt: "desc" },
-      skip: (page - 1) * LIMIT,
+      orderBy: view === "all_accounts"
+        ? { name: "asc" }
+        : { updatedAt: "desc" },
       take: LIMIT,
     }),
     prisma.account.count({ where }),
   ]);
 
-  const viewName = recordType
-    ? `${RECORD_TYPE_LABEL[recordType]} Accounts`
-    : "All Accounts";
+  const rows: AccountRow[] = items;
 
-  const columns: ListViewColumn<AccountRow>[] = [
+  const columns: SfColumn<AccountRow>[] = [
     {
       key: "name",
       label: "Account Name",
       render: (a) => a.name,
+      sortValue: (a) => a.name,
+      searchText: (a) => a.name,
+    },
+    {
+      key: "site",
+      label: "Account Site",
+      render: (a) => a.website ?? a.billingCity ?? "",
+      sortValue: (a) => a.website ?? a.billingCity ?? "",
+      searchText: (a) => a.website ?? a.billingCity,
+    },
+    {
+      key: "phone",
+      label: "Phone",
+      render: (a) =>
+        a.phone ? (
+          <a href={`tel:${a.phone}`} style={{ color: "#1589ee", textDecoration: "none" }}>
+            {formatPhone(a.phone)}
+          </a>
+        ) : (
+          ""
+        ),
+      sortValue: (a) => a.phone,
+      searchText: (a) => a.phone,
+    },
+    {
+      key: "ownerAlias",
+      label: "Account Owner Alias",
+      render: (a) => (
+        <span style={{ color: "#1589ee" }}>{ownerAlias(a.owner)}</span>
+      ),
+      sortValue: (a) => ownerAlias(a.owner),
+      searchText: (a) => ownerAlias(a.owner),
     },
     {
       key: "type",
       label: "Type",
-      render: (a) => (
-        <span
-          style={{
-            background: "#ecebea",
-            color: "#080707",
-            padding: "2px 8px",
-            borderRadius: 12,
-            fontSize: 11,
-            fontWeight: 600,
-          }}
-        >
-          {RECORD_TYPE_LABEL[a.recordType] ?? a.recordType}
-        </span>
-      ),
-    },
-    { key: "phone", label: "Phone", render: (a) => a.phone ?? "—" },
-    { key: "email", label: "Email", render: (a) => a.email ?? "—" },
-    { key: "industry", label: "Industry", render: (a) => a.industry ?? "—" },
-    {
-      key: "contacts",
-      label: "Contacts",
-      render: (a) => a._count.contacts.toString(),
+      render: (a) => RECORD_TYPE_LABEL[a.recordType] ?? a.recordType,
+      sortValue: (a) => RECORD_TYPE_LABEL[a.recordType] ?? a.recordType,
+      searchText: (a) => RECORD_TYPE_LABEL[a.recordType] ?? a.recordType,
     },
     {
-      key: "opps",
-      label: "Opps",
-      render: (a) => a._count.opportunities.toString(),
+      key: "industry",
+      label: "Industry",
+      render: (a) => a.industry ?? "",
+      sortValue: (a) => a.industry,
+      searchText: (a) => a.industry,
     },
     {
-      key: "owner",
-      label: "Account Owner",
-      render: (a) => a.owner?.name ?? "—",
+      key: "billingState",
+      label: "Billing State",
+      render: (a) => a.billingState ?? "",
+      sortValue: (a) => a.billingState,
+      searchText: (a) => a.billingState,
     },
   ];
 
+  const views: SfListViewOption[] = [
+    { label: "Recently Viewed", value: "", active: view === "" },
+    { label: "All Accounts", value: "all_accounts", active: view === "all_accounts" },
+    { label: "My Accounts", value: "my_accounts", active: view === "my_accounts" },
+    { label: "New This Week", value: "new_this_week", active: view === "new_this_week" },
+  ];
+
   return (
-    <ListView
-      entity="Account"
-      entityLabel="Accounts"
-      viewName={viewName}
-      totalCount={total}
-      rows={items as AccountRow[]}
-      columns={columns}
+    <SfListPage
+      entity="account"
+      iconSlug="account"
+      iconColor="#7f8de1"
+      title="Accounts"
+      subtitle={views.find((v) => v.active)?.label ?? "Recently Viewed"}
+      count={total}
+      actions={[
+        { label: "New", href: "/accounts/new" },
+        { label: "Import" },
+      ]}
       rowHref={(a) => `/accounts/${a.id}`}
-      newHref="/accounts/new"
+      columns={columns}
+      rows={rows}
+      views={views}
     />
   );
 }
