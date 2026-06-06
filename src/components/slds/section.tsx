@@ -23,9 +23,8 @@ export function Section({
         background: "#fff",
         border: "1px solid #dddbda",
         borderRadius: 4,
-        marginBottom: 12,
+        marginBottom: 10,
         overflow: "hidden",
-        boxShadow: "0 2px 2px 0 rgba(0,0,0,.05)",
       }}
     >
       <button
@@ -33,7 +32,7 @@ export function Section({
         style={{
           width: "100%",
           textAlign: "left",
-          background: "#f3f2f2",
+          background: "#fafaf9",
           border: 0,
           padding: "8px 16px",
           display: "flex",

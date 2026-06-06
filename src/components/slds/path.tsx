@@ -65,7 +65,7 @@ export function Path({
                   : "polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%)",
                 fontSize: 11,
                 fontWeight: isCurrent ? 700 : 400,
-                color: isDone ? "#fff" : isCurrent ? "#fff" : "#3e3e3c",
+                color: isDone ? "#fff" : isCurrent ? "#fff" : "#444",
                 whiteSpace: "nowrap",
                 paddingLeft: isFirst ? 10 : 16,
                 paddingRight: isLast ? 10 : 16,
@@ -121,10 +121,10 @@ export function Path({
           transition: background .15s;
         }
         :global(.sf-path-done) { background: #04844b; }
-        :global(.sf-path-current) { background: #1589ee; }
-        :global(.sf-path-upcoming) { background: #ecebea; }
+        :global(.sf-path-current) { background: #1b96ff; }
+        :global(.sf-path-upcoming) { background: #f3f3f3; }
         :global(.sf-path-done:hover) { background: #0b683b; }
-        :global(.sf-path-upcoming:hover) { background: #f3f2f2; }
+        :global(.sf-path-upcoming:hover) { background: #ecebea; }
       `}</style>
     </div>
   );
