@@ -76,15 +76,28 @@ export function FieldGrid({
 }) {
   return (
     <div
+      className={columns === 2 ? "sf-field-grid sf-field-grid--2col" : "sf-field-grid"}
       style={{
         display: "grid",
         gridTemplateColumns: columns === 1 ? "1fr" : "1fr 1fr",
-        gap: "0 32px",
+        columnGap: 0,
       }}
     >
       {fields.map(([label, value], i) => (
         <Field key={i} label={label} value={value} />
       ))}
+      <style jsx>{`
+        /* SF Lightning: vertical separator between the two columns.
+           Left column (odd cells) gets a right border + right padding;
+           right column (even cells) gets left padding for breathing room. */
+        :global(.sf-field-grid--2col > .sf-field:nth-child(odd)) {
+          border-right: 1px solid #dddbda;
+          padding-right: 16px;
+        }
+        :global(.sf-field-grid--2col > .sf-field:nth-child(even)) {
+          padding-left: 16px;
+        }
+      `}</style>
     </div>
   );
 }
@@ -159,7 +172,7 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
       </button>
       <style jsx>{`
         :global(.sf-field) {
-          border-bottom: 1px solid #f3f2f2;
+          border-bottom: 1px solid #dddbda;
         }
         :global(.sf-field:hover .sf-field-edit) {
           opacity: 1;
