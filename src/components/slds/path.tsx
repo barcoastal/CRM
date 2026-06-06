@@ -117,9 +117,14 @@ export function Path({
       </button>
 
       <style jsx>{`
-        :global(.sf-path-done) { background: #4bca81; }
-        :global(.sf-path-current) { background: #0070d2; }
+        :global(.sf-path-step) {
+          transition: background .15s;
+        }
+        :global(.sf-path-done) { background: #04844b; }
+        :global(.sf-path-current) { background: #1589ee; }
         :global(.sf-path-upcoming) { background: #ecebea; }
+        :global(.sf-path-done:hover) { background: #0b683b; }
+        :global(.sf-path-upcoming:hover) { background: #f3f2f2; }
       `}</style>
     </div>
   );

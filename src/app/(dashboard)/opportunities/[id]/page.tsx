@@ -264,7 +264,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     const n = Number(p);
     return Number.isFinite(n) ? `${n}%` : p;
   })();
-  const createdByDisplay = oppSf("CreatedBy_Full_Name__c") ?? oppSf("CreatedById") ?? "—";
+  const createdByDisplay = oppSf("CreatedBy_Full_Name__c") ?? oppSf("CreatedById") ?? "";
 
   const detailsPanel = (
     <>

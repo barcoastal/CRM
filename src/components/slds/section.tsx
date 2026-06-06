@@ -21,10 +21,11 @@ export function Section({
     <div
       style={{
         background: "#fff",
-        border: "1px solid #d8dde6",
+        border: "1px solid #dddbda",
         borderRadius: 4,
-        marginBottom: 8,
+        marginBottom: 12,
         overflow: "hidden",
+        boxShadow: "0 2px 2px 0 rgba(0,0,0,.05)",
       }}
     >
       <button
@@ -32,19 +33,19 @@ export function Section({
         style={{
           width: "100%",
           textAlign: "left",
-          background: "transparent",
+          background: "#fafaf9",
           border: 0,
-          padding: "10px 16px",
+          padding: "8px 16px",
           display: "flex",
           alignItems: "center",
-          gap: 6,
+          gap: 8,
           cursor: "pointer",
           borderBottom: open ? "1px solid #dddbda" : "none",
         }}
       >
         <svg
-          width="10"
-          height="10"
+          width="11"
+          height="11"
           viewBox="0 0 10 10"
           style={{
             transform: open ? "rotate(90deg)" : "rotate(0deg)",
@@ -57,7 +58,7 @@ export function Section({
         </svg>
         <span style={{ fontSize: 14, fontWeight: 700, color: "#080707", letterSpacing: 0 }}>{title}</span>
       </button>
-      {open && <div style={{ padding: "8px 16px 16px" }}>{children}</div>}
+      {open && <div style={{ padding: "8px 16px" }}>{children}</div>}
     </div>
   );
 }
@@ -89,17 +90,16 @@ export function FieldGrid({
 }
 
 export function Field({ label, value }: { label: string; value: ReactNode }) {
-  // SF Lightning field row: label LEFT (gray), value MIDDLE (black), edit
-  // pencil FAR RIGHT on hover. Horizontal layout, NOT stacked.
+  // SF Lightning field row: label LEFT (gray, small), value MIDDLE (black),
+  // edit pencil FAR RIGHT on hover. Horizontal 33/67 split mirrors Lightning.
   return (
     <div
       style={{
-        padding: "6px 0",
-        minHeight: 36,
-        borderBottom: "1px solid #f3f3f3",
+        padding: "8px 0",
+        minHeight: 40,
         position: "relative",
         display: "grid",
-        gridTemplateColumns: "minmax(120px, 40%) 1fr 28px",
+        gridTemplateColumns: "33% 1fr 28px",
         alignItems: "start",
         gap: 8,
       }}
@@ -111,8 +111,7 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
           color: "#3e3e3c",
           fontWeight: 400,
           lineHeight: 1.4,
-          paddingTop: 2,
-          paddingLeft: 4,
+          paddingTop: 1,
         }}
       >
         {label}
@@ -123,11 +122,12 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
           color: "#080707",
           wordBreak: "break-word",
           lineHeight: 1.4,
-          paddingTop: 2,
           minWidth: 0,
         }}
       >
-        {value ?? <span style={{ color: "#b0adab" }}>—</span>}
+        {value != null && value !== "" ? value : (
+          <span aria-hidden="true" style={{ color: "transparent" }}>-</span>
+        )}
       </div>
       <button
         aria-label="Edit"
@@ -149,8 +149,8 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
       >
         <svg
           aria-hidden="true"
-          width="14"
-          height="14"
+          width="13"
+          height="13"
           viewBox="0 0 52 52"
           style={{ fill: "#54698d" }}
         >
@@ -158,6 +158,9 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
         </svg>
       </button>
       <style jsx>{`
+        :global(.sf-field) {
+          border-bottom: 1px solid #f3f2f2;
+        }
         :global(.sf-field:hover .sf-field-edit) {
           opacity: 1;
         }

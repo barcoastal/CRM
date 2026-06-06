@@ -81,7 +81,7 @@ function fmtMoney(n: number) {
 }
 
 function label(opts: string[][], v: string | null) {
-  if (!v) return "—";
+  if (!v) return "";
   return opts.find(([k]) => k === v)?.[1] ?? v;
 }
 
@@ -240,7 +240,7 @@ export function OppDebtInformation({
               </td>
               <td style={td}>{label(TYPE_OPTIONS, d.debtType)}</td>
               <td style={td}>{fmtMoney(d.originalBalance)}</td>
-              <td style={td}>{d.paymentAmount != null ? fmtMoney(d.paymentAmount) : "—"}</td>
+              <td style={td}>{d.paymentAmount != null ? fmtMoney(d.paymentAmount) : ""}</td>
               <td style={td}>{label(FREQ_OPTIONS, d.paymentFrequency)}</td>
               <td style={td}>{label(STATUS_OPTIONS, d.status)}</td>
               <td style={td}>
