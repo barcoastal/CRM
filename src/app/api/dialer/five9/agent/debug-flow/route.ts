@@ -126,5 +126,34 @@ export async function POST() {
     break;
   }
 
-  return NextResponse.json({ ok: reached === "WORKING", reached, apiHost, logins, trace });
+  // 3. If WORKING, probe the correct click-to-dial method/path. Sending an
+  // empty body means a right-method request fails validation (400) BEFORE
+  // placing a call; a wrong method returns 405 with an Allow header. No real
+  // number is sent, so no call is placed.
+  const ctd: Array<Record<string, unknown>> = [];
+  if (reached === "WORKING") {
+    const candidates: Array<[string, string]> = [
+      ["OPTIONS", "/interactions/click_to_dial"],
+      ["OPTIONS", "/interactions/make_call"],
+      ["PUT", "/interactions/click_to_dial"],
+      ["POST", "/interactions/click_to_dial"],
+      ["POST", "/interactions/make_call"],
+    ];
+    for (const [m, p] of candidates) {
+      const res = await fetch(`${apiHost}/agents/${userId}${p}`, {
+        method: m,
+        headers: {
+          Accept: "application/json, text/javascript, */*; q=0.01",
+          "X-Requested-With": "XMLHttpRequest",
+          farmid: farmId ?? "",
+          Cookie: cookieHeaderFor(jar, host),
+          ...(m === "PUT" || m === "POST" ? { "Content-Type": "application/json" } : {}),
+        },
+        body: m === "PUT" || m === "POST" ? JSON.stringify({}) : undefined,
+      });
+      ctd.push({ method: m, path: p, status: res.status, allow: res.headers.get("allow"), body: (await res.text()).slice(0, 160) });
+    }
+  }
+
+  return NextResponse.json({ ok: reached === "WORKING", reached, apiHost, logins, trace, ctd });
 }
