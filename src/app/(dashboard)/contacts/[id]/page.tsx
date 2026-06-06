@@ -217,7 +217,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     ["Verified Phone Number", sfcBool("Verified_Phone_Number__c")],
     ["Asst. Phone", sfc("AssistantPhone")],
     ["Sync To Account Engagement", sfcBool("pi__pardot_hard_bounced__c") ?? sfcBool("Sync_to_Pardot__c") ?? sfcBool("Sync_To_Account_Engagement__c")],
-    ["", null], // pad right col so Mailing/Other line up
+    ["__PAD__", null], // empty right-column cell so Mailing/Other align side-by-side
     ["Mailing Address", mailingAddress],
     ["Other Address", otherAddress],
   ];

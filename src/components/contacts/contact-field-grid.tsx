@@ -24,6 +24,10 @@ export function ContactFieldGrid({ fields, columns = 2 }: { fields: [string, Rea
 }
 
 export function ContactField({ label, value }: { label: string; value: ReactNode }) {
+  // Spacer cells used to align two-column rows skip rendering entirely.
+  if (label === "__PAD__") {
+    return <div aria-hidden="true" style={{ minHeight: 32, padding: "8px 0" }} />;
+  }
   const isEmpty = value == null || value === "" || value === false;
   return (
     <div
