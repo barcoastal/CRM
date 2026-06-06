@@ -125,26 +125,69 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   const stage = currentStageOrDefault(lead.status);
 
+  let sfData: Record<string, unknown> = {};
+  try { sfData = lead.sfDataJson ? JSON.parse(lead.sfDataJson) as Record<string, unknown> : {}; } catch { /* keep empty */ }
+  const sf = (k: string): string | null => {
+    const v = sfData[k];
+    if (v == null || v === "") return null;
+    return String(v);
+  };
+  const sfDollar = (k: string): string | null => {
+    const v = sf(k);
+    if (!v) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? `$${n.toLocaleString()}` : v;
+  };
+  const sfDate = (k: string): string | null => {
+    const v = sf(k);
+    if (!v) return null;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString();
+  };
+
   const details = (
     <>
       <ConvertLeadButton leadId={lead.id} converted={converted} />
       <Section title="Lead Information">
         <FieldGrid
           fields={[
-            ["Business Name", lead.businessName],
-            ["Contact Name", lead.contactName],
-            ["Phone", <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{lead.phone}<CallButton phone={lead.phone} leadId={lead.id} /></span>],
-            ["Email", <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{lead.email}{lead.email && <ComposeEmailButton defaultTo={lead.email} leadId={lead.id} label="Email" />}</span>],
-            ["EIN", lead.ein],
-            ["Industry", lead.industry],
-            ["Annual Revenue", lead.annualRevenue ? `$${lead.annualRevenue.toLocaleString()}` : null],
-            ["Est. Total Debt", lead.totalDebtEst ? `$${lead.totalDebtEst.toLocaleString()}` : null],
-            ["Lead Source", lead.source],
+            ["Business Name", lead.businessName ?? sf("Company")],
+            ["Contact Name", lead.contactName === "Unknown" ? `${sf("FirstName") ?? ""} ${sf("LastName") ?? ""}`.trim() || "Unknown" : lead.contactName],
+            ["Salutation", sf("Salutation")],
+            ["Title", sf("Title")],
+            ["Phone", <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{lead.phone ?? sf("Phone")}<CallButton phone={lead.phone ?? sf("Phone") ?? ""} leadId={lead.id} /></span>],
+            ["Mobile Phone", sf("MobilePhone")],
+            ["Email", <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{lead.email ?? sf("Email")}{(lead.email ?? sf("Email")) && <ComposeEmailButton defaultTo={(lead.email ?? sf("Email"))!} leadId={lead.id} label="Email" />}</span>],
+            ["EIN", lead.ein ?? sf("EIN_Number_Tax_Id__c")],
+            ["Industry", lead.industry ?? sf("Industry")],
+            ["Annual Revenue", lead.annualRevenue ? `$${lead.annualRevenue.toLocaleString()}` : sfDollar("AnnualRevenue")],
+            ["Monthly Revenue", sfDollar("Monthly_Revenue__c")],
+            ["Est. Total Debt", lead.totalDebtEst ? `$${lead.totalDebtEst.toLocaleString()}` : sfDollar("Estimated_Total_Debt__c") ?? sfDollar("Total_Debt_Amount__c")],
+            ["Current Total Debt", sfDollar("Current_Total_Debt_Amount__c")],
+            ["Current Monthly Payment", sfDollar("Current_Total_Monthly_Payment__c") ?? sfDollar("Current_Total_Monthly_Payment_Formula__c")],
+            ["Current Weekly Payment", sfDollar("Current_Total_Weekly_Payment__c")],
+            ["Current Daily Payment", sfDollar("Current_Total_Daily_Payment__c")],
+            ["MCA Amount", sfDollar("MCA_Amount__c")],
+            ["MCA Amount Requested", sfDollar("MCA_Amount_Requested__c")],
+            ["Number of MCAs", sf("Has_Multiple_MCA_s__c")],
+            ["Lead Source", lead.source ?? sf("LeadSource")],
+            ["Lead Source Category", sf("Lead_Source_Category__c")],
+            ["Lead Vendor ID", sf("Lead_Vendor_ID__c")],
             ["Status", <StatusPill key="s" label={lead.status} tone={leadStatusTone(lead.status)} />],
-            ["Owner", lead.assignedTo?.name],
-            ["Last Contacted", lead.lastContactedAt?.toLocaleDateString()],
+            ["Sub-Disposition", sf("Sub_Disposition__c")],
+            ["Last Disposition", sf("Last_Disposition__c")],
+            ["Disqualification Reason", sf("Reason_for_Disqualification__c")],
+            ["Owner", lead.assignedTo?.name ?? sf("Owner_Full_Name__c")],
+            ["Owner Email", sf("Owner_Username__c")],
+            ["Last Contacted", lead.lastContactedAt?.toLocaleDateString() ?? sfDate("Last_Contacted_DateTime__c")],
+            ["Last Disposition Time", sfDate("Last_Disposition_DateTime__c")],
+            ["Days Since Last Contact", sf("Week_Days_Between_Last_Contacted_Date__c")],
             ["Next Follow-up", lead.nextFollowUpAt?.toLocaleDateString()],
             ["Score", lead.score ? `${lead.score}/100` : null],
+            ["Call Counter", sf("Call_counter__c")],
+            ["Hopper Priority", sf("Hopper_Priority__c")],
+            ["DNC", sf("DNC__c")],
+            ["Address", [sf("Street"), sf("City"), sf("State"), sf("PostalCode"), sf("Country")].filter(Boolean).join(", ") || null],
           ]}
         />
         {lead.scoreReason && (
@@ -152,6 +195,54 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <strong>Score reason:</strong> {lead.scoreReason}
           </div>
         )}
+      </Section>
+      <Section title="Marketing & Attribution" defaultOpen={false}>
+        <FieldGrid
+          fields={[
+            ["Ad Click ID", sf("Ad_Click_Id__c")],
+            ["Ad ID", sf("Ad_Id__c")],
+            ["Ad Set", sf("Ad_Set__c")],
+            ["Eli Ad Click", sf("Eli_Ad_click__c")],
+            ["UTM Source", lead.utmSource],
+            ["UTM Medium", lead.utmMedium],
+            ["UTM Campaign", lead.utmCampaign],
+            ["GCLID", lead.gclid],
+            ["FBCLID", lead.fbclid],
+            ["Hubspot ID", sf("Hubspot_Id__c")],
+            ["Five9 Disposition", sf("five9_Disposition__c")],
+            ["Five9 Last Disposition", sf("five9_Last_Disposition__c")],
+            ["Outbound ANI", sf("Outbound_ANI_From__c")],
+            ["Outbound ANI Date", sfDate("Outbound_ANI_Date__c")],
+          ]}
+        />
+      </Section>
+      <Section title="Program Setup" defaultOpen={false}>
+        <FieldGrid
+          fields={[
+            ["Payment Term", sf("Payment_Term__c")],
+            ["Payment Amount", sfDollar("Payment_Amount__c")],
+            ["Program Fee %", sf("Program_Fee_Percentage__c")],
+            ["Retainer %", sf("Retainer_Percentage__c")],
+            ["Settlement %", sf("Settlement_Percentage__c")],
+            ["Setup Fee", sfDollar("Setup_Fee__c")],
+            ["Down Payment", sfDollar("Down_Payment__c")],
+            ["Frequency", sf("Frequency__c")],
+            ["Monthly Bank Fee", sfDollar("Monthly_Bank_Fee__c")],
+            ["SSN", sf("SSN__c")],
+            ["Lenders", sf("Lenders__c")],
+            ["Product Interest", sf("ProductInterest__c")],
+          ]}
+        />
+      </Section>
+      <Section title="Creditor Details" defaultOpen={false}>
+        <FieldGrid
+          fields={[1,2,3,4,5,6,7,8,9,10].flatMap((n) => [
+            [`Creditor ${n} Debt`, sfDollar(`Creditor_${n}_Total_Debt__c`)],
+            [`Creditor ${n} Payment`, sfDollar(`Creditor_${n}_Payment__c`)],
+            [`Creditor ${n} Frequency`, sf(`Creditor_${n}_Payment_Frequency__c`)],
+            [`Creditor ${n} Status`, sf(`Creditor_${n}_Debt_Status__c`)],
+          ]).filter(([, v]) => v != null) as [string, string | null][]}
+        />
       </Section>
       {lead.notes && (
         <Section title="Notes" defaultOpen={false}>
