@@ -4,21 +4,23 @@ import { useState, type ReactNode } from "react";
 
 export type LeadTabKey =
   | "Details"
-  | "Debt Information"
-  | "Payment Calculator"
+  | "Activities"
+  | "Lead Calculator"
   | "Documents"
   | "Related"
   | "Marketing"
   | "All SF Fields";
 
+// SF Lightning Lead record-page tab order. "All SF Fields" is intentionally
+// NOT in the visible tab strip — it's reachable via a footer link, matching
+// how Opportunities expose the all-fields view.
 const TABS: LeadTabKey[] = [
   "Details",
-  "Debt Information",
-  "Payment Calculator",
+  "Activities",
+  "Lead Calculator",
   "Documents",
   "Related",
   "Marketing",
-  "All SF Fields",
 ];
 
 export function LeadTabs({ panels }: { panels: Record<LeadTabKey, ReactNode> }) {
@@ -45,10 +47,10 @@ export function LeadTabs({ panels }: { panels: Record<LeadTabKey, ReactNode> }) 
               style={{
                 background: "transparent",
                 border: 0,
-                padding: "12px 18px",
+                padding: "10px 16px",
                 fontSize: 13,
-                fontWeight: active ? 700 : 600,
-                color: active ? "#16325c" : "#3e3e3c",
+                fontWeight: active ? 700 : 400,
+                color: active ? "#080707" : "#3e3e3c",
                 borderBottom: active ? "3px solid #1589ee" : "3px solid transparent",
                 marginBottom: -1,
                 cursor: "pointer",
@@ -60,7 +62,33 @@ export function LeadTabs({ panels }: { panels: Record<LeadTabKey, ReactNode> }) 
           );
         })}
       </div>
-      <div>{panels[tab]}</div>
+      <div>
+        {panels[tab]}
+        {tab === "Details" && (
+          <div
+            style={{
+              padding: "6px 16px 12px",
+              fontSize: 12,
+              textAlign: "right",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setTab("All SF Fields")}
+              style={{
+                background: "transparent",
+                border: 0,
+                color: "#1589ee",
+                cursor: "pointer",
+                padding: 0,
+                fontSize: 12,
+              }}
+            >
+              Show all SF fields
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
