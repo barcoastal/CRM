@@ -115,10 +115,10 @@ export function StatusPill({
   tone?: "success" | "warning" | "danger" | "info" | "neutral";
 }) {
   const colors: Record<typeof tone, { bg: string; color: string }> = {
-    success: { bg: "#ddf5d6", color: "#0b683b" },
-    warning: { bg: "#fff5d8", color: "#806c00" },
-    danger: { bg: "#feded2", color: "#8e1f0b" },
-    info: { bg: "#d4ecff", color: "#0a3b6f" },
+    success: { bg: "#2e844a", color: "#fff" },
+    warning: { bg: "#fe9339", color: "#fff" },
+    danger: { bg: "#ba0517", color: "#fff" },
+    info: { bg: "#0176d3", color: "#fff" },
     neutral: { bg: "#ecebea", color: "#3e3e3c" },
   };
   const c = colors[tone];
@@ -132,6 +132,7 @@ export function StatusPill({
         fontSize: 11,
         fontWeight: 600,
         display: "inline-block",
+        lineHeight: 1.4,
       }}
     >
       {label}

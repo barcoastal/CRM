@@ -683,11 +683,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       entity="Account"
       entityLabel="Account"
       recordTitle={headerTitle}
-      recordSubtitle={
-        <>
-          {account.name} · <StatusPill label={account.stage} tone={statusTone(account.stage)} />
-        </>
-      }
+      recordSubtitle={account.name}
       highlights={[
         { label: "Client Status", value: <StatusPill label={account.clientStatus} tone={statusTone(account.clientStatus)} /> },
         { label: "Processor Status", value: account.processorStatus ?? "Not Synced" },
