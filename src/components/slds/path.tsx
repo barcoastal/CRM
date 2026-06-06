@@ -51,7 +51,7 @@ export function Path({
                 isDone ? "sf-path-done" : isCurrent ? "sf-path-current" : "sf-path-upcoming"
               }`}
               style={{
-                flex: 1,
+                flex: isCurrent ? 1.5 : 1,
                 minWidth: 0,
                 display: "flex",
                 alignItems: "center",

@@ -737,7 +737,22 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         actions={<OppHeaderButtons opportunityId={opp.id} currentStage={opp.stage} />}
         pathStages={PATH}
         pathCurrentIndex={oppPathIndex(opp.stage)}
-        pathActionLabel="Mark Stage as Complete"
+        pathActionLabel={(() => {
+          const idx = oppPathIndex(opp.stage);
+          if (idx >= PATH.length - 1) return "Change Closed Stage";
+          // SF labels the action by the current stage being completed, e.g.
+          // "Mark First Payment Complete" when current is "Closed Won First
+          // Payment Pending". We strip the wordy prefixes.
+          const cur = PATH[idx]?.label ?? "Current Stage";
+          const short = cur
+            .replace(/^Closed Won /, "")
+            .replace(/^Closed /, "")
+            .replace(/^Working /, "")
+            .replace(/ Pending$/, "")
+            .replace(/^Waiting for /, "")
+            .replace(/s Received$/, "");
+          return `Mark ${short} Complete`;
+        })()}
         details={
           <OppTabs
             panels={{
