@@ -54,6 +54,27 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
     return () => window.removeEventListener("message", onMessage);
   }, [five9Domain]);
 
+  // Screen-pop from THIS CRM: the embedded Five9 desktop uses its own (Salesforce)
+  // connector and doesn't postMessage us, so poll our backend for the agent's
+  // current active call (written by the Five9 webhook) and load the lead here.
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch("/api/dialer/active-call");
+        if (!res.ok) return;
+        const data = (await res.json()) as { active?: boolean; phone?: string };
+        if (!data.active || !data.phone) return;
+        const last10 = data.phone.replace(/[^0-9]/g, "").slice(-10);
+        const cur = (currentPhone ?? "").replace(/[^0-9]/g, "").slice(-10);
+        if (last10 && last10 !== cur) void handlePhoneChange(data.phone);
+      } catch {
+        /* ignore */
+      }
+    }, 4000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPhone]);
+
   async function handlePhoneChange(phone: string) {
     setCurrentPhone(phone);
     setLoadingLead(true);
