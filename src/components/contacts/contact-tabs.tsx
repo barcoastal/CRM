@@ -2,37 +2,23 @@
 
 import { useState, type ReactNode } from "react";
 
-export type AccountTabKey =
+export type ContactTabKey =
   | "Details"
-  | "Payment Calculator"
-  | "Activities"
-  | "Documents"
-  | "Related Records"
-  | "Payment Summaries"
-  | "Settlements"
-  | "Opportunities"
-  | "Contacts"
-  | "Team"
   | "Marketing"
+  | "Activities"
+  | "Related Records"
   | "All SF Fields";
 
-const TABS: AccountTabKey[] = [
+const TABS: ContactTabKey[] = [
   "Details",
-  "Payment Calculator",
-  "Activities",
-  "Documents",
-  "Related Records",
-  "Payment Summaries",
-  "Settlements",
-  "Opportunities",
-  "Contacts",
-  "Team",
   "Marketing",
+  "Activities",
+  "Related Records",
   "All SF Fields",
 ];
 
-export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNode> }) {
-  const [tab, setTab] = useState<AccountTabKey>("Details");
+export function ContactTabs({ panels }: { panels: Record<ContactTabKey, ReactNode> }) {
+  const [tab, setTab] = useState<ContactTabKey>("Details");
   return (
     <div>
       <div

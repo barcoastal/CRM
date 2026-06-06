@@ -11,6 +11,8 @@ import { AccountHeaderButtons } from "@/components/accounts/account-header-butto
 import { BankDetailsCard } from "@/components/accounts/bank-details-card";
 import { HealthCheckCard } from "@/components/accounts/health-check-card";
 import { EscrowBalanceCard } from "@/components/accounts/escrow-balance-card";
+import { AccountTeamCard } from "@/components/accounts/account-team-card";
+import { ContactRolesList } from "@/components/accounts/contact-roles-list";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
 import { PaymentCalculatorV2 } from "@/components/shared/payment-calculator-v2";
@@ -34,10 +36,12 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     where: { id },
     include: {
       owner: { select: { id: true, name: true, email: true } },
+      primaryContact: { select: { id: true, fullName: true, email: true, phone: true, title: true } },
       contacts: { include: { contact: true }, orderBy: { createdAt: "asc" } },
       opportunities: {
         include: {
           debts: true,
+          assignedTo: { select: { id: true, name: true, email: true } },
           _count: { select: { debts: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -151,7 +155,12 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["Phone", <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{account.phone ?? acctSf("Phone")}<CallButton phone={account.phone ?? acctSf("Phone") ?? ""} accountId={account.id} /></span>],
             ["Email", <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{account.email ?? acctSf("Email__c")}{(account.email ?? acctSf("Email__c")) && <ComposeEmailButton defaultTo={(account.email ?? acctSf("Email__c"))!} accountId={account.id} label="Email" />}</span>],
             ["Owner", account.owner?.name ?? acctSf("Owner_Full_Name__c")],
-            ["Owner Email", acctSf("Owner_Username__c")],
+            ["Owner Email", account.owner?.email ?? acctSf("Owner_Username__c")],
+            ["Primary Contact", account.primaryContact?.fullName ? (
+              <Link key="pc" href={`/contacts/${account.primaryContact.id}`} style={{ color: "#1589ee" }}>{account.primaryContact.fullName}</Link>
+            ) : acctSf("Primary_Contact__c")],
+            ["Closer", account.opportunities[0]?.closer ?? acctSf("Closer__c")],
+            ["Fronter", account.opportunities[0]?.fronter ?? acctSf("Fronter__c")],
             ["Business Start Date", account.businessStartDate?.toLocaleDateString() ?? acctSfDate("Business_Start_Date__c")],
             ["UCC Filing Date", account.uccFilingDate?.toLocaleDateString() ?? acctSfDate("UCC_Filing_Date__c")],
             ["Program Start Date", account.programStartDate?.toLocaleDateString() ?? acctSfDate("Program_Start_Date__c")],
@@ -466,7 +475,69 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
 
   const marketingPanel = (
     <Section title="Marketing Attribution">
-      <FieldGrid fields={[["Account Source", account.recordType.replace(/_/g, " ")]]} />
+      <FieldGrid
+        fields={[
+          ["Account Source", account.recordType.replace(/_/g, " ")],
+          ["Lead Source", acctSf("LeadSource")],
+          ["Lead Source Category", acctSf("Lead_Source_Category__c")],
+          ["Campaign", acctSf("Campaign__c")],
+          ["UTM Source", acctSf("UTM_Source__c")],
+          ["UTM Medium", acctSf("UTM_Medium__c")],
+          ["UTM Campaign", acctSf("UTM_Campaign__c")],
+          ["UTM Term", acctSf("UTM_Term__c")],
+          ["UTM Content", acctSf("UTM_Content__c")],
+          ["Account Engagement Score", acctSf("Account_Engagement_Score__c")],
+        ]}
+      />
+    </Section>
+  );
+
+  const contactsPanel = (
+    <ContactRolesList
+      rows={account.contacts.map((rel) => ({
+        id: rel.id,
+        role: rel.role,
+        isPrimary: rel.contact.id === account.primaryContactId,
+        contact: {
+          id: rel.contact.id,
+          fullName: rel.contact.fullName,
+          title: rel.contact.title,
+          email: rel.contact.email,
+          phone: rel.contact.phone,
+        },
+      }))}
+    />
+  );
+
+  const teamMembers = (() => {
+    const seen = new Set<string>();
+    const members: { role: string; name: string | null; email?: string | null }[] = [];
+    for (const opp of account.opportunities) {
+      if (opp.assignedTo?.name && !seen.has(`a:${opp.assignedTo.id}`)) {
+        seen.add(`a:${opp.assignedTo.id}`);
+        members.push({ role: "Opp Assignee", name: opp.assignedTo.name, email: opp.assignedTo.email });
+      }
+      if (opp.closer && !seen.has(`c:${opp.closer}`)) {
+        seen.add(`c:${opp.closer}`);
+        members.push({ role: "Closer", name: opp.closer });
+      }
+      if (opp.fronter && !seen.has(`f:${opp.fronter}`)) {
+        seen.add(`f:${opp.fronter}`);
+        members.push({ role: "Fronter", name: opp.fronter });
+      }
+    }
+    return members;
+  })();
+
+  const teamPanel = (
+    <Section title="Account Team">
+      <FieldGrid
+        fields={[
+          ["Owner", account.owner?.name],
+          ["Owner Email", account.owner?.email],
+          ...teamMembers.map((m) => [m.role, m.name] as [string, string | null]),
+        ]}
+      />
     </Section>
   );
 
@@ -505,6 +576,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             "Payment Summaries": paymentSummariesPanel,
             Settlements: settlementsPanel,
             Opportunities: opportunitiesPanel,
+            Contacts: contactsPanel,
+            Team: teamPanel,
             Marketing: marketingPanel,
             "All SF Fields": sfFieldsPanel,
           }}
@@ -530,6 +603,11 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
               bankAccountNumber: account.bankAccountNumber,
               bankAccountType: account.bankAccountType,
             }}
+          />
+          <AccountTeamCard
+            ownerName={account.owner?.name ?? null}
+            ownerEmail={account.owner?.email ?? null}
+            members={teamMembers}
           />
           <RelatedList
             entity="Opportunity"
