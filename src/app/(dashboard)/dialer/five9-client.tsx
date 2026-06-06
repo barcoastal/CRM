@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AgentPanel } from "./agent-panel";
 
 interface LeadContext {
   id: string;
@@ -93,9 +92,17 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
         </article>
       </div>
 
-      {/* Five9 dialer — right (custom AgentREST panel) */}
+      {/* Five9 dialer — right: embedded Five9 Agent Desktop (its real browser
+          softphone). The agent logs in here; audio runs through Five9's
+          softphone (extension + local service). We screen-pop the lead on the
+          left from its postMessage callConnected events. */}
       <div>
-        <AgentPanel />
+        <iframe
+          src={`https://${five9Domain}/clients/agent/main.html?role=Agent`}
+          title="Five9 Agent Desktop"
+          allow="microphone; autoplay; clipboard-read; clipboard-write"
+          style={{ width: "100%", height: "85vh", border: "1px solid #d8dde6", borderRadius: 4, background: "#fff" }}
+        />
       </div>
     </div>
   );
