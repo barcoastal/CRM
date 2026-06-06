@@ -91,36 +91,53 @@ function exportChunk(fields: string[], chunkIdx: number): string {
   return outFile;
 }
 
-function parseLine(line: string): string[] {
+/**
+ * Streaming CSV parser that handles embedded newlines and escaped quotes
+ * across line boundaries. Yields one row per emit.
+ */
+function* parseCsv(text: string): Generator<string[]> {
   const out: string[] = [];
   let cur = "";
   let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
     if (inQuotes) {
-      if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      if (c === '"' && text[i + 1] === '"') { cur += '"'; i++; }
       else if (c === '"') inQuotes = false;
       else cur += c;
-    } else if (c === ",") { out.push(cur); cur = ""; }
-    else if (c === '"') inQuotes = true;
-    else cur += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { out.push(cur); cur = ""; }
+      else if (c === "\n") {
+        out.push(cur);
+        const row = [...out];
+        out.length = 0;
+        cur = "";
+        yield row;
+      } else if (c === "\r") {
+        // ignore
+      } else cur += c;
+    }
   }
-  out.push(cur);
-  return out;
+  if (cur !== "" || out.length > 0) {
+    out.push(cur);
+    yield [...out];
+  }
 }
 
 async function mergeChunksToJson(chunkFiles: string[]): Promise<Map<string, Record<string, string>>> {
   const result = new Map<string, Record<string, string>>();
   for (const file of chunkFiles) {
-    const stream = fs.createReadStream(file);
-    const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+    const text = await fs.promises.readFile(file, "utf8");
     let headers: string[] | null = null;
-    for await (const line of rl) {
-      if (!line.trim()) continue;
-      const cells = parseLine(line);
-      if (!headers) { headers = cells; continue; }
+    for (const cells of parseCsv(text)) {
+      if (!headers) {
+        if (cells.length === 0 || (cells.length === 1 && cells[0] === "")) continue;
+        headers = cells;
+        continue;
+      }
       const id = cells[headers.indexOf("Id")];
-      if (!id) continue;
+      if (!id || !/^[a-zA-Z0-9]{15,18}$/.test(id)) continue;
       const row = result.get(id) ?? {};
       for (let i = 0; i < headers.length; i++) {
         if (cells[i] !== undefined && cells[i] !== "") row[headers[i]] = cells[i];

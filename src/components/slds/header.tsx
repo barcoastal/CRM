@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { ObjectIcon } from "./icon";
 import { AppLauncher } from "./app-launcher";
+import { GlobalSearch } from "./global-search";
 
 interface TabItem {
   label: string;
@@ -70,12 +71,7 @@ export function SldsHeader({
         </Link>
 
         <div className="sf-search-wrap">
-          <div className="sf-search">
-            <svg className="sf-search-icon" aria-hidden="true">
-              <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#search" />
-            </svg>
-            <input className="sf-search-input" placeholder="Search..." />
-          </div>
+          <GlobalSearch />
         </div>
 
         <div className="sf-global-utilities">
