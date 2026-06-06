@@ -19,7 +19,7 @@ export type AccountTabKey =
 // SF tab bar order — exactly matches Lightning Account record page.
 // "All SF Fields" is intentionally NOT in the tab strip; it's reachable via
 // a footer link on the Details tab.
-const TABS: AccountTabKey[] = [
+const PRIMARY_TABS: AccountTabKey[] = [
   "Details",
   "Payment Calculator",
   "Activities",
@@ -27,14 +27,19 @@ const TABS: AccountTabKey[] = [
   "Related Records",
   "Payment Summaries",
   "Settlements",
+];
+const MORE_TABS: AccountTabKey[] = [
   "Opportunities",
   "Contacts",
   "Team",
   "Marketing",
 ];
+const TABS: AccountTabKey[] = [...PRIMARY_TABS, ...MORE_TABS];
 
 export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNode> }) {
   const [tab, setTab] = useState<AccountTabKey>("Details");
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreActive = MORE_TABS.includes(tab);
   return (
     <div
       style={{
@@ -55,12 +60,15 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
           overflowX: "auto",
         }}
       >
-        {TABS.map((t) => {
+        {PRIMARY_TABS.map((t) => {
           const active = tab === t;
           return (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => {
+                setTab(t);
+                setMoreOpen(false);
+              }}
               style={{
                 background: "transparent",
                 border: 0,
@@ -78,6 +86,72 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
             </button>
           );
         })}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setMoreOpen((o) => !o)}
+            style={{
+              background: "transparent",
+              border: 0,
+              padding: "10px 16px",
+              fontSize: 14,
+              fontWeight: moreActive ? 700 : 400,
+              color: moreActive ? "#080707" : "#0070d2",
+              borderBottom: moreActive ? "3px solid #0070d2" : "3px solid transparent",
+              marginBottom: -1,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            {moreActive ? tab : "More"}
+            <svg width="9" height="9" viewBox="0 0 10 10" style={{ fill: "currentColor" }}>
+              <path d="M0 2l5 6 5-6z" />
+            </svg>
+          </button>
+          {moreOpen && (
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                background: "#fff",
+                border: "1px solid #dddbda",
+                borderRadius: 4,
+                boxShadow: "0 2px 4px 0 rgba(0,0,0,.16)",
+                minWidth: 180,
+                zIndex: 10,
+                padding: "4px 0",
+              }}
+            >
+              {MORE_TABS.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => {
+                    setTab(t);
+                    setMoreOpen(false);
+                  }}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    textAlign: "left",
+                    background: "transparent",
+                    border: 0,
+                    padding: "8px 16px",
+                    fontSize: 13,
+                    color: "#080707",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f2f2")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       <div style={{ padding: "12px 16px 16px" }}>
         {panels[tab]}

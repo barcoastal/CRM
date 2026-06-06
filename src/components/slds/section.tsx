@@ -33,7 +33,7 @@ export function Section({
         style={{
           width: "100%",
           textAlign: "left",
-          background: "#fafaf9",
+          background: "#f3f2f2",
           border: 0,
           padding: "8px 16px",
           display: "flex",
@@ -41,6 +41,7 @@ export function Section({
           gap: 8,
           cursor: "pointer",
           borderBottom: open ? "1px solid #dddbda" : "none",
+          minHeight: 36,
         }}
       >
         <svg

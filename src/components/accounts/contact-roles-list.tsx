@@ -23,16 +23,46 @@ export function ContactRolesList({ rows }: { rows: Row[] }) {
       <article
         style={{
           background: "#fff",
-          border: "1px solid #d8dde6",
+          border: "1px solid #dddbda",
           borderRadius: 4,
-          padding: 16,
-          marginBottom: 8,
+          marginBottom: 12,
+          overflow: "hidden",
+          boxShadow: "0 2px 2px 0 rgba(0,0,0,.05)",
         }}
       >
-        <h3 style={{ fontSize: 13, fontWeight: 700, margin: 0, marginBottom: 6 }}>
-          Contact Roles (0)
-        </h3>
-        <div style={{ fontSize: 12, color: "#706e6b" }}>No contact roles yet.</div>
+        <header
+          style={{
+            background: "#fafaf9",
+            borderBottom: "1px solid #dddbda",
+            padding: "8px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 20,
+              height: 20,
+              background: "#a094ed",
+              color: "#fff",
+              borderRadius: 3,
+              fontSize: 11,
+              fontWeight: 700,
+              flexShrink: 0,
+            }}
+          >
+            C
+          </span>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+            Contact Roles (0)
+          </h3>
+        </header>
+        <div style={{ padding: "12px 16px", fontSize: 12, color: "#706e6b" }}>No contact roles yet.</div>
       </article>
     );
   }
@@ -41,18 +71,45 @@ export function ContactRolesList({ rows }: { rows: Row[] }) {
     <article
       style={{
         background: "#fff",
-        border: "1px solid #d8dde6",
+        border: "1px solid #dddbda",
         borderRadius: 4,
-        padding: 0,
-        marginBottom: 8,
+        marginBottom: 12,
         overflow: "hidden",
+        boxShadow: "0 2px 2px 0 rgba(0,0,0,.05)",
       }}
     >
-      <div style={{ padding: "12px 16px", borderBottom: "1px solid #d8dde6" }}>
-        <h3 style={{ fontSize: 13, fontWeight: 700, margin: 0 }}>
+      <header
+        style={{
+          background: "#fafaf9",
+          borderBottom: "1px solid #dddbda",
+          padding: "8px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 20,
+            height: 20,
+            background: "#a094ed",
+            color: "#fff",
+            borderRadius: 3,
+            fontSize: 11,
+            fontWeight: 700,
+            flexShrink: 0,
+          }}
+        >
+          C
+        </span>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
           Contact Roles ({rows.length})
         </h3>
-      </div>
+      </header>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
