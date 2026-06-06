@@ -30,9 +30,10 @@ export function ObjectHeader({
       className="slds-page-header slds-page-header_record-home"
       style={{
         background: "#f3f3f3",
-        border: "1px solid #d8dde6",
-        borderRadius: "4px 4px 0 0",
+        border: "1px solid #dddbda",
+        borderRadius: 4,
         padding: "12px 16px 0",
+        boxShadow: "0 2px 2px 0 rgba(0,0,0,0.05)",
       }}
     >
       <div className="slds-page-header__row" style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
@@ -169,7 +170,7 @@ export function ObjectHeader({
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {h.value ?? "—"}
+                  {h.value ?? ""}
                 </div>
               </li>
             ))}

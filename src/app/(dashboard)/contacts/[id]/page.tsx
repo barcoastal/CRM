@@ -422,17 +422,25 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       recordTitle={contact.fullName}
       recordSubtitle={contact.title ?? undefined}
       highlights={[
-        { label: "Title", value: contact.title },
+        { label: "Title", value: contact.title ?? sfc("Title") },
         {
           label: "Account Name",
           value: contact.primaryAccount?.name && (
-            <Link href={`/accounts/${contact.primaryAccount.id}`} style={{ color: "#1589ee" }}>
+            <Link href={`/accounts/${contact.primaryAccount.id}`} style={{ color: "#0176d3", textDecoration: "none" }}>
               {contact.primaryAccount.name}
             </Link>
           ),
         },
         { label: "Phone", value: contact.phone ?? sfc("Phone") },
-        { label: "Email", value: contact.email ?? sfc("Email") },
+        { label: "Mobile", value: contact.mobilePhone ?? sfc("MobilePhone") },
+        {
+          label: "Email",
+          value: emailVal ? (
+            <a href={`mailto:${emailVal}`} style={{ color: "#0176d3", textDecoration: "none" }}>
+              {emailVal}
+            </a>
+          ) : null,
+        },
         { label: "Contact Owner", value: ownerNode },
       ]}
       actions={<ContactHeaderButtons contactId={contact.id} />}

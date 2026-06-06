@@ -9,7 +9,6 @@ export function ContactHeaderButtons({ contactId }: { contactId: string }) {
   const [busy, setBusy] = useState<string | null>(null);
 
   async function toggleFollow() {
-    // Lightweight optimistic follow toggle; persists only as a flash toast for now.
     setBusy("follow");
     try {
       toast.success("Following contact");
@@ -39,27 +38,44 @@ export function ContactHeaderButtons({ contactId }: { contactId: string }) {
     }
   }
 
+  // SF-exact pill buttons: white with thin border, blue label, tiny corner radius.
   const btn: React.CSSProperties = {
     background: "#fff",
-    border: "1px solid #d8dde6",
+    border: "1px solid #dddbda",
     borderRadius: 4,
-    padding: "5px 12px",
+    padding: "0 12px",
+    height: 28,
     fontSize: 13,
-    fontWeight: 600,
-    color: "#0070d2",
+    fontWeight: 400,
+    color: "#0176d3",
     cursor: "pointer",
+    fontFamily: "inherit",
+    lineHeight: "26px",
+  };
+
+  const dropdownBtn: React.CSSProperties = {
+    ...btn,
+    padding: "0 6px",
+    minWidth: 28,
   };
 
   return (
-    <div style={{ display: "inline-flex", gap: 6 }}>
+    <div style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
       <button onClick={toggleFollow} disabled={busy !== null} style={btn}>
         {busy === "follow" ? "…" : "+ Follow"}
       </button>
-      <button style={btn}>Edit</button>
+      <button onClick={newTask} disabled={busy !== null} style={btn}>
+        New Case
+      </button>
+      <button style={btn}>New Note</button>
       <button onClick={newTask} disabled={busy !== null} style={btn}>
         {busy === "task" ? "…" : "New Task"}
       </button>
-      <button style={btn}>New Event</button>
+      <button style={dropdownBtn} aria-label="More actions">
+        <svg width="10" height="10" viewBox="0 0 24 24" style={{ fill: "#0176d3", verticalAlign: "middle" }}>
+          <path d="M7 10l5 5 5-5z" />
+        </svg>
+      </button>
     </div>
   );
 }
