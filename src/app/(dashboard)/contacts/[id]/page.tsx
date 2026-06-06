@@ -182,7 +182,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   const contactInformationFields: [string, React.ReactNode][] = [
     ["Contact Owner", ownerNode],
     [
-      "Phone",
+      "Business Phone",
       phoneVal ? (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
           <span style={{ color: "#1589ee" }}>{phoneVal}</span>
@@ -190,14 +190,14 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
         </span>
       ) : null,
     ],
-    ["Name", nameNode],
+    ["Full Name", nameNode],
     ["Home Phone", sfc("HomePhone")],
     ["Account Name", accountNameNode],
-    ["Mobile", contact.mobilePhone ?? sfc("MobilePhone")],
+    ["Mobile Phone", contact.mobilePhone ?? sfc("MobilePhone")],
     ["Title", contact.title ?? sfc("Title")],
     ["Other Phone", sfc("OtherPhone")],
     ["Department", sfc("Department")],
-    ["Fax", sfc("Fax")],
+    ["Business Fax", sfc("Fax")],
     ["Birthdate", contact.birthdate?.toLocaleDateString() ?? sfcDate("Birthdate")],
     [
       "Email",
@@ -209,14 +209,14 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       ) : null,
     ],
     ["Reports To", reportsToNode],
-    ["SSN", sfc("SSN__c") ?? sfc("SSN")],
+    ["SSN", sfc("SSN__c") ?? sfc("SSN_Encrypted__c") ?? sfc("SSN")],
     ["Lead Source", sfc("LeadSource")],
     ["Preferred Method of Contact", sfc("Preferred_Method_of_Contact__c") ?? sfc("Preferred_Method__c")],
-    ["Lead Id", sfc("Lead_Id__c") ?? sfc("LeadId__c") ?? sfc("Lead_ID__c")],
-    ["Assistant", sfc("AssistantName")],
+    ["Lead Id", sfc("Lead_Number__c") ?? sfc("Lead_Id__c") ?? sfc("LeadId__c") ?? sfc("Lead_ID__c")],
+    ["Assistant's Name", sfc("AssistantName")],
     ["Verified Phone Number", sfcBool("Verified_Phone_Number__c")],
     ["Asst. Phone", sfc("AssistantPhone")],
-    ["Sync To Account Engagement", sfcBool("pi__pardot_hard_bounced__c") ?? sfcBool("Sync_to_Pardot__c") ?? sfcBool("Sync_To_Account_Engagement__c")],
+    ["Sync To Account Engagement", sfcBool("Sync_To_Account_Engagement__c") ?? sfcBool("Sync_to_Pardot__c")],
     ["__PAD__", null], // empty right-column cell so Mailing/Other align side-by-side
     ["Mailing Address", mailingAddress],
     ["Other Address", otherAddress],
@@ -254,13 +254,43 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
         </ContactSection>
       )}
 
+      <ContactSection title="Additional Information" defaultOpen={false}>
+        <ContactFieldGrid
+          fields={[
+            ["First Name", sfc("FirstName")],
+            ["Last Name", sfc("LastName")],
+            ["Middle Name", sfc("MiddleName")],
+            ["Salutation", sfc("Salutation")],
+            ["Suffix", sfc("Suffix")],
+            ["First Call Date", sfcDate("FirstCallDateTime")],
+            ["First Email Date", sfcDate("FirstEmailDateTime")],
+            ["High UCC RISK", sfcBool("High_UCC_RISK__c")],
+            ["Closer FIrst Name`", sfc("Closer_FIrst_Name__c")],
+            ["SMS Opt Out", sfcBool("smagicinteract__SMSOptOut__c")],
+            ["External Legacy CRM Id", sfc("External_Legacy_CRM_Id__c")],
+            ["Important", sfcBool("IsPriorityRecord")],
+            ["Is Email Bounced", sfcBool("IsEmailBounced")],
+            ["Is Person Account", sfcBool("IsPersonAccount")],
+          ]}
+        />
+      </ContactSection>
+
       <ContactSection title="System Information" defaultOpen={false}>
         <ContactFieldGrid
           fields={[
+            ["Contact ID", sfc("Id") ?? contact.sfId],
+            ["Account ID", sfc("AccountId")],
+            ["Owner ID", sfc("OwnerId")],
+            ["Reports To ID", sfc("ReportsToId")],
+            ["Master Record ID", sfc("MasterRecordId")],
+            ["Individual ID", sfc("IndividualId")],
+            ["Activity Metric ID", sfc("ActivityMetricId")],
             ["Owner Email", contact.owner?.email ?? sfc("Owner_Username__c")],
             ["Created Date", sfcDate("CreatedDate") ?? contact.createdAt.toLocaleDateString()],
-            ["Last Modified", sfcDate("LastModifiedDate") ?? contact.updatedAt.toLocaleDateString()],
-            ["Description", sfc("Description")],
+            ["Created By ID", sfc("CreatedById")],
+            ["Last Modified Date", sfcDate("LastModifiedDate") ?? contact.updatedAt.toLocaleDateString()],
+            ["Last Modified By ID", sfc("LastModifiedById")],
+            ["Contact Description", sfc("Description")],
           ]}
         />
       </ContactSection>
@@ -268,30 +298,40 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   );
 
   const marketingPanel = (
-    <ContactSection title="Account Engagement">
-      <ContactFieldGrid
-        fields={[
-          ["Email Opt Out", sfcBool("HasOptedOutOfEmail")],
-          ["Account Engagement Grade", sfc("pi__grade__c")],
-          ["Account Engagement Campaign", sfc("pi__campaign__c")],
-          ["First Referrer Type", sfc("pi__first_touch_url__c") ?? sfc("pi__first_referrer_type__c")],
-          ["Account Engagement Comments", sfc("pi__comments__c")],
-          ["Hard Bounced", sfcBool("pi__pardot_hard_bounced__c")],
-          ["Last Activity", sfcDate("pi__last_activity__c")],
-          ["Account Engagement Score", sfc("pi__score__c")],
-          ["First Activity", sfcDate("pi__first_activity__c")],
-          ["Conversion Date", sfcDate("pi__conversion_date__c")],
-          ["Created from URL", sfc("pi__created_from_url__c")],
-          ["Notes", sfc("pi__notes__c")],
-          ["Email Bounced Reason", sfc("EmailBouncedReason")],
-          ["Email Bounced Date", sfcDate("EmailBouncedDate")],
-          ["Last Activity Date", sfcDate("LastActivityDate")],
-          ["DNC Email", sfcBool("HasOptedOutOfEmail")],
-          ["DNC Fax", sfcBool("HasOptedOutOfFax")],
-          ["Do Not Call", sfcBool("DoNotCall")],
-        ]}
-      />
-    </ContactSection>
+    <>
+      <ContactSection title="Account Engagement">
+        <ContactFieldGrid
+          fields={[
+            ["Email Opt Out", sfcBool("HasOptedOutOfEmail")],
+            ["Account Engagement Grade", sfc("pi__grade__c")],
+            ["Account Engagement Campaign", sfc("pi__campaign__c")],
+            ["Account Engagement First Referrer", sfc("pi__first_touch_url__c") ?? sfc("pi__first_referrer_type__c")],
+            ["Account Engagement Comments", sfc("pi__comments__c")],
+            ["Account Engagement Hard Bounced", sfcBool("pi__pardot_hard_bounced__c")],
+            ["Account Engagement Last Activity", sfcDate("pi__last_activity__c")],
+            ["Account Engagement Score", sfc("pi__score__c")],
+            ["Account Engagement First Activity", sfcDate("pi__first_activity__c")],
+            ["Account Engagement Conversion Date", sfcDate("pi__conversion_date__c")],
+            ["Account Engagement Notes", sfc("pi__notes__c")],
+            ["Email Bounced Reason", sfc("EmailBouncedReason")],
+            ["Email Bounced Date", sfcDate("EmailBouncedDate")],
+            ["Last Activity", sfcDate("LastActivityDate")],
+          ]}
+        />
+      </ContactSection>
+
+      <ContactSection title="Google Analytics" defaultOpen={false}>
+        <ContactFieldGrid
+          fields={[
+            ["Google Analytics Campaign", sfc("pi__utm_campaign__c")],
+            ["Google Analytics Source", sfc("pi__utm_source__c")],
+            ["Google Analytics Medium", sfc("pi__utm_medium__c")],
+            ["Google Analytics Content", sfc("pi__utm_content__c")],
+            ["Google Analytics Term", sfc("pi__utm_term__c")],
+          ]}
+        />
+      </ContactSection>
+    </>
   );
 
   const relatedFooter = (
