@@ -180,7 +180,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ) : null],
             // Row 4: Account Number | Fax
             ["Account Number", acctSf("AccountNumber") ?? account.id.slice(-8).toUpperCase()],
-            ["Fax", acctSf("Fax")],
+            ["Account Fax", acctSf("Fax")],
             // Row 5: Account Site | Website
             ["Account Site", acctSf("Site")],
             ["Website", acctSf("Website")],
@@ -276,11 +276,11 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       <Section title="Billing Address" defaultOpen={false}>
         <FieldGrid
           fields={[
-            ["Street", account.billingStreet ?? acctSf("BillingStreet")],
-            ["City", account.billingCity ?? acctSf("BillingCity")],
-            ["State", account.billingState ?? acctSf("BillingState")],
-            ["Zip", account.billingZip ?? acctSf("BillingPostalCode")],
-            ["Country", account.billingCountry ?? acctSf("BillingCountry")],
+            ["Billing Street", account.billingStreet ?? acctSf("BillingStreet")],
+            ["Billing City", account.billingCity ?? acctSf("BillingCity")],
+            ["Billing State/Province", account.billingState ?? acctSf("BillingState")],
+            ["Billing Zip/Postal Code", account.billingZip ?? acctSf("BillingPostalCode")],
+            ["Billing Country", account.billingCountry ?? acctSf("BillingCountry")],
             ["Billing County", acctSf("BillingCounty__c")],
           ]}
         />
