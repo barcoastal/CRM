@@ -181,28 +181,30 @@ export function FieldGrid({
 }
 
 export function Field({ label, value }: { label: string; value: ReactNode }) {
-  // SF Lightning field row: label LEFT (gray, small), value MIDDLE (black),
-  // edit pencil FAR RIGHT on hover. Horizontal 33/67 split mirrors Lightning.
+  // SF Lightning record-page field row (verified against
+  // docs/sf-screenshots/sf-lead-detail.png): LABEL ON TOP (gray, small),
+  // VALUE BELOW (black, regular), edit pencil top-right. This matches the
+  // canonical Lightning Output Field component (`.slds-form-element_stacked`),
+  // not the horizontal Account-edit layout.
   return (
     <div
       style={{
-        padding: "8px 0",
-        minHeight: 40,
+        padding: "8px 0 10px",
+        minHeight: 56,
         position: "relative",
         display: "grid",
-        gridTemplateColumns: "33% 1fr 28px",
-        alignItems: "start",
-        gap: 8,
+        gridTemplateColumns: "1fr 28px",
+        gap: "2px 8px",
       }}
       className="sf-field"
     >
       <div
         style={{
+          gridColumn: "1 / -1",
           fontSize: 12,
           color: "#3e3e3c",
           fontWeight: 400,
-          lineHeight: 1.4,
-          paddingTop: 1,
+          lineHeight: 1.35,
         }}
       >
         {label}
@@ -236,6 +238,8 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
           width: 24,
           height: 24,
           borderRadius: 3,
+          alignSelf: "start",
+          marginTop: -2,
         }}
       >
         <svg

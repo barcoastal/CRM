@@ -145,15 +145,15 @@ export function InlineEditableField({
 
   return (
     <div
-      className="sf-ief"
+      className="sf-ief sf-field"
       style={{
         display: "grid",
-        gridTemplateColumns: "minmax(120px, 165px) 1fr 56px",
+        gridTemplateColumns: "1fr 56px",
         alignItems: "start",
-        gap: 12,
-        padding: "8px 0",
-        minHeight: 32,
-        borderBottom: "1px solid #ecebea",
+        gap: "2px 8px",
+        padding: "8px 0 10px",
+        minHeight: 56,
+        borderBottom: "1px solid #dddbda",
         fontSize: 13,
         lineHeight: 1.35,
         position: "relative",
@@ -161,10 +161,11 @@ export function InlineEditableField({
     >
       <div
         style={{
+          gridColumn: "1 / -1",
           color: "#3e3e3c",
           fontWeight: 400,
           fontSize: 12,
-          paddingTop: 4,
+          lineHeight: 1.35,
           wordBreak: "break-word",
         }}
       >
@@ -237,7 +238,7 @@ export function InlineEditableField({
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 2, justifyContent: "flex-end", paddingTop: 1 }}>
+      <div style={{ display: "flex", gap: 2, justifyContent: "flex-end", alignSelf: "start", marginTop: -2 }}>
         {editing ? (
           <>
             <button
