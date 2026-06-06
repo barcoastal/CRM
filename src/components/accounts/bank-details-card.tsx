@@ -68,69 +68,102 @@ export function BankDetailsCard({
     <article
       style={{
         background: "#fff",
-        border: "1px solid #d8dde6",
+        border: "1px solid #dddbda",
         borderRadius: 4,
-        padding: 12,
-        marginBottom: 8,
+        marginBottom: 12,
+        overflow: "hidden",
+        boxShadow: "0 2px 2px 0 rgba(0,0,0,.05)",
       }}
     >
-      <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, textAlign: "center" }}>
-        Bank Details
-      </h3>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-        <div>
-          <label style={label}>{required}Bank Name</label>
-          <input
-            value={form.bankName}
-            onChange={(e) => setForm({ ...form, bankName: e.target.value })}
-            style={input}
-          />
-        </div>
-        <div>
-          <label style={label}>{required}Bank Routing Number</label>
-          <input
-            value={form.bankRoutingNumber}
-            onChange={(e) => setForm({ ...form, bankRoutingNumber: e.target.value })}
-            style={input}
-          />
-        </div>
-        <div>
-          <label style={label}>{required}Bank Account Number</label>
-          <input
-            value={form.bankAccountNumber}
-            onChange={(e) => setForm({ ...form, bankAccountNumber: e.target.value })}
-            style={input}
-          />
-        </div>
-        <div>
-          <label style={label}>{required}Bank Account Type</label>
-          <select
-            value={form.bankAccountType}
-            onChange={(e) => setForm({ ...form, bankAccountType: e.target.value })}
-            style={input}
-          >
-            <option value="Checking">Checking</option>
-            <option value="Savings">Savings</option>
-          </select>
-        </div>
-      </div>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button
-          onClick={save}
-          disabled={saving}
+      <header
+        style={{
+          background: "#fafaf9",
+          borderBottom: "1px solid #dddbda",
+          padding: "8px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <span
+          aria-hidden="true"
           style={{
-            background: "#0070d2",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 20,
+            height: 20,
+            background: "#9b6cb1",
             color: "#fff",
-            border: 0,
-            padding: "6px 16px",
-            borderRadius: 4,
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: saving ? "wait" : "pointer",
+            borderRadius: 3,
+            fontSize: 11,
+            fontWeight: 700,
+            flexShrink: 0,
           }}
         >
-          {saving ? "Saving…" : "Save"}
-        </button>
+          B
+        </span>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+          Bank Details
+        </h3>
+      </header>
+      <div style={{ padding: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 8 }}>
+          <div>
+            <label style={label}>{required}Bank Name</label>
+            <input
+              value={form.bankName}
+              onChange={(e) => setForm({ ...form, bankName: e.target.value })}
+              style={input}
+            />
+          </div>
+          <div>
+            <label style={label}>{required}Bank Routing Number</label>
+            <input
+              value={form.bankRoutingNumber}
+              onChange={(e) => setForm({ ...form, bankRoutingNumber: e.target.value })}
+              style={input}
+            />
+          </div>
+          <div>
+            <label style={label}>{required}Bank Account Number</label>
+            <input
+              value={form.bankAccountNumber}
+              onChange={(e) => setForm({ ...form, bankAccountNumber: e.target.value })}
+              style={input}
+            />
+          </div>
+          <div>
+            <label style={label}>{required}Bank Account Type</label>
+            <select
+              value={form.bankAccountType}
+              onChange={(e) => setForm({ ...form, bankAccountType: e.target.value })}
+              style={input}
+            >
+              <option value="Checking">Checking</option>
+              <option value="Savings">Savings</option>
+            </select>
+          </div>
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            onClick={save}
+            disabled={saving}
+            style={{
+              background: "#fff",
+              color: "#0070d2",
+              border: "1px solid #dddbda",
+              padding: "0 16px",
+              height: 28,
+              borderRadius: 4,
+              fontSize: 13,
+              fontWeight: 400,
+              cursor: saving ? "wait" : "pointer",
+            }}
+          >
+            {saving ? "Saving" : "Save"}
+          </button>
+        </div>
       </div>
     </article>
   );

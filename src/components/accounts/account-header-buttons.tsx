@@ -8,13 +8,24 @@ import { ACCOUNT_STAGES, ACCOUNT_STAGE_TO_SUB_DISPOSITIONS } from "@/lib/sf-cano
 
 const btn: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #dddbda",
   color: "#0070d2",
-  padding: "4px 12px",
+  padding: "0 12px",
+  height: 32,
   borderRadius: 4,
   fontSize: 13,
-  fontWeight: 600,
+  fontWeight: 400,
   cursor: "pointer",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
+};
+
+const chevronBtn: React.CSSProperties = {
+  ...btn,
+  padding: "0 8px",
+  width: 32,
+  justifyContent: "center",
 };
 
 export function AccountHeaderButtons({
@@ -48,7 +59,12 @@ export function AccountHeaderButtons({
       <button style={btn} onClick={() => setModal(true)}>Disposition</button>
       <button style={btn} onClick={() => router.push(`/accounts/${accountId}/edit`)}>Edit</button>
       <button style={btn} onClick={sync} disabled={syncing}>
-        {syncing ? "Syncing…" : "Sync to Payment Processor"}
+        {syncing ? "Syncing" : "Sync to Payment Processor"}
+      </button>
+      <button style={chevronBtn} aria-label="More" title="More">
+        <svg width="11" height="11" viewBox="0 0 10 10" style={{ fill: "#0070d2" }}>
+          <path d="M0 2l5 6 5-6z" />
+        </svg>
       </button>
       <DispositionModal
         endpoint={`/api/accounts/${accountId}/disposition`}

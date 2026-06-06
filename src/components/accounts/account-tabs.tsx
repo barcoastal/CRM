@@ -36,15 +36,22 @@ const TABS: AccountTabKey[] = [
 export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNode> }) {
   const [tab, setTab] = useState<AccountTabKey>("Details");
   return (
-    <div>
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #dddbda",
+        borderRadius: 4,
+        boxShadow: "0 2px 2px 0 rgba(0,0,0,.05)",
+        overflow: "hidden",
+      }}
+    >
       <div
         style={{
           display: "flex",
           gap: 0,
           background: "#fff",
-          borderBottom: "1px solid #d8dde6",
+          borderBottom: "1px solid #dddbda",
           padding: "0 12px",
-          marginBottom: 8,
           overflowX: "auto",
         }}
       >
@@ -58,10 +65,10 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
                 background: "transparent",
                 border: 0,
                 padding: "10px 16px",
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: active ? 700 : 400,
-                color: active ? "#080707" : "#3e3e3c",
-                borderBottom: active ? "3px solid #1589ee" : "3px solid transparent",
+                color: active ? "#080707" : "#0070d2",
+                borderBottom: active ? "3px solid #0070d2" : "3px solid transparent",
                 marginBottom: -1,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
@@ -72,12 +79,12 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
           );
         })}
       </div>
-      <div>
+      <div style={{ padding: "12px 16px 16px" }}>
         {panels[tab]}
         {tab === "Details" && (
           <div
             style={{
-              padding: "6px 16px 12px",
+              padding: "6px 0 0",
               fontSize: 12,
               textAlign: "right",
             }}

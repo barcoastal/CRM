@@ -38,24 +38,47 @@ export function EscrowBalanceCard({
     <article
       style={{
         background: "#fff",
-        border: "1px solid #d8dde6",
+        border: "1px solid #dddbda",
         borderRadius: 4,
-        padding: 16,
-        marginBottom: 8,
-        textAlign: "center",
+        marginBottom: 12,
+        overflow: "hidden",
+        boxShadow: "0 2px 2px 0 rgba(0,0,0,.05)",
       }}
     >
-      <div
+      <header
         style={{
+          background: "#fafaf9",
+          borderBottom: "1px solid #dddbda",
+          padding: "8px 16px",
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 12,
+          justifyContent: "space-between",
+          gap: 8,
         }}
       >
-        <h3 style={{ fontSize: 13, fontWeight: 700, color: "#080707", margin: 0 }}>
-          Escrow Balance
-        </h3>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 20,
+              height: 20,
+              background: "#1589ee",
+              color: "#fff",
+              borderRadius: 3,
+              fontSize: 11,
+              fontWeight: 700,
+              flexShrink: 0,
+            }}
+          >
+            $
+          </span>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+            Escrow Balance
+          </h3>
+        </div>
         {accountId && (
           <button
             onClick={refresh}
@@ -65,38 +88,51 @@ export function EscrowBalanceCard({
               background: "transparent",
               border: 0,
               cursor: refreshing ? "wait" : "pointer",
-              color: "#0070d2",
+              color: "#706e6b",
               fontSize: 14,
+              padding: 2,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 22,
+              height: 22,
+              borderRadius: 3,
             }}
           >
-            {refreshing ? "⟳" : "↻"}
+            <svg width="14" height="14" viewBox="0 0 52 52" style={{ fill: "currentColor" }}>
+              <path d="M26 9c-9.4 0-17 7.6-17 17 0 1.7.3 3.4.8 5l-3.5-2c-.4-.2-.9-.1-1.2.3l-1 1.5c-.3.4-.2.9.2 1.2l7 4.1c.5.3 1.1.1 1.4-.3l4.1-7c.3-.5.1-1.1-.3-1.4l-1.5-1c-.4-.3-.9-.2-1.2.2l-1.7 2.5c-.3-1.4-.4-2.7-.4-4.1 0-7.1 5.8-12.9 12.9-12.9 4.1 0 7.7 1.9 10.1 4.9.4.4 1 .5 1.4.1l1.5-1.3c.4-.4.4-1 0-1.4C36.2 11.6 31.4 9 26 9zm17.7 21.2l-7-4.1c-.5-.3-1.1-.1-1.4.3l-4.1 7c-.3.5-.1 1.1.3 1.4l1.5 1c.4.3 1 .2 1.2-.2l1.6-2.4c.3 1.3.4 2.5.4 3.8 0 7.1-5.8 12.9-12.9 12.9-4.1 0-7.7-1.9-10.1-4.9-.4-.4-1-.5-1.4-.1l-1.5 1.3c-.4.4-.4 1 0 1.4 3 3.7 7.8 6.3 13.2 6.3 9.4 0 17-7.6 17-17 0-1.7-.3-3.4-.8-4.9l3.5 2c.4.2.9.1 1.2-.3l1-1.5c.4-.4.3-1-.1-1.2z" />
+            </svg>
           </button>
         )}
-      </div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: "#04844b" }}>
-        ${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-      </div>
-      {pulledAt && (
-        <div style={{ fontSize: 11, color: "#706e6b", marginTop: 6 }}>
-          (Pulled on: {pulledAt.toLocaleString()})
+      </header>
+      <div style={{ padding: "20px 16px 16px", textAlign: "center" }}>
+        <div style={{ fontSize: 28, fontWeight: 700, color: "#04844b" }}>
+          ${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
-      )}
-      {feePaidInFull && (
-        <div
-          style={{
-            marginTop: 12,
-            display: "inline-block",
-            padding: "4px 12px",
-            background: "#ddf5d6",
-            color: "#0b683b",
-            borderRadius: 12,
-            fontSize: 12,
-            fontWeight: 600,
-          }}
-        >
-          ✓ Fee paid in full
-        </div>
-      )}
+        {pulledAt && (
+          <div style={{ fontSize: 11, color: "#706e6b", marginTop: 6 }}>
+            (Pulled on: {pulledAt.toLocaleString()})
+          </div>
+        )}
+        {feePaidInFull && (
+          <div
+            style={{
+              marginTop: 12,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "4px 12px",
+              background: "#c23934",
+              color: "#fff",
+              borderRadius: 12,
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            Fee paid in full
+          </div>
+        )}
+      </div>
     </article>
   );
 }
