@@ -12,25 +12,47 @@ import { OppDebtInformation } from "@/components/opportunities/opp-debt-informat
 import { PaymentCalculatorV2 } from "@/components/shared/payment-calculator-v2";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-list";
+import { TotalPaymentsSummary } from "@/components/opportunities/total-payments-summary";
+import { DocusignEnvelopeStatus } from "@/components/opportunities/docusign-envelope-status";
+import { OppReportsCard } from "@/components/opportunities/opp-reports-card";
 import { opportunityStageTone, settlementStatusTone, genericTone } from "@/lib/slds/status-tones";
 import { OPP_STAGES } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
+import { computeOppFormulas, fmtMoney, fmtPercent } from "@/lib/opp-formulas";
 
-const PATH = OPP_STAGES.map((s) => ({ label: s }));
+/**
+ * SF path strip — mirrors the green-arrow path on the Kenya Palmer screenshot.
+ * Note that "Archived" / "Closed Lost" terminal stages are intentionally NOT in
+ * the path (SF treats them as off-path terminal states; the path renders the
+ * happy-path sequence only).
+ */
+const PATH_HAPPY: readonly string[] = [
+  "Working Opportunity",
+  "Waiting for Agreements",
+  "Agreements Received",
+  "Ready To Close",
+  "Contract Sent",
+  "Closed Won First Payment Pending",
+  "Closed Won - First Payment Completed",
+] as const;
+const PATH = PATH_HAPPY.map((s) => ({ label: s }));
 
 function oppPathIndex(stage: string): number {
-  const i = (OPP_STAGES as readonly string[]).indexOf(stage);
+  const i = PATH_HAPPY.indexOf(stage);
   if (i >= 0) return i;
+  // Off-path terminal states: pin to nearest milestone so the path still
+  // renders meaningfully (Archived → Contract Sent, Closed Lost → Working).
   const s = (stage ?? "").toUpperCase();
-  if (s.includes("CLOSED") && s.includes("WON") && s.includes("COMPLETED")) return 7;
-  if (s.includes("CLOSED") && s.includes("WON")) return 6;
-  if (s.includes("ARCHIVED")) return 5;
+  if (s.includes("CLOSED") && s.includes("WON") && s.includes("COMPLETED")) return 6;
+  if (s.includes("CLOSED") && s.includes("WON")) return 5;
   if (s.includes("CONTRACT") && s.includes("SENT")) return 4;
   if (s.includes("READY")) return 3;
   if (s.includes("AGREEMENT")) return 2;
   if (s.includes("WAITING")) return 1;
   return 0;
 }
+// Keep an OPP_STAGES reference for the SfDataSection legend below.
+void OPP_STAGES;
 
 export default async function OpportunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -177,6 +199,22 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     return s + ((d.paymentAmount * (perYear[d.paymentFrequency] ?? 0)) / 52);
   }, 0);
 
+  // Compute DS_* formula fields read-time so they always reflect current
+  // CRM data instead of stale SF snapshot values.
+  const formulas = computeOppFormulas({
+    totalDebt: totalDebtVal,
+    programFeePercent: latestCalc?.programFeePercent ?? null,
+    programFeePeriodMonths: latestCalc?.programFeePeriod ?? null,
+    setupFee: latestCalc?.setupFee ?? null,
+    monthlyBankFee: latestCalc?.monthlyBankFee ?? null,
+    serviceFee: latestCalc?.serviceFee ?? null,
+    // SF default estimated settlement percent is 50% — overridable when SF
+    // data carries an explicit value.
+    estimatedSettlementPercent: 50,
+    buyoutFeePercent: null,
+    buyoutLoanAmount: null,
+  });
+
   let oppSfData: Record<string, unknown> = {};
   try { oppSfData = opp.sfDataJson ? JSON.parse(opp.sfDataJson) as Record<string, unknown> : {}; } catch { /* empty */ }
   const oppSf = (k: string): string | null => {
@@ -268,6 +306,21 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             ["What Was Explained to Client", oppSf("What_Was_Explained_to_Client__c")],
             ["Main Competitors", oppSf("Main_Competitors__c")],
             ["Delivery Installation Status", oppSf("Delivery_Installation_Status__c")],
+          ]}
+        />
+      </Section>
+
+      <Section title="DocuSign / Settlement Formulas" defaultOpen={false}>
+        <FieldGrid
+          fields={[
+            ["DS Estimated Settlement", fmtMoney(formulas.estimatedSettlement)],
+            ["DS Total Program Fee", fmtMoney(formulas.totalProgramFee)],
+            ["DS Total Bank Fee", fmtMoney(formulas.totalBankFee)],
+            ["DS Total Amount With Fees", fmtMoney(formulas.totalAmountWithFees)],
+            ["DS Buyout Fee", fmtMoney(formulas.buyoutFee)],
+            ["DS Total Buyout Amount", fmtMoney(formulas.totalBuyoutAmount)],
+            ["DS Total Savings", fmtMoney(formulas.totalSavings)],
+            ["DS Total Savings %", fmtPercent(formulas.totalSavingsPercent)],
           ]}
         />
       </Section>
@@ -523,24 +576,35 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       }
       rail={
         <>
+          <OppReportsCard opportunityId={opp.id} />
+          <DocusignEnvelopeStatus
+            envelopes={opp.envelopes.map((e) => ({
+              id: e.id,
+              templateName: e.templateName,
+              documentName: e.documentName,
+              status: e.status,
+              signerName: e.signerName,
+              sentAt: e.sentAt?.toISOString() ?? null,
+              signedAt: e.signedAt?.toISOString() ?? null,
+              completedAt: e.completedAt?.toISOString() ?? null,
+              createdAt: e.createdAt.toISOString(),
+            }))}
+          />
+          <ContactRolesCard
+            primary={opp.primaryContact}
+            accountId={opp.account?.id}
+          />
           <TotalPaymentsSummary
-            programLength={latestCalc?.programFeePeriod ?? null}
+            programLengthMonths={latestCalc?.programFeePeriod ?? null}
             totalDebt={totalDebtVal}
-            totalProgramCost={latestCalc?.estimatedAmount ?? null}
-            totalProgramFee={
-              latestCalc?.programFeePercent && totalDebtVal
-                ? Math.round(totalDebtVal * (latestCalc.programFeePercent / 100) * 100) / 100
-                : null
-            }
+            totalProgramCost={formulas.totalAmountWithFees ?? latestCalc?.estimatedAmount ?? null}
+            totalProgramFee={formulas.totalProgramFee ?? null}
             totalSetupFee={latestCalc?.setupFee ?? null}
-            totalBankFee={
-              latestCalc?.monthlyBankFee && latestCalc?.programFeePeriod
-                ? Math.round(latestCalc.monthlyBankFee * latestCalc.programFeePeriod * 100) / 100
-                : null
-            }
+            totalBankFee={formulas.totalBankFee ?? null}
             totalServiceFee={latestCalc?.serviceFee ?? null}
-            totalSettlement={latestCalc?.totalSettlement ?? null}
-            totalWeeklyPayment={totalWeekly}
+            totalSettlement={formulas.estimatedSettlement ?? latestCalc?.totalSettlement ?? null}
+            totalWeeklyPayment={totalWeekly || null}
+            empty={!latestCalc && opp.programPlans.length === 0}
           />
           <ActivityChatterRail activities={activity} chatter={chatter} />
         </>
@@ -549,28 +613,14 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   );
 }
 
-function TotalPaymentsSummary(props: {
-  programLength: number | null;
-  totalDebt: number;
-  totalProgramCost: number | null;
-  totalProgramFee: number | null;
-  totalSetupFee: number | null;
-  totalBankFee: number | null;
-  totalServiceFee: number | null;
-  totalSettlement: number | null;
-  totalWeeklyPayment: number;
+function ContactRolesCard({
+  primary,
+  accountId,
+}: {
+  primary: { id: string; fullName: string } | null;
+  accountId?: string;
 }) {
-  const rows: [string, string | null][] = [
-    ["Program Length", props.programLength ? `${props.programLength} mo` : null],
-    ["Total Debt", `$${props.totalDebt.toLocaleString()}`],
-    ["Total Program Cost", money(props.totalProgramCost)],
-    ["Total Program Fee", money(props.totalProgramFee)],
-    ["Total Setup Fee", money(props.totalSetupFee)],
-    ["Total Bank Fee", money(props.totalBankFee)],
-    ["Total Service Fee", money(props.totalServiceFee)],
-    ["Total Settlement", money(props.totalSettlement)],
-    ["Total Weekly Payment", money(props.totalWeeklyPayment)],
-  ];
+  if (!primary) return null;
   return (
     <article
       style={{
@@ -582,25 +632,26 @@ function TotalPaymentsSummary(props: {
       }}
     >
       <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: "#080707" }}>
-        Total Payments Summary
+        Contact Roles (1)
       </h3>
-      <table style={{ width: "100%", fontSize: 12 }}>
-        <tbody>
-          {rows.map(([label, value]) => (
-            <tr key={label} style={{ borderBottom: "1px solid #f3f3f3" }}>
-              <td style={{ padding: "6px 0", color: "#706e6b" }}>{label}</td>
-              <td style={{ padding: "6px 0", textAlign: "right", fontWeight: 600 }}>{value ?? "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+        <Link href={`/contacts/${primary.id}`} style={{ color: "#1589ee" }}>
+          {primary.fullName}
+        </Link>
+        <span style={{ color: "#706e6b" }}>Primary</span>
+      </div>
+      {accountId && (
+        <div style={{ textAlign: "right", marginTop: 6 }}>
+          <Link
+            href={`/accounts/${accountId}`}
+            style={{ color: "#1589ee", fontSize: 12 }}
+          >
+            View All
+          </Link>
+        </div>
+      )}
     </article>
   );
-}
-
-function money(n: number | null): string | null {
-  if (n == null) return null;
-  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 const th: React.CSSProperties = {
