@@ -70,8 +70,8 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 420px", gap: 12, padding: 12 }}>
-      {/* Lead context — left */}
+    <div style={{ display: "grid", gridTemplateColumns: "320px minmax(0, 1fr)", gap: 12, padding: 12 }}>
+      {/* Lead context — slim left sidebar */}
       <div>
         <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 16, minHeight: 600 }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: "#3e3e3c", marginBottom: 12 }}>
@@ -101,7 +101,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
           src={"https://app-atl.five9.com/clients/agent/main.html?role=Agent"}
           title="Five9 Agent Desktop"
           allow="microphone; autoplay; clipboard-read; clipboard-write"
-          style={{ width: "100%", height: "85vh", border: "1px solid #d8dde6", borderRadius: 4, background: "#fff" }}
+          style={{ width: "100%", height: "calc(100vh - 130px)", minHeight: 600, border: "1px solid #d8dde6", borderRadius: 4, background: "#fff" }}
         />
       </div>
     </div>
