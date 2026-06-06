@@ -29,15 +29,14 @@ const TABS: OppTabKey[] = [
 export function OppTabs({ panels }: { panels: Record<OppTabKey, ReactNode> }) {
   const [tab, setTab] = useState<OppTabKey>("Details");
   return (
-    <div>
+    <div style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4 }}>
       <div
         style={{
           display: "flex",
           gap: 0,
           background: "#fff",
           borderBottom: "1px solid #d8dde6",
-          padding: "0 12px",
-          marginBottom: 8,
+          padding: "0 8px",
           overflowX: "auto",
         }}
       >
@@ -50,11 +49,11 @@ export function OppTabs({ panels }: { panels: Record<OppTabKey, ReactNode> }) {
               style={{
                 background: "transparent",
                 border: 0,
-                padding: "10px 16px",
+                padding: "12px 14px 10px",
                 fontSize: 13,
                 fontWeight: active ? 700 : 400,
                 color: active ? "#080707" : "#3e3e3c",
-                borderBottom: active ? "3px solid #1589ee" : "3px solid transparent",
+                borderBottom: active ? "3px solid #0070d2" : "3px solid transparent",
                 marginBottom: -1,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
@@ -65,12 +64,12 @@ export function OppTabs({ panels }: { panels: Record<OppTabKey, ReactNode> }) {
           );
         })}
       </div>
-      <div>
+      <div style={{ padding: 12 }}>
         {panels[tab]}
         {tab === "Details" && (
           <div
             style={{
-              padding: "6px 16px 12px",
+              padding: "6px 4px 0",
               fontSize: 12,
               textAlign: "right",
             }}

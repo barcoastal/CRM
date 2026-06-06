@@ -26,34 +26,73 @@ export function ObjectHeader({
 }) {
   const slug = slugEntity(entity);
   return (
-    <div className="slds-page-header slds-page-header_record-home">
-      <div className="slds-page-header__row">
-        <div className="slds-page-header__col-title">
-          <div className="slds-media">
-            <div className="slds-media__figure">
-              <span className={`slds-icon_container slds-icon-standard-${slug}`} title={entityLabel ?? entity}>
-                <svg className="slds-icon slds-page-header__icon" aria-hidden="true">
+    <div
+      className="slds-page-header slds-page-header_record-home"
+      style={{
+        background: "#f3f3f3",
+        border: "1px solid #d8dde6",
+        borderRadius: "4px 4px 0 0",
+        padding: "12px 16px 0",
+      }}
+    >
+      <div className="slds-page-header__row" style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+        <div className="slds-page-header__col-title" style={{ flex: 1, minWidth: 0 }}>
+          <div className="slds-media" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <div className="slds-media__figure" style={{ flexShrink: 0 }}>
+              <span
+                className={`slds-icon_container slds-icon-standard-${slug}`}
+                title={entityLabel ?? entity}
+                style={{
+                  background: "#fcb95b",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 32,
+                  height: 32,
+                  borderRadius: 4,
+                }}
+              >
+                <svg className="slds-icon slds-page-header__icon" aria-hidden="true" style={{ width: 20, height: 20, fill: "#fff" }}>
                   <use xlinkHref={`/slds/icons/standard-sprite/svg/symbols.svg#${slug}`} />
                 </svg>
               </span>
             </div>
-            <div className="slds-media__body">
+            <div className="slds-media__body" style={{ minWidth: 0 }}>
               <div className="slds-page-header__name">
-                <div className="slds-page-header__name-title">
-                  <h1>
-                    <span className="slds-page-header__title slds-truncate" style={{ display: "block" }}>
-                      <span className="slds-text-body_regular slds-text-color_weak" style={{ display: "block", fontSize: 12 }}>
-                        {entityLabel ?? entity}
-                      </span>
-                      <span style={{ fontSize: 18, fontWeight: 700, color: "#080707" }}>
-                        {recordTitle}
-                      </span>
-                    </span>
-                  </h1>
-                </div>
+                <span
+                  style={{
+                    display: "block",
+                    fontSize: 11,
+                    color: "#3e3e3c",
+                    fontWeight: 400,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {entityLabel ?? entity}
+                </span>
+                <h1 style={{ margin: 0 }}>
+                  <span
+                    style={{
+                      display: "block",
+                      fontSize: 18,
+                      fontWeight: 700,
+                      color: "#080707",
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {recordTitle}
+                  </span>
+                </h1>
               </div>
               {recordSubtitle && (
-                <p className="slds-page-header__name-meta slds-text-body_small slds-text-color_weak">
+                <p
+                  style={{
+                    margin: "2px 0 0",
+                    fontSize: 12,
+                    color: "#3e3e3c",
+                    lineHeight: 1.3,
+                  }}
+                >
                   {recordSubtitle}
                 </p>
               )}
@@ -61,9 +100,9 @@ export function ObjectHeader({
           </div>
         </div>
         {actions && (
-          <div className="slds-page-header__col-actions">
+          <div className="slds-page-header__col-actions" style={{ flexShrink: 0 }}>
             <div className="slds-page-header__controls">
-              <div className="slds-page-header__control" style={{ display: "flex", gap: 4 }}>
+              <div className="slds-page-header__control" style={{ display: "flex", gap: 4, alignItems: "center" }}>
                 {actions}
               </div>
             </div>
@@ -72,19 +111,69 @@ export function ObjectHeader({
       </div>
 
       {highlights.length > 0 && (
-        <div className="slds-page-header__row slds-page-header__row_gutters">
-          <div className="slds-page-header__col-details">
-            <ul className="slds-page-header__detail-row">
-              {highlights.map((h, i) => (
-                <li key={i} className="slds-page-header__detail-block">
-                  <div className="slds-text-title slds-truncate" title={h.label}>{h.label}</div>
-                  <div className="slds-text-body_regular slds-truncate" style={{ fontWeight: 600 }}>
-                    {h.value ?? "—"}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div
+          className="slds-page-header__row slds-page-header__row_gutters"
+          style={{
+            marginTop: 10,
+            paddingTop: 10,
+            paddingBottom: 8,
+            borderTop: "1px solid #ecebea",
+          }}
+        >
+          <ul
+            className="slds-page-header__detail-row"
+            style={{
+              display: "grid",
+              gridTemplateColumns: `repeat(${highlights.length}, 1fr)`,
+              gap: 0,
+              listStyle: "none",
+              margin: 0,
+              padding: 0,
+            }}
+          >
+            {highlights.map((h, i) => (
+              <li
+                key={i}
+                className="slds-page-header__detail-block"
+                style={{
+                  padding: "0 12px",
+                  borderLeft: i === 0 ? "none" : "1px solid #dddbda",
+                  minWidth: 0,
+                }}
+              >
+                <div
+                  className="slds-text-title slds-truncate"
+                  title={h.label}
+                  style={{
+                    fontSize: 11,
+                    color: "#3e3e3c",
+                    fontWeight: 400,
+                    lineHeight: 1.4,
+                    marginBottom: 2,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {h.label}
+                </div>
+                <div
+                  className="slds-text-body_regular slds-truncate"
+                  style={{
+                    fontSize: 13,
+                    color: "#080707",
+                    fontWeight: 400,
+                    lineHeight: 1.3,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {h.value ?? "—"}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

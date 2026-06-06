@@ -34,12 +34,12 @@ export function Section({
           textAlign: "left",
           background: "transparent",
           border: 0,
-          padding: "8px 16px",
+          padding: "10px 16px",
           display: "flex",
           alignItems: "center",
-          gap: 8,
+          gap: 6,
           cursor: "pointer",
-          borderBottom: open ? "1px solid #ecebea" : "none",
+          borderBottom: open ? "1px solid #dddbda" : "none",
         }}
       >
         <svg
@@ -49,14 +49,15 @@ export function Section({
           style={{
             transform: open ? "rotate(90deg)" : "rotate(0deg)",
             transition: "transform .15s",
-            fill: "#3e3e3c",
+            fill: "#706e6b",
+            flexShrink: 0,
           }}
         >
           <path d="M2 0l6 5-6 5z" />
         </svg>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#080707" }}>{title}</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "#080707", letterSpacing: 0 }}>{title}</span>
       </button>
-      {open && <div style={{ padding: 16 }}>{children}</div>}
+      {open && <div style={{ padding: "8px 16px 16px" }}>{children}</div>}
     </div>
   );
 }
@@ -88,42 +89,45 @@ export function FieldGrid({
 }
 
 export function Field({ label, value }: { label: string; value: ReactNode }) {
+  // SF Lightning field row: label LEFT (gray), value MIDDLE (black), edit
+  // pencil FAR RIGHT on hover. Horizontal layout, NOT stacked.
   return (
     <div
       style={{
-        padding: "8px 0",
-        minHeight: 32,
+        padding: "6px 0",
+        minHeight: 36,
         borderBottom: "1px solid #f3f3f3",
         position: "relative",
         display: "grid",
-        gridTemplateColumns: "1fr auto",
-        alignItems: "center",
+        gridTemplateColumns: "minmax(120px, 40%) 1fr 28px",
+        alignItems: "start",
         gap: 8,
       }}
       className="sf-field"
     >
-      <div style={{ minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 12,
-            color: "#3e3e3c",
-            fontWeight: 400,
-            marginBottom: 1,
-            lineHeight: 1.25,
-          }}
-        >
-          {label}
-        </div>
-        <div
-          style={{
-            fontSize: 13,
-            color: "#080707",
-            wordBreak: "break-word",
-            lineHeight: 1.4,
-          }}
-        >
-          {value ?? <span style={{ color: "#b0adab" }}>—</span>}
-        </div>
+      <div
+        style={{
+          fontSize: 12,
+          color: "#3e3e3c",
+          fontWeight: 400,
+          lineHeight: 1.4,
+          paddingTop: 2,
+          paddingLeft: 4,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 13,
+          color: "#080707",
+          wordBreak: "break-word",
+          lineHeight: 1.4,
+          paddingTop: 2,
+          minWidth: 0,
+        }}
+      >
+        {value ?? <span style={{ color: "#b0adab" }}>—</span>}
       </div>
       <button
         aria-label="Edit"
