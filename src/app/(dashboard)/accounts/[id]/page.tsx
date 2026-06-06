@@ -134,6 +134,21 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     const d = new Date(v);
     return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString();
   };
+  const acctSfDateTime = (k: string): string | null => {
+    const v = acctSf(k);
+    if (!v) return null;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? v : d.toLocaleString();
+  };
+  const acctSfBool = (k: string): string | null => {
+    const v = acctSfData[k];
+    if (v == null || v === "") return null;
+    if (typeof v === "boolean") return v ? "Yes" : "No";
+    const s = String(v).toLowerCase();
+    if (s === "true") return "Yes";
+    if (s === "false") return "No";
+    return String(v);
+  };
 
   const phoneVal = account.phone ?? acctSf("Phone");
   const emailVal = account.email ?? acctSf("Email__c");
@@ -221,15 +236,32 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["Fronter", account.opportunities[0]?.fronter ?? acctSf("Fronter__c")],
             ["Business Start Date", account.businessStartDate?.toLocaleDateString() ?? acctSfDate("Business_Start_Date__c")],
             ["UCC Filing Date", account.uccFilingDate?.toLocaleDateString() ?? acctSfDate("UCC_Filing_Date__c")],
-            ["First Payment Date", acctSfDate("First_Payment_Date__c")],
             ["Cancellation Date", account.cancellationDate?.toLocaleDateString() ?? acctSfDate("Cancellation_Date__c")],
             ["Cancellation Reason", account.cancellationReason ?? acctSf("Cancellation_Reason__c")],
             ["Legal Status", account.legalStatus ?? acctSf("Legal_Status__c")],
+            ["Legal Network", acctSf("Legal_Network__c")],
             ["Submitted by Legal", account.submittedByLegal ?? acctSf("Submitted_By_Legal__c")],
             ["Reschedule Status", account.rescheduleStatus ?? acctSf("Reschedule_Status__c")],
+            ["Reschedule Program Pending", acctSfBool("Reschedule_Program_Pending__c")],
             ["Conversion Reason", account.conversionReason ?? acctSf("Conversion_Reason__c")],
             ["Loan Provider", account.loanProvider ?? acctSf("Loan_Provider__c")],
             ["Collection Agency", account.collectionAgency ?? acctSf("Collection_Agency__c")],
+            // SF identity + key metadata
+            ["Account ID", acctSf("Id") ?? account.sfId],
+            ["Client Number", acctSf("Client_Number__c")],
+            ["Primary Contact Name", acctSf("Primary_Contact_Name__c")],
+            ["Closer FIrst Name", acctSf("Closer_FIrst_Name__c") ?? acctSf("Closer_FIrst_Name__pc")],
+            ["Sub Disposition", acctSf("Sub_Disposition__c")],
+            ["Processor Status", acctSf("Status__c") ?? account.processorStatus],
+            ["Important", acctSfBool("IsPriorityRecord")],
+            ["Upsell Opportunity", acctSf("UpsellOpportunity__c")],
+            ["Lead Created Date", acctSfDateTime("Lead_Created_Date__c")],
+            ["Synced DateTime", acctSfDateTime("Synced_DateTime__c")],
+            ["First Contract Signed Date", acctSfDateTime("First_Contract_Signed_Date__c")],
+            ["First Payment Completed Date", acctSfDate("First_Payment_Completed_Date__c") ?? acctSfDate("First_Payment_Date__c")],
+            ["Contract Sync Status", acctSf("Contract_Sync_Status__c")],
+            ["Verified Phone Number", acctSfBool("Verified_Phone_Number__pc")],
+            ["SMS Opt Out", acctSfBool("smagicinteract__SMSOptOut__pc")],
           ]}
         />
       </Section>
@@ -242,6 +274,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["State", account.billingState ?? acctSf("BillingState")],
             ["Zip", account.billingZip ?? acctSf("BillingPostalCode")],
             ["Country", account.billingCountry ?? acctSf("BillingCountry")],
+            ["Billing County", acctSf("BillingCounty__c")],
           ]}
         />
       </Section>
@@ -255,8 +288,11 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["Total Paid to Date", acctSfDollar("Total_Paid_to_Date__c")],
             ["Active Settlements", acctSf("Active_Settlements__c")],
             ["Escrow Balance", acctSfDollar("Escrow_Balance__c")],
+            ["Escrow Balance Pulled Date Time", acctSfDateTime("Escrow_Balance_Pulled_Date_Time__c")],
             ["Total Fees Collected", acctSfDollar("Total_Fees_Collected__c")],
+            ["Fee Paid In Full", acctSfBool("Fee_Paid_In_Full__c")],
             ["Number of Drafts", acctSf("Number_of_Drafts__c")],
+            ["Completed Draft Count", acctSf("Completed_Draft_Count__c")],
             ["Missed Drafts", acctSf("Missed_Drafts__c")],
             ["First Draft Date", acctSfDate("First_Draft_Date__c")],
             ["Last Draft Date", acctSfDate("Last_Draft_Date__c")],
@@ -266,6 +302,33 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["Account Number (masked)", acctSf("Account_Number_Masked__c")],
             ["Processor", acctSf("Processor__c")],
             ["RAM/SAS Status", acctSf("RAM_SAS_Status__c")],
+            ["Program Completion Stage", acctSfBool("Program_Completion_Stage__c")],
+            ["Qualified Financial", acctSfBool("Qualified_Financial__c")],
+          ]}
+        />
+      </Section>
+
+      <Section title="Bank Information (from SF)" defaultOpen={false}>
+        <FieldGrid
+          fields={[
+            ["Bank Name", acctSf("Bank_Name__c")],
+            ["Bank Routing Number", acctSf("Bank_Routing_Number__c")],
+            ["Bank Account Number", acctSf("Bank_Account_Number__c")],
+            ["Bank Account Type", acctSf("Bank_Account_Type__c")],
+            ["Bank Account Sync Status", acctSf("Bank_Account_Sync_Status__c")],
+            ["IsChecking", acctSf("IsChecking__c")],
+          ]}
+        />
+      </Section>
+
+      <Section title="Activity Tracking" defaultOpen={false}>
+        <FieldGrid
+          fields={[
+            ["Last Called Time", acctSfDateTime("Last_Call__c")],
+            ["Last Contacted DateTime", acctSfDateTime("Last_Contacted_DateTime__c")],
+            ["Last Emailed Time", acctSfDateTime("Last_Email__c")],
+            ["Last SMS Time", acctSfDateTime("Last_SMS__c")],
+            ["Week Days Between Last Activity Date", acctSf("Week_Days_Between_Last_Activity_Date__c")],
           ]}
         />
       </Section>
@@ -276,7 +339,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["Client Status", <StatusPill key="cs" label={account.clientStatus} tone={statusTone(account.clientStatus)} />],
             ["Payment Status", <StatusPill key="ps" label={account.paymentStatus} tone={statusTone(account.paymentStatus)} />],
             ["Qualified Status", account.qualifiedStatus],
-            ["High UCC Risk", account.highUccRisk ? "Yes" : "No"],
+            ["HIGH UCC RISK", acctSfBool("HIGH_UCC_RISK__c") ?? (account.highUccRisk ? "Yes" : "No")],
+            ["High UCC RISK", acctSfBool("High_UCC_RISK__pc")],
             ["Graduated Status", account.graduatedStatus],
             ["Bank Account Status", <StatusPill key="bas" label={account.bankAccountStatus} tone={statusTone(account.bankAccountStatus)} />],
           ]}
@@ -541,6 +605,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           ["UTM Term", acctSf("UTM_Term__c")],
           ["UTM Content", acctSf("UTM_Content__c")],
           ["Account Engagement Score", acctSf("Account_Engagement_Score__c")],
+          ["Account Engagement Hard Bounced", acctSfBool("pi__pardot_hard_bounced__pc")],
+          ["Needs Score Synced", acctSfBool("pi__Needs_Score_Synced__pc")],
         ]}
       />
     </Section>
