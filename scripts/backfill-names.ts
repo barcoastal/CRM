@@ -80,7 +80,7 @@ async function main() {
       params.push(id, n.fn || null, n.ln || null, contactName);
     }
     const setSql = ENTITY === "lead"
-      ? `"contactName" = upd.contact_name, "firstName" = upd.fn, "lastName" = upd.ln`
+      ? `"contactName" = upd.contact_name`
       : `"fullName" = upd.contact_name, "firstName" = upd.fn, "lastName" = upd.ln`;
     const sql = `
       UPDATE "${TABLE}" AS l
