@@ -262,6 +262,13 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["Contract Sync Status", acctSf("Contract_Sync_Status__c")],
             ["Verified Phone Number", acctSfBool("Verified_Phone_Number__pc")],
             ["SMS Opt Out", acctSfBool("smagicinteract__SMSOptOut__pc")],
+            ["Work Phone", acctSf("Work_Phone__c")],
+            ["Other Industry", acctSf("Other_Industry__c")],
+            ["Debt Negotiator", acctSf("Debt_Negotiator__c")],
+            ["Graduation Status", acctSf("Graduation_Status__c")],
+            ["Negotiation Status", acctSf("NegotiationStatus__c")],
+            ["Last Synced By", acctSf("Last_Synced_By__c")],
+            ["Last Synced Date Time", acctSfDateTime("Last_Synced_Date_Time__c")],
           ]}
         />
       </Section>
@@ -304,6 +311,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["RAM/SAS Status", acctSf("RAM_SAS_Status__c")],
             ["Program Completion Stage", acctSfBool("Program_Completion_Stage__c")],
             ["Qualified Financial", acctSfBool("Qualified_Financial__c")],
+            ["Actual Program Term", acctSf("Actual_Program_Term__c")],
+            ["Actual Weekly Payment", acctSfDollar("Actual_Weekly_Payment__c")],
+            ["Buyout Program Weeks", acctSf("Buyout_Program_Weeks__c")],
           ]}
         />
       </Section>
@@ -351,8 +361,11 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         <FieldGrid
           fields={[
             ["Operating Expenses", account.operatingExpenses != null ? `$${account.operatingExpenses.toLocaleString()}` : null],
+            ["Operating Expense", acctSfDollar("Operating_Expense__c")],
+            ["Direct Expenses", acctSfDollar("Direct_Expenses__c")],
             ["Gross Profit", account.grossProfit != null ? `$${account.grossProfit.toLocaleString()}` : null],
             ["Net Profit", account.netProfit != null ? `$${account.netProfit.toLocaleString()}` : null],
+            ["Profit", acctSfDollar("Profit__c")],
             ["Debt Payments", account.debtPayments != null ? `$${account.debtPayments.toLocaleString()}` : null],
             ["EBITDA", account.ebitda != null ? `$${account.ebitda.toLocaleString()}` : null],
             ["Buyout Program Weekly Payment", account.buyoutProgramWeeklyPayment != null ? `$${account.buyoutProgramWeeklyPayment.toLocaleString()}` : null],
