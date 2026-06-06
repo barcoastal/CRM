@@ -5,12 +5,59 @@ import { LeadTable, LeadFilterBar } from "@/components/leads/lead-table";
 import { LeadPipeline } from "@/components/leads/lead-pipeline";
 import { LeadViewToggle } from "@/components/leads/lead-view-toggle";
 
+const RECORD_TYPE_TABS: Array<{ key: string; label: string }> = [
+  { key: "", label: "All" },
+  { key: "WEB", label: "Web Leads" },
+  { key: "LIST", label: "Purchased Lists" },
+  { key: "DIRECT_MAIL", label: "Direct Mail" },
+  { key: "BUSINESS", label: "Business" },
+  { key: "ARCHIVED_WEB", label: "Archived Web" },
+  { key: "ARCHIVED_LIST", label: "Archived List" },
+  { key: "ARCHIVED_DIRECT_MAIL", label: "Archived Mail" },
+];
+
+function RecordTypeTabs({ current }: { current: string }) {
+  return (
+    <div style={{
+      display: "flex",
+      gap: 0,
+      borderBottom: "1px solid #d8dde6",
+      marginBottom: 16,
+      overflowX: "auto",
+    }}>
+      {RECORD_TYPE_TABS.map((t) => {
+        const active = (current === "" && t.key === "") || current === t.key;
+        const href = t.key ? `/leads?recordType=${t.key}` : "/leads";
+        return (
+          <Link
+            key={t.key || "all"}
+            href={href}
+            style={{
+              padding: "10px 18px",
+              fontSize: 13,
+              fontWeight: active ? 700 : 600,
+              color: active ? "#16325c" : "#3e3e3c",
+              borderBottom: active ? "3px solid #1589ee" : "3px solid transparent",
+              marginBottom: -1,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {t.label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
 interface LeadsPageProps {
   searchParams: Promise<{
     page?: string;
     search?: string;
     status?: string;
     source?: string;
+    recordType?: string;
     assignedToId?: string;
     view?: string;
   }>;
@@ -23,6 +70,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const search = params.search || "";
   const status = params.status || "";
   const source = params.source || "";
+  const recordType = params.recordType || "";
   const assignedToId = params.assignedToId || "";
   const view = params.view || "table";
 
@@ -41,6 +89,10 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
 
   if (source) {
     where.source = source;
+  }
+
+  if (recordType) {
+    where.recordType = recordType;
   }
 
   if (assignedToId) {
@@ -164,6 +216,8 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
           </Link>
         </div>
       </div>
+
+      <RecordTypeTabs current={recordType} />
 
       {view === "pipeline" ? (
         <LeadPipeline leads={serializedPipelineLeads} />

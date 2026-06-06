@@ -249,7 +249,20 @@ function mapTypedColumns(sf: Record<string, string>): Record<string, unknown> {
   if (ENTITY === "lead") {
     const fn = sf.FirstName || "";
     const ln = sf.LastName || "Unknown";
+    const SF_LEAD_RT: Record<string, string> = {
+      "012VO000002NUlrYAG": "WEB",
+      "012VO000002NUlqYAG": "LIST",
+      "012VO000002VGc1YAG": "DIRECT_MAIL",
+      "0128Y000001Z0JTQA0": "BUSINESS",
+      "0128Y000001Z0JUQA0": "BUSINESS",
+      "012VO000000ceNpYAI": "WEB",
+      "012VO000002VDizYAG": "ARCHIVED_WEB",
+      "012VO000002VDmDYAW": "ARCHIVED_LIST",
+      "012VO000002VGk5YAG": "ARCHIVED_DIRECT_MAIL",
+    };
+    const recordType = SF_LEAD_RT[sf.RecordTypeId] ?? "WEB";
     return {
+      recordType,
       businessName: sf.Company || `${fn} ${ln}`.trim() || "Unknown",
       contactName: `${fn} ${ln}`.trim() || "Unknown",
       email: sf.Email || null,
