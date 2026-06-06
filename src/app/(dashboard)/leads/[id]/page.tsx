@@ -535,21 +535,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       {debtCalculation}
       {callDisposition}
       {trustFunds}
-      <Section title={`Debt Information (${lead.debts.length})`} defaultOpen={false}>
-        <DebtInformation
-          leadId={lead.id}
-          items={lead.debts.map((d) => ({
-            id: d.id,
-            type: d.type,
-            creditorName: d.creditorName,
-            amount: d.amount,
-            frequency: d.frequency,
-            paymentAmount: d.paymentAmount,
-            status: d.status,
-            notes: d.notes,
-          }))}
-        />
-      </Section>
       {creditorInformation}
       {accountEngagement}
       {dialerIntegration}
@@ -594,38 +579,30 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     </Section>
   );
 
-  const activitiesPanel = (
-    <Section title={`Activities (${activity.length})`}>
-      <div style={{ fontSize: 12, color: "#706e6b", marginBottom: 8 }}>
-        All calls, emails, SMS, tasks, and events on this Lead.
-      </div>
-      {activity.length === 0 ? (
-        <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>No activity recorded.</div>
-      ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
-              <th style={th}>Date</th>
-              <th style={th}>Type</th>
-              <th style={th}>Subject</th>
-              <th style={th}>Detail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...activity]
-              .sort((a, b) => b.date.getTime() - a.date.getTime())
-              .map((a) => (
-                <tr key={a.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                  <td style={td}>{a.date.toLocaleString()}</td>
-                  <td style={td}>{a.type}</td>
-                  <td style={td}>{a.subject}</td>
-                  <td style={td}>{a.meta ?? "-"}</td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
-      )}
-    </Section>
+  // SF "Debt Information" tab: surfaces the current debt rollup + per-debt
+  // detail rows. In the SF org these fields live under their own tab so the
+  // Details panel stays focused on lead / company information.
+  const debtInformationPanel = (
+    <>
+      {currentDebtInformation}
+      {debtCalculation}
+      {creditorInformation}
+      <Section title={`Debt Information (${lead.debts.length})`}>
+        <DebtInformation
+          leadId={lead.id}
+          items={lead.debts.map((d) => ({
+            id: d.id,
+            type: d.type,
+            creditorName: d.creditorName,
+            amount: d.amount,
+            frequency: d.frequency,
+            paymentAmount: d.paymentAmount,
+            status: d.status,
+            notes: d.notes,
+          }))}
+        />
+      </Section>
+    </>
   );
 
   const openActivities = [
@@ -755,10 +732,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         </>
       }
       highlights={[
+        // SF Lead detail highlights row (verified against sf-lead-detail.png):
+        // 5 columns — Title, Email, Phone, Mobile, Lead Id. Company is shown
+        // in the Lead Information section below, not the highlight strip.
         { label: "Title", value: sf("Title") },
-        { label: "Company", value: lead.businessName ?? sf("Company") },
-        { label: "Phone", value: phoneVal },
         { label: "Email", value: emailVal },
+        { label: "Phone", value: phoneVal },
         { label: "Mobile", value: mobileVal },
         { label: "Lead Id", value: displayLeadId },
       ]}
@@ -770,8 +749,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         <LeadTabs
           panels={{
             Details: details,
-            Activities: activitiesPanel,
-            "Lead Calculator": calc,
+            "Debt Information": debtInformationPanel,
+            "Payment Calculator": calc,
             Documents: documents,
             Related: related,
             Marketing: marketing,
