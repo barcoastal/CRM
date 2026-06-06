@@ -91,21 +91,37 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div
       style={{
-        padding: "10px 0",
+        padding: "8px 0",
+        minHeight: 32,
         borderBottom: "1px solid #f3f3f3",
         position: "relative",
         display: "grid",
         gridTemplateColumns: "1fr auto",
         alignItems: "center",
-        gap: 12,
+        gap: 8,
       }}
       className="sf-field"
     >
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 11, color: "#706e6b", fontWeight: 400, marginBottom: 2 }}>
+        <div
+          style={{
+            fontSize: 12,
+            color: "#3e3e3c",
+            fontWeight: 400,
+            marginBottom: 1,
+            lineHeight: 1.25,
+          }}
+        >
           {label}
         </div>
-        <div style={{ fontSize: 13, color: "#080707", wordBreak: "break-word" }}>
+        <div
+          style={{
+            fontSize: 13,
+            color: "#080707",
+            wordBreak: "break-word",
+            lineHeight: 1.4,
+          }}
+        >
           {value ?? <span style={{ color: "#b0adab" }}>—</span>}
         </div>
       </div>
@@ -119,15 +135,30 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
           padding: 4,
           opacity: 0,
           transition: "opacity .15s",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 24,
+          height: 24,
+          borderRadius: 3,
         }}
       >
-        <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#54698d" }}>
-          <path d="M9.5 1L11 2.5 4 9.5 2.5 8z M3 11l-1.5-1.5L2 9l1.5 1.5z" />
+        <svg
+          aria-hidden="true"
+          width="14"
+          height="14"
+          viewBox="0 0 52 52"
+          style={{ fill: "#54698d" }}
+        >
+          <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#edit" />
         </svg>
       </button>
       <style jsx>{`
         :global(.sf-field:hover .sf-field-edit) {
           opacity: 1;
+        }
+        :global(.sf-field-edit:hover) {
+          background: #f3f2f2;
         }
       `}</style>
     </div>

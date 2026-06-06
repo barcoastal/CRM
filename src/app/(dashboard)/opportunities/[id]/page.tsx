@@ -62,6 +62,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       lead: {
         select: {
           id: true,
+          sfId: true,
           businessName: true,
           contactName: true,
           phone: true,
@@ -235,31 +236,64 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString();
   };
 
+  // Resolve a presentable Account name. The account migration defaulted
+  // empty SF names to literal "Unnamed Account", which leaks into the UI.
+  // Prefer that string only when it actually came from SF; otherwise fall back
+  // to the lead's businessName, the opp's own name, or a single em-dash.
+  const rawAccountName = opp.account?.name && opp.account.name !== "Unnamed Account"
+    ? opp.account.name
+    : null;
+  const accountDisplayName =
+    rawAccountName ??
+    opp.lead?.businessName ??
+    (opp.account ? "Unnamed Account" : null);
+  const accountLink = accountDisplayName && opp.account?.id ? (
+    <Link href={`/accounts/${opp.account.id}`} style={{ color: "#1589ee" }}>
+      {accountDisplayName}
+    </Link>
+  ) : (
+    accountDisplayName ?? null
+  );
+
+  const ownerDisplay = opp.assignedTo?.name ?? oppSf("Owner_Full_Name__c");
+  const closeDateDisplay = opp.expectedCloseDate?.toLocaleDateString() ?? oppSfDate("CloseDate");
+  const totalDebtDisplay = `$${totalDebtVal.toLocaleString()}`;
+  const probabilityDisplay = (() => {
+    const p = oppSf("Probability");
+    if (!p) return null;
+    const n = Number(p);
+    return Number.isFinite(n) ? `${n}%` : p;
+  })();
+  const createdByDisplay = oppSf("CreatedBy_Full_Name__c") ?? oppSf("CreatedById") ?? "—";
+
   const detailsPanel = (
     <>
+      {/* Order mirrors the SF Lightning Details tab on the Kenya Palmer record:
+          Opportunity Name → Account Name → Close Date → Owner → Total Debt
+          Including Fees → Probability → Lead Source → Created By, then the
+          remaining SF detail rows in the same two-column rhythm. */}
       <Section title="Opportunity Information">
         <FieldGrid
           fields={[
             ["Opportunity Name", oppName],
-            ["Account Name", opp.account?.name && (
-              <Link href={`/accounts/${opp.account.id}`} style={{ color: "#1589ee" }}>{opp.account.name}</Link>
-            )],
+            ["Account Name", accountLink],
+            ["Close Date", closeDateDisplay],
+            ["Opportunity Owner", ownerDisplay],
+            ["Total Debt Including Fees", totalDebtDisplay],
+            ["Probability (%)", probabilityDisplay],
+            ["Lead Source", opp.lead?.source ?? oppSf("LeadSource")],
+            ["Created By", createdByDisplay],
             ["Stage", <StatusPill key="s" label={opp.stage} tone={opportunityStageTone(opp.stage)} />],
             ["Sub-Disposition", oppSf("Sub_Disposition__c")],
-            ["Lead Source", opp.lead?.source ?? oppSf("LeadSource")],
             ["Lead Source Category", oppSf("Lead_Source_Category__c")],
-            ["Total Debt", `$${totalDebtVal.toLocaleString()}`],
-            ["Current Total Debt", oppSfDollar("Current_Total_Debt__c")],
+            ["Current Total Debt", oppSfDollar("Current_Total_Debt__c") ?? totalDebtDisplay],
             ["Estimated Total Debt", oppSfDollar("Estimated_Total_Debt__c")],
             ["Current Weekly Payment", oppSfDollar("Current_Weekly_Payment__c")],
             ["Current Monthly Payment", oppSfDollar("Current_Monthly_Payment__c")],
             ["Weekly Payment/Debt Ratio", oppSf("Weekly_Payment_To_Debt_Ratio__c")],
             ["Amount", oppSfDollar("Amount")],
-            ["Expected Close Date", opp.expectedCloseDate?.toLocaleDateString() ?? oppSfDate("CloseDate")],
             ["First Draft Date", oppSfDate("First_Draft_Date__c")],
             ["First Contract Signed", oppSfDate("First_Contract_Signed_Date__c")],
-            ["Probability", oppSf("Probability")],
-            ["Owner", opp.assignedTo?.name ?? oppSf("Owner_Full_Name__c")],
             ["Owner Email", oppSf("Owner_Username__c")],
             ["Fronter", oppSf("Fronter__c")],
             ["Closer", oppSf("Closer__c")],
@@ -537,79 +571,95 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     </Section>
   );
 
+  // SF Lead Id is captured on the opp as sfLeadIdText (free text from SF) or
+  // can be derived from the linked CRM Lead row's sfId. Fall back to the CRM
+  // lead id only as a last resort.
+  const sfLeadIdDisplay =
+    opp.sfLeadIdText ??
+    oppSf("Lead_Id__c") ??
+    opp.lead?.sfId ??
+    (opp.lead?.id ? opp.lead.id.slice(-8).toUpperCase() : null);
+
+  const sfOppIdDisplay = opp.sfId ?? opp.id.slice(-8).toUpperCase();
+
   return (
-    <RecordPage
-      entity="Opportunity"
-      entityLabel="Opportunity"
-      recordTitle={oppName}
-      recordSubtitle={
-        <>
-          {opp.recordType.replace(/_/g, " ")} ·{" "}
-          <StatusPill label={opp.stage} tone={opportunityStageTone(opp.stage)} />
-        </>
-      }
-      highlights={[
-        { label: "Account Name", value: opp.account?.name ? <Link href={`/accounts/${opp.account.id}`} style={{ color: "#1589ee" }}>{opp.account.name}</Link> : null },
-        { label: "Current Total Debt", value: `$${totalDebtVal.toLocaleString()}` },
-        { label: "Lead Id", value: opp.lead?.id ? opp.lead.id.slice(-8).toUpperCase() : null },
-        { label: "Opportunity Owner", value: opp.assignedTo?.name },
-        { label: "Version", value: opp.version },
-      ]}
-      actions={<OppHeaderButtons opportunityId={opp.id} currentStage={opp.stage} />}
-      pathStages={PATH}
-      pathCurrentIndex={oppPathIndex(opp.stage)}
-      pathActionLabel="Mark Stage as Complete"
-      details={
-        <OppTabs
-          panels={{
-            Details: detailsPanel,
-            Activities: activitiesPanel,
-            "Debt Information": debtPanel,
-            "Payment Calculator": calcPanel,
-            Settlements: settlementsPanel,
-            Documents: documentsPanel,
-            Related: relatedPanel,
-            Marketing: marketingPanel,
-            "All SF Fields": sfFieldsPanel,
-          }}
-        />
-      }
-      rail={
-        <>
-          <OppReportsCard opportunityId={opp.id} />
-          <DocusignEnvelopeStatus
-            envelopes={opp.envelopes.map((e) => ({
-              id: e.id,
-              templateName: e.templateName,
-              documentName: e.documentName,
-              status: e.status,
-              signerName: e.signerName,
-              sentAt: e.sentAt?.toISOString() ?? null,
-              signedAt: e.signedAt?.toISOString() ?? null,
-              completedAt: e.completedAt?.toISOString() ?? null,
-              createdAt: e.createdAt.toISOString(),
-            }))}
+    <div className="sf-record-page">
+      <RecordPage
+        entity="Opportunity"
+        entityLabel="Opportunity"
+        recordTitle={oppName}
+        recordSubtitle={
+          <>
+            {opp.recordType.replace(/_/g, " ")} ·{" "}
+            <StatusPill label={opp.stage} tone={opportunityStageTone(opp.stage)} />
+          </>
+        }
+        highlights={[
+          { label: "Account Name", value: accountLink },
+          { label: "Current Total Debt", value: `$${totalDebtVal.toLocaleString()}` },
+          { label: "Lead Id", value: sfLeadIdDisplay },
+          { label: "Opportunity Owner", value: ownerDisplay },
+          { label: "Opp Id", value: sfOppIdDisplay },
+        ]}
+        actions={<OppHeaderButtons opportunityId={opp.id} currentStage={opp.stage} />}
+        pathStages={PATH}
+        pathCurrentIndex={oppPathIndex(opp.stage)}
+        pathActionLabel="Mark Stage as Complete"
+        details={
+          <OppTabs
+            panels={{
+              Details: detailsPanel,
+              Activities: activitiesPanel,
+              "Debt Information": debtPanel,
+              "Payment Calculator": calcPanel,
+              Settlements: settlementsPanel,
+              Documents: documentsPanel,
+              Related: relatedPanel,
+              Marketing: marketingPanel,
+              "All SF Fields": sfFieldsPanel,
+            }}
           />
-          <ContactRolesCard
-            primary={opp.primaryContact}
-            accountId={opp.account?.id}
-          />
-          <TotalPaymentsSummary
-            programLengthMonths={latestCalc?.programFeePeriod ?? null}
-            totalDebt={totalDebtVal}
-            totalProgramCost={formulas.totalAmountWithFees ?? latestCalc?.estimatedAmount ?? null}
-            totalProgramFee={formulas.totalProgramFee ?? null}
-            totalSetupFee={latestCalc?.setupFee ?? null}
-            totalBankFee={formulas.totalBankFee ?? null}
-            totalServiceFee={latestCalc?.serviceFee ?? null}
-            totalSettlement={formulas.estimatedSettlement ?? latestCalc?.totalSettlement ?? null}
-            totalWeeklyPayment={totalWeekly || null}
-            empty={!latestCalc && opp.programPlans.length === 0}
-          />
-          <ActivityChatterRail activities={activity} chatter={chatter} />
-        </>
-      }
-    />
+        }
+        rail={
+          <>
+            {/* Rail order mirrors SF Kenya Palmer screenshot:
+                Total Payments Summary → Reports → DocuSign Envelope Status →
+                Contact Roles. Activity / Chatter sits below. */}
+            <TotalPaymentsSummary
+              programLengthMonths={latestCalc?.programFeePeriod ?? null}
+              totalDebt={totalDebtVal}
+              totalProgramCost={formulas.totalAmountWithFees ?? latestCalc?.estimatedAmount ?? null}
+              totalProgramFee={formulas.totalProgramFee ?? null}
+              totalSetupFee={latestCalc?.setupFee ?? null}
+              totalBankFee={formulas.totalBankFee ?? null}
+              totalServiceFee={latestCalc?.serviceFee ?? null}
+              totalSettlement={formulas.estimatedSettlement ?? latestCalc?.totalSettlement ?? null}
+              totalWeeklyPayment={totalWeekly || null}
+              empty={!latestCalc && opp.programPlans.length === 0}
+            />
+            <OppReportsCard opportunityId={opp.id} />
+            <DocusignEnvelopeStatus
+              envelopes={opp.envelopes.map((e) => ({
+                id: e.id,
+                templateName: e.templateName,
+                documentName: e.documentName,
+                status: e.status,
+                signerName: e.signerName,
+                sentAt: e.sentAt?.toISOString() ?? null,
+                signedAt: e.signedAt?.toISOString() ?? null,
+                completedAt: e.completedAt?.toISOString() ?? null,
+                createdAt: e.createdAt.toISOString(),
+              }))}
+            />
+            <ContactRolesCard
+              primary={opp.primaryContact}
+              accountId={opp.account?.id}
+            />
+            <ActivityChatterRail activities={activity} chatter={chatter} />
+          </>
+        }
+      />
+    </div>
   );
 }
 
