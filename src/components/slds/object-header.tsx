@@ -27,7 +27,6 @@ export function ObjectHeader({
   const slug = slugEntity(entity);
   return (
     <div
-      className="slds-page-header slds-page-header_record-home"
       style={{
         background: "#f3f3f3",
         border: "1px solid #dddbda",
@@ -36,15 +35,14 @@ export function ObjectHeader({
         boxShadow: "0 2px 2px 0 rgba(0,0,0,0.05)",
       }}
     >
-      <div className="slds-page-header__row" style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-        <div className="slds-page-header__col-title" style={{ flex: 1, minWidth: 0 }}>
-          <div className="slds-media" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-            <div className="slds-media__figure" style={{ flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <div style={{ flexShrink: 0 }}>
               <span
-                className={`slds-icon_container slds-icon-standard-${slug}`}
                 title={entityLabel ?? entity}
                 style={{
-                  background: "#fcb95b",
+                  background: ENTITY_COLOR[slug] ?? "#fcb95b",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -53,13 +51,13 @@ export function ObjectHeader({
                   borderRadius: 4,
                 }}
               >
-                <svg className="slds-icon slds-page-header__icon" aria-hidden="true" style={{ width: 20, height: 20, fill: "#fff" }}>
+                <svg aria-hidden="true" style={{ width: 20, height: 20, fill: "#fff" }}>
                   <use xlinkHref={`/slds/icons/standard-sprite/svg/symbols.svg#${slug}`} />
                 </svg>
               </span>
             </div>
-            <div className="slds-media__body" style={{ minWidth: 0 }}>
-              <div className="slds-page-header__name">
+            <div className="slds-media__body" style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 <span
                   style={{
                     display: "block",
@@ -67,11 +65,12 @@ export function ObjectHeader({
                     color: "#3e3e3c",
                     fontWeight: 400,
                     lineHeight: 1.2,
+                    marginBottom: 1,
                   }}
                 >
                   {entityLabel ?? entity}
                 </span>
-                <h1 style={{ margin: 0 }}>
+                <h1 style={{ margin: 0, display: "block" }}>
                   <span
                     style={{
                       display: "block",
@@ -101,11 +100,9 @@ export function ObjectHeader({
           </div>
         </div>
         {actions && (
-          <div className="slds-page-header__col-actions" style={{ flexShrink: 0 }}>
-            <div className="slds-page-header__controls">
-              <div className="slds-page-header__control" style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                {actions}
-              </div>
+          <div style={{ flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              {actions}
             </div>
           </div>
         )}
@@ -113,7 +110,6 @@ export function ObjectHeader({
 
       {highlights.length > 0 && (
         <div
-          className="slds-page-header__row slds-page-header__row_gutters"
           style={{
             marginTop: 10,
             paddingTop: 10,
@@ -122,10 +118,9 @@ export function ObjectHeader({
           }}
         >
           <ul
-            className="slds-page-header__detail-row"
             style={{
               display: "grid",
-              gridTemplateColumns: `repeat(${highlights.length}, 1fr)`,
+              gridTemplateColumns: `repeat(${highlights.length}, minmax(0, 1fr))`,
               gap: 0,
               listStyle: "none",
               margin: 0,
@@ -135,15 +130,15 @@ export function ObjectHeader({
             {highlights.map((h, i) => (
               <li
                 key={i}
-                className="slds-page-header__detail-block"
                 style={{
-                  padding: "0 12px",
+                  padding: "0 14px",
                   borderLeft: i === 0 ? "none" : "1px solid #dddbda",
                   minWidth: 0,
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
                 <div
-                  className="slds-text-title slds-truncate"
                   title={h.label}
                   style={{
                     fontSize: 11,
@@ -159,7 +154,6 @@ export function ObjectHeader({
                   {h.label}
                 </div>
                 <div
-                  className="slds-text-body_regular slds-truncate"
                   style={{
                     fontSize: 13,
                     color: "#080707",
@@ -224,6 +218,21 @@ export function DetailTabs({
     </div>
   );
 }
+
+// SF Lightning standard-icon brand colors per object.
+const ENTITY_COLOR: Record<string, string> = {
+  account: "#7f8de1",
+  contact: "#a094ed",
+  lead: "#f88962",
+  opportunity: "#fcb95b",
+  case: "#f2cf5b",
+  household: "#26c8b3",
+  partners: "#56aadc",
+  task: "#4bc076",
+  event: "#bfb6e8",
+  email: "#95aec5",
+  sms: "#56aadc",
+};
 
 function slugEntity(entity: string): string {
   const map: Record<string, string> = {
