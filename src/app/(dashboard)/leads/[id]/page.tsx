@@ -764,13 +764,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         />
       }
       rail={
+        // SF Lead detail rail order:
+        //   1. Health Check Results  (always at top per SF Lightning)
+        //   2. Activity / Chatter tabs
+        // The Lead Score and "Related Records" (Owner + converted links) cards
+        // were CRM extras that pushed Health Check below the fold; SF Lead pages
+        // don't show them on the rail (Owner is in the highlights and converted
+        // breadcrumb is in Details).
         <>
-          <LeadScoreCard score={lead.score} reason={lead.scoreReason} />
-          <RelatedRecordsCard
-            converted={converted}
-            ownerName={ownerName}
-            ownerEmail={lead.assignedTo?.email ?? sf("Owner_Username__c")}
-          />
           <LeadHealthCheckCard
             status={lead.status}
             businessName={lead.businessName}
@@ -815,111 +816,7 @@ const td: React.CSSProperties = {
   verticalAlign: "top",
 };
 
-/**
- * SF Lightning Lead Score card — shown above Related Records when the lead
- * has been scored. Mirrors the Einstein Lead Scoring widget.
- */
-function LeadScoreCard({ score, reason }: { score: number | null; reason: string | null }) {
-  if (score == null) return null;
-  const tone = score >= 70 ? "#04844b" : score >= 40 ? "#fe9339" : "#c23934";
-  return (
-    <article
-      style={{
-        background: "#fff",
-        border: "1px solid #d8dde6",
-        borderRadius: 4,
-        padding: 12,
-        marginBottom: 8,
-      }}
-    >
-      <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: "#080707" }}>
-        Lead Score
-      </h3>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: "50%",
-            background: tone,
-            color: "#fff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 16,
-            fontWeight: 700,
-            flexShrink: 0,
-          }}
-        >
-          {score}
-        </div>
-        <div style={{ fontSize: 12, color: "#3e3e3c", lineHeight: 1.4 }}>
-          {reason ?? "Score out of 100."}
-        </div>
-      </div>
-    </article>
-  );
-}
-
-/**
- * Related Records — SF Lead rail card showing the Account/Contact/Opportunity
- * the lead converted into (if applicable) plus the Owner.
- */
-function RelatedRecordsCard({
-  converted,
-  ownerName,
-  ownerEmail,
-}: {
-  converted: { accountId: string; contactId: string; opportunityId: string | null } | undefined;
-  ownerName: string | null;
-  ownerEmail: string | null;
-}) {
-  return (
-    <article
-      style={{
-        background: "#fff",
-        border: "1px solid #d8dde6",
-        borderRadius: 4,
-        padding: 12,
-        marginBottom: 8,
-      }}
-    >
-      <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: "#080707" }}>
-        Related Records
-      </h3>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: 12 }}>
-        <li style={{ padding: "4px 0", display: "flex", justifyContent: "space-between", gap: 8 }}>
-          <span style={{ color: "#706e6b" }}>Owner</span>
-          <span style={{ color: "#080707", fontWeight: 600, textAlign: "right" }}>
-            {ownerName ?? <span style={{ color: "#b0adab" }}>-</span>}
-            {ownerEmail && <div style={{ fontSize: 11, color: "#706e6b", fontWeight: 400 }}>{ownerEmail}</div>}
-          </span>
-        </li>
-        {converted?.accountId && (
-          <li style={{ padding: "4px 0", display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#706e6b" }}>Account</span>
-            <Link href={`/accounts/${converted.accountId}`} style={{ color: "#0070d2" }}>
-              View
-            </Link>
-          </li>
-        )}
-        {converted?.contactId && (
-          <li style={{ padding: "4px 0", display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#706e6b" }}>Contact</span>
-            <Link href={`/contacts/${converted.contactId}`} style={{ color: "#0070d2" }}>
-              View
-            </Link>
-          </li>
-        )}
-        {converted?.opportunityId && (
-          <li style={{ padding: "4px 0", display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#706e6b" }}>Opportunity</span>
-            <Link href={`/opportunities/${converted.opportunityId}`} style={{ color: "#0070d2" }}>
-              View
-            </Link>
-          </li>
-        )}
-      </ul>
-    </article>
-  );
-}
+// LeadScoreCard + RelatedRecordsCard removed: SF Lead detail rail doesn't
+// surface either. Lead Score is shown as a tone next to the status pill on
+// the path; owner lives in the highlights row; converted-record links live
+// in the in-Details breadcrumb at the top of the Details panel.
