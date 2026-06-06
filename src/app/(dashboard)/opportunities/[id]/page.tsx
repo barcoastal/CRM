@@ -14,6 +14,7 @@ import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-list";
 import { opportunityStageTone, settlementStatusTone, genericTone } from "@/lib/slds/status-tones";
 import { OPP_STAGES } from "@/lib/sf-canonical";
+import { SfDataSection } from "@/components/slds/sf-data-section";
 
 const PATH = OPP_STAGES.map((s) => ({ label: s }));
 
@@ -392,6 +393,10 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     </>
   );
 
+  const sfFieldsPanel = (
+    <SfDataSection sfDataJson={opp.sfDataJson} sfId={opp.sfId} />
+  );
+
   const marketingPanel = (
     <Section title="Marketing Attribution">
       <FieldGrid
@@ -440,6 +445,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             Documents: documentsPanel,
             Related: relatedPanel,
             Marketing: marketingPanel,
+            "All SF Fields": sfFieldsPanel,
           }}
         />
       }

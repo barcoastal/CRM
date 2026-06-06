@@ -10,7 +10,8 @@ export type OppTabKey =
   | "Settlements"
   | "Documents"
   | "Related"
-  | "Marketing";
+  | "Marketing"
+  | "All SF Fields";
 
 const TABS: OppTabKey[] = [
   "Details",
@@ -21,6 +22,7 @@ const TABS: OppTabKey[] = [
   "Documents",
   "Related",
   "Marketing",
+  "All SF Fields",
 ];
 
 export function OppTabs({ panels }: { panels: Record<OppTabKey, ReactNode> }) {

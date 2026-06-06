@@ -11,7 +11,8 @@ export type AccountTabKey =
   | "Payment Summaries"
   | "Settlements"
   | "Opportunities"
-  | "Marketing";
+  | "Marketing"
+  | "All SF Fields";
 
 const TABS: AccountTabKey[] = [
   "Details",
@@ -23,6 +24,7 @@ const TABS: AccountTabKey[] = [
   "Settlements",
   "Opportunities",
   "Marketing",
+  "All SF Fields",
 ];
 
 export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNode> }) {

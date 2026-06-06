@@ -8,7 +8,8 @@ export type LeadTabKey =
   | "Payment Calculator"
   | "Documents"
   | "Related"
-  | "Marketing";
+  | "Marketing"
+  | "All SF Fields";
 
 const TABS: LeadTabKey[] = [
   "Details",
@@ -17,6 +18,7 @@ const TABS: LeadTabKey[] = [
   "Documents",
   "Related",
   "Marketing",
+  "All SF Fields",
 ];
 
 export function LeadTabs({ panels }: { panels: Record<LeadTabKey, ReactNode> }) {

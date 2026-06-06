@@ -27,8 +27,9 @@ function cuid(): string {
 }
 
 const ENTITY = process.argv[2];
+const WHERE_CLAUSE = process.argv[3] ?? ""; // e.g. "WHERE CreatedDate >= 2025-01-01T00:00:00Z AND CreatedDate < 2026-01-01T00:00:00Z"
 if (!ENTITY || !["contact", "account", "opportunity", "lead"].includes(ENTITY)) {
-  console.error("Usage: tsx scripts/migrate-sf-full.ts <contact|account|opportunity|lead>");
+  console.error("Usage: tsx scripts/migrate-sf-full.ts <contact|account|opportunity|lead> [WHERE_CLAUSE]");
   process.exit(1);
 }
 
@@ -46,7 +47,8 @@ const SF_OBJECT_MAP: Record<string, string> = {
   lead: "Lead",
 };
 
-const CSV_DIR = `/tmp/sf-${ENTITY}-full`;
+const CHUNK_SUFFIX = WHERE_CLAUSE ? "-" + crypto.createHash("sha1").update(WHERE_CLAUSE).digest("hex").slice(0, 12) : "";
+const CSV_DIR = `/tmp/sf-${ENTITY}-full${CHUNK_SUFFIX}`;
 const TABLE = TABLE_MAP[ENTITY];
 const SF_OBJECT = SF_OBJECT_MAP[ENTITY];
 
@@ -60,10 +62,10 @@ function listFields(): string[] {
     process.exit(1);
   }
   const data = JSON.parse(res.stdout);
-  // Drop compound + sensitive types we can't query directly
+  // Drop the compound parent fields (address/location/Name) but KEEP their parts (FirstName, LastName, BillingStreet, etc.)
   return data.result.fields
-    .filter((f: { name: string; type: string; compoundFieldName?: string }) =>
-      f.type !== "address" && f.type !== "location" && !f.compoundFieldName,
+    .filter((f: { name: string; type: string; nameField?: boolean }) =>
+      f.type !== "address" && f.type !== "location" && f.name !== "Name",
     )
     .map((f: { name: string }) => f.name);
 }
@@ -74,11 +76,11 @@ function exportChunk(fields: string[], chunkIdx: number): string {
     console.log(`  [reuse] chunk ${chunkIdx}: ${(fs.statSync(outFile).size / 1024 / 1024).toFixed(1)} MB`);
     return outFile;
   }
-  const soql = `SELECT ${fields.join(",")} FROM ${SF_OBJECT}`;
+  const soql = `SELECT ${fields.join(",")} FROM ${SF_OBJECT} ${WHERE_CLAUSE}`;
   console.log(`  [export] chunk ${chunkIdx} (${fields.length} fields)…`);
   const r = spawnSync(
     "sf",
-    ["data", "export", "bulk", "--target-org", "coastal", "--query", soql, "--result-format", "csv", "--output-file", outFile, "--wait", "180"],
+    ["data", "export", "bulk", "--target-org", "coastal", "--query", soql, "--result-format", "csv", "--output-file", outFile, "--wait", "240"],
     { stdio: "inherit" },
   );
   if (r.status !== 0) {
@@ -236,7 +238,7 @@ function mapTypedColumns(sf: Record<string, string>): Record<string, unknown> {
       email: sf.Email || null,
       phone: sf.Phone || "0000000000",
       status: sf.Status || "New",
-      source: sf.LeadSource || null,
+      source: sf.LeadSource || "OTHER",
       industry: sf.Industry || null,
       annualRevenue: num(sf.AnnualRevenue),
       ...baseTimestamps,

@@ -5,6 +5,7 @@ import { RecordPage, HeaderActions } from "@/components/slds/record-page";
 import { Section, FieldGrid } from "@/components/slds/section";
 import { ActivityRail, type ActivityItem } from "@/components/slds/activity-rail";
 import { RelatedList } from "@/components/slds/related-list";
+import { SfDataSection } from "@/components/slds/sf-data-section";
 
 export default async function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -89,6 +90,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
               />
             </Section>
           )}
+          <SfDataSection sfDataJson={contact.sfDataJson} sfId={contact.sfId} />
         </>
       }
       rail={

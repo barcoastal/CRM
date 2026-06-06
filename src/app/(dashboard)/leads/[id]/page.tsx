@@ -10,6 +10,7 @@ import { PaymentCalculatorV2 } from "@/components/shared/payment-calculator-v2";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { DebtInformation } from "@/components/leads/debt-information";
 import { LeadRelated } from "@/components/leads/lead-related";
+import { SfDataSection } from "@/components/slds/sf-data-section";
 import { ConvertLeadButton } from "@/components/leads/convert-lead-button";
 import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
@@ -240,6 +241,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     />
   );
 
+  const sfFields = (
+    <SfDataSection sfDataJson={lead.sfDataJson} sfId={lead.sfId} />
+  );
+
   const marketing = (
     <Section title="Marketing Attribution">
       <FieldGrid
@@ -289,6 +294,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             Documents: documents,
             Related: related,
             Marketing: marketing,
+            "All SF Fields": sfFields,
           }}
         />
       }

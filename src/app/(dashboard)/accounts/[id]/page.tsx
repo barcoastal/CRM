@@ -18,6 +18,7 @@ import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-l
 import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
 import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
+import { SfDataSection } from "@/components/slds/sf-data-section";
 import { genericTone } from "@/lib/slds/status-tones";
 
 const PATH = ACCOUNT_STAGES.map((s) => ({ label: s }));
@@ -420,6 +421,10 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     </Section>
   );
 
+  const sfFieldsPanel = (
+    <SfDataSection sfDataJson={account.sfDataJson} sfId={account.sfId} />
+  );
+
   return (
     <RecordPage
       entity="Account"
@@ -452,6 +457,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             Settlements: settlementsPanel,
             Opportunities: opportunitiesPanel,
             Marketing: marketingPanel,
+            "All SF Fields": sfFieldsPanel,
           }}
         />
       }
