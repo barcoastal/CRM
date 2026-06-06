@@ -54,7 +54,7 @@ export function RecordPage({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: rail ? "minmax(0, 2fr) minmax(320px, 1fr)" : "minmax(0, 1fr)",
+          gridTemplateColumns: rail ? "minmax(0, 1fr) minmax(320px, 360px)" : "minmax(0, 1fr)",
           gap: 12,
           marginTop: 8,
         }}
