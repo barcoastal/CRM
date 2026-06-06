@@ -133,11 +133,8 @@ export async function POST() {
   const ctd: Array<Record<string, unknown>> = [];
   if (reached === "WORKING") {
     const candidates: Array<[string, string]> = [
-      ["OPTIONS", "/interactions/click_to_dial"],
-      ["OPTIONS", "/interactions/make_call"],
-      ["PUT", "/interactions/click_to_dial"],
-      ["POST", "/interactions/click_to_dial"],
-      ["POST", "/interactions/make_call"],
+      ["POST", "/interactions/make_external_call"],
+      ["POST", "/interactions/make_agent_call"],
     ];
     for (const [m, p] of candidates) {
       const res = await fetch(`${apiHost}/agents/${userId}${p}`, {

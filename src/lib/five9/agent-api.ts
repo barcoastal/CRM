@@ -530,33 +530,24 @@ export async function makeCall(userId: string, args: {
   contactId?: string;
   stationId?: string;
 }): Promise<{ ok: boolean; callId?: string }> {
+  // Place an outbound call to an external number. The correct Five9 Agent REST
+  // endpoint is POST /interactions/make_external_call (NOT the legacy
+  // PUT /interactions/click_to_dial, which returns 405 on this version).
+  // Source: Five9DeveloperProgram Agent-Sup REST Python Pack (MakeExternalCall).
   const body = JSON.stringify({
     number: args.number,
     campaignId: args.campaignId ?? undefined,
     skillId: args.skillId ?? undefined,
-    contactId: args.contactId ?? undefined,
   });
 
-  let res = await agentFetch(userId, `/interactions/click_to_dial`, {
-    method: "PUT",
+  const res = await agentFetch(userId, `/interactions/make_external_call`, {
+    method: "POST",
     body,
   });
 
-  // If 401, the agent session may have lapsed. Clear caches and re-login + start.
-  if (res.status === 401 || res.status === 435) {
-    const text = await res.clone().text();
-    if (text.includes("not logged in") || text.includes("\"401\"")) {
-      sessionCache.delete(userId);
-      await clearPersistedSession(userId);
-      const stationId = args.stationId ?? "";
-      await startAgentSession(userId, stationId).catch(() => undefined);
-      res = await agentFetch(userId, `/interactions/click_to_dial`, { method: "PUT", body });
-    }
-  }
-
   if (!res.ok) {
     const t = await res.text().catch(() => "");
-    throw new Error(`click_to_dial ${res.status}: ${t.slice(0, 500)}`);
+    throw new Error(`make_external_call ${res.status}: ${t.slice(0, 500)}`);
   }
   const json = await res.json().catch(() => ({}));
   return { ok: true, callId: (json as { callId?: string }).callId };
