@@ -211,32 +211,59 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     <Section title="Lead Information">
       <FieldGrid
         fields={[
-          ["Name", displayContactName],
-          ["Title", sf("Title")],
-          ["Phone", <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{phoneVal ?? "—"}{phoneVal && <CallButton phone={phoneVal} leadId={lead.id} />}</span>],
-          ["Mobile", mobileVal],
-          ["Email", <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{emailVal ?? "—"}{emailVal && <ComposeEmailButton defaultTo={emailVal} leadId={lead.id} label="Email" />}</span>],
+          ["Full Name", displayContactName],
+          ["First Name", sf("FirstName")],
+          ["Last Name", sf("LastName")],
           ["Salutation", sf("Salutation")],
+          ["Title", sf("Title")],
+          ["Phone", <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{phoneVal ?? "-"}{phoneVal && <CallButton phone={phoneVal} leadId={lead.id} />}</span>],
+          ["Mobile Phone", mobileVal],
+          ["Formated Phone", sf("Formated_Phone__c")],
+          ["Email", <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{emailVal ?? "-"}{emailVal && <ComposeEmailButton defaultTo={emailVal} leadId={lead.id} label="Email" />}</span>],
+          ["Preferred Language", sf("Preferred_Language__c")],
+          ["Timezone", sf("Timezone__c")],
           ["Lead Source", lead.source ?? sf("LeadSource")],
           ["Lead Source Category", sf("Lead_Source_Category__c")],
           ["Lead Vendor ID", sf("Lead_Vendor_ID__c")],
+          ["Lead Vendor Id Text", sf("Lead_Vendor_Id_Text__c")],
+          ["Campaign Name", sf("Campaign_Name__c")],
+          ["Keyword", sf("Keyword__c")],
           ["Status", <StatusPill key="st" label={lead.status} tone={leadStatusTone(lead.status)} />],
-          ["Sub-Disposition", sf("Sub_Disposition__c")],
+          ["Sub Disposition", sf("Sub_Disposition__c")],
           ["Last Disposition", lead.lastDisposition ?? sf("Last_Disposition__c")],
           ["Last Sub Disposition", lead.lastSubDisposition ?? sf("Last_Sub_Disposition__c")],
+          ["Transfer Qualification", sf("Transfer_Qualification__c")],
           ["Owner", ownerName],
-          ["Owner Email", sf("Owner_Username__c")],
+          ["Owner Full Name", sf("Owner_Full_Name__c")],
+          ["Owner Username", sf("Owner_Username__c")],
+          ["Agent", sf("Agent__c")],
+          ["Agent Location", sf("Agent_Location__c")],
+          ["Fronter", sf("Fronter__c")],
           ["Lead Assignment Date", lead.leadAssignmentDate?.toLocaleDateString() ?? sfDate("Lead_Assignment_Date__c")],
-          ["Last Contacted", lead.lastContactedAt?.toLocaleDateString() ?? sfDate("Last_Contacted_DateTime__c")],
-          ["Last Disposition Time", lead.lastDispositionAt?.toLocaleString() ?? sfDate("Last_Disposition_DateTime__c")],
-          ["Days Since Last Contact", sf("Week_Days_Between_Last_Contacted_Date__c")],
+          ["Last Contacted DateTime", lead.lastContactedAt?.toLocaleString() ?? sfDate("Last_Contacted_DateTime__c")],
+          ["Last Disposition DateTime", lead.lastDispositionAt?.toLocaleString() ?? sfDate("Last_Disposition_DateTime__c")],
+          ["Week Days Between Last Contacted Date", sf("Week_Days_Between_Last_Contacted_Date__c")],
           ["Next Follow-up", lead.nextFollowUpAt?.toLocaleDateString()],
-          ["Call Counter", sf("Call_counter__c")],
+          ["Call counter", sf("Call_counter__c")],
           ["Hopper Priority", sf("Hopper_Priority__c")],
+          ["Hopper", yesNo(sf("Hopper__c"))],
+          ["Call ASAP", yesNo(sf("Call_ASAP__c"))],
           ["DNC", yesNo(sf("DNC__c"))],
+          ["Check DNC", yesNo(sf("Check_DNC__c"))],
           ["Address", [sf("Street"), sf("City"), sf("State"), sf("PostalCode"), sf("Country")].filter(Boolean).join(", ") || null],
-          ["Lead Id", displayLeadId],
-          ["Disqualification Reason", sf("Reason_for_Disqualification__c")],
+          ["Lead ID", displayLeadId],
+          ["Lead Id", sf("Lead_Id__c")],
+          ["External 18 Digit ID", sf("External_18_Digit_ID__c")],
+          ["External ID 15 digit", sf("External_ID_15_digit__c")],
+          ["Lead Score", sf("Lead_Score__c")],
+          ["Lead Appended Timestamp", sfDate("Lead_Appended_Timestamp__c")],
+          ["Reason for Disqualification", sf("Reason_for_Disqualification__c")],
+          ["Is Archived", yesNo(sf("Is_Archived__c"))],
+          ["Archived Duplicate Leads", yesNo(sf("Archived_Duplicate_Leads__c"))],
+          ["Check Duplicate Archive", yesNo(sf("Check_Duplicate_Archive__c"))],
+          ["Re-shuffle Lead", yesNo(sf("Re_shuffle_Lead__c"))],
+          ["Reshuffle Lead", yesNo(sf("Reshuffle_Lead__c"))],
+          ["Legal Plan Required", yesNo(sf("Legal_Plan_Required__c"))],
         ]}
       />
       {lead.scoreReason && (
@@ -252,11 +279,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       <FieldGrid
         fields={[
           ["Company", lead.businessName ?? sf("Company")],
-          ["EIN Number / Tax ID", lead.ein ?? sf("EIN_Number_Tax_Id__c")],
+          ["EIN Number / Tax Id", lead.ein ?? sf("EIN_Number_Tax_Id__c")],
           ["Industry", lead.industry ?? sf("Industry")],
+          ["Other Industry", sf("Other_Industry__c")],
           ["Annual Revenue", lead.annualRevenue ? `$${lead.annualRevenue.toLocaleString()}` : sfDollar("AnnualRevenue")],
           ["Monthly Revenue", sfDollar("Monthly_Revenue__c")],
-          ["Number of MCAs", yesNo(sf("Has_Multiple_MCA_s__c"))],
+          ["Has Multiple MCA’s", yesNo(sf("Has_Multiple_MCA_s__c"))],
           ["Business Start Date", sfDate("Business_Start_Date__c")],
         ]}
       />
@@ -269,11 +297,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         fields={[
           ["MCA Amount", sfDollar("MCA_Amount__c")],
           ["MCA Amount Requested", sfDollar("MCA_Amount_Requested__c")],
-          ["Est. Total Debt", lead.totalDebtEst ? `$${lead.totalDebtEst.toLocaleString()}` : sfDollar("Estimated_Total_Debt__c") ?? sfDollar("Total_Debt_Amount__c")],
-          ["Current Total Debt", sfDollar("Current_Total_Debt_Amount__c")],
+          ["Estimated Total Debt", lead.totalDebtEst ? `$${lead.totalDebtEst.toLocaleString()}` : sf("Estimated_Total_Debt__c")],
+          ["Current Total Debt Amount", sfDollar("Current_Total_Debt_Amount__c")],
           ["Current Total Monthly Payment", sfDollar("Current_Total_Monthly_Payment__c") ?? sfDollar("Current_Total_Monthly_Payment_Formula__c")],
           ["Current Total Weekly Payment", lead.currentTotalWeeklyPayment ? `$${lead.currentTotalWeeklyPayment.toLocaleString()}` : sfDollar("Current_Total_Weekly_Payment__c")],
           ["Current Total Daily Payment", sfDollar("Current_Total_Daily_Payment__c")],
+          ["RT Debt Amount Lead Creation", sfDollar("RT_Debt_Amount_Lead_Creation__c")],
+          ["RT Debt Amount Lead Qualification", sfDollar("RT_Debt_Amount_Lead_Qualification__c")],
         ]}
       />
     </Section>
@@ -287,9 +317,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           ["Frequency", sf("Frequency__c")],
           ["Payment Amount", sfDollar("Payment_Amount__c")],
           ["Monthly Bank Fee", sfDollar("Monthly_Bank_Fee__c")],
-          ["Program Fee %", sf("Program_Fee_Percentage__c")],
-          ["Retainer %", sf("Retainer_Percentage__c")],
-          ["Settlement %", sf("Settlement_Percentage__c")],
+          ["Program Fee Percentage", sf("Program_Fee_Percentage__c")],
+          ["Retainer Percentage", sf("Retainer_Percentage__c")],
+          ["Settlement Percentage", sf("Settlement_Percentage__c")],
           ["Setup Fee", sfDollar("Setup_Fee__c")],
           ["Down Payment", sfDollar("Down_Payment__c")],
           ["Payment Term", sf("Payment_Term__c")],
@@ -302,12 +332,17 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     <Section title="Call Disposition" defaultOpen={false}>
       <FieldGrid
         fields={[
-          ["Closer", sf("CloserLookup__c")],
+          ["Closer", sf("Closer__c")],
+          ["Closer Reference", sf("CloserLookup__c")],
           ["Call Transfer Status", sf("Call_Transfer_Status__c")],
           ["Call Received By", sf("Call_Received_By_Lookup__c")],
           ["Call Received Date", sfDate("Call_Received_Date__c")],
-          ["Outbound Call From", sf("Outbound_ANI_From__c")],
-          ["Reason for Disqualification", sf("Reason_for_Disqualification__c")],
+          ["Call Tranferred DateTime", sfDate("Call_Tranferred_DateTime__c")],
+          ["Call Transferred By", sf("Call_Transferred_By__c")],
+          ["Outbound ANI", sf("Outbound_ANI__c")],
+          ["Outbound ANI From", sf("Outbound_ANI_From__c")],
+          ["Outbound ANI Date", sfDate("Outbound_ANI_Date__c")],
+          ["Outbound ANI Identifier", sf("Outbound_ANI_Identifier__c")],
         ]}
       />
     </Section>
@@ -331,12 +366,58 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const creditorInformation = (
     <Section title="Creditor Information" defaultOpen={false}>
       <FieldGrid
-        fields={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].flatMap((n) => [
-          [`Creditor ${n} Debt`, sfDollar(`Creditor_${n}_Total_Debt__c`)],
-          [`Creditor ${n} Payment`, sfDollar(`Creditor_${n}_Payment__c`)],
-          [`Creditor ${n} Frequency`, sf(`Creditor_${n}_Payment_Frequency__c`)],
-          [`Creditor ${n} Status`, sf(`Creditor_${n}_Debt_Status__c`)],
-        ]).filter(([, v]) => v != null) as [string, string | null][]}
+        fields={[
+          ["Creditor 1 Name", sf("Creditor_1_Name__c")],
+          ["Creditor 1 Total Debt", sfDollar("Creditor_1_Total_Debt__c")],
+          ["Creditor 1 Payment", sfDollar("Creditor_1_Payment__c")],
+          ["Creditor 1 Payment Frequency", sf("Creditor_1_Payment_Frequency__c")],
+          ["Creditor 1 Debt Status", sf("Creditor_1_Debt_Status__c")],
+          ["Creditor 2 Name", sf("Creditor_2_Name__c")],
+          ["Creditor 2 Total Debt", sfDollar("Creditor_2_Total_Debt__c")],
+          ["Creditor 2 Payment", sfDollar("Creditor_2_Payment__c")],
+          ["Creditor 2 Payment Frequency", sf("Creditor_2_Payment_Frequency__c")],
+          ["Creditor 2 Debt Status", sf("Creditor_2_Debt_Status__c")],
+          ["Creditor 3 Name", sf("Creditor_3_Name__c")],
+          ["Creditor 3 Total Debt", sfDollar("Creditor_3_Total_Debt__c")],
+          ["Creditor 3 Payment", sfDollar("Creditor_3_Payment__c")],
+          ["Creditor 3 Payment Frequency", sf("Creditor_3_Payment_Frequency__c")],
+          ["Creditor 3 Debt Status", sf("Creditor_3_Debt_Status__c")],
+          ["Creditor 4 Name", sf("Creditor_4_Name__c")],
+          ["Creditor 4 Total Debt", sfDollar("Creditor_4_Total_Debt__c")],
+          ["Creditor 4 Payment", sfDollar("Creditor_4_Payment__c")],
+          ["Creditor 4 Payment Frequency", sf("Creditor_4_Payment_Frequency__c")],
+          ["Creditor 4 Debt Status", sf("Creditor_4_Debt_Status__c")],
+          ["Creditor 5 Name", sf("Creditor_5_Name__c")],
+          ["Creditor 5 Total Debt", sfDollar("Creditor_5_Total_Debt__c")],
+          ["Creditor 5 Payment", sfDollar("Creditor_5_Payment__c")],
+          ["Creditor 5 Payment Frequency", sf("Creditor_5_Payment_Frequency__c")],
+          ["Creditor 5 Debt Status", sf("Creditor_5_Debt_Status__c")],
+          ["Creditor 6 Name", sf("Creditor_6_Name__c")],
+          ["Creditor 6 Total Debt", sfDollar("Creditor_6_Total_Debt__c")],
+          ["Creditor 6 Payment", sfDollar("Creditor_6_Payment__c")],
+          ["Creditor 6 Payment Frequency", sf("Creditor_6_Payment_Frequency__c")],
+          ["Creditor 6 Debt Status", sf("Creditor_6_Debt_Status__c")],
+          ["Creditor 7 Name", sf("Creditor_7_Name__c")],
+          ["Creditor 7 Total Debt", sfDollar("Creditor_7_Total_Debt__c")],
+          ["Creditor 7 Payment", sfDollar("Creditor_7_Payment__c")],
+          ["Creditor 7 Payment Frequency", sf("Creditor_7_Payment_Frequency__c")],
+          ["Creditor 7 Debt Status", sf("Creditor_7_Debt_Status__c")],
+          ["Creditor 8 Name", sf("Creditor_8_Name__c")],
+          ["Creditor 8 Total Debt", sfDollar("Creditor_8_Total_Debt__c")],
+          ["Creditor 8 Payment", sfDollar("Creditor_8_Payment__c")],
+          ["Creditor 8 Payment Frequency", sf("Creditor_8_Payment_Frequency__c")],
+          ["Creditor 8 Debt Status", sf("Creditor_8_Debt_Status__c")],
+          ["Creditor 9 Name", sf("Creditor_9_Name__c")],
+          ["Creditor 9 Total Debt", sfDollar("Creditor_9_Total_Debt__c")],
+          ["Creditor 9  Payment", sfDollar("Creditor_9_Payment__c")],
+          ["Creditor 9 Payment Frequency", sf("Creditor_9_Payment_Frequency__c")],
+          ["Creditor 9 Debt Status", sf("Creditor_9_Debt_Status__c")],
+          ["Creditor 10 Name", sf("Creditor_10_Name__c")],
+          ["Creditor 10 Total Debt", sfDollar("Creditor_10_Total_Debt__c")],
+          ["Creditor 10 Payment", sfDollar("Creditor_10_Payment__c")],
+          ["Creditor 10 Payment Frequency", sf("Creditor_10_Payment_Frequency__c")],
+          ["Creditor 10 Debt Status", sf("Creditor_10_Debt_Status__c")],
+        ]}
       />
     </Section>
   );
@@ -347,9 +428,58 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         fields={[
           ["First Form Submission", sfDate("Account_Engagement_First_Activity__c")],
           ["Last Form Submission", sfDate("Account_Engagement_Last_Activity__c")],
-          ["Last Activity Date", sfDate("LastActivityDate")],
+          ["Last Activity", sfDate("LastActivityDate")],
           ["Conversion Score", sf("Account_Engagement_Score__c")],
           ["Grade", sf("Account_Engagement_Grade__c")],
+          ["Account Engagement Hard Bounced", yesNo(sf("pi__pardot_hard_bounced__c"))],
+          ["Needs Score Synced", yesNo(sf("pi__Needs_Score_Synced__c"))],
+          ["Sync To Account Engagement", yesNo(sf("Sync_To_Account_Engagement__c"))],
+        ]}
+      />
+    </Section>
+  );
+
+  const dialerIntegration = (
+    <Section title="Dialer Integration" defaultOpen={false}>
+      <FieldGrid
+        fields={[
+          ["Dialer Group", sf("Dialer_Group__c")],
+          ["Five9 Final Stage", yesNo(sf("Five9_Final_Stage__c"))],
+          ["Five9 List Id", sf("Five9_List_Id__c")],
+          ["Five9 List Updated by Convoso Batch", yesNo(sf("Five9_List_Updated_by_Convoso_Batch__c"))],
+          ["Synced to Five9 List", yesNo(sf("Synced_to_Five9_List__c"))],
+          ["Removed From Five9", yesNo(sf("Removed_From_Five9__c"))],
+          ["Pulled From Convoso", yesNo(sf("Pulled_From_Convoso__c"))],
+        ]}
+      />
+    </Section>
+  );
+
+  const phoneVerification = (
+    <Section title="Phone Verification" defaultOpen={false}>
+      <FieldGrid
+        fields={[
+          ["Verified Phone Number", yesNo(sf("Verified_Phone_Number__c"))],
+          ["Check Wireless", yesNo(sf("Check_Wireless__c"))],
+          ["IP Address", sf("IP_Address__c")],
+          ["IPQS Fraud Score", sf("IPQS_Fraud_Score__c")],
+          ["IPQS Is Valid", yesNo(sf("IPQS_Is_Valid__c"))],
+          ["IPQS Is Risky", yesNo(sf("IPQS_Is_Risky__c"))],
+          ["IPQS Is Prepaid", yesNo(sf("IPQS_Is_Prepaid__c"))],
+          ["IPQS Is VOIP", yesNo(sf("IPQS_Is_VOIP__c"))],
+          ["IPQS_IsActive", yesNo(sf("IPQS_IsActive__c"))],
+          ["SMS Opt Out", yesNo(sf("smagicinteract__SMSOptOut__c"))],
+        ]}
+      />
+    </Section>
+  );
+
+  const calendlyAndScheduling = (
+    <Section title="Calendly & Scheduling" defaultOpen={false}>
+      <FieldGrid
+        fields={[
+          ["CalendlyCreated", yesNo(sf("Calendly__CalendlyCreated__c"))],
+          ["Has Calendly Event", yesNo(sf("Has_Calendly_Event__c"))],
         ]}
       />
     </Section>
@@ -381,6 +511,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       </Section>
       {creditorInformation}
       {accountEngagement}
+      {dialerIntegration}
+      {phoneVerification}
+      {calendlyAndScheduling}
       {lead.notes && (
         <Section title="Notes" defaultOpen={false}>
           <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>{lead.notes}</div>
@@ -560,10 +693,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           ["Facebook Click ID", lead.fbclid],
           ["Eli Click ID", lead.eliClickId],
           ["Redtrack ID", lead.redtrackClickId],
-          ["Ad Click ID", sf("Ad_Click_Id__c")],
-          ["Ad ID", sf("Ad_Id__c")],
+          ["Ad Click Id", sf("Ad_Click_Id__c")],
+          ["Ad Id", sf("Ad_Id__c")],
           ["Ad Set", sf("Ad_Set__c")],
-          ["Hubspot ID", sf("Hubspot_Id__c")],
+          ["Hubspot Id", sf("Hubspot_Id__c")],
         ]}
       />
     </Section>
