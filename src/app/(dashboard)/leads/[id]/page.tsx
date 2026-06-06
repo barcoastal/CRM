@@ -107,7 +107,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       id: c.id,
       type: "CALL" as const,
       subject: `Call to ${c.phoneNumber}`,
-      meta: `${c.disposition ?? "—"} · ${c.agent.name}`,
+      meta: `${c.disposition ?? "-"} · ${c.agent.name}`,
       date: c.startedAt,
       done: c.status === "COMPLETED",
     })),
@@ -866,7 +866,7 @@ function RelatedRecordsCard({
         <li style={{ padding: "4px 0", display: "flex", justifyContent: "space-between", gap: 8 }}>
           <span style={{ color: "#706e6b" }}>Owner</span>
           <span style={{ color: "#080707", fontWeight: 600, textAlign: "right" }}>
-            {ownerName ?? <span style={{ color: "#b0adab" }}>—</span>}
+            {ownerName ?? <span style={{ color: "#b0adab" }}>-</span>}
             {ownerEmail && <div style={{ fontSize: 11, color: "#706e6b", fontWeight: 400 }}>{ownerEmail}</div>}
           </span>
         </li>
