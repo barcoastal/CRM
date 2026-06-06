@@ -446,47 +446,33 @@ async function acceptMaintenanceNotices(userId: string): Promise<void> {
  *   WORKING        -> done
  * Reference: github.com/a1comms/go-five9-api/blob/master/login.go
  */
-export async function startAgentSession(
+/**
+ * Drive the agent's login state machine to WORKING using the given
+ * session_start body, reusing the CURRENT session (no fresh login). Right
+ * after login, login_state intermittently 401s until the session propagates
+ * to the data-center node — we retry the same session until it settles.
+ */
+async function driveToWorking(
   userId: string,
-  stationId: string,
-  stationType: "EMPTY" | "SOFTPHONE" | "STATION" | "PSTN" = "EMPTY",
+  sessionStartBody: { stationId: string; stationType: string },
 ): Promise<{ ok: boolean; state?: string }> {
-  // stationType=EMPTY: REST-driven click-to-dial (audio goes nowhere)
-  // stationType=SOFTPHONE: Five9's softphone — requires WebRTC bridge (TBD)
-  // stationType=STATION: agent's physical desk phone (needs stationId)
-  // stationType=PSTN: Five9 calls the agent's phone number (stationId)
-  const body = buildSessionStartBody(stationType as "EMPTY" | "SOFTPHONE" | "STATION" | "PSTN", stationId);
-
-  // Start Session is an explicit "begin" action — never reuse a cached or
-  // persisted session that a later ForceIn login may have invalidated. Force
-  // a fresh login so the state machine starts from a live token.
-  sessionCache.delete(userId);
-  await clearPersistedSession(userId);
-
-  // Loop generously: right after login, login_state intermittently returns 401
-  // "not logged in" until the session propagates to the data-center node. We
-  // retry the SAME session (no re-login) until it settles, then drive states.
   let lastState = "";
   for (let i = 0; i < 12; i++) {
     const { status, state } = await getLoginState(userId);
     lastState = `${status}:${state}`;
 
-    // Not propagated yet — keep polling the same session.
-    if (status === 401) continue;
+    if (status === 401) continue; // not propagated yet — retry same session
     if (status !== 200) throw new Error(`login_state ${status}: ${state.slice(0, 300)}`);
 
     if (state === "WORKING") {
-      // Persist the session so click_to_dial on a different Railway pod sees
-      // this exact token + cookies.
       const session = sessionCache.get(userId);
       if (session) await persistSession(userId, session).catch(() => undefined);
       return { ok: true, state };
     }
-
     if (state === "SELECT_STATION") {
       const res = await agentFetch(userId, `/session_start?force=true`, {
         method: "PUT",
-        body: JSON.stringify(body),
+        body: JSON.stringify(sessionStartBody),
       });
       if (!res.ok) {
         const t = await res.text().catch(() => "");
@@ -494,17 +480,44 @@ export async function startAgentSession(
       }
       continue;
     }
-
     if (state === "ACCEPT_NOTICE") {
       await acceptMaintenanceNotices(userId);
       continue;
     }
-
-    // SELECT_SKILLS and any other state are not handled yet — surface the raw
-    // state so we know exactly what to add next instead of silently hanging.
     throw new Error(`Unexpected Five9 login state: ${state}`);
   }
   throw new Error(`Five9 did not reach WORKING state (last: ${lastState})`);
+}
+
+export async function startAgentSession(
+  userId: string,
+  stationId: string,
+  stationType: "EMPTY" | "SOFTPHONE" | "STATION" | "PSTN" = "EMPTY",
+): Promise<{ ok: boolean; state?: string }> {
+  const body = buildSessionStartBody(stationType, stationId);
+  // Start Session is an explicit "begin" — force a fresh login so the state
+  // machine starts from a live token.
+  sessionCache.delete(userId);
+  await clearPersistedSession(userId);
+  return driveToWorking(userId, body);
+}
+
+/**
+ * Ensure the agent is WORKING using their SAVED station, reusing the existing
+ * session (no fresh login / no re-ring unless the session fell back to
+ * SELECT_STATION). Call this right before placing a call — make_external_call
+ * requires WORKING and EMPTY-station sessions tend to drop back to
+ * SELECT_STATION.
+ */
+async function ensureWorking(userId: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { five9StationType: true, five9StationId: true },
+  });
+  const stationType = (user?.five9StationType ?? "EMPTY") as
+    | "EMPTY" | "SOFTPHONE" | "STATION" | "PSTN";
+  const body = buildSessionStartBody(stationType, user?.five9StationId ?? "");
+  await driveToWorking(userId, body);
 }
 
 /** Change the agent's ready state — values: READY, NOT_READY, ON_CALL, WORK */
@@ -539,6 +552,11 @@ export async function makeCall(userId: string, args: {
     campaignId: args.campaignId ?? undefined,
     skillId: args.skillId ?? undefined,
   });
+
+  // make_external_call requires the agent to be WORKING; ensure it (reuses the
+  // Start Session session, re-selects the station if it fell back to
+  // SELECT_STATION) before dialing.
+  await ensureWorking(userId);
 
   const res = await agentFetch(userId, `/interactions/make_external_call`, {
     method: "POST",
