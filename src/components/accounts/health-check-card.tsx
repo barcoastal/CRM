@@ -40,13 +40,13 @@ export function HealthCheckCard({
             background: "#c23934",
             color: "#fff",
             borderRadius: 3,
-            fontSize: 11,
-            fontWeight: 700,
             flexShrink: 0,
           }}
           aria-hidden="true"
         >
-          !
+          <svg width="12" height="12" viewBox="0 0 52 52" style={{ fill: "#fff" }}>
+            <path d="M26 0C11.6 0 0 11.6 0 26s11.6 26 26 26 26-11.6 26-26S40.4 0 26 0zm0 41c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3zm3-12c0 1.1-.9 2-2 2h-2c-1.1 0-2-.9-2-2V13c0-1.1.9-2 2-2h2c1.1 0 2 .9 2 2v16z" />
+          </svg>
         </span>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
           Health Check Results

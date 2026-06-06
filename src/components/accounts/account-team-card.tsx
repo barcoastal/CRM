@@ -58,12 +58,12 @@ export function AccountTeamCard({
             background: "#0070d2",
             color: "#fff",
             borderRadius: 3,
-            fontSize: 11,
-            fontWeight: 700,
             flexShrink: 0,
           }}
         >
-          T
+          <svg width="12" height="12" viewBox="0 0 52 52" style={{ fill: "#fff" }}>
+            <path d="M26 24c5 0 9-4 9-9s-4-9-9-9-9 4-9 9 4 9 9 9zm0 4c-6 0-18 3-18 9v5h36v-5c0-6-12-9-18-9z" />
+          </svg>
         </span>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
           Account Team

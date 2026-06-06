@@ -96,12 +96,12 @@ export function BankDetailsCard({
             background: "#9b6cb1",
             color: "#fff",
             borderRadius: 3,
-            fontSize: 11,
-            fontWeight: 700,
             flexShrink: 0,
           }}
         >
-          B
+          <svg width="12" height="12" viewBox="0 0 52 52" style={{ fill: "#fff" }}>
+            <path d="M26 4L4 14v3h44v-3L26 4zM6 19v23h6V19H6zm10 0v23h6V19h-6zm10 0v23h6V19h-6zm10 0v23h6V19h-6zM4 44v4h44v-4H4z" />
+          </svg>
         </span>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
           Bank Details
