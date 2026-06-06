@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { recalcLeadWeeklyPayment } from "@/lib/lead-debt-rollup";
 
 export async function PATCH(
   request: NextRequest,
@@ -26,6 +27,7 @@ export async function PATCH(
   if (typeof body.notes === "string" || body.notes === null) data.notes = body.notes || null;
 
   const updated = await prisma.leadDebt.update({ where: { id: debtId }, data });
+  await recalcLeadWeeklyPayment(id).catch(() => undefined);
   return NextResponse.json(updated);
 }
 
@@ -39,5 +41,6 @@ export async function DELETE(
   const existing = await prisma.leadDebt.findFirst({ where: { id: debtId, leadId: id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
   await prisma.leadDebt.delete({ where: { id: debtId } });
+  await recalcLeadWeeklyPayment(id).catch(() => undefined);
   return NextResponse.json({ ok: true });
 }

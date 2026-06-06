@@ -36,6 +36,7 @@ interface LeadAssignee {
 
 interface Lead {
   id: string;
+  sfId: string | null;
   businessName: string;
   contactName: string;
   phone: string;
@@ -44,6 +45,7 @@ interface Lead {
   score: number | null;
   status: string;
   source: string;
+  subDisposition: string | null;
   assignedTo: LeadAssignee | null;
   createdAt: string;
   lastContactedAt: string | null;
@@ -384,6 +386,12 @@ export function LeadTable({ leads, total, page, totalPages }: LeadTableProps) {
               className="border-0 text-[11.5px] font-semibold uppercase tracking-wide"
               style={{ color: "#444656" }}
             >
+              Lead ID
+            </TableHead>
+            <TableHead
+              className="border-0 text-[11.5px] font-semibold uppercase tracking-wide"
+              style={{ color: "#444656" }}
+            >
               Phone
             </TableHead>
             <TableHead
@@ -414,6 +422,12 @@ export function LeadTable({ leads, total, page, totalPages }: LeadTableProps) {
               className="border-0 text-[11.5px] font-semibold uppercase tracking-wide"
               style={{ color: "#444656" }}
             >
+              Sub Disposition
+            </TableHead>
+            <TableHead
+              className="border-0 text-[11.5px] font-semibold uppercase tracking-wide"
+              style={{ color: "#444656" }}
+            >
               Assigned To
             </TableHead>
             <TableHead
@@ -430,7 +444,7 @@ export function LeadTable({ leads, total, page, totalPages }: LeadTableProps) {
           {leads.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={10}
+                colSpan={12}
                 className="h-24 text-center text-[13.5px]"
                 style={{ color: "#444656" }}
               >
@@ -497,6 +511,16 @@ export function LeadTable({ leads, total, page, totalPages }: LeadTableProps) {
                     </div>
                   </TableCell>
 
+                  {/* Lead ID (SF parity column) */}
+                  <TableCell
+                    className="text-[12px] font-mono border-0 whitespace-nowrap"
+                    style={{ color: "#444656" }}
+                  >
+                    {lead.sfId
+                      ? lead.sfId.slice(0, 15)
+                      : lead.id.slice(-8).toUpperCase()}
+                  </TableCell>
+
                   <TableCell
                     className="text-[13.5px] border-0 whitespace-nowrap"
                     style={{ color: "#131b2e" }}
@@ -527,6 +551,13 @@ export function LeadTable({ leads, total, page, totalPages }: LeadTableProps) {
 
                   <TableCell className="border-0">
                     <StatusBadge status={lead.status} />
+                  </TableCell>
+
+                  <TableCell
+                    className="text-[13px] border-0 whitespace-nowrap"
+                    style={{ color: "#444656" }}
+                  >
+                    {lead.subDisposition ?? "--"}
                   </TableCell>
 
                   <TableCell

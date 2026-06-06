@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { recalcLeadWeeklyPayment } from "@/lib/lead-debt-rollup";
 
 const TYPES = ["MCA", "CREDIT_LINE", "TERM_LOAN", "BUSINESS_CC", "EQUIPMENT", "INVOICE_FACTORING", "OTHER"];
 const FREQS = ["DAILY", "WEEKLY", "BI_WEEKLY", "MONTHLY", "LUMP_SUM"];
@@ -56,6 +57,9 @@ export async function POST(
       createdById: session.userId,
     },
   });
+
+  // SF parity: keep Lead.currentTotalWeeklyPayment in sync after any creditor edit.
+  await recalcLeadWeeklyPayment(id).catch(() => undefined);
 
   return NextResponse.json(debt);
 }

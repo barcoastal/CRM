@@ -116,14 +116,26 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
 
   const totalPages = Math.ceil(total / limit);
 
-  // Serialize dates for client components
-  const serializedLeads = leads.map((lead) => ({
-    ...lead,
-    createdAt: lead.createdAt.toISOString(),
-    updatedAt: lead.updatedAt.toISOString(),
-    lastContactedAt: lead.lastContactedAt?.toISOString() ?? null,
-    nextFollowUpAt: lead.nextFollowUpAt?.toISOString() ?? null,
-  }));
+  // Serialize dates for client components. Also pull Sub_Disposition__c out of
+  // the SF data snapshot so the SF parity list column has something to show.
+  const serializedLeads = leads.map((lead) => {
+    let subDisposition: string | null = null;
+    try {
+      if (lead.sfDataJson) {
+        const sf = JSON.parse(lead.sfDataJson) as Record<string, unknown>;
+        const sub = sf["Sub_Disposition__c"];
+        if (typeof sub === "string" && sub.length > 0) subDisposition = sub;
+      }
+    } catch { /* ignore bad json */ }
+    return {
+      ...lead,
+      subDisposition,
+      createdAt: lead.createdAt.toISOString(),
+      updatedAt: lead.updatedAt.toISOString(),
+      lastContactedAt: lead.lastContactedAt?.toISOString() ?? null,
+      nextFollowUpAt: lead.nextFollowUpAt?.toISOString() ?? null,
+    };
+  });
 
   // For pipeline view, fetch all leads (not paginated) for the pipeline columns
   let serializedPipelineLeads = serializedLeads.map((lead) => ({

@@ -55,13 +55,24 @@ export async function POST(
     },
   });
 
-  // Update the Lead through the trigger runner → fires the LeadTrigger,
+  // Stamp sub-disposition into sfDataJson so the LeadTrigger can roll the
+  // previous value into Last_Sub_Disposition__c (SF parity).
+  let sfData: Record<string, unknown> = {};
+  try {
+    sfData = lead.sfDataJson ? JSON.parse(lead.sfDataJson) as Record<string, unknown> : {};
+  } catch {
+    sfData = {};
+  }
+  sfData.Sub_Disposition__c = subDisposition;
+
+  // Update the Lead through the trigger runner -> fires the LeadTrigger,
   // which writes Lead.lastDisposition / lastDispositionAt and creates the
   // LeadHistory entry automatically.
   const ctx = makeCtx(session.userId, [`Lead:${id}:task`]);
   await triggerUpdate("lead", id, {
     status: stage,
     lastContactedAt: new Date(),
+    sfDataJson: JSON.stringify(sfData),
   }, ctx);
 
   // Auto-convert to Opportunity when stage flips to "Converted"
