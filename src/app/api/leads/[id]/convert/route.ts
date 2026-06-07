@@ -6,11 +6,23 @@ import { OPPORTUNITY_RECORD_TYPES, ACCOUNT_RECORD_TYPES } from "@/lib/record-typ
 
 const Body = z.object({
   accountRecordType: z.enum(ACCOUNT_RECORD_TYPES).optional(),
+  accountName: z.string().optional(),
   opportunityRecordType: z.enum(OPPORTUNITY_RECORD_TYPES).optional(),
   opportunityName: z.string().min(1).optional(),
-  accountOwnerId: z.string().cuid().optional(),
+  accountOwnerId: z.string().optional(),
   contactRole: z.string().optional(),
   doNotCreateOpportunity: z.boolean().optional(),
+  // Contact name fields from the SF Convert Lead modal
+  contactSalutation: z.string().optional(),
+  contactFirstName: z.string().optional(),
+  contactMiddleName: z.string().optional(),
+  contactLastName: z.string().optional(),
+  contactSuffix: z.string().optional(),
+  // "Choose Existing" picker results
+  existingAccountId: z.string().optional(),
+  existingContactId: z.string().optional(),
+  existingOpportunityId: z.string().optional(),
+  convertedStatus: z.string().optional(),
 });
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {

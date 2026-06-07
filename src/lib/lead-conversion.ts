@@ -23,6 +23,23 @@ export interface ConvertLeadOptions {
   doNotCreateOpportunity?: boolean;
   /** ID of the user performing the conversion (for audit log) */
   performedById?: string;
+  /** Skip the SF "Company + Debt + Fronter transfer" validation. Reserved for
+   *  test harnesses and trigger-driven conversions. */
+  skipValidation?: boolean;
+  /** Salutation / first / middle / last / suffix from the modal — overrides
+   *  the parsed contact name */
+  contactSalutation?: string;
+  contactFirstName?: string;
+  contactMiddleName?: string;
+  contactLastName?: string;
+  contactSuffix?: string;
+  /** Optional explicit account / contact / opportunity overrides from the
+   *  modal (e.g. "Choose Existing Account" picker results) */
+  existingAccountId?: string;
+  existingContactId?: string;
+  existingOpportunityId?: string;
+  /** SF "Converted Status" — defaults to "Converted" */
+  convertedStatus?: string;
 }
 
 export interface ConvertLeadResult {
@@ -69,7 +86,7 @@ export async function convertLead(
 ): Promise<ConvertLeadResult> {
   const lead = await prisma.lead.findUnique({
     where: { id: leadId },
-    include: { debts: true },
+    include: { debts: true, calls: { orderBy: { createdAt: "desc" }, take: 10 } },
   });
   if (!lead) throw new Error(`Lead ${leadId} not found`);
 
@@ -81,6 +98,44 @@ export async function convertLead(
       opportunityId: lead.convertedOpportunityId ?? null,
       alreadyConverted: true,
     };
+  }
+
+  // SF Validation Rule: Company and Debt Information are required and the call
+  // should be transferred from the fronter to convert a Lead.
+  // - Company = Lead.businessName populated
+  // - Debt Information = at least one LeadDebt row OR Total_Debt_Amount__c > 0
+  // - Call transferred from fronter = at least one Call with a non-empty
+  //   transferredBy / fronter set on the lead's recent calls
+  if (!opts.skipValidation) {
+    const company = (lead.businessName ?? "").trim();
+    if (!company) {
+      throw new Error(
+        "Company and Debt Information are required and the call should be transferred from the fronter to convert a Lead",
+      );
+    }
+    let sfData: Record<string, unknown> = {};
+    try { sfData = lead.sfDataJson ? JSON.parse(lead.sfDataJson) as Record<string, unknown> : {}; } catch { /* */ }
+    const totalDebt = Number(sfData.Total_Debt_Amount__c ?? sfData.Total_Debt__c ?? lead.totalDebtEst ?? 0);
+    const hasDebt = lead.debts.length > 0 || totalDebt > 0;
+    if (!hasDebt) {
+      throw new Error(
+        "Company and Debt Information are required and the call should be transferred from the fronter to convert a Lead",
+      );
+    }
+    const fronterTransferred =
+      (sfData.Call_Transfer_Status__c &&
+        String(sfData.Call_Transfer_Status__c).toLowerCase().includes("transfer")) ||
+      !!sfData.Call_Transferred_DateTime__c ||
+      !!sfData.Call_Transferred_By_Lookup__c ||
+      lead.calls.some((c) =>
+        (c.disposition ?? "").toUpperCase().includes("TRANSFER") ||
+        (c.disposition ?? "").toUpperCase() === "QUALIFIED",
+      );
+    if (!fronterTransferred) {
+      throw new Error(
+        "Company and Debt Information are required and the call should be transferred from the fronter to convert a Lead",
+      );
+    }
   }
 
   const hasBusinessName = !!lead.businessName?.trim();
