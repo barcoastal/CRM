@@ -74,26 +74,33 @@ export function LeadHeaderButtons({
     }
   }
 
-  async function deleteLead() {
-    if (!confirm("Delete this lead?")) return;
-    const res = await fetch(`/api/leads/${leadId}`, { method: "DELETE" });
-    if (res.ok) router.push("/leads");
+  async function addToDnc() {
+    if (!confirm("Add this lead's phone number(s) to the Do Not Call list?")) return;
+    const res = await fetch(`/api/leads/${leadId}/dnc`, { method: "POST" });
+    if (res.ok) {
+      router.refresh();
+    } else {
+      alert("Failed to add to DNC. Please try again.");
+    }
   }
 
   return (
     <>
-      <QuickActionsRow leadId={leadId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
+      {/* SF Lightning Lead header action strip: three primary buttons then a
+          caret (▼) dropdown for the overflow Quick Actions. Verified against
+          the SF screenshot Bar shared 2026-06-07. */}
       {!converted && (
         <button style={btn} onClick={() => setConvertOpen(true)}>
           Convert
         </button>
       )}
       <button style={btn} onClick={() => setDispModal(true)}>
-        Edit
+        Disposition
       </button>
-      <button style={btn} onClick={deleteLead}>
-        Delete
+      <button style={btn} onClick={addToDnc}>
+        Add Numbers To DNC
       </button>
+      <QuickActionsRow leadId={leadId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
 
       <DispositionModal
         endpoint={`/api/leads/${leadId}/disposition`}
