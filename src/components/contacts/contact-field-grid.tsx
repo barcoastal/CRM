@@ -69,26 +69,12 @@ export function ContactFieldGrid({
   );
 }
 
-/** Helper to build an editable row tuple — mirrors the section.tsx `E` helper. */
-export function CE(
-  label: string,
-  value: ReactNode,
-  fieldKey: string,
-  type: FieldType = "text",
-  opts?: { rawValue?: string | number | boolean | Date | null; options?: { label: string; value: string }[]; editable?: boolean },
-): ContactGridField {
-  return [
-    label,
-    value,
-    {
-      fieldKey,
-      type,
-      rawValue: opts?.rawValue ?? (typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? value : null),
-      options: opts?.options,
-      editable: opts?.editable,
-    },
-  ];
-}
+/*
+ * `CE(...)` helper now lives in `./contact-field-helpers` (no "use client"
+ * directive) so it can be called from server components. Re-exporting or
+ * re-defining it here would create a client-reference proxy that the
+ * server render rejects with "Attempted to call CE() from the server".
+ */
 
 export function ContactField({ label, value }: { label: string; value: ReactNode }) {
   // Spacer cells used to align two-column rows skip rendering entirely.
