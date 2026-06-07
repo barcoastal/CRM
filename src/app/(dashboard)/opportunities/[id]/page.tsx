@@ -306,8 +306,11 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   const timezoneDisplay = oppSf("Timezone__c");
   const totalDebtIncludedDisplay = oppSfDollar("Total_Debt_Included__c") ?? totalDebtDisplay;
   const currentTotalDebtDisplay = oppSfDollar("Current_Total_Debt__c") ?? totalDebtDisplay;
-  const phoneDisplay = oppSf("Phone__c") ?? oppSf("Phone");
-  const emailDisplay = oppSf("Email__c") ?? oppSf("Email");
+  // SF stores phone/email as *_Formula__c fields on Opportunity (formulas pull
+  // the canonical value from the linked Account/Contact). Fall back to the raw
+  // Phone__c/Email__c variants for older snapshots.
+  const phoneDisplay = oppSf("Phone_Formula__c") ?? oppSf("Formatted_Phone__c") ?? oppSf("Phone__c") ?? oppSf("Phone");
+  const emailDisplay = oppSf("Email_Formula__c") ?? oppSf("Email__c") ?? oppSf("Email");
 
   const detailsPanel = (
     <>
