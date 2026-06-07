@@ -836,7 +836,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ownerEmail={account.owner?.email ?? null}
             members={teamMembers}
           />
-          <ActivityChatterRail activities={activity} chatter={chatter} />
+          <ActivityChatterRail activities={activity} chatter={chatter} accountId={account.id} defaultEmail={account.email ?? null} />
         </>
       }
     />

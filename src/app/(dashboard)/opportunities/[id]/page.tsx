@@ -929,7 +929,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
               primary={opp.primaryContact}
               accountId={opp.account?.id}
             />
-            <ActivityChatterRail activities={activity} chatter={chatter} />
+            <ActivityChatterRail activities={activity} chatter={chatter} opportunityId={opp.id} defaultEmail={opp.oppEmail ?? opp.lead?.email ?? null} />
           </>
         }
       />

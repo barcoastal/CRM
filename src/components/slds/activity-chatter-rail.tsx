@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ActivityRail, type ActivityItem } from "./activity-rail";
+import { ActivityComposerButtons } from "./activity-composer-buttons";
 
 export type ChatterPost = {
   id: string;
@@ -11,14 +12,26 @@ export type ChatterPost = {
   replies?: ChatterPost[];
 };
 
+type TabKey = "Activity" | "Five9 Call Logs" | "Chatter" | "SMS";
+
 export function ActivityChatterRail({
   activities,
   chatter,
+  leadId,
+  opportunityId,
+  accountId,
+  contactId,
+  defaultEmail,
 }: {
   activities: readonly ActivityItem[];
   chatter: readonly ChatterPost[];
+  leadId?: string;
+  opportunityId?: string;
+  accountId?: string;
+  contactId?: string;
+  defaultEmail?: string | null;
 }) {
-  const [tab, setTab] = useState<"Activity" | "Chatter">("Activity");
+  const [tab, setTab] = useState<TabKey>("Activity");
 
   return (
     <div
@@ -38,7 +51,7 @@ export function ActivityChatterRail({
           padding: "0 8px",
         }}
       >
-        {(["Activity", "Chatter"] as const).map((t) => {
+        {(["Activity", "Five9 Call Logs", "Chatter", "SMS"] as const).map((t) => {
           const active = tab === t;
           return (
             <button
@@ -54,6 +67,7 @@ export function ActivityChatterRail({
                 borderBottom: active ? "3px solid #0070d2" : "3px solid transparent",
                 marginBottom: -1,
                 cursor: "pointer",
+                whiteSpace: "nowrap",
               }}
             >
               {t}
@@ -62,11 +76,29 @@ export function ActivityChatterRail({
         })}
       </div>
 
+      {tab === "Activity" && (
+        <ActivityComposerButtons
+          leadId={leadId}
+          opportunityId={opportunityId}
+          accountId={accountId}
+          contactId={contactId}
+          defaultEmail={defaultEmail}
+        />
+      )}
+
       <div style={{ padding: 8 }}>
         {tab === "Activity" ? (
           <ActivityRail items={activities} />
-        ) : (
+        ) : tab === "Chatter" ? (
           <ChatterFeed posts={chatter} />
+        ) : tab === "Five9 Call Logs" ? (
+          <div style={{ padding: 24, textAlign: "center", color: "#706e6b", fontSize: 13 }}>
+            No Five9 call logs yet for this record.
+          </div>
+        ) : (
+          <div style={{ padding: 24, textAlign: "center", color: "#706e6b", fontSize: 13 }}>
+            No SMS messages yet.
+          </div>
         )}
       </div>
     </div>

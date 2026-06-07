@@ -827,7 +827,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               !!sf("Call_Received_Date__c")
             }
           />
-          <ActivityChatterRail activities={activity} chatter={chatter} />
+          <ActivityChatterRail activities={activity} chatter={chatter} leadId={lead.id} defaultEmail={emailVal} />
         </>
       }
     />

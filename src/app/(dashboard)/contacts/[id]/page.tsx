@@ -531,7 +531,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       }
       rail={
         <>
-          <ActivityChatterRail activities={activity} chatter={chatter} />
+          <ActivityChatterRail activities={activity} chatter={chatter} contactId={contact.id} defaultEmail={contact.email ?? null} />
         </>
       }
     />
