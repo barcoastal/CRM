@@ -181,16 +181,15 @@ export function FieldGrid({
 }
 
 export function Field({ label, value }: { label: string; value: ReactNode }) {
-  // SF Lightning record-page field row (verified against the Roberto Suarez
-  // SF Lead screenshot Bar provided 2026-06-07): HORIZONTAL layout — label
-  // LEFT (gray, small), value MIDDLE (black, regular), edit pencil FAR RIGHT
-  // (only when the row carries edit metadata via the E() helper; bare
-  // read-only rows render a spacer instead of a dead pencil).
+  // SF Lightning record-page field row — tightened to match SF density. SF
+  // uses ~11px labels in #706e6b gray, ~12.5px values in #080707, 30px row
+  // height with 6px vertical padding. Horizontal layout: label 33% | value |
+  // pencil 28px.
   return (
     <div
       style={{
-        padding: "8px 0",
-        minHeight: 40,
+        padding: "6px 0",
+        minHeight: 30,
         position: "relative",
         display: "grid",
         gridTemplateColumns: "33% 1fr 28px",
@@ -201,10 +200,10 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
     >
       <div
         style={{
-          fontSize: 12,
-          color: "#3e3e3c",
+          fontSize: 11,
+          color: "#706e6b",
           fontWeight: 400,
-          lineHeight: 1.4,
+          lineHeight: 1.35,
           paddingTop: 1,
         }}
       >
@@ -212,10 +211,10 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
       </div>
       <div
         style={{
-          fontSize: 13,
+          fontSize: 12.5,
           color: "#080707",
           wordBreak: "break-word",
-          lineHeight: 1.4,
+          lineHeight: 1.35,
           minWidth: 0,
         }}
       >

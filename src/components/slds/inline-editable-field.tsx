@@ -155,20 +155,20 @@ export function InlineEditableField({
         gridTemplateColumns: editing ? "33% 1fr 56px" : "33% 1fr 28px",
         alignItems: "start",
         gap: 8,
-        padding: "8px 0",
-        minHeight: 40,
+        padding: "6px 0",
+        minHeight: 30,
         borderBottom: "1px solid #dddbda",
-        fontSize: 13,
+        fontSize: 12.5,
         lineHeight: 1.35,
         position: "relative",
       }}
     >
       <div
         style={{
-          color: "#3e3e3c",
+          color: "#706e6b",
           fontWeight: 400,
-          fontSize: 12,
-          lineHeight: 1.4,
+          fontSize: 11,
+          lineHeight: 1.35,
           wordBreak: "break-word",
           paddingTop: 1,
         }}
