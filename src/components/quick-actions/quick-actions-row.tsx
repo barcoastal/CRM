@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { NewTaskModal } from "./new-task-modal";
 import { NewEventModal } from "./new-event-modal";
 import { LogCallModal } from "./log-call-modal";
-import { ComposeEmailButton } from "@/components/emails/compose-email-button";
 
 type Props = {
   leadId?: string;
@@ -16,47 +15,101 @@ type Props = {
 };
 
 /**
- * SF Lightning Quick Actions strip — New Task, New Event, Log a Call, Email.
- * Lives at the top right of the detail page header next to the existing
- * Disposition/Edit/etc. action buttons.
+ * SF Lightning header overflow caret (▼) — wraps Quick Actions that don't
+ * fit on the visible button row. SF shows only 3 primary actions in the
+ * header bar and tucks the rest behind this caret. The dropdown menu opens
+ * below the caret button and includes:
+ *   New Task | New Event | Log a Call | Send Email | Add to Engagement
+ *   Studio List | Send Account Engagement Email
  */
 export function QuickActionsRow({ leadId, opportunityId, accountId, contactId, defaultEmail, defaultPhone }: Props) {
+  const [open, setOpen] = useState(false);
   const [task, setTask] = useState(false);
   const [event, setEvent] = useState(false);
   const [call, setCall] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function close(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  const item = (label: string, onClick: () => void) => (
+    <button key={label} onClick={onClick} style={menuItem}>{label}</button>
+  );
 
   return (
-    <>
-      <button style={btn} onClick={() => setTask(true)}>New Task</button>
-      <button style={btn} onClick={() => setEvent(true)}>New Event</button>
-      <button style={btn} onClick={() => setCall(true)}>Log a Call</button>
-      <ComposeEmailButton
-        defaultTo={defaultEmail ?? null}
-        leadId={leadId}
-        opportunityId={opportunityId}
-        accountId={accountId}
-        contactId={contactId}
-        label="Email"
-      />
+    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        aria-label="Show more actions"
+        onClick={() => setOpen((o) => !o)}
+        style={caretBtn}
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#0070d2" }}>
+          <path d="M6 9L1 4h10z" />
+        </svg>
+      </button>
+
+      {open && (
+        <div style={menu}>
+          {item("New Task", () => { setTask(true); setOpen(false); })}
+          {item("New Event", () => { setEvent(true); setOpen(false); })}
+          {item("Log a Call", () => { setCall(true); setOpen(false); })}
+          {item("Send Email", () => {
+            const mailto = defaultEmail ? `mailto:${defaultEmail}` : "mailto:";
+            window.location.href = mailto;
+            setOpen(false);
+          })}
+          {item("Add to Engagement Studio List", () => { setOpen(false); })}
+          {item("Send Account Engagement Email", () => { setOpen(false); })}
+        </div>
+      )}
 
       <NewTaskModal open={task} onClose={() => setTask(false)} leadId={leadId} opportunityId={opportunityId} accountId={accountId} contactId={contactId} />
       <NewEventModal open={event} onClose={() => setEvent(false)} leadId={leadId} opportunityId={opportunityId} accountId={accountId} contactId={contactId} />
       <LogCallModal open={call} onClose={() => setCall(false)} leadId={leadId} defaultPhone={defaultPhone ?? null} />
-    </>
+    </div>
   );
 }
 
-const btn: React.CSSProperties = {
+const caretBtn: React.CSSProperties = {
   background: "#fff",
   border: "1px solid #d8dde6",
-  color: "#0070d2",
-  padding: "0 12px",
-  height: 32,
   borderRadius: 4,
-  fontSize: 13,
-  fontWeight: 400,
+  height: 32,
+  width: 32,
+  padding: 0,
   cursor: "pointer",
-  whiteSpace: "nowrap",
   display: "inline-flex",
   alignItems: "center",
+  justifyContent: "center",
+};
+
+const menu: React.CSSProperties = {
+  position: "absolute",
+  top: "calc(100% + 4px)",
+  right: 0,
+  minWidth: 240,
+  background: "#fff",
+  border: "1px solid #d8dde6",
+  borderRadius: 4,
+  boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+  zIndex: 100,
+  padding: "4px 0",
+};
+
+const menuItem: React.CSSProperties = {
+  display: "block",
+  width: "100%",
+  textAlign: "left",
+  background: "transparent",
+  border: 0,
+  padding: "8px 16px",
+  fontSize: 13,
+  color: "#0070d2",
+  cursor: "pointer",
+  whiteSpace: "nowrap",
 };
