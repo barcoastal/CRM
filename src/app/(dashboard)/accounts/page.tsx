@@ -1,122 +1,149 @@
 import { prisma } from "@/lib/prisma";
-import { ACCOUNT_RECORD_TYPES } from "@/lib/record-types";
-import { ListView, type ListViewColumn } from "@/components/slds/list-view";
+import { Prisma } from "@/generated/prisma/client";
+import {
+  SfListPage,
+  type SfColumn,
+  type SfRow,
+  ownerAlias,
+} from "@/components/slds/sf-list-page";
 
 interface AccountsPageProps {
-  searchParams: Promise<{ recordType?: string; q?: string; page?: string }>;
+  searchParams: Promise<{
+    recordType?: string;
+    search?: string;
+    sort?: string;
+    dir?: string;
+  }>;
 }
 
-const LIMIT = 25;
+const LIMIT = 50;
 
-const RECORD_TYPE_LABEL: Record<string, string> = {
-  CLIENT: "Client", CREDITOR: "Creditor", VENDOR: "Vendor",
-  BUSINESS_ACCOUNT: "Business", PERSON_ACCOUNT: "Person", BUYOUT: "Buyout", OTHER: "Other",
+// SF Account list columns (match docs/sf-screenshots/sf-account-list.png):
+// # | checkbox | Account Name | Account Site | Phone | Account Owner Alias |
+// Type | Industry | Billing State
+const COLUMNS: SfColumn[] = [
+  { key: "name", label: "Account Name", width: 260, sortable: true },
+  { key: "site", label: "Account Site", width: 130, sortable: true },
+  { key: "phone", label: "Phone", width: 150, sortable: true },
+  { key: "ownerAlias", label: "Account Owner Alias", width: 160, sortable: true },
+  { key: "type", label: "Type", width: 120, sortable: true },
+  { key: "industry", label: "Industry", width: 160, sortable: true },
+  { key: "billingState", label: "Billing State", width: 110, sortable: true },
+];
+
+const SORT_MAP: Record<string, Prisma.AccountOrderByWithRelationInput> = {
+  name: { name: "asc" },
+  phone: { phone: "asc" },
+  type: { recordType: "asc" },
+  industry: { industry: "asc" },
+  billingState: { billingState: "asc" },
 };
 
-type AccountRow = {
-  id: string;
-  name: string;
-  recordType: string;
-  email: string | null;
-  phone: string | null;
-  owner: { id: string; name: string } | null;
-  industry: string | null;
-  updatedAt: Date;
-  _count: { contacts: number; opportunities: number };
+const TYPE_LABEL: Record<string, string> = {
+  CLIENT: "Client",
+  CREDITOR: "Creditor",
+  VENDOR: "Vendor",
+  BUSINESS_ACCOUNT: "Business",
+  PERSON_ACCOUNT: "Person",
+  BUYOUT: "Buyout",
+  OTHER: "Other",
 };
 
 export default async function AccountsPage({ searchParams }: AccountsPageProps) {
   const params = await searchParams;
-  const page = Math.max(1, parseInt(params.page || "1"));
-  const recordType =
-    params.recordType && (ACCOUNT_RECORD_TYPES as readonly string[]).includes(params.recordType)
-      ? params.recordType
-      : undefined;
-  const q = params.q?.trim() || undefined;
+  const search = params.search?.trim() ?? "";
+  const sort = params.sort ?? "";
+  const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
 
-  const where: Record<string, unknown> = { isActive: true };
-  if (recordType) where.recordType = recordType;
-  if (q) {
+  const where: Prisma.AccountWhereInput = { isActive: true };
+  if (params.recordType) where.recordType = params.recordType;
+  if (search) {
     where.OR = [
-      { name: { contains: q, mode: "insensitive" } },
-      { email: { contains: q, mode: "insensitive" } },
-      { phone: { contains: q } },
-      { ein: { contains: q } },
+      { name: { contains: search } },
+      { phone: { contains: search } },
+      { email: { contains: search } },
     ];
+  }
+
+  let orderBy: Prisma.AccountOrderByWithRelationInput = { updatedAt: "desc" };
+  if (sort && SORT_MAP[sort]) {
+    const key = Object.keys(SORT_MAP[sort])[0] as keyof Prisma.AccountOrderByWithRelationInput;
+    orderBy = { [key]: dir } as Prisma.AccountOrderByWithRelationInput;
   }
 
   const [items, total] = await Promise.all([
     prisma.account.findMany({
       where,
-      include: {
-        owner: { select: { id: true, name: true } },
-        _count: { select: { contacts: true, opportunities: true } },
+      select: {
+        id: true,
+        name: true,
+        recordType: true,
+        phone: true,
+        industry: true,
+        billingState: true,
+        website: true,
+        owner: { select: { id: true, name: true, email: true } },
       },
-      orderBy: { updatedAt: "desc" },
-      skip: (page - 1) * LIMIT,
+      orderBy,
       take: LIMIT,
     }),
     prisma.account.count({ where }),
   ]);
 
-  const viewName = recordType
-    ? `${RECORD_TYPE_LABEL[recordType]} Accounts`
-    : "All Accounts";
+  const rows: SfRow[] = items.map((a) => {
+    // SF "Account Site" — we use website as a proxy when present
+    const site = a.website
+      ? a.website.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "")
+      : "";
+    return {
+      id: a.id,
+      href: `/accounts/${a.id}`,
+      cells: [
+        a.name || "—",
+        site || "",
+        a.phone ? (
+          <a
+            key="phone"
+            href={`tel:${a.phone}`}
+            style={{ color: "#1589ee", textDecoration: "none" }}
+          >
+            {a.phone}
+          </a>
+        ) : (
+          "—"
+        ),
+        ownerAlias(a.owner) || "—",
+        TYPE_LABEL[a.recordType] ?? a.recordType,
+        a.industry ?? "",
+        a.billingState ?? "",
+      ],
+    };
+  });
 
-  const columns: ListViewColumn<AccountRow>[] = [
-    {
-      key: "name",
-      label: "Account Name",
-      render: (a) => a.name,
-    },
-    {
-      key: "type",
-      label: "Type",
-      render: (a) => (
-        <span
-          style={{
-            background: "#ecebea",
-            color: "#080707",
-            padding: "2px 8px",
-            borderRadius: 12,
-            fontSize: 11,
-            fontWeight: 600,
-          }}
-        >
-          {RECORD_TYPE_LABEL[a.recordType] ?? a.recordType}
-        </span>
-      ),
-    },
-    { key: "phone", label: "Phone", render: (a) => a.phone ?? "—" },
-    { key: "email", label: "Email", render: (a) => a.email ?? "—" },
-    { key: "industry", label: "Industry", render: (a) => a.industry ?? "—" },
-    {
-      key: "contacts",
-      label: "Contacts",
-      render: (a) => a._count.contacts.toString(),
-    },
-    {
-      key: "opps",
-      label: "Opps",
-      render: (a) => a._count.opportunities.toString(),
-    },
-    {
-      key: "owner",
-      label: "Account Owner",
-      render: (a) => a.owner?.name ?? "—",
-    },
-  ];
+  const preservedParams: Record<string, string> = {};
+  if (params.recordType) preservedParams.recordType = params.recordType;
 
   return (
-    <ListView
-      entity="Account"
-      entityLabel="Accounts"
-      viewName={viewName}
-      totalCount={total}
-      rows={items as AccountRow[]}
-      columns={columns}
-      rowHref={(a) => `/accounts/${a.id}`}
-      newHref="/accounts/new"
+    <SfListPage
+      entity="account"
+      title="Accounts"
+      subtitle="Recently Viewed"
+      count={total}
+      iconColor="#7f8de1"
+      iconSlug="account"
+      actions={[
+        { label: "New" },
+        { label: "Import" },
+        { label: "Discover Companies" },
+        { label: "Intelligence View" },
+      ]}
+      columns={COLUMNS}
+      rows={rows}
+      pathname="/accounts"
+      sortKey={sort || undefined}
+      sortDir={dir}
+      searchQuery={search}
+      preservedParams={preservedParams}
     />
   );
 }

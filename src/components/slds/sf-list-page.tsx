@@ -1,175 +1,109 @@
-"use client";
-
 import Link from "next/link";
-import { useMemo, useState, useRef, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import type { ReactNode } from "react";
+import { SfListSearch, SfRowCheckbox, SfSelectAllCheckbox } from "./sf-list-client";
 
 /* ------------------------------------------------------------------ */
-/* Types                                                              */
+/* SF Lightning list page — server component                          */
+/*                                                                    */
+/* The previous version was a "use client" component that received    */
+/* `render: (row) => ReactNode` and `sortValue: (row) => string`      */
+/* function props from server pages. Functions can't cross the        */
+/* server -> client RSC boundary, so every list page SSR-crashed.     */
+/*                                                                    */
+/* This version is a server component that takes only serializable    */
+/* props: `columns: { key, label, width, sortable }[]` and            */
+/* `rows: { id, href, cells: ReactNode[] }[]`. Each parent server     */
+/* page pre-renders its own cells. Interactive bits (search box,      */
+/* sort header links, checkboxes) live in small "use client" islands  */
+/* that take only serializable props (URL strings, ids, etc).         */
 /* ------------------------------------------------------------------ */
 
-export type SfCellAlign = "left" | "right";
-
-export interface SfColumn<T> {
-  /** stable key */
+export interface SfColumn {
+  /** stable key — also used as `?sort=` URL param value */
   key: string;
   /** header label as it appears in SF */
   label: string;
-  /** optional truncate width in px (header + cell) */
+  /** fixed column width in px */
   width?: number;
-  /** render cell content */
-  render: (row: T) => React.ReactNode;
-  /** comparator value used for client-side sort + search-text */
-  sortValue?: (row: T) => string | number | null | undefined;
-  /** plain text used by the in-list search box */
-  searchText?: (row: T) => string | null | undefined;
-  /** cell alignment, default left */
-  align?: SfCellAlign;
+  /** if true, render the sort arrows + wrap header in a link to `?sort=key&dir=...` */
+  sortable?: boolean;
+  /** right-align numeric columns */
+  align?: "left" | "right";
+}
+
+export interface SfRow {
+  id: string;
+  /** href the primary (first) column wraps in */
+  href?: string;
+  /** pre-rendered cell contents, one per column */
+  cells: ReactNode[];
 }
 
 export interface SfListAction {
   label: string;
   href?: string;
-  onClick?: () => void;
 }
 
-export interface SfListViewOption {
-  /** label shown in the dropdown */
-  label: string;
-  /** value used as ?view= URL param. "" means default (Recently Viewed) */
-  value: string;
-  /** if true, show a check mark */
-  active?: boolean;
-}
-
-export interface SfListPageProps<T extends { id: string }> {
+export interface SfListPageProps {
   /** entity slug (e.g. "lead", "opportunity", "account", "contact") */
   entity: string;
   /** plural title, e.g. "Leads" */
   title: string;
-  /** subtitle like "Recently Viewed" — appears as the big bold dropdown label */
+  /** subtitle like "Recently Viewed" — appears as the big bold label */
   subtitle: string;
   /** total items count */
   count: number;
-  /** the SLDS standard sprite color class — driven via `iconColor` (background hex) */
+  /** background hex for the icon tile (e.g. "#f88962" for Lead orange) */
   iconColor?: string;
   /** SLDS standard icon slug, e.g. "lead", "opportunity" */
   iconSlug: string;
   /** right-aligned header action buttons */
   actions: SfListAction[];
-  /** row link target (first text column wraps in a Link to this href) */
-  rowHref?: (row: T) => string;
   /** the columns */
-  columns: SfColumn<T>[];
-  /** the rows */
-  rows: T[];
-  /** list view options (e.g. Recently Viewed, All Leads, ...) */
-  views?: SfListViewOption[];
-  /** name of the column that should be a Link (first by default) */
-  primaryColumnKey?: string;
+  columns: SfColumn[];
+  /** the rows (pre-rendered cells) */
+  rows: SfRow[];
+  /** current pathname (for sort link hrefs) */
+  pathname: string;
+  /** current sort key from URL */
+  sortKey?: string;
+  /** current sort dir from URL ("asc" | "desc") */
+  sortDir?: "asc" | "desc";
+  /** current search query from URL */
+  searchQuery?: string;
+  /** preserved query params (everything except sort/dir/search) */
+  preservedParams?: Record<string, string>;
 }
 
-/* ------------------------------------------------------------------ */
-/* Component                                                          */
-/* ------------------------------------------------------------------ */
-
-export function SfListPage<T extends { id: string }>(props: SfListPageProps<T>) {
+export function SfListPage(props: SfListPageProps) {
   const {
-    entity,
     title,
     subtitle,
     count,
     iconColor,
     iconSlug,
     actions,
-    rowHref,
     columns,
     rows,
-    views,
-    primaryColumnKey,
+    pathname,
+    sortKey,
+    sortDir,
+    searchQuery,
+    preservedParams,
   } = props;
-
-  const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-
-  const firstTextColumnKey = primaryColumnKey ?? columns[0]?.key;
-
-  // client-side filter + sort
-  const visibleRows = useMemo(() => {
-    let out = rows.slice();
-    const q = query.trim().toLowerCase();
-    if (q.length > 0) {
-      out = out.filter((r) =>
-        columns.some((c) => {
-          const v = c.searchText ? c.searchText(r) : null;
-          if (typeof v === "string") return v.toLowerCase().includes(q);
-          return false;
-        }),
-      );
-    }
-    if (sortKey) {
-      const col = columns.find((c) => c.key === sortKey);
-      if (col?.sortValue) {
-        out.sort((a, b) => {
-          const av = col.sortValue!(a);
-          const bv = col.sortValue!(b);
-          if (av == null && bv == null) return 0;
-          if (av == null) return 1;
-          if (bv == null) return -1;
-          if (typeof av === "number" && typeof bv === "number") {
-            return sortDir === "asc" ? av - bv : bv - av;
-          }
-          const as = String(av).toLowerCase();
-          const bs = String(bv).toLowerCase();
-          return sortDir === "asc" ? as.localeCompare(bs) : bs.localeCompare(as);
-        });
-      }
-    }
-    return out;
-  }, [rows, columns, query, sortKey, sortDir]);
-
-  function clickHeader(c: SfColumn<T>) {
-    if (!c.sortValue) return;
-    if (sortKey === c.key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(c.key);
-      setSortDir("asc");
-    }
-  }
-
-  const [allChecked, setAllChecked] = useState(false);
-  const [checkedIds, setCheckedIds] = useState<Record<string, boolean>>({});
-
-  function toggleAll() {
-    const next = !allChecked;
-    setAllChecked(next);
-    if (next) {
-      const m: Record<string, boolean> = {};
-      visibleRows.forEach((r) => (m[r.id] = true));
-      setCheckedIds(m);
-    } else {
-      setCheckedIds({});
-    }
-  }
-  function toggleRow(id: string) {
-    setCheckedIds((m) => ({ ...m, [id]: !m[id] }));
-  }
 
   return (
     <div style={{ padding: 0 }}>
-      <SfListHeader
-        entity={entity}
+      <Header
         iconSlug={iconSlug}
         iconColor={iconColor}
         title={title}
         subtitle={subtitle}
         count={count}
         actions={actions}
-        views={views}
-        query={query}
-        setQuery={setQuery}
+        searchQuery={searchQuery ?? ""}
+        pathname={pathname}
+        preservedParams={preservedParams ?? {}}
       />
 
       <div
@@ -177,57 +111,94 @@ export function SfListPage<T extends { id: string }>(props: SfListPageProps<T>) 
           background: "#fff",
           border: "1px solid #dddbda",
           borderTop: "none",
+          overflowX: "auto",
         }}
       >
         <table
           className="slds-table slds-table_cell-buffer slds-table_bordered slds-no-row-hover"
           role="grid"
           style={{
-            tableLayout: "auto",
+            tableLayout: "fixed",
             width: "100%",
             fontSize: 12,
             borderCollapse: "collapse",
+            fontFamily:
+              "'Salesforce Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
           }}
         >
+          <colgroup>
+            <col style={{ width: 36 }} />
+            <col style={{ width: 44 }} />
+            {columns.map((c) => (
+              <col key={c.key} style={{ width: c.width }} />
+            ))}
+            <col style={{ width: 32 }} />
+          </colgroup>
           <thead>
             <tr className="slds-line-height_reset">
               <th
                 scope="col"
                 style={{
-                  width: 32,
                   padding: "0 6px",
                   background: "#fafaf9",
                   borderBottom: "1px solid #dddbda",
+                  borderRight: "1px solid #dddbda",
+                  textAlign: "center",
                 }}
               >
-                <span
-                  className="slds-checkbox slds-checkbox_standalone"
-                  style={{ display: "inline-flex", alignItems: "center" }}
-                >
-                  <input
-                    type="checkbox"
-                    aria-label="Select all"
-                    checked={allChecked}
-                    onChange={toggleAll}
-                  />
-                  <span className="slds-checkbox_faux" />
-                </span>
+                <SfSelectAllCheckbox ids={rows.map((r) => r.id)} />
               </th>
               <th
                 scope="col"
                 style={{
-                  width: 40,
                   background: "#fafaf9",
                   borderBottom: "1px solid #dddbda",
-                  fontSize: 11,
-                  color: "#3e3e3c",
-                  fontWeight: 700,
-                  padding: "0 8px",
+                  borderRight: "1px solid #dddbda",
+                  padding: "6px 8px",
                   textAlign: "left",
+                  color: "#3e3e3c",
+                  fontSize: 11,
+                  fontWeight: 700,
                 }}
               />
               {columns.map((c) => {
                 const isSorted = sortKey === c.key;
+                const dir = isSorted ? sortDir ?? "asc" : null;
+                const nextDir = isSorted && sortDir === "asc" ? "desc" : "asc";
+                const sortHref = buildHref(pathname, preservedParams, {
+                  sort: c.key,
+                  dir: nextDir,
+                  search: searchQuery,
+                });
+                const headerInner = (
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "6px 8px",
+                      color: "#080707",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      justifyContent:
+                        c.align === "right" ? "flex-end" : "flex-start",
+                    }}
+                  >
+                    <span
+                      className="slds-truncate"
+                      title={c.label}
+                      style={{
+                        flex: 1,
+                        textAlign: c.align === "right" ? "right" : "left",
+                      }}
+                    >
+                      {c.label}
+                    </span>
+                    {c.sortable && <SortIcon dir={dir} />}
+                    <DownChev />
+                  </span>
+                );
                 return (
                   <th
                     key={c.key}
@@ -237,51 +208,31 @@ export function SfListPage<T extends { id: string }>(props: SfListPageProps<T>) 
                       borderBottom: "1px solid #dddbda",
                       borderRight: "1px solid #dddbda",
                       padding: 0,
-                      width: c.width,
                       textAlign: c.align === "right" ? "right" : "left",
                     }}
                   >
-                    <a
-                      className="slds-th__action slds-text-link_reset"
-                      href="#"
-                      role="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        clickHeader(c);
-                      }}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                        padding: "6px 8px",
-                        color: "#080707",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        textDecoration: "none",
-                        cursor: c.sortValue ? "pointer" : "default",
-                        justifyContent:
-                          c.align === "right" ? "flex-end" : "flex-start",
-                      }}
-                    >
-                      <span
-                        className="slds-truncate"
-                        title={c.label}
-                        style={{ flex: 1, textAlign: c.align === "right" ? "right" : "left" }}
+                    {c.sortable ? (
+                      <Link
+                        href={sortHref}
+                        scroll={false}
+                        style={{
+                          display: "block",
+                          textDecoration: "none",
+                          color: "inherit",
+                          cursor: "pointer",
+                        }}
                       >
-                        {c.label}
-                      </span>
-                      <SortIcon
-                        active={isSorted}
-                        dir={isSorted ? sortDir : null}
-                      />
-                    </a>
+                        {headerInner}
+                      </Link>
+                    ) : (
+                      headerInner
+                    )}
                   </th>
                 );
               })}
               <th
                 scope="col"
                 style={{
-                  width: 32,
                   background: "#fafaf9",
                   borderBottom: "1px solid #dddbda",
                 }}
@@ -289,7 +240,7 @@ export function SfListPage<T extends { id: string }>(props: SfListPageProps<T>) 
             </tr>
           </thead>
           <tbody>
-            {visibleRows.length === 0 && (
+            {rows.length === 0 && (
               <tr>
                 <td
                   colSpan={columns.length + 3}
@@ -304,158 +255,121 @@ export function SfListPage<T extends { id: string }>(props: SfListPageProps<T>) 
                 </td>
               </tr>
             )}
-            {visibleRows.map((row, idx) => {
-              const checked = !!checkedIds[row.id];
-              return (
-                <tr
-                  key={row.id}
-                  className="slds-hint-parent"
+            {rows.map((row, idx) => (
+              <tr key={row.id} className="slds-hint-parent">
+                <td
+                  role="gridcell"
                   style={{
-                    background: checked ? "#f3f9fe" : undefined,
+                    padding: "0 6px",
+                    borderBottom: "1px solid #f3f2f2",
+                    borderRight: "1px solid #f3f2f2",
+                    textAlign: "center",
                   }}
                 >
-                  <td
-                    role="gridcell"
-                    style={{
-                      padding: "0 6px",
-                      borderBottom: "1px solid #f3f2f2",
-                    }}
-                  >
-                    <span
-                      className="slds-checkbox slds-checkbox_standalone"
-                      style={{ display: "inline-flex", alignItems: "center" }}
+                  <SfRowCheckbox id={row.id} rowIndex={idx + 1} />
+                </td>
+                <td
+                  role="gridcell"
+                  style={{
+                    padding: "6px 8px",
+                    fontSize: 12,
+                    color: "#3e3e3c",
+                    borderBottom: "1px solid #f3f2f2",
+                    borderRight: "1px solid #f3f2f2",
+                  }}
+                >
+                  {idx + 1}
+                </td>
+                {columns.map((c, ci) => {
+                  const isPrimary = ci === 0;
+                  return (
+                    <td
+                      key={c.key}
+                      role="gridcell"
+                      style={{
+                        padding: "6px 8px",
+                        fontSize: 12,
+                        color: "#080707",
+                        borderBottom: "1px solid #f3f2f2",
+                        borderRight: "1px solid #f3f2f2",
+                        textAlign: c.align === "right" ? "right" : "left",
+                      }}
                     >
-                      <input
-                        type="checkbox"
-                        aria-label={`Select row ${idx + 1}`}
-                        checked={checked}
-                        onChange={() => toggleRow(row.id)}
-                      />
-                      <span className="slds-checkbox_faux" />
-                    </span>
-                  </td>
-                  <td
-                    role="gridcell"
-                    style={{
-                      padding: "6px 8px",
-                      fontSize: 12,
-                      color: "#3e3e3c",
-                      borderBottom: "1px solid #f3f2f2",
-                    }}
-                  >
-                    {idx + 1}
-                  </td>
-                  {columns.map((c) => {
-                    const isPrimary = c.key === firstTextColumnKey;
-                    const href = rowHref?.(row);
-                    return (
-                      <td
-                        key={c.key}
-                        role="gridcell"
+                      <div
+                        className="slds-truncate"
                         style={{
-                          padding: "6px 8px",
-                          fontSize: 12,
-                          color: "#080707",
-                          borderBottom: "1px solid #f3f2f2",
-                          borderRight: "1px solid #f3f2f2",
-                          textAlign: c.align === "right" ? "right" : "left",
-                          maxWidth: c.width,
+                          maxWidth: "100%",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        <div
-                          className="slds-truncate"
-                          style={{
-                            maxWidth: "100%",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {isPrimary && href ? (
-                            <Link
-                              href={href}
-                              style={{
-                                color: "#1589ee",
-                                textDecoration: "none",
-                              }}
-                            >
-                              {c.render(row)}
-                            </Link>
-                          ) : (
-                            c.render(row)
-                          )}
-                        </div>
-                      </td>
-                    );
-                  })}
-                  <td
-                    role="gridcell"
-                    style={{
-                      padding: "0 4px",
-                      textAlign: "center",
-                      borderBottom: "1px solid #f3f2f2",
-                    }}
-                  >
-                    <button
-                      type="button"
-                      aria-label="Row actions"
-                      style={{
-                        background: "transparent",
-                        border: "1px solid transparent",
-                        borderRadius: 3,
-                        color: "#706e6b",
-                        cursor: "pointer",
-                        padding: "2px 4px",
-                        fontSize: 10,
-                      }}
-                      onClick={(e) => e.preventDefault()}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 12 12">
-                        <path
-                          d="M2 4l4 4 4-4z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+                        {isPrimary && row.href ? (
+                          <Link
+                            href={row.href}
+                            style={{
+                              color: "#1589ee",
+                              textDecoration: "none",
+                            }}
+                            className="sf-row-link"
+                          >
+                            {row.cells[ci]}
+                          </Link>
+                        ) : (
+                          row.cells[ci]
+                        )}
+                      </div>
+                    </td>
+                  );
+                })}
+                <td
+                  role="gridcell"
+                  style={{
+                    padding: "0 4px",
+                    textAlign: "center",
+                    borderBottom: "1px solid #f3f2f2",
+                  }}
+                >
+                  <DownChev />
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
+
+      <style>{`
+        .sf-row-link:hover { text-decoration: underline; }
+      `}</style>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Header + view picker                                               */
+/* Header                                                             */
 /* ------------------------------------------------------------------ */
 
-function SfListHeader({
-  entity,
+function Header({
   iconSlug,
   iconColor,
   title,
   subtitle,
   count,
   actions,
-  views,
-  query,
-  setQuery,
+  searchQuery,
+  pathname,
+  preservedParams,
 }: {
-  entity: string;
   iconSlug: string;
   iconColor?: string;
   title: string;
   subtitle: string;
   count: number;
   actions: SfListAction[];
-  views?: SfListViewOption[];
-  query: string;
-  setQuery: (v: string) => void;
+  searchQuery: string;
+  pathname: string;
+  preservedParams: Record<string, string>;
 }) {
-  void entity;
   return (
     <div
       style={{
@@ -489,39 +403,35 @@ function SfListHeader({
             }}
             aria-hidden="true"
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              style={{ fill: "#fff" }}
-            >
+            <svg width="20" height="20" viewBox="0 0 24 24" style={{ fill: "#fff" }}>
               <use
                 xlinkHref={`/slds/icons/standard-sprite/svg/symbols.svg#${iconSlug}`}
               />
             </svg>
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div
-              style={{
-                fontSize: 12,
-                color: "#3e3e3c",
-                lineHeight: 1.2,
-              }}
-            >
+            <div style={{ fontSize: 12, color: "#3e3e3c", lineHeight: 1.2 }}>
               {title}
             </div>
-            <ViewPickerInline
-              subtitle={subtitle}
-              views={views}
-            />
             <div
               style={{
-                marginTop: 2,
-                fontSize: 12,
-                color: "#3e3e3c",
+                fontSize: 18,
+                fontWeight: 700,
+                color: "#080707",
+                lineHeight: 1.2,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
               }}
             >
-              {count} item{count === 1 ? "" : "s"} <span style={{ color: "#706e6b" }}>· Updated a few seconds ago</span>
+              {subtitle}
+              <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#080707" }}>
+                <path d="M2 4l4 4 4-4z" />
+              </svg>
+            </div>
+            <div style={{ marginTop: 2, fontSize: 12, color: "#3e3e3c" }}>
+              {count} item{count === 1 ? "" : "s"}
+              <span style={{ color: "#706e6b" }}> · Updated a few seconds ago</span>
             </div>
           </div>
         </div>
@@ -564,14 +474,9 @@ function SfListHeader({
               );
             }
             return (
-              <button
-                key={a.label}
-                type="button"
-                onClick={a.onClick}
-                style={{ background: "transparent", border: 0, padding: 0 }}
-              >
+              <span key={a.label} style={{ textDecoration: "none" }}>
                 {inner}
-              </button>
+              </span>
             );
           })}
         </div>
@@ -587,43 +492,11 @@ function SfListHeader({
           marginTop: 8,
         }}
       >
-        <div
-          style={{
-            position: "relative",
-            width: 240,
-          }}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            style={{
-              position: "absolute",
-              left: 8,
-              top: "50%",
-              transform: "translateY(-50%)",
-              fill: "#706e6b",
-            }}
-          >
-            <path d="M11 4a7 7 0 1 0 4.193 12.572l3.118 3.118 1.414-1.414-3.118-3.118A7 7 0 0 0 11 4zm0 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" />
-          </svg>
-          <input
-            type="search"
-            placeholder="Search this list..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "4px 8px 4px 26px",
-              fontSize: 13,
-              border: "1px solid #dddbda",
-              borderRadius: 4,
-              outline: "none",
-              background: "#fff",
-              color: "#080707",
-            }}
-          />
-        </div>
+        <SfListSearch
+          pathname={pathname}
+          preservedParams={preservedParams}
+          initialValue={searchQuery}
+        />
         <IconBtn ariaLabel="List controls">
           <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#706e6b" }}>
             <circle cx="12" cy="12" r="3" />
@@ -667,7 +540,7 @@ function IconBtn({
   children,
 }: {
   ariaLabel: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button
@@ -691,127 +564,13 @@ function IconBtn({
   );
 }
 
-function ViewPickerInline({
-  subtitle,
-  views,
-}: {
-  subtitle: string;
-  views?: SfListViewOption[];
-}) {
-  const [open, setOpen] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    }
-    if (open) document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
-
-  return (
-    <div ref={ref} style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 4 }}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        style={{
-          background: "transparent",
-          border: 0,
-          padding: 0,
-          fontSize: 18,
-          fontWeight: 700,
-          color: "#080707",
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          lineHeight: 1.2,
-        }}
-      >
-        {subtitle}
-        <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#080707" }}>
-          <path d="M2 4l4 4 4-4z" />
-        </svg>
-      </button>
-
-      {open && views && views.length > 0 && (
-        <div
-          style={{
-            position: "absolute",
-            top: 28,
-            left: 0,
-            zIndex: 9000,
-            background: "#fff",
-            border: "1px solid #dddbda",
-            borderRadius: 4,
-            boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-            minWidth: 240,
-            maxHeight: 400,
-            overflowY: "auto",
-          }}
-        >
-          <div
-            style={{
-              padding: "6px 12px",
-              fontSize: 11,
-              color: "#3e3e3c",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: 0.4,
-              borderBottom: "1px solid #ecebea",
-            }}
-          >
-            List Views
-          </div>
-          {views.map((v) => {
-            const isActive = !!v.active;
-            return (
-              <button
-                key={v.value || "default"}
-                type="button"
-                onClick={() => {
-                  const sp = new URLSearchParams();
-                  if (v.value) sp.set("view", v.value);
-                  router.push(pathname + (sp.toString() ? `?${sp}` : ""));
-                  setOpen(false);
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  width: "100%",
-                  padding: "8px 12px",
-                  background: isActive ? "#f3f9fe" : "transparent",
-                  border: 0,
-                  textAlign: "left",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  color: "#080707",
-                }}
-              >
-                <span style={{ flex: 1 }}>{v.label}</span>
-                {isActive && (
-                  <svg width="14" height="14" viewBox="0 0 14 14" style={{ fill: "#1589ee" }}>
-                    <path d="M5 10.5L2 7.5l1-1L5 8.5 11 2.5l1 1z" />
-                  </svg>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" | null }) {
-  const upColor = active && dir === "asc" ? "#0070d2" : "#aeaeae";
-  const downColor = active && dir === "desc" ? "#0070d2" : "#aeaeae";
+function SortIcon({ dir }: { dir: "asc" | "desc" | null }) {
+  const upColor = dir === "asc" ? "#0070d2" : "#aeaeae";
+  const downColor = dir === "desc" ? "#0070d2" : "#aeaeae";
   return (
     <svg
-      width="10"
-      height="14"
+      width="8"
+      height="12"
       viewBox="0 0 10 14"
       style={{ flexShrink: 0 }}
       aria-hidden="true"
@@ -822,15 +581,56 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" | null
   );
 }
 
+function DownChev() {
+  return (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 12 12"
+      style={{ fill: "#706e6b", flexShrink: 0 }}
+      aria-hidden="true"
+    >
+      <path d="M2 4l4 4 4-4z" />
+    </svg>
+  );
+}
+
 /* ------------------------------------------------------------------ */
-/* Util: derive an "alias" from an email or name                      */
+/* Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-export function ownerAlias(user: { name?: string | null; email?: string | null } | null): string {
+function buildHref(
+  pathname: string,
+  preserved: Record<string, string> | undefined,
+  next: Record<string, string | undefined>,
+): string {
+  const sp = new URLSearchParams();
+  if (preserved) {
+    for (const [k, v] of Object.entries(preserved)) {
+      if (v) sp.set(k, v);
+    }
+  }
+  for (const [k, v] of Object.entries(next)) {
+    if (v && v.length > 0) {
+      sp.set(k, v);
+    } else {
+      sp.delete(k);
+    }
+  }
+  const qs = sp.toString();
+  return qs ? `${pathname}?${qs}` : pathname;
+}
+
+/* ------------------------------------------------------------------ */
+/* Util: derive an "alias" from an email or name (8 chars, lowercase) */
+/* ------------------------------------------------------------------ */
+
+export function ownerAlias(
+  user: { name?: string | null; email?: string | null } | null,
+): string {
   if (!user) return "";
   if (user.email) {
-    const local = user.email.split("@")[0];
-    return local.toLowerCase().slice(0, 8);
+    return user.email.split("@")[0].toLowerCase().slice(0, 8);
   }
   if (user.name) {
     return user.name.replace(/\s+/g, "").toLowerCase().slice(0, 8);

@@ -1,55 +1,11 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import { LeadTable, LeadFilterBar } from "@/components/leads/lead-table";
-import { LeadPipeline } from "@/components/leads/lead-pipeline";
-import { LeadViewToggle } from "@/components/leads/lead-view-toggle";
-
-const RECORD_TYPE_TABS: Array<{ key: string; label: string }> = [
-  { key: "", label: "All" },
-  { key: "WEB", label: "Web Leads" },
-  { key: "LIST", label: "Purchased Lists" },
-  { key: "DIRECT_MAIL", label: "Direct Mail" },
-  { key: "BUSINESS", label: "Business" },
-  { key: "ARCHIVED_WEB", label: "Archived Web" },
-  { key: "ARCHIVED_LIST", label: "Archived List" },
-  { key: "ARCHIVED_DIRECT_MAIL", label: "Archived Mail" },
-];
-
-function RecordTypeTabs({ current }: { current: string }) {
-  return (
-    <div style={{
-      display: "flex",
-      gap: 0,
-      borderBottom: "1px solid #d8dde6",
-      marginBottom: 16,
-      overflowX: "auto",
-    }}>
-      {RECORD_TYPE_TABS.map((t) => {
-        const active = (current === "" && t.key === "") || current === t.key;
-        const href = t.key ? `/leads?recordType=${t.key}` : "/leads";
-        return (
-          <Link
-            key={t.key || "all"}
-            href={href}
-            style={{
-              padding: "10px 18px",
-              fontSize: 13,
-              fontWeight: active ? 700 : 600,
-              color: active ? "#16325c" : "#3e3e3c",
-              borderBottom: active ? "3px solid #1589ee" : "3px solid transparent",
-              marginBottom: -1,
-              textDecoration: "none",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {t.label}
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
+import {
+  SfListPage,
+  type SfColumn,
+  type SfRow,
+  ownerAlias,
+} from "@/components/slds/sf-list-page";
 
 interface LeadsPageProps {
   searchParams: Promise<{
@@ -59,191 +15,157 @@ interface LeadsPageProps {
     source?: string;
     recordType?: string;
     assignedToId?: string;
-    view?: string;
+    sort?: string;
+    dir?: string;
   }>;
 }
 
+const LIMIT = 50;
+
+// SF Lead list columns (match docs/sf-screenshots/sf-lead-list.png):
+// # | checkbox | Name | Lead ID | Company | Phone | Email | Lead Status |
+// Lead Source | Sub-Disposition | Owner Alias
+const COLUMNS: SfColumn[] = [
+  { key: "name", label: "Name", width: 200, sortable: true },
+  { key: "leadId", label: "Lead ID", width: 120, sortable: true },
+  { key: "company", label: "Company", width: 260, sortable: true },
+  { key: "phone", label: "Phone", width: 150, sortable: true },
+  { key: "email", label: "Email", width: 240, sortable: true },
+  { key: "status", label: "Lead Status", width: 140, sortable: true },
+  { key: "source", label: "Lead Source", width: 130, sortable: true },
+  { key: "subDisposition", label: "Sub-Disposition", width: 140, sortable: true },
+  { key: "ownerAlias", label: "Owner Alias", width: 120, sortable: true },
+];
+
+const SORT_MAP: Record<string, Prisma.LeadOrderByWithRelationInput> = {
+  name: { contactName: "asc" },
+  leadId: { sfId: "asc" },
+  company: { businessName: "asc" },
+  phone: { phone: "asc" },
+  email: { email: "asc" },
+  status: { status: "asc" },
+  source: { source: "asc" },
+};
+
 export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const params = await searchParams;
-  const page = Math.max(1, parseInt(params.page || "1"));
-  const limit = 20;
-  const search = params.search || "";
-  const status = params.status || "";
-  const source = params.source || "";
-  const recordType = params.recordType || "";
-  const assignedToId = params.assignedToId || "";
-  const view = params.view || "table";
+  const search = params.search?.trim() ?? "";
+  const sort = params.sort ?? "";
+  const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
 
   const where: Prisma.LeadWhereInput = {};
-
   if (search) {
     where.OR = [
       { businessName: { contains: search } },
       { contactName: { contains: search } },
+      { phone: { contains: search } },
+      { email: { contains: search } },
     ];
   }
+  if (params.status) where.status = params.status;
+  if (params.source) where.source = params.source;
+  if (params.recordType) where.recordType = params.recordType;
+  if (params.assignedToId) where.assignedToId = params.assignedToId;
 
-  if (status) {
-    where.status = status;
-  }
-
-  if (source) {
-    where.source = source;
-  }
-
-  if (recordType) {
-    where.recordType = recordType;
-  }
-
-  if (assignedToId) {
-    where.assignedToId = assignedToId;
+  // Build prisma orderBy from sort key
+  let orderBy: Prisma.LeadOrderByWithRelationInput =
+    { createdAt: "desc" };
+  if (sort && SORT_MAP[sort]) {
+    const key = Object.keys(SORT_MAP[sort])[0] as keyof Prisma.LeadOrderByWithRelationInput;
+    orderBy = { [key]: dir } as Prisma.LeadOrderByWithRelationInput;
   }
 
   const [leads, total] = await Promise.all([
     prisma.lead.findMany({
       where,
       include: {
-        assignedTo: {
-          select: { id: true, name: true, email: true },
-        },
+        assignedTo: { select: { id: true, name: true, email: true } },
       },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
+      orderBy,
+      take: LIMIT,
     }),
     prisma.lead.count({ where }),
   ]);
 
-  const totalPages = Math.ceil(total / limit);
-
-  // Serialize dates for client components. Also pull Sub_Disposition__c out of
-  // the SF data snapshot so the SF parity list column has something to show.
-  const serializedLeads = leads.map((lead) => {
-    let subDisposition: string | null = null;
-    try {
-      if (lead.sfDataJson) {
+  // Pre-render every cell here in the server component. Pulls SF
+  // Sub_Disposition__c out of the lossless JSON snapshot when present.
+  const rows: SfRow[] = leads.map((lead) => {
+    let subDisposition = "";
+    if (lead.sfDataJson) {
+      try {
         const sf = JSON.parse(lead.sfDataJson) as Record<string, unknown>;
         const sub = sf["Sub_Disposition__c"];
-        if (typeof sub === "string" && sub.length > 0) subDisposition = sub;
+        if (typeof sub === "string") subDisposition = sub;
+      } catch {
+        /* ignore bad json */
       }
-    } catch { /* ignore bad json */ }
+    }
+    const shortLeadId = lead.sfId ?? lead.id.slice(-8).toUpperCase();
     return {
-      ...lead,
-      subDisposition,
-      createdAt: lead.createdAt.toISOString(),
-      updatedAt: lead.updatedAt.toISOString(),
-      lastContactedAt: lead.lastContactedAt?.toISOString() ?? null,
-      nextFollowUpAt: lead.nextFollowUpAt?.toISOString() ?? null,
+      id: lead.id,
+      href: `/leads/${lead.id}`,
+      cells: [
+        lead.contactName || "—",
+        shortLeadId,
+        lead.businessName || "—",
+        lead.phone ? (
+          <a
+            key="phone"
+            href={`tel:${lead.phone}`}
+            style={{ color: "#1589ee", textDecoration: "none" }}
+          >
+            {lead.phone}
+          </a>
+        ) : (
+          "—"
+        ),
+        lead.email ? (
+          <a
+            key="email"
+            href={`mailto:${lead.email}`}
+            style={{ color: "#1589ee", textDecoration: "none" }}
+          >
+            {lead.email}
+          </a>
+        ) : (
+          "—"
+        ),
+        lead.status || "—",
+        lead.source || "—",
+        subDisposition || "",
+        ownerAlias(lead.assignedTo) || "—",
+      ],
     };
   });
 
-  // For pipeline view, fetch all leads (not paginated) for the pipeline columns
-  let serializedPipelineLeads = serializedLeads.map((lead) => ({
-    id: lead.id,
-    businessName: lead.businessName,
-    contactName: lead.contactName,
-    totalDebtEst: lead.totalDebtEst,
-    score: lead.score,
-    status: lead.status,
-    source: lead.source,
-    assignedTo: lead.assignedTo,
-    createdAt: lead.createdAt,
-  }));
-
-  if (view === "pipeline") {
-    const pipelineData = await prisma.lead.findMany({
-      where,
-      select: {
-        id: true,
-        businessName: true,
-        contactName: true,
-        totalDebtEst: true,
-        score: true,
-        status: true,
-        source: true,
-        createdAt: true,
-        assignedTo: {
-          select: { id: true, name: true, email: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 200,
-    });
-    serializedPipelineLeads = pipelineData.map((l) => ({
-      ...l,
-      createdAt: l.createdAt.toISOString(),
-    }));
-  }
+  const preservedParams: Record<string, string> = {};
+  if (params.status) preservedParams.status = params.status;
+  if (params.source) preservedParams.source = params.source;
+  if (params.recordType) preservedParams.recordType = params.recordType;
+  if (params.assignedToId) preservedParams.assignedToId = params.assignedToId;
 
   return (
-    <div className="space-y-0">
-      {/* Page Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1
-          className="text-[26px] font-bold tracking-tight"
-          style={{ fontFamily: "var(--font-manrope, 'Manrope', sans-serif)" }}
-        >
-          Leads
-        </h1>
-        <div className="flex items-center gap-3">
-          <LeadViewToggle />
-          {/* Filter icon button */}
-          <button
-            className="w-10 h-10 flex items-center justify-center rounded-[4px] border-0 cursor-pointer"
-            style={{ background: "#f2f3ff", color: "#444656" }}
-            title="Filters"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            >
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-            </svg>
-          </button>
-          <Link
-            href="/leads/new"
-            className="flex items-center gap-2 px-5 py-2 rounded-[4px] text-white text-[13.5px] font-semibold transition-opacity hover:opacity-90"
-            style={{
-              background: "linear-gradient(135deg,#0034e4,#3052ff)",
-              textDecoration: "none",
-            }}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Add Lead
-          </Link>
-        </div>
-      </div>
-
-      <RecordTypeTabs current={recordType} />
-
-      {view === "pipeline" ? (
-        <LeadPipeline leads={serializedPipelineLeads} />
-      ) : (
-        <>
-          <LeadFilterBar />
-          <LeadTable
-            leads={serializedLeads}
-            total={total}
-            page={page}
-            totalPages={totalPages}
-          />
-        </>
-      )}
-    </div>
+    <SfListPage
+      entity="lead"
+      title="Leads"
+      subtitle="Recently Viewed"
+      count={total}
+      iconColor="#f88962"
+      iconSlug="lead"
+      actions={[
+        { label: "New", href: "/leads/new" },
+        { label: "Import" },
+        { label: "Change Owner" },
+        { label: "Change Status" },
+        { label: "Send List Email" },
+      ]}
+      columns={COLUMNS}
+      rows={rows}
+      pathname="/leads"
+      sortKey={sort || undefined}
+      sortDir={dir}
+      searchQuery={search}
+      preservedParams={preservedParams}
+    />
   );
 }
