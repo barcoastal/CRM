@@ -487,14 +487,14 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           entityId={opp.id}
           fields={[
             // Row 1: Type of Business | High Lien Risk
-            E("Type of Business", opp.typeOfBusiness, "typeOfBusiness"),
-            E("High Lien Risk", opp.highLienRisk, "highLienRisk"),
+            E("Type of Business", opp.typeOfBusiness ?? oppSf("Type_of_Business__c"), "typeOfBusiness", "text", { rawValue: opp.typeOfBusiness }),
+            E("High Lien Risk", opp.highLienRisk ?? oppSf("High_Lien_Risk__c"), "highLienRisk", "text", { rawValue: opp.highLienRisk }),
             // Row 2: Receivables Collection Method | What was explained to client?
-            E("Receivables Collection Method", opp.receivablesCollectionMethod, "receivablesCollectionMethod"),
+            E("Receivables Collection Method", opp.receivablesCollectionMethod ?? oppSf("Receivables_Collection_Method__c"), "receivablesCollectionMethod", "text", { rawValue: opp.receivablesCollectionMethod }),
             E("What was explained to client?", oppSf("What_was_explained_to_client__c") ?? oppSf("What_Was_Explained_to_Client__c"), "whatWasExplainedToClient", "textarea"),
             // Row 3: Processor Info | Bank Change
             E("Processor Info", oppSf("Processor_Info__c"), "processorInfo"),
-            E("Bank Change", opp.bankChange, "bankChange"),
+            E("Bank Change", opp.bankChange ?? oppSf("Bank_Change__c"), "bankChange", "text", { rawValue: opp.bankChange }),
             // Row 4: Lender Agreements Collected | Status with Lender/s
             E("Lender Agreements Collected", oppSf("Lender_Agreements_Collected__c"), "lenderAgreementsCollected"),
             E("Status with Lender/s", oppSf("Status_with_Lenders__c") ?? oppSf("Status_with_Lender_s__c"), "statusWithLenders"),
