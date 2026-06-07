@@ -1,21 +1,24 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { SfListSearch, SfRowCheckbox, SfSelectAllCheckbox } from "./sf-list-client";
+import {
+  SfListSearch,
+  SfRowCheckbox,
+  SfSelectAllCheckbox,
+  SfSelectionProvider,
+  SfMassActionsToolbar,
+  SfViewPicker,
+  SfRowTr,
+  type SfMassToolbarConfig,
+  type SfViewOption,
+} from "./sf-list-client";
 
 /* ------------------------------------------------------------------ */
 /* SF Lightning list page — server component                          */
 /*                                                                    */
-/* The previous version was a "use client" component that received    */
-/* `render: (row) => ReactNode` and `sortValue: (row) => string`      */
-/* function props from server pages. Functions can't cross the        */
-/* server -> client RSC boundary, so every list page SSR-crashed.     */
-/*                                                                    */
-/* This version is a server component that takes only serializable    */
-/* props: `columns: { key, label, width, sortable }[]` and            */
-/* `rows: { id, href, cells: ReactNode[] }[]`. Each parent server     */
-/* page pre-renders its own cells. Interactive bits (search box,      */
-/* sort header links, checkboxes) live in small "use client" islands  */
-/* that take only serializable props (URL strings, ids, etc).         */
+/* Server component. Takes only serializable props. Interactive bits  */
+/* (search box, sort header links, checkboxes, mass-action toolbar,   */
+/* view picker, clickable rows) are client-component islands which    */
+/* share state via React Context (SfSelectionProvider).               */
 /* ------------------------------------------------------------------ */
 
 export interface SfColumn {
@@ -73,6 +76,12 @@ export interface SfListPageProps {
   searchQuery?: string;
   /** preserved query params (everything except sort/dir/search) */
   preservedParams?: Record<string, string>;
+  /** mass action toolbar config (statuses + which API to hit) */
+  massConfig: SfMassToolbarConfig;
+  /** list view options for the title dropdown picker */
+  views?: SfViewOption[];
+  /** current selected view value (matches ?view=) */
+  currentView?: string;
 }
 
 export function SfListPage(props: SfListPageProps) {
@@ -90,258 +99,269 @@ export function SfListPage(props: SfListPageProps) {
     sortDir,
     searchQuery,
     preservedParams,
+    massConfig,
+    views,
+    currentView,
   } = props;
 
-  return (
-    <div style={{ padding: 0 }}>
-      <Header
-        iconSlug={iconSlug}
-        iconColor={iconColor}
-        title={title}
-        subtitle={subtitle}
-        count={count}
-        actions={actions}
-        searchQuery={searchQuery ?? ""}
-        pathname={pathname}
-        preservedParams={preservedParams ?? {}}
-      />
+  const ids = rows.map((r) => r.id);
 
-      <div
-        style={{
-          background: "#fff",
-          border: "1px solid #dddbda",
-          borderTop: "none",
-          overflowX: "auto",
-        }}
-      >
-        <table
-          className="slds-table slds-table_cell-buffer slds-table_bordered slds-no-row-hover"
-          role="grid"
+  return (
+    <SfSelectionProvider ids={ids}>
+      <div style={{ padding: 0 }}>
+        <SfMassActionsToolbar config={massConfig} />
+        <Header
+          iconSlug={iconSlug}
+          iconColor={iconColor}
+          title={title}
+          subtitle={subtitle}
+          count={count}
+          actions={actions}
+          searchQuery={searchQuery ?? ""}
+          pathname={pathname}
+          preservedParams={preservedParams ?? {}}
+          views={views}
+          currentView={currentView}
+        />
+
+        <div
           style={{
-            tableLayout: "fixed",
-            width: "100%",
-            fontSize: 12,
-            borderCollapse: "collapse",
-            fontFamily:
-              "'Salesforce Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            background: "#fff",
+            border: "1px solid #dddbda",
+            borderTop: "none",
+            overflowX: "auto",
           }}
         >
-          <colgroup>
-            <col style={{ width: 36 }} />
-            <col style={{ width: 44 }} />
-            {columns.map((c) => (
-              <col key={c.key} style={{ width: c.width }} />
-            ))}
-            <col style={{ width: 32 }} />
-          </colgroup>
-          <thead>
-            <tr className="slds-line-height_reset">
-              <th
-                scope="col"
-                style={{
-                  padding: "0 6px",
-                  background: "#fafaf9",
-                  borderBottom: "1px solid #dddbda",
-                  borderRight: "1px solid #dddbda",
-                  textAlign: "center",
-                }}
-              >
-                <SfSelectAllCheckbox ids={rows.map((r) => r.id)} />
-              </th>
-              <th
-                scope="col"
-                style={{
-                  background: "#fafaf9",
-                  borderBottom: "1px solid #dddbda",
-                  borderRight: "1px solid #dddbda",
-                  padding: "6px 8px",
-                  textAlign: "left",
-                  color: "#3e3e3c",
-                  fontSize: 11,
-                  fontWeight: 700,
-                }}
-              />
-              {columns.map((c) => {
-                const isSorted = sortKey === c.key;
-                const dir = isSorted ? sortDir ?? "asc" : null;
-                const nextDir = isSorted && sortDir === "asc" ? "desc" : "asc";
-                const sortHref = buildHref(pathname, preservedParams, {
-                  sort: c.key,
-                  dir: nextDir,
-                  search: searchQuery,
-                });
-                const headerInner = (
-                  <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      padding: "6px 8px",
-                      color: "#080707",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      textDecoration: "none",
-                      justifyContent:
-                        c.align === "right" ? "flex-end" : "flex-start",
-                    }}
-                  >
-                    <span
-                      className="slds-truncate"
-                      title={c.label}
-                      style={{
-                        flex: 1,
-                        textAlign: c.align === "right" ? "right" : "left",
-                      }}
-                    >
-                      {c.label}
-                    </span>
-                    {c.sortable && <SortIcon dir={dir} />}
-                    <DownChev />
-                  </span>
-                );
-                return (
-                  <th
-                    key={c.key}
-                    scope="col"
-                    style={{
-                      background: "#fafaf9",
-                      borderBottom: "1px solid #dddbda",
-                      borderRight: "1px solid #dddbda",
-                      padding: 0,
-                      textAlign: c.align === "right" ? "right" : "left",
-                    }}
-                  >
-                    {c.sortable ? (
-                      <Link
-                        href={sortHref}
-                        scroll={false}
-                        style={{
-                          display: "block",
-                          textDecoration: "none",
-                          color: "inherit",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {headerInner}
-                      </Link>
-                    ) : (
-                      headerInner
-                    )}
-                  </th>
-                );
-              })}
-              <th
-                scope="col"
-                style={{
-                  background: "#fafaf9",
-                  borderBottom: "1px solid #dddbda",
-                }}
-              />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 && (
-              <tr>
-                <td
-                  colSpan={columns.length + 3}
-                  style={{
-                    textAlign: "center",
-                    padding: 48,
-                    color: "#706e6b",
-                    fontSize: 13,
-                  }}
-                >
-                  No records to display.
-                </td>
-              </tr>
-            )}
-            {rows.map((row, idx) => (
-              <tr key={row.id} className="slds-hint-parent">
-                <td
-                  role="gridcell"
+          <table
+            className="slds-table slds-table_cell-buffer slds-table_bordered slds-no-row-hover"
+            role="grid"
+            style={{
+              tableLayout: "fixed",
+              width: "100%",
+              fontSize: 12,
+              borderCollapse: "collapse",
+              fontFamily:
+                "'Salesforce Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            }}
+          >
+            <colgroup>
+              <col style={{ width: 36 }} />
+              <col style={{ width: 44 }} />
+              {columns.map((c) => (
+                <col key={c.key} style={{ width: c.width }} />
+              ))}
+              <col style={{ width: 32 }} />
+            </colgroup>
+            <thead>
+              <tr className="slds-line-height_reset">
+                <th
+                  scope="col"
                   style={{
                     padding: "0 6px",
-                    borderBottom: "1px solid #f3f2f2",
-                    borderRight: "1px solid #f3f2f2",
+                    background: "#fafaf9",
+                    borderBottom: "1px solid #dddbda",
+                    borderRight: "1px solid #dddbda",
                     textAlign: "center",
                   }}
                 >
-                  <SfRowCheckbox id={row.id} rowIndex={idx + 1} />
-                </td>
-                <td
-                  role="gridcell"
+                  <SfSelectAllCheckbox />
+                </th>
+                <th
+                  scope="col"
                   style={{
+                    background: "#fafaf9",
+                    borderBottom: "1px solid #dddbda",
+                    borderRight: "1px solid #dddbda",
                     padding: "6px 8px",
-                    fontSize: 12,
+                    textAlign: "left",
                     color: "#3e3e3c",
-                    borderBottom: "1px solid #f3f2f2",
-                    borderRight: "1px solid #f3f2f2",
+                    fontSize: 11,
+                    fontWeight: 700,
                   }}
-                >
-                  {idx + 1}
-                </td>
-                {columns.map((c, ci) => {
-                  const isPrimary = ci === 0;
-                  return (
-                    <td
-                      key={c.key}
-                      role="gridcell"
+                />
+                {columns.map((c) => {
+                  const isSorted = sortKey === c.key;
+                  const dir = isSorted ? sortDir ?? "asc" : null;
+                  const nextDir = isSorted && sortDir === "asc" ? "desc" : "asc";
+                  const sortHref = buildHref(pathname, preservedParams, {
+                    sort: c.key,
+                    dir: nextDir,
+                    search: searchQuery,
+                  });
+                  const headerInner = (
+                    <span
                       style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
                         padding: "6px 8px",
-                        fontSize: 12,
                         color: "#080707",
-                        borderBottom: "1px solid #f3f2f2",
-                        borderRight: "1px solid #f3f2f2",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        textDecoration: "none",
+                        justifyContent:
+                          c.align === "right" ? "flex-end" : "flex-start",
+                      }}
+                    >
+                      <span
+                        className="slds-truncate"
+                        title={c.label}
+                        style={{
+                          flex: 1,
+                          textAlign: c.align === "right" ? "right" : "left",
+                        }}
+                      >
+                        {c.label}
+                      </span>
+                      {c.sortable && <SortIcon dir={dir} />}
+                      <DownChev />
+                    </span>
+                  );
+                  return (
+                    <th
+                      key={c.key}
+                      scope="col"
+                      style={{
+                        background: "#fafaf9",
+                        borderBottom: "1px solid #dddbda",
+                        borderRight: "1px solid #dddbda",
+                        padding: 0,
                         textAlign: c.align === "right" ? "right" : "left",
                       }}
                     >
-                      <div
-                        className="slds-truncate"
-                        style={{
-                          maxWidth: "100%",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {isPrimary && row.href ? (
-                          <Link
-                            href={row.href}
-                            style={{
-                              color: "#1589ee",
-                              textDecoration: "none",
-                            }}
-                            className="sf-row-link"
-                          >
-                            {row.cells[ci]}
-                          </Link>
-                        ) : (
-                          row.cells[ci]
-                        )}
-                      </div>
-                    </td>
+                      {c.sortable ? (
+                        <Link
+                          href={sortHref}
+                          scroll={false}
+                          style={{
+                            display: "block",
+                            textDecoration: "none",
+                            color: "inherit",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {headerInner}
+                        </Link>
+                      ) : (
+                        headerInner
+                      )}
+                    </th>
                   );
                 })}
-                <td
-                  role="gridcell"
+                <th
+                  scope="col"
                   style={{
-                    padding: "0 4px",
-                    textAlign: "center",
-                    borderBottom: "1px solid #f3f2f2",
+                    background: "#fafaf9",
+                    borderBottom: "1px solid #dddbda",
                   }}
-                >
-                  <DownChev />
-                </td>
+                />
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={columns.length + 3}
+                    style={{
+                      textAlign: "center",
+                      padding: 48,
+                      color: "#706e6b",
+                      fontSize: 13,
+                    }}
+                  >
+                    No records to display.
+                  </td>
+                </tr>
+              )}
+              {rows.map((row, idx) => (
+                <SfRowTr key={row.id} id={row.id} href={row.href}>
+                  <td
+                    role="gridcell"
+                    style={{
+                      padding: "0 6px",
+                      borderBottom: "1px solid #f3f2f2",
+                      borderRight: "1px solid #f3f2f2",
+                      textAlign: "center",
+                    }}
+                  >
+                    <SfRowCheckbox id={row.id} rowIndex={idx + 1} />
+                  </td>
+                  <td
+                    role="gridcell"
+                    style={{
+                      padding: "6px 8px",
+                      fontSize: 12,
+                      color: "#3e3e3c",
+                      borderBottom: "1px solid #f3f2f2",
+                      borderRight: "1px solid #f3f2f2",
+                    }}
+                  >
+                    {idx + 1}
+                  </td>
+                  {columns.map((c, ci) => {
+                    const isPrimary = ci === 0;
+                    return (
+                      <td
+                        key={c.key}
+                        role="gridcell"
+                        style={{
+                          padding: "6px 8px",
+                          fontSize: 12,
+                          color: "#080707",
+                          borderBottom: "1px solid #f3f2f2",
+                          borderRight: "1px solid #f3f2f2",
+                          textAlign: c.align === "right" ? "right" : "left",
+                        }}
+                      >
+                        <div
+                          className="slds-truncate"
+                          style={{
+                            maxWidth: "100%",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {isPrimary && row.href ? (
+                            <Link
+                              href={row.href}
+                              style={{
+                                color: "#1589ee",
+                                textDecoration: "none",
+                              }}
+                              className="sf-row-link"
+                            >
+                              {row.cells[ci]}
+                            </Link>
+                          ) : (
+                            row.cells[ci]
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
+                  <td
+                    role="gridcell"
+                    style={{
+                      padding: "0 4px",
+                      textAlign: "center",
+                      borderBottom: "1px solid #f3f2f2",
+                    }}
+                  >
+                    <DownChev />
+                  </td>
+                </SfRowTr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <style>{`
-        .sf-row-link:hover { text-decoration: underline; }
-      `}</style>
-    </div>
+        <style>{`
+          .sf-row-link:hover { text-decoration: underline; }
+          .sf-row:hover { background: #f4f6f9 !important; }
+        `}</style>
+      </div>
+    </SfSelectionProvider>
   );
 }
 
@@ -359,6 +379,8 @@ function Header({
   searchQuery,
   pathname,
   preservedParams,
+  views,
+  currentView,
 }: {
   iconSlug: string;
   iconColor?: string;
@@ -369,6 +391,8 @@ function Header({
   searchQuery: string;
   pathname: string;
   preservedParams: Record<string, string>;
+  views?: SfViewOption[];
+  currentView?: string;
 }) {
   return (
     <div
@@ -413,22 +437,26 @@ function Header({
             <div style={{ fontSize: 12, color: "#3e3e3c", lineHeight: 1.2 }}>
               {title}
             </div>
-            <div
-              style={{
-                fontSize: 18,
-                fontWeight: 700,
-                color: "#080707",
-                lineHeight: 1.2,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              {subtitle}
-              <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#080707" }}>
-                <path d="M2 4l4 4 4-4z" />
-              </svg>
-            </div>
+            {views && views.length > 0 ? (
+              <SfViewPicker views={views} current={currentView ?? "recent"} />
+            ) : (
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "#080707",
+                  lineHeight: 1.2,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {subtitle}
+                <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#080707" }}>
+                  <path d="M2 4l4 4 4-4z" />
+                </svg>
+              </div>
+            )}
             <div style={{ marginTop: 2, fontSize: 12, color: "#3e3e3c" }}>
               {count} item{count === 1 ? "" : "s"}
               <span style={{ color: "#706e6b" }}> · Updated a few seconds ago</span>
