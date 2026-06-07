@@ -7,6 +7,7 @@ import {
   type OpportunityRecordType,
 } from "@/lib/record-types";
 import { auditWrite } from "@/lib/audit";
+import { firePostbackEvent } from "@/lib/marketing/postback";
 
 export interface ConvertLeadOptions {
   /** Override account record type — defaults are inferred from lead. */
@@ -261,6 +262,19 @@ export async function convertLead(
       after: { status: "Converted", convertedAccountId: result.accountId },
     }).catch(() => null),
   ]);
+
+  // Marketing postback: lead.converted (fire-and-forget)
+  void firePostbackEvent({
+    event: "lead.converted",
+    entityType: "Lead",
+    entityId: lead.id,
+    data: {
+      lead,
+      accountId: result.accountId,
+      contactId: result.contactId,
+      opportunityId: result.opportunityId,
+    },
+  }).catch(() => {});
 
   return { ...result, alreadyConverted: false };
 }

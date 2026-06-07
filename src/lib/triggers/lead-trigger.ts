@@ -44,6 +44,7 @@ import type { Lead } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
 import { addSuppression } from "@/lib/dnc";
 import { onLeadStatusChange } from "./email-automation";
+import { firePostbackEvent } from "@/lib/marketing/postback";
 
 // Use a permissive shape so trigger writers can set FK columns directly.
 type LeadWrite = Partial<Lead> & Record<string, unknown>;
@@ -207,6 +208,18 @@ export const leadTrigger: Trigger<Lead, LeadWrite> = {
     next.sfDataJson = stringifySfData(sf);
   },
 
+  afterInsert({ row }) {
+    // Fire-and-forget marketing postback. Note: inbound-driven Lead creation
+    // also fires this directly from src/lib/marketing/inbound.ts; the trigger
+    // path covers all OTHER creation sources (manual, ingest, importer).
+    void firePostbackEvent({
+      event: "lead.created",
+      entityType: "Lead",
+      entityId: row.id,
+      data: { lead: row },
+    }).catch(() => {});
+  },
+
   async afterUpdate({ row, prev, ctx }) {
     const statusChanged = row.status !== prev.status;
 
@@ -238,6 +251,17 @@ export const leadTrigger: Trigger<Lead, LeadWrite> = {
       await syncFronterToOpp(row, prev, ctx).catch(() => undefined);
       return;
     }
+
+    // Marketing postback: lead.disposition_changed
+    void firePostbackEvent({
+      event: "lead.disposition_changed",
+      entityType: "Lead",
+      entityId: row.id,
+      data: {
+        lead: row,
+        prev: { status: prev.status, lastDisposition: prev.lastDisposition },
+      },
+    }).catch(() => {});
 
     // Skip Task creation if the caller already made one (e.g. Disposition modal)
     const skipKey = `Lead:${row.id}:task`;

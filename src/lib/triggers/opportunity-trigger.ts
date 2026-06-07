@@ -45,6 +45,7 @@
 
 import type { Opportunity } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
+import { firePostbackEvent } from "@/lib/marketing/postback";
 
 type OppWrite = Partial<Opportunity> & Record<string, unknown>;
 
@@ -93,6 +94,15 @@ export const opportunityTrigger: Trigger<Opportunity, OppWrite> = {
     ) {
       next.amount = next.totalDebt;
     }
+  },
+
+  afterInsert({ row }) {
+    void firePostbackEvent({
+      event: "opportunity.created",
+      entityType: "Opportunity",
+      entityId: row.id,
+      data: { opportunity: row },
+    }).catch(() => {});
   },
 
   async afterUpdate({ row, prev, ctx }) {
@@ -242,6 +252,33 @@ export const opportunityTrigger: Trigger<Opportunity, OppWrite> = {
           data: { firstContractSignedDateOpp: new Date() },
         })
         .catch(() => undefined);
+    }
+
+    // Marketing postbacks for stage changes (fire-and-forget)
+    void firePostbackEvent({
+      event: "opportunity.stage_changed",
+      entityType: "Opportunity",
+      entityId: row.id,
+      data: { opportunity: row, prev: { stage: prev.stage } },
+    }).catch(() => {});
+
+    // Closed Won detection covers any "Closed Won*" stage (SF uses several)
+    const stageStr = String(row.stage ?? "");
+    if (stageStr.toLowerCase().includes("closed won")) {
+      void firePostbackEvent({
+        event: "opportunity.closed_won",
+        entityType: "Opportunity",
+        entityId: row.id,
+        data: { opportunity: row, prev: { stage: prev.stage } },
+      }).catch(() => {});
+    }
+    if (stageStr.toLowerCase().includes("closed lost")) {
+      void firePostbackEvent({
+        event: "opportunity.closed_lost",
+        entityType: "Opportunity",
+        entityId: row.id,
+        data: { opportunity: row, prev: { stage: prev.stage } },
+      }).catch(() => {});
     }
   },
 };
