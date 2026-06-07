@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { auditWrite } from "@/lib/audit";
 import { applyFieldUpdate, mergeSfData, FieldUpdateError } from "@/lib/field-update";
+import { validateOppPatch } from "@/lib/validation/opp-validation";
 
 export async function PATCH(
   request: NextRequest,
@@ -31,6 +32,28 @@ export async function PATCH(
       existingSfDataJson: existing.sfDataJson,
       existingRecord: existing as unknown as Record<string, unknown>,
     });
+
+    // SF validation rules for inline single-field edits on Opportunity.
+    const patch: Record<string, unknown> = {};
+    if (result.typedColumn?.name === "stage") patch.stage = result.typedColumn.value;
+    if (result.typedColumn?.name === "totalDebt") patch.totalDebt = result.typedColumn.value;
+    if (result.typedColumn?.name === "expectedCloseDate") patch.expectedCloseDate = result.typedColumn.value as string | Date | null;
+    if (fieldName === "Payment_Term__c") patch.Payment_Term__c = newValue == null ? null : String(newValue);
+    if (Object.keys(patch).length > 0) {
+      const vErrors = validateOppPatch(
+        {
+          id: existing.id,
+          stage: existing.stage,
+          accountId: existing.accountId,
+          totalDebt: existing.totalDebt,
+          expectedCloseDate: existing.expectedCloseDate,
+        },
+        patch as Parameters<typeof validateOppPatch>[1],
+      );
+      if (vErrors.length > 0) {
+        return NextResponse.json({ error: vErrors[0], errors: vErrors }, { status: 400 });
+      }
+    }
 
     const updateData: Record<string, unknown> = {};
     if (result.typedColumn) updateData[result.typedColumn.name] = result.typedColumn.value;

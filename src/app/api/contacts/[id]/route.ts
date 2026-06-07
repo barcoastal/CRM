@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { updateContactSchema } from "@/lib/validations/contact";
 import { auditWrite } from "@/lib/audit";
+import { validateContactPatch } from "@/lib/validation/contact-validation";
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const r = await requireAuthOrRespond("Contact.View");
@@ -34,6 +35,30 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   const d = parsed.data;
   const before = await prisma.contact.findUnique({ where: { id } });
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // SF validation rules — reject patches that violate ported Contact rules.
+  const vErrors = validateContactPatch(
+    {
+      id: before.id,
+      firstName: before.firstName,
+      lastName: before.lastName,
+      email: before.email,
+      phone: before.phone,
+      mobilePhone: before.mobilePhone,
+      primaryAccountId: before.primaryAccountId,
+    },
+    {
+      firstName: typeof d.firstName === "string" ? d.firstName : undefined,
+      lastName: typeof d.lastName === "string" ? d.lastName : undefined,
+      email: typeof d.email === "string" ? d.email : undefined,
+      phone: typeof d.phone === "string" ? d.phone : undefined,
+      mobilePhone: typeof d.mobilePhone === "string" ? d.mobilePhone : undefined,
+      primaryAccountId: typeof d.primaryAccountId === "string" ? d.primaryAccountId : undefined,
+    },
+  );
+  if (vErrors.length > 0) {
+    return NextResponse.json({ error: vErrors[0], errors: vErrors }, { status: 400 });
+  }
 
   const data: Record<string, unknown> = { ...d };
   if (d.firstName !== undefined || d.lastName !== undefined) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { updateOpportunitySchema } from "@/lib/validations/opportunity";
+import { validateOppPatch } from "@/lib/validation/opp-validation";
 
 export async function GET(
   _request: NextRequest,
@@ -86,6 +87,26 @@ export async function PATCH(
   }
 
   const data = parsed.data;
+
+  // SF validation rules — reject patches that violate ported Opp rules.
+  const vErrors = validateOppPatch(
+    {
+      id: existing.id,
+      stage: existing.stage,
+      accountId: existing.accountId,
+      totalDebt: existing.totalDebt,
+      expectedCloseDate: existing.expectedCloseDate,
+    },
+    {
+      stage: typeof data.stage === "string" ? data.stage : undefined,
+      totalDebt: typeof data.totalDebt === "number" ? data.totalDebt : (data.totalDebt === null ? null : undefined),
+      expectedCloseDate: typeof data.expectedCloseDate === "string" ? data.expectedCloseDate : undefined,
+    },
+  );
+  if (vErrors.length > 0) {
+    return NextResponse.json({ error: vErrors[0], errors: vErrors }, { status: 400 });
+  }
+
   const updateData: Record<string, unknown> = {};
 
   if (data.stage !== undefined) updateData.stage = data.stage;

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { updateLeadSchema } from "@/lib/validations/lead";
 import { enrollClientSchema } from "@/lib/validations/client";
+import { validateLeadPatch } from "@/lib/validation/lead-validation";
 
 export async function GET(
   _request: NextRequest,
@@ -153,6 +154,31 @@ export async function PATCH(
   }
 
   const data = parsed.data;
+
+  // SF validation rules — reject patches that violate ported Lead rules with
+  // the SF error message so the modal shows the same text as the live org.
+  const vErrors = validateLeadPatch(
+    {
+      id: existing.id,
+      status: existing.status,
+      email: existing.email,
+      phone: existing.phone,
+      contactName: existing.contactName,
+      businessName: existing.businessName,
+      convertedAccountId: existing.convertedAccountId,
+      convertedContactId: existing.convertedContactId,
+    },
+    {
+      status: typeof data.status === "string" ? data.status : undefined,
+      email: typeof data.email === "string" ? data.email : undefined,
+      phone: typeof data.phone === "string" ? data.phone : undefined,
+      contactName: typeof data.contactName === "string" ? data.contactName : undefined,
+      businessName: typeof data.businessName === "string" ? data.businessName : undefined,
+    },
+  );
+  if (vErrors.length > 0) {
+    return NextResponse.json({ error: vErrors[0], errors: vErrors }, { status: 400 });
+  }
 
   const updateData: Record<string, unknown> = {};
 

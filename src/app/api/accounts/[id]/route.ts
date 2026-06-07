@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { updateAccountSchema } from "@/lib/validations/account";
 import { auditWrite } from "@/lib/audit";
+import { validateAccountPatch } from "@/lib/validation/account-validation";
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const r = await requireAuthOrRespond("Account.View");
@@ -37,6 +38,28 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
   const before = await prisma.account.findUnique({ where: { id } });
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // SF validation rules — reject patches that violate ported Account rules.
+  const d = parsed.data as Record<string, unknown>;
+  const vErrors = validateAccountPatch(
+    {
+      id: before.id,
+      stage: before.stage,
+      name: before.name,
+      email: before.email,
+      recordType: before.recordType,
+      parentAccountId: before.parentAccountId,
+    },
+    {
+      stage: typeof d.stage === "string" ? d.stage : undefined,
+      name: typeof d.name === "string" ? d.name : undefined,
+      email: typeof d.email === "string" ? d.email : undefined,
+      parentAccountId: typeof d.parentAccountId === "string" ? d.parentAccountId : undefined,
+    },
+  );
+  if (vErrors.length > 0) {
+    return NextResponse.json({ error: vErrors[0], errors: vErrors }, { status: 400 });
+  }
 
   const account = await prisma.account.update({ where: { id }, data: parsed.data });
   await auditWrite({

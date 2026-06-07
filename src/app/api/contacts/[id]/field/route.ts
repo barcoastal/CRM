@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { auditWrite } from "@/lib/audit";
 import { applyFieldUpdate, mergeSfData, FieldUpdateError } from "@/lib/field-update";
+import { validateContactPatch } from "@/lib/validation/contact-validation";
 
 export async function PATCH(
   request: NextRequest,
@@ -31,6 +32,31 @@ export async function PATCH(
       existingSfDataJson: existing.sfDataJson,
       existingRecord: existing as unknown as Record<string, unknown>,
     });
+
+    const patch: Record<string, unknown> = {};
+    if (result.typedColumn?.name === "firstName") patch.firstName = result.typedColumn.value;
+    if (result.typedColumn?.name === "lastName") patch.lastName = result.typedColumn.value;
+    if (result.typedColumn?.name === "email") patch.email = result.typedColumn.value;
+    if (result.typedColumn?.name === "phone") patch.phone = result.typedColumn.value;
+    if (result.typedColumn?.name === "mobilePhone") patch.mobilePhone = result.typedColumn.value;
+    if (result.typedColumn?.name === "primaryAccountId") patch.primaryAccountId = result.typedColumn.value;
+    if (Object.keys(patch).length > 0) {
+      const vErrors = validateContactPatch(
+        {
+          id: existing.id,
+          firstName: existing.firstName,
+          lastName: existing.lastName,
+          email: existing.email,
+          phone: existing.phone,
+          mobilePhone: existing.mobilePhone,
+          primaryAccountId: existing.primaryAccountId,
+        },
+        patch as Parameters<typeof validateContactPatch>[1],
+      );
+      if (vErrors.length > 0) {
+        return NextResponse.json({ error: vErrors[0], errors: vErrors }, { status: 400 });
+      }
+    }
 
     const updateData: Record<string, unknown> = {};
     if (result.typedColumn) updateData[result.typedColumn.name] = result.typedColumn.value;

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { auditWrite } from "@/lib/audit";
 import { applyFieldUpdate, mergeSfData, FieldUpdateError } from "@/lib/field-update";
+import { validateAccountPatch } from "@/lib/validation/account-validation";
 
 export async function PATCH(
   request: NextRequest,
@@ -31,6 +32,28 @@ export async function PATCH(
       existingSfDataJson: existing.sfDataJson,
       existingRecord: existing as unknown as Record<string, unknown>,
     });
+
+    const patch: Record<string, unknown> = {};
+    if (result.typedColumn?.name === "stage") patch.stage = result.typedColumn.value;
+    if (result.typedColumn?.name === "name") patch.name = result.typedColumn.value;
+    if (result.typedColumn?.name === "email") patch.email = result.typedColumn.value;
+    if (result.typedColumn?.name === "parentAccountId") patch.parentAccountId = result.typedColumn.value;
+    if (Object.keys(patch).length > 0) {
+      const vErrors = validateAccountPatch(
+        {
+          id: existing.id,
+          stage: existing.stage,
+          name: existing.name,
+          email: existing.email,
+          recordType: existing.recordType,
+          parentAccountId: existing.parentAccountId,
+        },
+        patch as Parameters<typeof validateAccountPatch>[1],
+      );
+      if (vErrors.length > 0) {
+        return NextResponse.json({ error: vErrors[0], errors: vErrors }, { status: 400 });
+      }
+    }
 
     const updateData: Record<string, unknown> = {};
     if (result.typedColumn) updateData[result.typedColumn.name] = result.typedColumn.value;
