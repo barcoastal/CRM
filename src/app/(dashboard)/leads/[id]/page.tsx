@@ -208,74 +208,113 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const mobileVal = sf("MobilePhone");
 
   const leadInformation = (
+    // Field set + pair order verified against the live SF Roberto Suarez Lead
+    // screenshot Bar provided 2026-06-07. SF Lightning interleaves left/right
+    // column rows top-to-bottom — even index = left column, odd = right.
     <Section title="Lead Information">
       <FieldGrid
         entityType="lead"
         entityId={lead.id}
         fields={[
+          // Row 1: Name | SSN
           E("Name", displayContactName, "contactName", "text", { rawValue: lead.contactName }),
-          E("Salutation", sf("Salutation"), "Salutation"),
-          E("Title", sf("Title"), "Title"),
-          [
-            "Phone",
-            <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{phoneVal ?? "-"}{phoneVal && <CallButton phone={phoneVal} leadId={lead.id} />}</span>,
-            { fieldKey: "phone", type: "phone", rawValue: lead.phone ?? phoneVal },
-          ],
-          E("Mobile Phone", mobileVal, "MobilePhone", "phone"),
-          ["Formated Phone", sf("Formated_Phone__c")],
+          E("SSN", sf("SSN__c"), "SSN__c"),
+          // Row 2: Email | Date Of Birth
           [
             "Email",
             <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{emailVal ?? "-"}{emailVal && <ComposeEmailButton defaultTo={emailVal} leadId={lead.id} label="Email" />}</span>,
             { fieldKey: "email", type: "email", rawValue: lead.email ?? emailVal },
           ],
-          E("Preferred Language", sf("Preferred_Language__c"), "Preferred_Language__c"),
+          E("Date Of Birth", sfDate("Date_Of_Birth__c"), "Date_Of_Birth__c", "date"),
+          // Row 3: Alternate Email | Gender
+          E("Alternate Email", sf("Alternate_Email__c"), "Alternate_Email__c", "email"),
+          E("Gender", sf("Gender__c"), "Gender__c"),
+          // Row 4: Phone | Title
+          [
+            "Phone",
+            <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{phoneVal ?? "-"}{phoneVal && <CallButton phone={phoneVal} leadId={lead.id} />}</span>,
+            { fieldKey: "phone", type: "phone", rawValue: lead.phone ?? phoneVal },
+          ],
+          E("Title", sf("Title"), "Title"),
+          // Row 5: Mobile | Address
+          E("Mobile", mobileVal, "MobilePhone", "phone"),
+          ["Address", [sf("Street"), sf("City"), sf("State"), sf("PostalCode"), sf("Country")].filter(Boolean).join(", ") || null],
+          // Row 6: Work Phone | Timezone
+          E("Work Phone", sf("Work_Phone__c"), "Work_Phone__c", "phone"),
           E("Timezone", sf("Timezone__c"), "Timezone__c"),
-          E("Lead Source", lead.source ?? sf("LeadSource"), "source", "text", { rawValue: lead.source }),
-          E("Lead Source Category", sf("Lead_Source_Category__c"), "Lead_Source_Category__c"),
-          E("Lead Vendor ID", sf("Lead_Vendor_ID__c"), "Lead_Vendor_ID__c"),
-          E("Lead Vendor Id Text", sf("Lead_Vendor_Id_Text__c"), "Lead_Vendor_Id_Text__c"),
-          E("Campaign Name", sf("Campaign_Name__c"), "Campaign_Name__c"),
+          // Row 7: Fax | IP Address
+          E("Fax", sf("Fax__c"), "Fax__c"),
+          ["IP Address", sf("IP_Address__c")],
+          // Row 8: Preferred method of Contact | Keyword
+          E("Preferred method of Contact", sf("Preferred_Method_of_Contact__c"), "Preferred_Method_of_Contact__c"),
           E("Keyword", sf("Keyword__c"), "Keyword__c"),
+          // Row 9: Legal Plan Required | Secured Party
+          E("Legal Plan Required", yesNo(sf("Legal_Plan_Required__c")), "Legal_Plan_Required__c", "checkbox"),
+          E("Secured Party", sf("Secured_Party__c"), "Secured_Party__c"),
+          // Row 10: External ID 15 digit | Call ASAP
+          ["External ID 15 digit", sf("External_ID_15_digit__c")],
+          E("Call ASAP", yesNo(sf("Call_ASAP__c")), "Call_ASAP__c", "checkbox"),
+          // Row 11: Outbound ANI Date | Hopper Priority
+          ["Outbound ANI Date", sfDate("Outbound_ANI_Date__c")],
+          E("Hopper Priority", sf("Hopper_Priority__c"), "Hopper_Priority__c", "number"),
+          // Row 12: Outbound ANI Identifier | Outbound ANI From
+          ["Outbound ANI Identifier", sf("Outbound_ANI_Identifier__c")],
+          ["Outbound ANI From", sf("Outbound_ANI_From__c")],
+          // Row 13: Preferred Language | Lead Source
+          E("Preferred Language", sf("Preferred_Language__c"), "Preferred_Language__c"),
+          E("Lead Source", lead.source ?? sf("LeadSource"), "source", "text", { rawValue: lead.source }),
+          // Row 14: Status | Sub-Disposition
           [
             "Status",
             <StatusPill key="st" label={lead.status} tone={leadStatusTone(lead.status)} />,
             { fieldKey: "status", type: "select", rawValue: lead.status, options: LEAD_STATUSES.map((s) => ({ label: s, value: s })) },
           ],
           E("Sub Disposition", sf("Sub_Disposition__c"), "Sub_Disposition__c"),
+          // Row 15: Last Disposition | Last Sub Disposition
           E("Last Disposition", lead.lastDisposition ?? sf("Last_Disposition__c"), "lastDisposition", "text", { rawValue: lead.lastDisposition }),
           E("Last Sub Disposition", lead.lastSubDisposition ?? sf("Last_Sub_Disposition__c"), "lastSubDisposition", "text", { rawValue: lead.lastSubDisposition }),
-          E("Transfer Qualification", sf("Transfer_Qualification__c"), "Transfer_Qualification__c"),
+          // Row 16: Lead Source Category | Lead Vendor ID
+          E("Lead Source Category", sf("Lead_Source_Category__c"), "Lead_Source_Category__c"),
+          E("Lead Vendor ID", sf("Lead_Vendor_ID__c"), "Lead_Vendor_ID__c"),
+          // Row 17: Campaign Name | Lead Vendor Id Text
+          E("Campaign Name", sf("Campaign_Name__c"), "Campaign_Name__c"),
+          E("Lead Vendor Id Text", sf("Lead_Vendor_Id_Text__c"), "Lead_Vendor_Id_Text__c"),
+          // Row 18: Owner | Agent
           ["Owner", ownerName],
-          ["Owner Full Name", sf("Owner_Full_Name__c")],
-          ["Owner Username", sf("Owner_Username__c")],
           E("Agent", sf("Agent__c"), "Agent__c"),
-          E("Agent Location", sf("Agent_Location__c"), "Agent_Location__c"),
+          // Row 19: Fronter | Agent Location
           E("Fronter", sf("Fronter__c"), "Fronter__c"),
+          E("Agent Location", sf("Agent_Location__c"), "Agent_Location__c"),
+          // Row 20: Transfer Qualification | Lead Assignment Date
+          E("Transfer Qualification", sf("Transfer_Qualification__c"), "Transfer_Qualification__c"),
           ["Lead Assignment Date", lead.leadAssignmentDate?.toLocaleDateString() ?? sfDate("Lead_Assignment_Date__c")],
+          // Row 21: Last Contacted DateTime | Last Disposition DateTime
           E("Last Contacted DateTime", lead.lastContactedAt?.toLocaleString() ?? sfDate("Last_Contacted_DateTime__c"), "lastContactedAt", "datetime", { rawValue: lead.lastContactedAt ?? null }),
           ["Last Disposition DateTime", lead.lastDispositionAt?.toLocaleString() ?? sfDate("Last_Disposition_DateTime__c")],
-          ["Week Days Between Last Contacted Date", sf("Week_Days_Between_Last_Contacted_Date__c")],
+          // Row 22: Next Follow-up | Week Days Between Last Contacted Date
           E("Next Follow-up", lead.nextFollowUpAt?.toLocaleDateString(), "nextFollowUpAt", "date", { rawValue: lead.nextFollowUpAt ?? null }),
+          ["Week Days Between Last Contacted Date", sf("Week_Days_Between_Last_Contacted_Date__c")],
+          // Row 23: Call counter | Hopper
           ["Call counter", sf("Call_counter__c")],
-          E("Hopper Priority", sf("Hopper_Priority__c"), "Hopper_Priority__c"),
-          E("Hopper", yesNo(sf("Hopper__c")), "Hopper__c"),
-          E("Call ASAP", yesNo(sf("Call_ASAP__c")), "Call_ASAP__c"),
+          E("Hopper", yesNo(sf("Hopper__c")), "Hopper__c", "checkbox"),
+          // Row 24: DNC | Check DNC
           ["DNC", yesNo(sf("DNC__c"))],
           ["Check DNC", yesNo(sf("Check_DNC__c"))],
-          ["Address", [sf("Street"), sf("City"), sf("State"), sf("PostalCode"), sf("Country")].filter(Boolean).join(", ") || null],
+          // Row 25: Lead ID | Lead Id (SF custom)
           ["Lead ID", displayLeadId],
           ["Lead Id", sf("Lead_Id__c")],
+          // Row 26: External 18 Digit ID | Lead Score
           ["External 18 Digit ID", sf("External_18_Digit_ID__c")],
-          ["External ID 15 digit", sf("External_ID_15_digit__c")],
           ["Lead Score", sf("Lead_Score__c")],
+          // Row 27: Lead Appended Timestamp | Reason for Disqualification
           ["Lead Appended Timestamp", sfDate("Lead_Appended_Timestamp__c")],
           ["Reason for Disqualification", sf("Reason_for_Disqualification__c")],
+          // Row 28: Is Archived | Archived Duplicate Leads
           ["Is Archived", yesNo(sf("Is_Archived__c"))],
           ["Archived Duplicate Leads", yesNo(sf("Archived_Duplicate_Leads__c"))],
+          // Row 29: Check Duplicate Archive | Re-shuffle Lead
           ["Check Duplicate Archive", yesNo(sf("Check_Duplicate_Archive__c"))],
           ["Re-shuffle Lead", yesNo(sf("Re_shuffle_Lead__c"))],
-          ["Reshuffle Lead", yesNo(sf("Reshuffle_Lead__c"))],
-          ["Legal Plan Required", yesNo(sf("Legal_Plan_Required__c"))],
         ]}
       />
       {lead.scoreReason && (

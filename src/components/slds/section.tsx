@@ -181,30 +181,32 @@ export function FieldGrid({
 }
 
 export function Field({ label, value }: { label: string; value: ReactNode }) {
-  // SF Lightning record-page field row (verified against
-  // docs/sf-screenshots/sf-lead-detail.png): LABEL ON TOP (gray, small),
-  // VALUE BELOW (black, regular), edit pencil top-right. This matches the
-  // canonical Lightning Output Field component (`.slds-form-element_stacked`),
-  // not the horizontal Account-edit layout.
+  // SF Lightning record-page field row (verified against the Roberto Suarez
+  // SF Lead screenshot Bar provided 2026-06-07): HORIZONTAL layout — label
+  // LEFT (gray, small), value MIDDLE (black, regular), edit pencil FAR RIGHT.
+  // The earlier stacked layout was wrong; SF Lightning actually uses the
+  // .slds-form-element_horizontal Output Field pattern on read-only record
+  // pages.
   return (
     <div
       style={{
-        padding: "8px 0 10px",
-        minHeight: 56,
+        padding: "8px 0",
+        minHeight: 40,
         position: "relative",
         display: "grid",
-        gridTemplateColumns: "1fr 28px",
-        gap: "2px 8px",
+        gridTemplateColumns: "33% 1fr 28px",
+        alignItems: "start",
+        gap: 8,
       }}
       className="sf-field"
     >
       <div
         style={{
-          gridColumn: "1 / -1",
           fontSize: 12,
           color: "#3e3e3c",
           fontWeight: 400,
-          lineHeight: 1.35,
+          lineHeight: 1.4,
+          paddingTop: 1,
         }}
       >
         {label}
@@ -238,8 +240,6 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
           width: 24,
           height: 24,
           borderRadius: 3,
-          alignSelf: "start",
-          marginTop: -2,
         }}
       >
         <svg
