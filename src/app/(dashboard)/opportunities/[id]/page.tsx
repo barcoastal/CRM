@@ -39,8 +39,35 @@ const PATH_HAPPY: readonly string[] = [
 ] as const;
 const PATH = PATH_HAPPY.map((s) => ({ label: s }));
 
+// Display labels for opportunity stages — DB enum upper-snake maps to the
+// SF titlecase label visible on sf-opp-kenya.png ("Working Opportunity").
+const STAGE_LABEL: Record<string, string> = {
+  WORKING_OPPORTUNITY: "Working Opportunity",
+  WAITING_FOR_AGREEMENTS: "Waiting for Agreements",
+  AGREEMENTS_RECEIVED: "Agreements Received",
+  READY_TO_CLOSE: "Ready To Close",
+  CONTRACT_SENT: "Contract Sent",
+  CONTRACT_SIGNED: "Contract Signed",
+  ARCHIVED: "Archived",
+  CLOSED_WON_FIRST_PAYMENT: "Closed Won First Payment Pending",
+  CLOSED_WON_FIRST_PAYMENT_COMPLETED: "Closed Won - First Payment Completed",
+  CLOSED: "Closed",
+  CLOSED_LOST: "Closed Lost",
+};
+const formatStage = (s: string | null | undefined) => {
+  if (!s) return "";
+  // Already a SF-style label.
+  if (PATH_HAPPY.includes(s)) return s;
+  if (STAGE_LABEL[s]) return STAGE_LABEL[s];
+  // Fallback: convert UPPER_SNAKE to Title Case.
+  return s.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
 function oppPathIndex(stage: string): number {
-  const i = PATH_HAPPY.indexOf(stage);
+  // Normalise enum form before lookup so DB rows with WORKING_OPPORTUNITY
+  // hit the same path index as rows already mapped to "Working Opportunity".
+  const label = formatStage(stage);
+  const i = PATH_HAPPY.indexOf(label);
   if (i >= 0) return i;
   // Off-path terminal states: pin to nearest milestone so the path still
   // renders meaningfully (Archived → Contract Sent, Closed Lost → Working).
@@ -335,7 +362,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             ["Account Name", accountLink],
             [
               "Stage",
-              <StatusPill key="s" label={opp.stage} tone={opportunityStageTone(opp.stage)} />,
+              <StatusPill key="s" label={formatStage(opp.stage)} tone={opportunityStageTone(opp.stage)} />,
               { fieldKey: "stage", type: "select", rawValue: opp.stage, options: PATH_HAPPY.map((s) => ({ label: s, value: s })) },
             ],
             // Row 5: Type | Last Disposition
@@ -823,7 +850,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         recordSubtitle={
           <>
             {opp.recordType.replace(/_/g, " ")} ·{" "}
-            <StatusPill label={opp.stage} tone={opportunityStageTone(opp.stage)} />
+            <StatusPill label={formatStage(opp.stage)} tone={opportunityStageTone(opp.stage)} />
           </>
         }
         highlights={[
