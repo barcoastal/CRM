@@ -40,13 +40,23 @@ export async function POST(request: NextRequest) {
 
   if (!body.to) return NextResponse.json({ error: "to required" }, { status: 400 });
 
+  // Send "from" the logged-in user so replies route back to them. Resend
+  // requires the domain to be verified — users at @coastaldebt.com become
+  // legit senders once the domain is added in Resend.
+  const sender = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { name: true, email: true },
+  });
   const defaultFrom = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
+  const fromAddress = sender?.email
+    ? `${sender.name ?? sender.email} <${sender.email}>`
+    : defaultFrom;
 
   const msg = await prisma.emailMessage.create({
     data: {
       direction: "OUTBOUND",
       status: "QUEUED",
-      fromAddress: defaultFrom,
+      fromAddress,
       toAddresses: body.to,
       cc: body.cc ?? null,
       bcc: body.bcc ?? null,
