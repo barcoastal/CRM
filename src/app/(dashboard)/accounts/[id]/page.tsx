@@ -158,139 +158,170 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     ? <Link href={`/accounts/${account.parentAccount.id}`} style={{ color: "#1589ee" }}>{account.parentAccount.name}</Link>
     : acctSf("Parent_Account_Name__c") ?? acctSf("ParentName") ?? acctSf("Parent_Account__c");
 
+  // SF Account Details — field pairs verified against docs/sf-screenshots/sf-account-detail.png
+  // (Dakota Enterprises LLC). Even index = left col, odd index = right col.
+  const ratingDisplay = acctSf("Rating");
+  const ownerFullNameDisplay = acctSf("Owner_Full_Name__c") ?? ownerName;
+  const processorStatusDisplay = account.processorStatus ?? acctSf("Status__c") ?? acctSf("Processor_Status__c");
+  const faxDisplay = acctSf("Fax");
+  const websiteDisplay = account.website ?? acctSf("Website");
+  const tickerSymbolDisplay = acctSf("TickerSymbol");
+  const ownershipDisplay = acctSf("Ownership");
+  const employeesDisplay = account.numberOfEmployees ?? acctSf("NumberOfEmployees");
+  const sicCodeDisplay = acctSf("Sic") ?? acctSf("SicCode");
+  const totalDebtSfDisplay = acctSfDollar("Total_Debt__c") ?? `$${totalDebt.toLocaleString()}`;
+  const currentBalanceDisplay = acctSfDollar("Current_Total_Debt_Amount__c") ?? acctSfDollar("Current_Balance__c");
+  const creditorTypeDisplay = acctSf("Creditor_Type__c");
+  const accountRecordTypeDisplay = acctSf("Account_Record_Type__c") ?? account.recordType.replace(/_/g, " ");
+  const primaryContactNode = account.primaryContact?.fullName ? (
+    <Link key="pc" href={`/contacts/${account.primaryContact.id}`} style={{ color: "#1589ee" }}>{account.primaryContact.fullName}</Link>
+  ) : (acctSf("Primary_Contact_Name__c") ?? acctSf("Primary_Contact__c"));
+  const syncedDateTimeDisplay = acctSfDateTime("Synced_DateTime__c");
+  const closerDisplay = account.opportunities[0]?.closer ?? acctSf("Closer__c");
+  const firstDraftDateDisplay = acctSfDate("First_Draft_Date__c");
+  const lastContactedDateTimeDisplay = acctSfDateTime("Last_Contacted_DateTime__c");
+  const firstPaymentCompletedDateDisplay = acctSfDate("First_Payment_Completed_Date__c") ?? acctSfDate("First_Payment_Date__c");
+  const lastCalledTimeDisplay = acctSfDateTime("Last_Call__c");
+  const lastEmailedTimeDisplay = acctSfDateTime("Last_Email__c");
+  const lastSMSTimeDisplay = acctSfDateTime("Last_SMS__c");
+  const lastSyncedByDisplay = acctSf("Last_Synced_By__c");
+  const lastSyncedDateTimeDisplay = acctSfDateTime("Last_Synced_Date_Time__c");
+  const weekDaysBetweenLastActivityDisplay = acctSf("Week_Days_Between_Last_Activity_Date__c");
+  const programCompletionStageDisplay = acctSfBool("Program_Completion_Stage__c");
+  const collectionAgencyDisplay = account.collectionAgency ?? acctSf("Collection_Agency__c");
+  const legalNetworkDisplay = acctSf("Legal_Network__c");
+  const legalNetworkSyncStatusDisplay = acctSf("Legal_Network_Sync_Status__c");
+  const billingAddressNode = (
+    <div key="ba" style={{ color: "#1589ee", whiteSpace: "pre-line" }}>
+      {[
+        account.billingStreet ?? acctSf("BillingStreet"),
+        [account.billingCity ?? acctSf("BillingCity"), account.billingState ?? acctSf("BillingState"), account.billingZip ?? acctSf("BillingPostalCode")].filter(Boolean).join(", "),
+        account.billingCountry ?? acctSf("BillingCountry"),
+      ].filter(Boolean).join("\n") || ""}
+    </div>
+  );
+  const shippingAddressNode = (
+    <div key="sa" style={{ color: "#1589ee", whiteSpace: "pre-line" }}>
+      {[
+        acctSf("ShippingStreet"),
+        [acctSf("ShippingCity"), acctSf("ShippingState"), acctSf("ShippingPostalCode")].filter(Boolean).join(", "),
+        acctSf("ShippingCountry"),
+      ].filter(Boolean).join("\n") || ""}
+    </div>
+  );
+  const billingCountyDisplay = acctSf("BillingCounty__c");
+  const createdByDisplay = `${acctSf("CreatedBy_Full_Name__c") ?? ""}${acctSf("CreatedBy_Full_Name__c") ? `, ${account.createdAt.toLocaleString()}` : account.createdAt.toLocaleString()}`;
+  const lastModifiedByDisplay = `${acctSf("LastModifiedBy_Full_Name__c") ?? ""}${acctSf("LastModifiedBy_Full_Name__c") ? `, ${account.updatedAt.toLocaleString()}` : account.updatedAt.toLocaleString()}`;
+
   const detailsPanel = (
     <>
-      {/* SF Account Information — field pairs match Lightning layout exactly.
-          Tuples render row-by-row across two columns: left first, then right. */}
-      <Section title="Account Information">
+      {/* SF Dakota Enterprises Account Details — pair-by-pair parity with SF Lightning.
+          Rows alternate left/right top-to-bottom; even index = left col,
+          odd index = right col. E(...) rows are inline-editable. */}
+      <Section title="Details">
         <FieldGrid
           entityType="account"
           entityId={account.id}
           fields={[
             // Row 1: Account Name | Rating
             E("Account Name", account.name ?? acctSf("Name"), "name", "text", { rawValue: account.name }),
-            ["Rating", acctSf("Rating")],
+            ["Rating", ratingDisplay],
             // Row 2: Account Owner | Owner Full Name
             ["Account Owner", ownerName],
-            ["Owner Full Name", acctSf("Owner_Full_Name__c") ?? ownerName],
-            // Row 3: Parent Account | Phone
+            ["Owner Full Name", ownerFullNameDisplay],
+            // Row 3: Parent Account | Processor Status
             ["Parent Account", parentAcctNode],
+            ["Processor Status", processorStatusDisplay],
+            // Row 4: Account Number | Phone
+            ["Account Number", acctSf("AccountNumber") ?? account.id.slice(-8).toUpperCase()],
             [
               "Phone",
               phoneVal ? (
-                <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#1589ee" }}>
                   {phoneVal}
                   <CallButton phone={phoneVal} accountId={account.id} />
                 </span>
               ) : null,
               { fieldKey: "phone", type: "phone", rawValue: account.phone ?? phoneVal },
             ],
-            // Row 4: Account Number | Fax
-            ["Account Number", acctSf("AccountNumber") ?? account.id.slice(-8).toUpperCase()],
-            E("Account Fax", acctSf("Fax"), "Fax"),
-            // Row 5: Account Site | Website
+            // Row 5: Account Site | Fax
             E("Account Site", acctSf("Site"), "Site"),
-            E("Website", acctSf("Website"), "website", "text", { rawValue: account.website }),
-            // Row 6: Type | Ticker Symbol
+            E("Fax", faxDisplay, "Fax"),
+            // Row 6: Type | Website
             E("Type", acctSf("Type") ?? account.recordType.replace(/_/g, " "), "type", "text", { rawValue: account.type }),
-            E("Ticker Symbol", acctSf("TickerSymbol"), "TickerSymbol"),
-            // Row 7: Industry | Ownership
+            E("Website", websiteDisplay, "website", "text", { rawValue: account.website }),
+            // Row 7: Industry | Ticker Symbol
             E("Industry", account.industry ?? acctSf("Industry"), "industry", "text", { rawValue: account.industry }),
-            E("Ownership", acctSf("Ownership"), "Ownership"),
-            // Row 8: Annual Revenue | Employees
+            E("Ticker Symbol", tickerSymbolDisplay, "TickerSymbol"),
+            // Row 8: Annual Revenue | Ownership
             E("Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : acctSfDollar("AnnualRevenue"), "annualRevenue", "number", { rawValue: account.annualRevenue ?? null }),
-            E("Employees", acctSf("NumberOfEmployees"), "numberOfEmployees", "number", { rawValue: account.numberOfEmployees ?? null }),
-            // Row 9: SSN | SIC Code
+            E("Ownership", ownershipDisplay, "Ownership"),
+            // Row 9: SSN | Employees
             E("SSN", acctSf("SSN__c"), "SSN__c"),
-            E("SIC Code", acctSf("Sic") ?? acctSf("SicCode"), "Sic"),
-            // Row 10: EIN Number / Tax Id | Total Debt
+            E("Employees", employeesDisplay, "numberOfEmployees", "number", { rawValue: account.numberOfEmployees ?? null }),
+            // Row 10: EIN Number / Tax Id | SIC Code
             E("EIN Number / Tax Id", account.ein ?? acctSf("EIN_Number_Tax_Id__c"), "ein", "text", { rawValue: account.ein }),
-            ["Total Debt", acctSfDollar("Total_Debt__c")],
-            // Row 11: Lead Id | Current Balance
+            E("SIC Code", sicCodeDisplay, "Sic"),
+            // Row 11: Lead Id | Total Debt
             ["Lead Id", acctSf("Lead_Id__c") ?? acctSf("LeadId")],
-            ["Current Balance", acctSfDollar("Current_Total_Debt_Amount__c") ?? acctSfDollar("Current_Balance__c")],
-            // Row 12: Program Start Date | Account Record Type
+            ["Total Debt", totalDebtSfDisplay],
+            // Row 12: Program Start Date | Current Balance
             ["Program Start Date", account.programStartDate?.toLocaleDateString() ?? acctSfDate("Program_Start_Date__c")],
-            ["Account Record Type", account.recordType.replace(/_/g, " ")],
-            // Row 13: Program End Date | Creation Date
+            ["Current Balance", currentBalanceDisplay],
+            // Row 13: Program End Date | Creditor Type
             ["Program End Date", account.programEndDate?.toLocaleDateString() ?? acctSfDate("Program_End_Date__c")],
-            ["Creation Date", account.createdAt.toLocaleDateString()],
-            // Row 14: External SAS Id | Primary Contact
+            ["Creditor Type", creditorTypeDisplay],
+            // Row 14: External SAS Id | Account Record Type
             ["External SAS Id", account.externalSasId ?? acctSf("External_SAS_Id__c")],
-            ["Primary Contact", account.primaryContact?.fullName ? (
-              <Link key="pc" href={`/contacts/${account.primaryContact.id}`} style={{ color: "#1589ee" }}>{account.primaryContact.fullName}</Link>
-            ) : acctSf("Primary_Contact__c")],
-            // Row 15: External RAM Id | Closer
+            ["Account Record Type", accountRecordTypeDisplay],
+            // Row 15: External RAM Id | Primary Contact
             ["External RAM Id", acctSf("External_RAM_Id__c") ?? acctSf("RAM_Id__c")],
-            ["Closer", account.opportunities[0]?.closer ?? acctSf("Closer__c")],
-            // Row 16: External Citadel Id | Created Date Time
+            ["Primary Contact", primaryContactNode],
+            // Row 16: External Citadel Id | Synced DateTime
             ["External Citadel Id", acctSf("External_Citadel_Id__c")],
-            ["Created Date Time", account.createdAt.toLocaleString()],
-            // Row 17: Sync Status | First Draft Date
+            ["Synced DateTime", syncedDateTimeDisplay],
+            // Row 17: Sync Status | Closer
             ["Sync Status", account.bankAccountSyncStatus ?? acctSf("Sync_Status__c") ?? acctSf("Bank_Account_Sync_Status__c")],
-            ["First Draft Date", acctSfDate("First_Draft_Date__c")],
-            // Row 18: Bank Account Sync | (blank right)
+            ["Closer", closerDisplay],
+            // Row 18: Bank Account Sync | First Draft Date
             ["Bank Account Sync", account.bankAccountSyncStatus ?? acctSf("Bank_Account_Sync_Status__c")],
-            ["", null],
-            // Email + supporting fields (not in SF screenshot but useful)
-            ["Email", emailVal ? (
-              <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                {emailVal}
-                <ComposeEmailButton defaultTo={emailVal} accountId={account.id} label="Email" />
-              </span>
-            ) : null],
-            ["Owner Email", account.owner?.email ?? acctSf("Owner_Username__c")],
-            ["Fronter", account.opportunities[0]?.fronter ?? acctSf("Fronter__c")],
-            ["Business Start Date", account.businessStartDate?.toLocaleDateString() ?? acctSfDate("Business_Start_Date__c")],
-            ["UCC Filing Date", account.uccFilingDate?.toLocaleDateString() ?? acctSfDate("UCC_Filing_Date__c")],
-            ["Cancellation Date", account.cancellationDate?.toLocaleDateString() ?? acctSfDate("Cancellation_Date__c")],
-            ["Cancellation Reason", account.cancellationReason ?? acctSf("Cancellation_Reason__c")],
+            ["First Draft Date", firstDraftDateDisplay],
+            // Row 19: Last Contacted DateTime | First Payment Completed Date
+            ["Last Contacted DateTime", lastContactedDateTimeDisplay],
+            ["First Payment Completed Date", firstPaymentCompletedDateDisplay],
+            // Row 20: Week Days Between Last Activity Date | Last Called Time
+            ["Week Days Between Last Activity Date", weekDaysBetweenLastActivityDisplay],
+            ["Last Called Time", lastCalledTimeDisplay],
+            // Row 21: Legal Status | Last Emailed Time
             ["Legal Status", account.legalStatus ?? acctSf("Legal_Status__c")],
-            ["Legal Network", acctSf("Legal_Network__c")],
-            ["Submitted by Legal", account.submittedByLegal ?? acctSf("Submitted_By_Legal__c")],
-            ["Reschedule Status", account.rescheduleStatus ?? acctSf("Reschedule_Status__c")],
-            ["Reschedule Program Pending", acctSfBool("Reschedule_Program_Pending__c")],
-            ["Conversion Reason", account.conversionReason ?? acctSf("Conversion_Reason__c")],
-            ["Loan Provider", account.loanProvider ?? acctSf("Loan_Provider__c")],
-            ["Collection Agency", account.collectionAgency ?? acctSf("Collection_Agency__c")],
-            // SF identity + key metadata
-            ["Account ID", acctSf("Id") ?? account.sfId],
-            ["Client Number", acctSf("Client_Number__c")],
-            ["Primary Contact Name", acctSf("Primary_Contact_Name__c")],
-            ["Closer FIrst Name", acctSf("Closer_FIrst_Name__c") ?? acctSf("Closer_FIrst_Name__pc")],
-            ["Sub Disposition", acctSf("Sub_Disposition__c")],
-            ["Processor Status", acctSf("Status__c") ?? account.processorStatus],
-            ["Important", acctSfBool("IsPriorityRecord")],
-            ["Upsell Opportunity", acctSf("UpsellOpportunity__c")],
-            ["Lead Created Date", acctSfDateTime("Lead_Created_Date__c")],
-            ["Synced DateTime", acctSfDateTime("Synced_DateTime__c")],
-            ["First Contract Signed Date", acctSfDateTime("First_Contract_Signed_Date__c")],
-            ["First Payment Completed Date", acctSfDate("First_Payment_Completed_Date__c") ?? acctSfDate("First_Payment_Date__c")],
-            ["Contract Sync Status", acctSf("Contract_Sync_Status__c")],
-            ["Verified Phone Number", acctSfBool("Verified_Phone_Number__pc")],
-            ["SMS Opt Out", acctSfBool("smagicinteract__SMSOptOut__pc")],
-            ["Work Phone", acctSf("Work_Phone__c")],
-            ["Other Industry", acctSf("Other_Industry__c")],
-            ["Debt Negotiator", acctSf("Debt_Negotiator__c")],
-            ["Graduation Status", acctSf("Graduation_Status__c")],
+            ["Last Emailed Time", lastEmailedTimeDisplay],
+            // Row 22: Negotiation Status | Last SMS Time
             ["Negotiation Status", acctSf("NegotiationStatus__c")],
-            ["Last Synced By", acctSf("Last_Synced_By__c")],
-            ["Last Synced Date Time", acctSfDateTime("Last_Synced_Date_Time__c")],
-          ]}
-        />
-      </Section>
-
-      <Section title="Billing Address" defaultOpen={false}>
-        <FieldGrid
-          entityType="account"
-          entityId={account.id}
-          fields={[
-            E("Billing Street", account.billingStreet ?? acctSf("BillingStreet"), "billingStreet", "text", { rawValue: account.billingStreet }),
-            E("Billing City", account.billingCity ?? acctSf("BillingCity"), "billingCity", "text", { rawValue: account.billingCity }),
-            E("Billing State/Province", account.billingState ?? acctSf("BillingState"), "billingState", "text", { rawValue: account.billingState }),
-            E("Billing Zip/Postal Code", account.billingZip ?? acctSf("BillingPostalCode"), "billingZip", "text", { rawValue: account.billingZip }),
-            E("Billing Country", account.billingCountry ?? acctSf("BillingCountry"), "billingCountry", "text", { rawValue: account.billingCountry }),
-            E("Billing County", acctSf("BillingCounty__c"), "BillingCounty__c"),
+            ["Last SMS Time", lastSMSTimeDisplay],
+            // Row 23: HIGH UCC RISK | Last Synced By
+            ["HIGH UCC RISK", acctSfBool("HIGH_UCC_RISK__c") ?? (account.highUccRisk ? "Yes" : "No")],
+            ["Last Synced By", lastSyncedByDisplay],
+            // Row 24: Qualified Financial | Last Synced Date Time
+            ["Qualified Financial", acctSfBool("Qualified_Financial__c")],
+            ["Last Synced Date Time", lastSyncedDateTimeDisplay],
+            // Row 25: Creditor Lien Risk | Collection Agency
+            ["Creditor Lien Risk", acctSf("Creditor_Lien_Risk__c")],
+            ["Collection Agency", collectionAgencyDisplay],
+            // Row 26: Debt Negotiator | Program Completion Stage
+            ["Debt Negotiator", acctSf("Debt_Negotiator__c")],
+            ["Program Completion Stage", programCompletionStageDisplay],
+            // Row 27: Cancellation Reason | Legal Network
+            ["Cancellation Reason", account.cancellationReason ?? acctSf("Cancellation_Reason__c")],
+            ["Legal Network", legalNetworkDisplay],
+            // Row 28: Work Phone | Legal Network Sync Status
+            ["Work Phone", acctSf("Work_Phone__c")],
+            ["Legal Network Sync Status", legalNetworkSyncStatusDisplay],
+            // Row 29: Billing Address | Shipping Address
+            ["Billing Address", billingAddressNode],
+            ["Shipping Address", shippingAddressNode],
+            // Row 30: Billing County | (empty right)
+            ["Billing County", billingCountyDisplay],
+            ["", null],
           ]}
         />
       </Section>
@@ -353,17 +384,34 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       </Section>
 
       <Section title="File Status">
+        {/* SF File Status section — pair-by-pair from SF Dakota Enterprises. */}
         <FieldGrid
+          entityType="account"
+          entityId={account.id}
           fields={[
+            // Row 1: Client Status | Bank Account Status
             ["Client Status", <StatusPill key="cs" label={account.clientStatus} tone={statusTone(account.clientStatus)} />],
-            ["Payment Status", <StatusPill key="ps" label={account.paymentStatus} tone={statusTone(account.paymentStatus)} />],
-            ["Qualified Status", account.qualifiedStatus],
-            ["HIGH UCC RISK", acctSfBool("HIGH_UCC_RISK__c") ?? (account.highUccRisk ? "Yes" : "No")],
-            ["High UCC RISK", acctSfBool("High_UCC_RISK__pc")],
-            ["Graduated Status", account.graduatedStatus],
             ["Bank Account Status", <StatusPill key="bas" label={account.bankAccountStatus} tone={statusTone(account.bankAccountStatus)} />],
+            // Row 2: Payment Status | (empty right)
+            ["Payment Status", <StatusPill key="ps" label={account.paymentStatus} tone={statusTone(account.paymentStatus)} />],
+            ["", null],
+            // Row 3: Graduation Status | (empty right)
+            ["Graduation Status", account.graduatedStatus ?? acctSf("Graduation_Status__c")],
+            ["", null],
+            // Row 4: Created By | Last Modified By
+            ["Created By", createdByDisplay],
+            ["Last Modified By", lastModifiedByDisplay],
           ]}
         />
+        {/* Description (full width) — SF renders Description as a full-row
+            below the File Status pair grid. */}
+        <div style={{ padding: "8px 0", display: "grid", gridTemplateColumns: "16.5% 1fr 28px", gap: 8, alignItems: "start" }}>
+          <div style={{ fontSize: 12, color: "#3e3e3c", paddingTop: 1 }}>Description</div>
+          <div style={{ fontSize: 13, color: "#080707", whiteSpace: "pre-wrap" }}>
+            {account.description ?? acctSf("Description") ?? ""}
+          </div>
+          <div />
+        </div>
       </Section>
 
       <Section title="Financial Summary Information" defaultOpen={false}>
