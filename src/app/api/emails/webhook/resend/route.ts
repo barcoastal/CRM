@@ -3,7 +3,7 @@
  *
  * Configure in Resend dashboard:
  *   https://resend.com/webhooks → Add endpoint:
- *   https://crm-production-613a.up.railway.app/api/emails/webhook/resend
+ *   https://crm.coastaldebt-tools.com/api/emails/webhook/resend
  *
  * Set RESEND_WEBHOOK_SECRET env to the signing secret Resend gives you.
  * Svix signature: header "svix-signature" = "v1,<base64hmac>".

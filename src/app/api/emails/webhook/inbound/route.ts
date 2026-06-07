@@ -7,7 +7,7 @@
  *
  * Resend Inbound config:
  *   1. Verify your inbound domain in Resend.
- *   2. Create a route: catch-all -> https://crm-production-613a.up.railway.app/api/emails/webhook/inbound
+ *   2. Create a route: catch-all -> https://crm.coastaldebt-tools.com/api/emails/webhook/inbound
  *   3. Set RESEND_WEBHOOK_SECRET env to the signing secret.
  *
  * Expected payload (Resend Inbound shape, also accepts a plain Mailgun-style

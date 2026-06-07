@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { execSync } from "child_process";
 
 // One-shot seed endpoint. Hit:
-//   curl -X POST https://crm-production-613a.up.railway.app/api/debug/seed \
+//   curl -X POST https://crm.coastaldebt-tools.com/api/debug/seed \
 //        -H "x-seed-token: $SEED_TOKEN"
 // Requires SEED_TOKEN env var to be set on Railway.
 

@@ -8,7 +8,7 @@
  *   SMS_MAGIC_API_KEY=<api key from SMS Magic portal>
  *   SMS_MAGIC_SENDER_ID=<short code / long code / alphanumeric sender>
  *   SMS_MAGIC_BASE_URL=https://api.sms-magic.com    (optional override)
- *   SMS_MAGIC_CALLBACK_URL=https://crm-production-613a.up.railway.app/api/sms/webhook/sms-magic
+ *   SMS_MAGIC_CALLBACK_URL=https://crm.coastaldebt-tools.com/api/sms/webhook/sms-magic
  *
  * The same {{token}} merge from email-sender is reused for SMS bodies.
  */
