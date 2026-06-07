@@ -3,8 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { QuickActionsRow } from "@/components/quick-actions/quick-actions-row";
 
-export function ContactHeaderButtons({ contactId }: { contactId: string }) {
+export function ContactHeaderButtons({
+  contactId,
+  defaultEmail,
+  defaultPhone,
+}: {
+  contactId: string;
+  defaultEmail?: string | null;
+  defaultPhone?: string | null;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -61,6 +70,7 @@ export function ContactHeaderButtons({ contactId }: { contactId: string }) {
 
   return (
     <div style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
+      <QuickActionsRow contactId={contactId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
       <button onClick={toggleFollow} disabled={busy !== null} style={btn}>
         {busy === "follow" ? "…" : "+ Follow"}
       </button>

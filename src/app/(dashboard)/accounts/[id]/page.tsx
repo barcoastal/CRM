@@ -747,7 +747,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         { label: "Payment Status", value: <StatusPill label={account.paymentStatus} tone={statusTone(account.paymentStatus)} /> },
         { label: "Bank Account Status", value: <StatusPill label={account.bankAccountStatus} tone={statusTone(account.bankAccountStatus)} /> },
       ]}
-      actions={<AccountHeaderButtons accountId={account.id} currentStage={account.stage} />}
+      actions={<AccountHeaderButtons accountId={account.id} currentStage={account.stage} defaultEmail={emailVal} defaultPhone={phoneVal} />}
       pathStages={PATH}
       pathCurrentIndex={accountPathIndex(account.stage)}
       pathActionLabel="Mark Stage as Complete"

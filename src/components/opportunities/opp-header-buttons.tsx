@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DispositionModal } from "@/components/leads/disposition-modal";
+import { QuickActionsRow } from "@/components/quick-actions/quick-actions-row";
 import { OPP_STAGES, OPP_STAGE_TO_SUB_DISPOSITIONS } from "@/lib/sf-canonical";
 
 const btn: React.CSSProperties = {
@@ -19,9 +20,13 @@ const btn: React.CSSProperties = {
 export function OppHeaderButtons({
   opportunityId,
   currentStage,
+  defaultEmail,
+  defaultPhone,
 }: {
   opportunityId: string;
   currentStage: string;
+  defaultEmail?: string | null;
+  defaultPhone?: string | null;
 }) {
   const router = useRouter();
   const [modal, setModal] = useState(false);
@@ -37,6 +42,7 @@ export function OppHeaderButtons({
 
   return (
     <>
+      <QuickActionsRow opportunityId={opportunityId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
       <button style={btn} onClick={() => setModal(true)}>
         Disposition
       </button>

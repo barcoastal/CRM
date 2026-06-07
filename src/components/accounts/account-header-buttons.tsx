@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DispositionModal } from "@/components/leads/disposition-modal";
+import { QuickActionsRow } from "@/components/quick-actions/quick-actions-row";
 import { ACCOUNT_STAGES, ACCOUNT_STAGE_TO_SUB_DISPOSITIONS } from "@/lib/sf-canonical";
 
 const btn: React.CSSProperties = {
@@ -31,9 +32,13 @@ const chevronBtn: React.CSSProperties = {
 export function AccountHeaderButtons({
   accountId,
   currentStage,
+  defaultEmail,
+  defaultPhone,
 }: {
   accountId: string;
   currentStage: string;
+  defaultEmail?: string | null;
+  defaultPhone?: string | null;
 }) {
   const router = useRouter();
   const [modal, setModal] = useState(false);
@@ -56,6 +61,7 @@ export function AccountHeaderButtons({
 
   return (
     <>
+      <QuickActionsRow accountId={accountId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
       <button style={btn} onClick={() => setModal(true)}>Disposition</button>
       <button style={btn} onClick={() => router.push(`/accounts/${accountId}/edit`)}>Edit</button>
       <button style={btn} onClick={sync} disabled={syncing}>

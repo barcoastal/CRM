@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DispositionModal } from "./disposition-modal";
+import { QuickActionsRow } from "@/components/quick-actions/quick-actions-row";
 import { OPPORTUNITY_RECORD_TYPES } from "@/lib/record-types";
 import {
   LEAD_STATUSES,
@@ -38,10 +39,14 @@ export function LeadHeaderButtons({
   leadId,
   currentStage,
   converted,
+  defaultEmail,
+  defaultPhone,
 }: {
   leadId: string;
   currentStage: LeadStatusV2;
   converted?: boolean;
+  defaultEmail?: string | null;
+  defaultPhone?: string | null;
 }) {
   const router = useRouter();
   const [dispModal, setDispModal] = useState(false);
@@ -77,6 +82,7 @@ export function LeadHeaderButtons({
 
   return (
     <>
+      <QuickActionsRow leadId={leadId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
       {!converted && (
         <button style={btn} onClick={() => setConvertOpen(true)}>
           Convert

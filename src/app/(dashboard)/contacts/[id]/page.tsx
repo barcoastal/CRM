@@ -485,7 +485,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
         },
         { label: "Contact Owner", value: ownerNode },
       ]}
-      actions={<ContactHeaderButtons contactId={contact.id} />}
+      actions={<ContactHeaderButtons contactId={contact.id} defaultEmail={emailVal} defaultPhone={phoneVal} />}
       details={
         <ContactTabs
           panels={{
