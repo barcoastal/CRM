@@ -23,13 +23,16 @@ const LIMIT = 50;
 
 // SF Contact list columns (match docs/sf-screenshots/sf-contact-list.png):
 // # | checkbox | Name | Title | Account Name | Phone | Email | Owner Alias
+// SF Contact list columns (match docs/sf-screenshots/sf-contact-list.png):
+// # | checkbox | Name | Account Name | Account Site | Phone | Email | Lead Id | Contact Owner Alias
 const COLUMNS: SfColumn[] = [
   { key: "name", label: "Name", width: 200, sortable: true },
-  { key: "title", label: "Title", width: 180, sortable: true },
   { key: "account", label: "Account Name", width: 240, sortable: true },
+  { key: "accountSite", label: "Account Site", width: 110, sortable: false },
   { key: "phone", label: "Phone", width: 150, sortable: true },
   { key: "email", label: "Email", width: 260, sortable: true },
-  { key: "ownerAlias", label: "Owner Alias", width: 110, sortable: true },
+  { key: "leadId", label: "Lead Id", width: 100, sortable: false },
+  { key: "ownerAlias", label: "Contact Owner Alias", width: 150, sortable: true },
 ];
 
 const SORT_MAP: Record<string, Prisma.ContactOrderByWithRelationInput> = {
@@ -97,8 +100,10 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
         title: true,
         email: true,
         phone: true,
-        primaryAccount: { select: { id: true, name: true } },
+        sfDataJson: true,
+        primaryAccount: { select: { id: true, name: true, website: true } },
         owner: { select: { id: true, name: true, email: true } },
+        convertedFromLead: { select: { sfId: true } },
       },
       orderBy,
       take: LIMIT,
@@ -106,49 +111,77 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
     prisma.contact.count({ where }),
   ]);
 
-  const rows: SfRow[] = items.map((c) => ({
-    id: c.id,
-    href: `/contacts/${c.id}`,
-    cells: [
-      c.fullName || "—",
-      c.title ?? "",
-      c.primaryAccount ? (
-        <Link
-          key="acct"
-          href={`/accounts/${c.primaryAccount.id}`}
-          style={{ color: "#1589ee", textDecoration: "none" }}
-          className="sf-row-link"
-        >
-          {c.primaryAccount.name}
-        </Link>
-      ) : (
-        "—"
-      ),
-      c.phone ? (
-        <a
-          key="phone"
-          href={`tel:${c.phone}`}
-          style={{ color: "#1589ee", textDecoration: "none" }}
-        >
-          {c.phone}
-        </a>
-      ) : (
-        "—"
-      ),
-      c.email ? (
-        <a
-          key="email"
-          href={`mailto:${c.email}`}
-          style={{ color: "#1589ee", textDecoration: "none" }}
-        >
-          {c.email}
-        </a>
-      ) : (
-        "—"
-      ),
-      ownerAlias(c.owner) || "—",
-    ],
-  }));
+  const rows: SfRow[] = items.map((c) => {
+    // Account Site — derived from the linked account's website host
+    const acctSite = c.primaryAccount?.website
+      ? c.primaryAccount.website
+          .replace(/^https?:\/\/(www\.)?/i, "")
+          .replace(/\/$/, "")
+      : "";
+
+    // Lead Id — prefer the SF "Lead_Id__c" custom field captured during
+    // conversion; fall back to the original lead's SF id, then sfDataJson
+    // top-level keys.
+    let leadIdVal: string | null = null;
+    if (c.sfDataJson) {
+      try {
+        const sfData = JSON.parse(c.sfDataJson) as Record<string, unknown>;
+        const raw =
+          sfData.Lead_Id__c ?? sfData.LeadId__c ?? sfData.LeadId ?? sfData.Lead_Id;
+        if (raw != null && raw !== "") leadIdVal = String(raw);
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!leadIdVal && c.convertedFromLead?.[0]?.sfId) {
+      leadIdVal = c.convertedFromLead[0].sfId;
+    }
+
+    return {
+      id: c.id,
+      href: `/contacts/${c.id}`,
+      cells: [
+        c.fullName || "—",
+        c.primaryAccount ? (
+          <Link
+            key="acct"
+            href={`/accounts/${c.primaryAccount.id}`}
+            style={{ color: "#1589ee", textDecoration: "none" }}
+            className="sf-row-link"
+          >
+            {c.primaryAccount.name}
+          </Link>
+        ) : (
+          "—"
+        ),
+        acctSite || "—",
+        c.phone ? (
+          <a
+            key="phone"
+            href={`tel:${c.phone}`}
+            style={{ color: "#1589ee", textDecoration: "none" }}
+          >
+            {c.phone}
+          </a>
+        ) : (
+          "—"
+        ),
+        c.email ? (
+          <a
+            key="email"
+            href={`mailto:${c.email}`}
+            style={{ color: "#1589ee", textDecoration: "none" }}
+          >
+            {c.email}
+          </a>
+        ) : (
+          "—"
+        ),
+        leadIdVal ?? "—",
+        ownerAlias(c.owner) || "—",
+      ],
+    };
+  });
 
   const preservedParams: Record<string, string> = {};
   if (params.accountId) preservedParams.accountId = params.accountId;
