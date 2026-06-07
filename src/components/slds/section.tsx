@@ -183,10 +183,9 @@ export function FieldGrid({
 export function Field({ label, value }: { label: string; value: ReactNode }) {
   // SF Lightning record-page field row (verified against the Roberto Suarez
   // SF Lead screenshot Bar provided 2026-06-07): HORIZONTAL layout — label
-  // LEFT (gray, small), value MIDDLE (black, regular), edit pencil FAR RIGHT.
-  // The earlier stacked layout was wrong; SF Lightning actually uses the
-  // .slds-form-element_horizontal Output Field pattern on read-only record
-  // pages.
+  // LEFT (gray, small), value MIDDLE (black, regular), edit pencil FAR RIGHT
+  // (only when the row carries edit metadata via the E() helper; bare
+  // read-only rows render a spacer instead of a dead pencil).
   return (
     <div
       style={{
@@ -224,43 +223,15 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
           <span aria-hidden="true" style={{ color: "transparent" }}>-</span>
         )}
       </div>
-      <button
-        aria-label="Edit"
-        className="sf-field-edit"
-        style={{
-          background: "transparent",
-          border: 0,
-          cursor: "pointer",
-          padding: 4,
-          opacity: 0.55,
-          transition: "opacity .15s",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 24,
-          height: 24,
-          borderRadius: 3,
-        }}
-      >
-        <svg
-          aria-hidden="true"
-          width="13"
-          height="13"
-          viewBox="0 0 52 52"
-          style={{ fill: "#54698d" }}
-        >
-          <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#edit" />
-        </svg>
-      </button>
+      {/* Spacer to preserve the 3-column grid layout. Read-only Field rows
+          intentionally render NO pencil — the pencil only appears on rows
+          wired through the E() helper + InlineEditableField, where clicking
+          it actually opens an inline editor. Rendering a static pencil here
+          mislead users into clicking a dead control. */}
+      <span aria-hidden="true" style={{ display: "inline-block", width: 24, height: 24 }} />
       <style jsx>{`
         :global(.sf-field) {
           border-bottom: 1px solid #dddbda;
-        }
-        :global(.sf-field:hover .sf-field-edit) {
-          opacity: 1;
-        }
-        :global(.sf-field-edit:hover) {
-          background: #f3f2f2;
         }
       `}</style>
     </div>

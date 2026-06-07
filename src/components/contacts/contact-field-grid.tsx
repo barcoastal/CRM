@@ -131,37 +131,14 @@ export function ContactField({ label, value }: { label: string; value: ReactNode
       >
         {isEmpty ? <span style={{ color: "#b0adab" }}>{"—"}</span> : value}
       </div>
-      <button
-        type="button"
-        aria-label={`Edit ${label}`}
-        className="sfc-field-edit"
-        style={{
-          background: "transparent",
-          border: 0,
-          cursor: "pointer",
-          padding: 0,
-          width: 24,
-          height: 24,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: 0.55,
-          borderRadius: 3,
-        }}
-      >
-        <svg width="14" height="14" viewBox="0 0 52 52" aria-hidden="true" style={{ fill: "#54698d" }}>
-          <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#edit" />
-        </svg>
-      </button>
+      {/* Spacer keeps the 3-column grid intact. Read-only ContactField rows
+          intentionally render NO pencil. Only rows wired via CE() +
+          InlineEditableField show a clickable pencil. A static pencil here
+          previously mislead users into clicking a dead control. */}
+      <span aria-hidden="true" style={{ display: "inline-block", width: 24, height: 24 }} />
       <style jsx>{`
         :global(.sfc-field:hover) {
           background: #fafaf9;
-        }
-        :global(.sfc-field:hover .sfc-field-edit) {
-          opacity: 1;
-        }
-        :global(.sfc-field-edit:hover) {
-          background: #ecebea;
         }
       `}</style>
     </div>
