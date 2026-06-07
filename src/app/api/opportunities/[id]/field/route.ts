@@ -69,7 +69,7 @@ export async function PATCH(
         newValue: result.newDisplay,
         changedById: session.userId,
       },
-    }).catch(() => { /* best-effort */ });
+    }).catch((err) => { console.error("[opportunities/field] opportunityHistory write failed:", err); });
 
     await auditWrite({
       userId: session.userId,
@@ -78,7 +78,7 @@ export async function PATCH(
       action: "UPDATE",
       before: { [result.historyField]: result.oldDisplay },
       after: { [result.historyField]: result.newDisplay },
-    }).catch(() => { /* best-effort */ });
+    }).catch((err) => { console.error("[opportunities/field] auditWrite failed:", err); });
 
     return NextResponse.json({ ok: true, value: result.newDisplay, opportunity: updated });
   } catch (e) {

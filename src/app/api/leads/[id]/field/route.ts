@@ -72,7 +72,10 @@ export async function PATCH(
 
     const updated = await prisma.lead.update({ where: { id }, data: updateData });
 
-    // Field-level history row + audit log entry for the change.
+    // Field-level history row + audit log entry for the change. Logged on
+    // failure (instead of swallowed) so missing FKs / migrations surface in
+    // the dev console; the response still succeeds because the DB write
+    // already landed.
     await prisma.leadHistory.create({
       data: {
         leadId: id,
@@ -81,7 +84,7 @@ export async function PATCH(
         newValue: result.newDisplay,
         changedById: session.userId,
       },
-    }).catch(() => { /* best-effort */ });
+    }).catch((err) => { console.error("[leads/field] leadHistory write failed:", err); });
 
     await auditWrite({
       userId: session.userId,
@@ -90,7 +93,7 @@ export async function PATCH(
       action: "UPDATE",
       before: { [result.historyField]: result.oldDisplay },
       after: { [result.historyField]: result.newDisplay },
-    }).catch(() => { /* best-effort */ });
+    }).catch((err) => { console.error("[leads/field] auditWrite failed:", err); });
 
     return NextResponse.json({ ok: true, value: result.newDisplay, lead: updated });
   } catch (e) {

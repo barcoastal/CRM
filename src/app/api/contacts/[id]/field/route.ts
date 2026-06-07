@@ -71,6 +71,9 @@ export async function PATCH(
 
     const updated = await prisma.contact.update({ where: { id }, data: updateData });
 
+    // Contact has no per-field history table in the schema (unlike Lead /
+    // Account / Opportunity), so we record the change in the cross-entity
+    // AuditLog only.
     await auditWrite({
       userId: session.userId,
       entity: "Contact",
@@ -78,7 +81,7 @@ export async function PATCH(
       action: "UPDATE",
       before: { [result.historyField]: result.oldDisplay },
       after: { [result.historyField]: result.newDisplay },
-    }).catch(() => { /* best-effort */ });
+    }).catch((err) => { console.error("[contacts/field] auditWrite failed:", err); });
 
     return NextResponse.json({ ok: true, value: result.newDisplay, contact: updated });
   } catch (e) {
