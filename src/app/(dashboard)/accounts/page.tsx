@@ -22,12 +22,15 @@ interface AccountsPageProps {
 const LIMIT = 50;
 
 // SF Account list columns (match docs/sf-screenshots/sf-account-list.png):
-// # | checkbox | Account Name | Account Site | Phone | Account Owner Alias |
-// Type | Industry | Billing State
+// # | checkbox | Account Name | Account Site | Phone | Lead Id |
+// Account Owner Alias
+// (We keep Type/Industry/Billing State after the SF set so internal users
+// still get those columns when scrolled right.)
 const COLUMNS: SfColumn[] = [
   { key: "name", label: "Account Name", width: 260, sortable: true },
   { key: "site", label: "Account Site", width: 130, sortable: true },
   { key: "phone", label: "Phone", width: 150, sortable: true },
+  { key: "leadId", label: "Lead Id", width: 100, sortable: false },
   { key: "ownerAlias", label: "Account Owner Alias", width: 160, sortable: true },
   { key: "type", label: "Type", width: 120, sortable: true },
   { key: "industry", label: "Industry", width: 160, sortable: true },
@@ -112,7 +115,9 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         industry: true,
         billingState: true,
         website: true,
+        sfDataJson: true,
         owner: { select: { id: true, name: true, email: true } },
+        convertedFromLead: { select: { sfId: true } },
       },
       orderBy,
       take: LIMIT,
@@ -125,12 +130,30 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     const site = a.website
       ? a.website.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "")
       : "";
+
+    // Lead Id — pull the SF custom Lead_Id__c first, then fall back to the
+    // converted lead's sfId. Same approach used on the contacts list.
+    let leadIdVal: string | null = null;
+    if (a.sfDataJson) {
+      try {
+        const sfData = JSON.parse(a.sfDataJson) as Record<string, unknown>;
+        const raw =
+          sfData.Lead_Id__c ?? sfData.LeadId__c ?? sfData.LeadId ?? sfData.Lead_Id;
+        if (raw != null && raw !== "") leadIdVal = String(raw);
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!leadIdVal && a.convertedFromLead?.[0]?.sfId) {
+      leadIdVal = a.convertedFromLead[0].sfId;
+    }
+
     return {
       id: a.id,
       href: `/accounts/${a.id}`,
       cells: [
         a.name || "—",
-        site || "",
+        site || "—",
         a.phone ? (
           <a
             key="phone"
@@ -142,6 +165,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         ) : (
           "—"
         ),
+        leadIdVal ?? "—",
         ownerAlias(a.owner) || "—",
         TYPE_LABEL[a.recordType] ?? a.recordType,
         a.industry ?? "",
