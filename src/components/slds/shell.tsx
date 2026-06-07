@@ -1,6 +1,7 @@
 "use client";
 
 import { SldsHeader } from "./header";
+import { DockedComposer } from "@/components/emails/docked-composer";
 
 export function SldsShell({
   children,
@@ -21,6 +22,7 @@ export function SldsShell({
     <div style={{ minHeight: "100vh", background: "#f3f3f3" }}>
       <SldsHeader userInitials={initials} userName={userName} />
       <main style={{ padding: 16, maxWidth: "100%" }}>{children}</main>
+      <DockedComposer />
     </div>
   );
 }
