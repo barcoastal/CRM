@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { ObjectIcon } from "./icon";
@@ -151,18 +151,11 @@ export function SldsHeader({
             <span className="sf-avatar">{userInitials}</span>
           </button>
           {profileOpen && (
-            <div className="sf-profile-menu">
-              {userName && <div className="sf-profile-name">{userName}</div>}
-              <Link href="/settings" className="sf-profile-item" onClick={() => setProfileOpen(false)}>
-                Settings
-              </Link>
-              <button
-                className="sf-profile-item"
-                onClick={() => signOut({ callbackUrl: "/login" })}
-              >
-                Log Out
-              </button>
-            </div>
+            <SldsProfileMenu
+              userName={userName}
+              userInitials={userInitials}
+              onClose={() => setProfileOpen(false)}
+            />
           )}
         </div>
       </div>
@@ -211,5 +204,97 @@ export function SldsHeader({
       {/* Row 3 — decorative blue diagonal banner */}
       <div className="sf-decor-band" aria-hidden="true" />
     </>
+  );
+}
+
+const DENSITY_KEY = "sf:displayDensity";
+type Density = "comfy" | "compact";
+
+function SldsProfileMenu({
+  userName,
+  userInitials,
+  onClose,
+}: {
+  userName?: string;
+  userInitials: string;
+  onClose: () => void;
+}) {
+  const [density, setDensity] = useState<Density>("compact");
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(DENSITY_KEY);
+      if (v === "comfy" || v === "compact") setDensity(v);
+    } catch {}
+  }, []);
+
+  const pick = (next: Density) => {
+    setDensity(next);
+    try {
+      localStorage.setItem(DENSITY_KEY, next);
+    } catch {}
+  };
+
+  return (
+    <div
+      className="sf-profile-menu sf-profile-menu-wide"
+      role="menu"
+      style={{ minWidth: 280, padding: 0 }}
+    >
+      <div className="sf-profile-header">
+        <span className="sf-avatar sf-profile-header-avatar">{userInitials}</span>
+        <div className="sf-profile-header-body">
+          <div className="sf-profile-header-name">{userName ?? "User"}</div>
+          <div className="sf-profile-header-org">coastaldebt.my.salesforce.com</div>
+          <div className="sf-profile-header-links">
+            <Link href="/my-settings/personal-information" onClick={onClose}>
+              Settings
+            </Link>
+            <span className="sf-profile-header-sep">|</span>
+            <button
+              type="button"
+              className="sf-profile-header-link-btn"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+            >
+              Log Out
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="sf-profile-section">
+        <div className="sf-profile-section-title">Display Density</div>
+        <label className="sf-profile-radio">
+          <input
+            type="radio"
+            name="sf-density"
+            value="comfy"
+            checked={density === "comfy"}
+            onChange={() => pick("comfy")}
+          />
+          <span>Comfy</span>
+        </label>
+        <label className="sf-profile-radio">
+          <input
+            type="radio"
+            name="sf-density"
+            value="compact"
+            checked={density === "compact"}
+            onChange={() => pick("compact")}
+          />
+          <span>Compact</span>
+        </label>
+      </div>
+
+      <div className="sf-profile-section">
+        <div className="sf-profile-section-title">Options</div>
+        <a href="#" className="sf-profile-item" onClick={(e) => e.preventDefault()}>
+          Switch to Salesforce Classic
+        </a>
+        <a href="#" className="sf-profile-item" onClick={(e) => e.preventDefault()}>
+          Add Username
+        </a>
+      </div>
+    </div>
   );
 }

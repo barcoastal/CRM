@@ -168,6 +168,101 @@
 
 .sf-profile-item:hover { background: #f3f2f2; }
 
+.sf-profile-menu-wide { width: 280px; }
+
+.sf-profile-header {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-bottom: 1px solid #d8dde6;
+}
+
+.sf-profile-header-avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.sf-profile-header-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sf-profile-header-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #080707;
+}
+
+.sf-profile-header-org {
+  font-size: 12px;
+  color: #706e6b;
+}
+
+.sf-profile-header-links {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.sf-profile-header-links a,
+.sf-profile-header-link-btn {
+  color: #0070d2;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.sf-profile-header-links a:hover,
+.sf-profile-header-link-btn:hover {
+  text-decoration: underline;
+}
+
+.sf-profile-header-sep {
+  color: #d8dde6;
+}
+
+.sf-profile-section {
+  padding: 10px 14px;
+  border-bottom: 1px solid #d8dde6;
+}
+
+.sf-profile-section:last-child {
+  border-bottom: 0;
+}
+
+.sf-profile-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #54698d;
+  margin-bottom: 6px;
+}
+
+.sf-profile-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+  color: #080707;
+  cursor: pointer;
+}
+
+.sf-profile-radio input {
+  cursor: pointer;
+}
+
 .sf-nav-bar {
   height: 40px;
   background: #fff;

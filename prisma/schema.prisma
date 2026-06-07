@@ -10,18 +10,18 @@ datasource db {
 // ============ AUTH ============
 
 model User {
-  id           String    @id @default(cuid())
-  sfId         String?   @unique // Salesforce 18-char User ID, populated by backfill-user-sfid.ts
-  name         String
-  email        String    @unique
-  passwordHash       String
-  mustResetPassword  Boolean  @default(false) // set true on bulk import; cleared after user picks a new password
-  role               String   @default("SALES_REP") // LEGACY string role — replaced by profileId in Phase 2
-  avatar       String?
-  isActive     Boolean   @default(true)
-  lastLoginAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  sfId              String?   @unique // Salesforce 18-char User ID, populated by backfill-user-sfid.ts
+  name              String
+  email             String    @unique
+  passwordHash      String
+  mustResetPassword Boolean   @default(false) // set true on bulk import; cleared after user picks a new password
+  role              String    @default("SALES_REP") // LEGACY string role — replaced by profileId in Phase 2
+  avatar            String?
+  isActive          Boolean   @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   // Phase 1 access model
   profileId       String?
@@ -36,55 +36,74 @@ model User {
   auditEntries    AuditLog[]
   appLogs         ApplicationLog[]
 
-  leads             Lead[]
-  calls             Call[]
-  campaigns         CampaignAgent[]
-  callFeedbacks     CallFeedback[]
-  assignedClients   Client[]        @relation("ClientNegotiator")
-  negotiations      Negotiation[]
-  uploadedDocuments Document[]
-  opportunities     Opportunity[]   @relation("OpportunityAssignee")
-  ownedAccounts     Account[]       @relation("AccountOwner")
-  ownedContacts     Contact[]       @relation("ContactOwner")
-  programPlansAssigned ProgramPlan[] @relation("ProgramPlanAssignedTo")
-  feesCharged       Fee[]           @relation("FeeChargedBy")
-  offersCreated     Offer[]         @relation("OfferCreatedBy")
-  settlementsApproved Settlement[]  @relation("SettlementApprovedBy")
-  tasksOwned        Task[]          @relation("TaskOwner")
-  eventsOwned       Event[]         @relation("EventOwner")
-  casesOwned        Case[]          @relation("CaseOwner")
-  casesCreated      Case[]          @relation("CaseCreatedBy")
-  casesApproved     Case[]          @relation("CaseApprover")
-  caseComments      CaseComment[]   @relation("CaseCommentAuthor")
-  listViews         ListView[]      @relation("ListViewOwner")
-  emailsOwned       EmailMessage[]  @relation("EmailOwner")
-  smsOwned          SmsMessage[]    @relation("SmsOwner")
-  emailTemplates    EmailTemplate[] @relation("EmailTemplateAuthor")
-  integrationCredentials IntegrationCredential[] @relation("IntegrationCredentialAuthor")
-  paymentCalcsSaved LeadPaymentCalculation[] @relation("PaymentCalcSavedBy")
-  leadHistoryChanges LeadHistory[]   @relation("LeadHistoryChangedBy")
-  leadDebtsCreated  LeadDebt[]      @relation("LeadDebtCreatedBy")
-  oppPaymentCalcsSaved OpportunityPaymentCalculation[] @relation("OppPaymentCalcSavedBy")
-  oppHistoryChanges OpportunityHistory[] @relation("OpportunityHistoryChangedBy")
-  accountHistoryChanges AccountHistory[] @relation("AccountHistoryChangedBy")
-  envelopesCreated      Envelope[]       @relation("EnvelopeCreatedBy")
-  suppressionsAdded     SuppressionEntry[] @relation("SuppressionAddedBy")
-  cadenceEnrollments    CadenceEnrollment[] @relation("CadenceEnrolledBy")
+  leads                  Lead[]
+  calls                  Call[]
+  campaigns              CampaignAgent[]
+  callFeedbacks          CallFeedback[]
+  assignedClients        Client[]                        @relation("ClientNegotiator")
+  negotiations           Negotiation[]
+  uploadedDocuments      Document[]
+  opportunities          Opportunity[]                   @relation("OpportunityAssignee")
+  ownedAccounts          Account[]                       @relation("AccountOwner")
+  ownedContacts          Contact[]                       @relation("ContactOwner")
+  programPlansAssigned   ProgramPlan[]                   @relation("ProgramPlanAssignedTo")
+  feesCharged            Fee[]                           @relation("FeeChargedBy")
+  offersCreated          Offer[]                         @relation("OfferCreatedBy")
+  settlementsApproved    Settlement[]                    @relation("SettlementApprovedBy")
+  tasksOwned             Task[]                          @relation("TaskOwner")
+  eventsOwned            Event[]                         @relation("EventOwner")
+  casesOwned             Case[]                          @relation("CaseOwner")
+  casesCreated           Case[]                          @relation("CaseCreatedBy")
+  casesApproved          Case[]                          @relation("CaseApprover")
+  caseComments           CaseComment[]                   @relation("CaseCommentAuthor")
+  listViews              ListView[]                      @relation("ListViewOwner")
+  emailsOwned            EmailMessage[]                  @relation("EmailOwner")
+  smsOwned               SmsMessage[]                    @relation("SmsOwner")
+  emailTemplates         EmailTemplate[]                 @relation("EmailTemplateAuthor")
+  integrationCredentials IntegrationCredential[]         @relation("IntegrationCredentialAuthor")
+  paymentCalcsSaved      LeadPaymentCalculation[]        @relation("PaymentCalcSavedBy")
+  leadHistoryChanges     LeadHistory[]                   @relation("LeadHistoryChangedBy")
+  leadDebtsCreated       LeadDebt[]                      @relation("LeadDebtCreatedBy")
+  oppPaymentCalcsSaved   OpportunityPaymentCalculation[] @relation("OppPaymentCalcSavedBy")
+  oppHistoryChanges      OpportunityHistory[]            @relation("OpportunityHistoryChangedBy")
+  accountHistoryChanges  AccountHistory[]                @relation("AccountHistoryChangedBy")
+  envelopesCreated       Envelope[]                      @relation("EnvelopeCreatedBy")
+  suppressionsAdded      SuppressionEntry[]              @relation("SuppressionAddedBy")
+  cadenceEnrollments     CadenceEnrollment[]             @relation("CadenceEnrolledBy")
 
   // Five9 AgentREST credentials per user — used to log the agent into Five9
   // and trigger click-to-dial on their behalf. Password is encrypted at rest
   // with the FIVE9_AGENT_KEY env var.
-  five9Username        String?
-  five9PasswordEnc     String?
-  five9StationId       String?
-  five9StationType     String? // EMPTY | SOFTPHONE | STATION — picked by user when configuring
-  five9Domain          String? // override the global FIVE9_API_BASE_URL per-user if needed
+  five9Username    String?
+  five9PasswordEnc String?
+  five9StationId   String?
+  five9StationType String? // EMPTY | SOFTPHONE | STATION — picked by user when configuring
+  five9Domain      String? // override the global FIVE9_API_BASE_URL per-user if needed
 
   // Persisted Five9 REST session — shared across Railway instances so a
   // session_start on one pod is visible to a click_to_dial on another.
   // Serialized AgentSession JSON.
-  five9SessionJson     String?
-  five9SessionAt       DateTime?
+  five9SessionJson String?
+  five9SessionAt   DateTime?
+
+  // SF "My Personal Information" profile fields. Mirrors Salesforce User
+  // standard fields exposed on the personal settings page.
+  middleName     String?
+  suffix         String?
+  alias          String?
+  nickname       String?
+  title          String?
+  companyDisplay String?
+  department     String?
+  division       String?
+  extension      String?
+  fax            String?
+  mobile         String?
+  country        String?
+  street         String?
+  city           String?
+  state          String?
+  postalCode     String?
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
@@ -253,61 +272,61 @@ model AsyncOperation {
 // ============ ACCOUNTS / CONTACTS / CREDITORS (SF parity) ============
 
 model Account {
-  id              String   @id @default(cuid())
-  sfId            String?  @unique // Salesforce 18-char ID, populated on migration
-  sfDataJson      String?  // Lossless SF row snapshot
-  recordType      String   @default("CLIENT") // CLIENT | CREDITOR | VENDOR | BUSINESS_ACCOUNT | PERSON_ACCOUNT | BUYOUT | OTHER
-  name            String                       // org name OR person full name
-  type            String   @default("ORG")     // ORG | PERSON
-  ein             String?
-  ssnLast4        String?
-  phone           String?
-  email           String?
-  website         String?
-  industry        String?
-  annualRevenue   Float?
+  id                String    @id @default(cuid())
+  sfId              String?   @unique // Salesforce 18-char ID, populated on migration
+  sfDataJson        String? // Lossless SF row snapshot
+  recordType        String    @default("CLIENT") // CLIENT | CREDITOR | VENDOR | BUSINESS_ACCOUNT | PERSON_ACCOUNT | BUYOUT | OTHER
+  name              String // org name OR person full name
+  type              String    @default("ORG") // ORG | PERSON
+  ein               String?
+  ssnLast4          String?
+  phone             String?
+  email             String?
+  website           String?
+  industry          String?
+  annualRevenue     Float?
   numberOfEmployees Int?
-  description     String?
+  description       String?
   // billing address
-  billingStreet   String?
-  billingCity     String?
-  billingState    String?
-  billingZip      String?
-  billingCountry  String?  @default("US")
+  billingStreet     String?
+  billingCity       String?
+  billingState      String?
+  billingZip        String?
+  billingCountry    String?   @default("US")
   // ownership / hierarchy
-  ownerId         String?
-  owner           User?    @relation("AccountOwner", fields: [ownerId], references: [id])
-  parentAccountId String?
-  parentAccount   Account? @relation("AccountHierarchy", fields: [parentAccountId], references: [id])
-  childAccounts   Account[] @relation("AccountHierarchy")
-  primaryContactId String?
-  primaryContact  Contact? @relation("AccountPrimaryContact", fields: [primaryContactId], references: [id])
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  ownerId           String?
+  owner             User?     @relation("AccountOwner", fields: [ownerId], references: [id])
+  parentAccountId   String?
+  parentAccount     Account?  @relation("AccountHierarchy", fields: [parentAccountId], references: [id])
+  childAccounts     Account[] @relation("AccountHierarchy")
+  primaryContactId  String?
+  primaryContact    Contact?  @relation("AccountPrimaryContact", fields: [primaryContactId], references: [id])
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   // SF Account stage (8 stages — First Payment pending → Active → On Hold → ... → Closed Duplicate)
-  stage           String   @default("First Payment pending")
+  stage String @default("First Payment pending")
 
   // Status pills shown in the highlight strip
-  clientStatus       String  @default("Active")        // Active | Inactive | Hardship | Cancelled
-  processorStatus    String?                           // Active | Inactive | Suspended
-  paymentStatus      String  @default("Active")        // Active | NSF | Suspended | Closed
-  bankAccountStatus  String  @default("Active")        // Active | Pending | Closed | Invalid
+  clientStatus      String  @default("Active") // Active | Inactive | Hardship | Cancelled
+  processorStatus   String? // Active | Inactive | Suspended
+  paymentStatus     String  @default("Active") // Active | NSF | Suspended | Closed
+  bankAccountStatus String  @default("Active") // Active | Pending | Closed | Invalid
 
   // Program dates
-  programStartDate DateTime?
-  programEndDate   DateTime?
+  programStartDate  DateTime?
+  programEndDate    DateTime?
   businessStartDate DateTime?
-  uccFilingDate    DateTime?
+  uccFilingDate     DateTime?
 
   // Cancellation
-  cancellationDate    DateTime?
-  cancellationReason  String?
+  cancellationDate   DateTime?
+  cancellationReason String?
 
   // Legal
-  legalStatus        String?
-  submittedByLegal   String?
+  legalStatus      String?
+  submittedByLegal String?
 
   // Reschedule
   rescheduleStatus String?
@@ -318,65 +337,65 @@ model Account {
   collectionAgency String?
 
   // External system IDs
-  externalSasId     String?
-  externalRamId     String?            // SF: External_RAM_Id__c (Reliant)
-  uccFilingId       String?
+  externalSasId         String?
+  externalRamId         String? // SF: External_RAM_Id__c (Reliant)
+  uccFilingId           String?
   bankAccountSyncStatus String?
-  paymentProcessor  String?            // RAM | SAS | RELIANT (chosen processor for this account)
+  paymentProcessor      String? // RAM | SAS | RELIANT (chosen processor for this account)
 
   // File Status
-  qualifiedStatus   String?
-  highUccRisk       Boolean @default(false)
-  graduatedStatus   String?
+  qualifiedStatus String?
+  highUccRisk     Boolean @default(false)
+  graduatedStatus String?
 
   // Financial Summary
-  operatingExpenses     Float?
-  netProfit             Float?
-  ebitda                Float?
-  grossProfit           Float?
-  debtPayments          Float?
-  buyoutProgramWeeklyPayment   Float?
-  buyoutProgramMonthlyPayment  Float?
-  financialDescription  String?
+  operatingExpenses           Float?
+  netProfit                   Float?
+  ebitda                      Float?
+  grossProfit                 Float?
+  debtPayments                Float?
+  buyoutProgramWeeklyPayment  Float?
+  buyoutProgramMonthlyPayment Float?
+  financialDescription        String?
 
   // Bank Details (editable on right rail)
   bankName          String?
   bankRoutingNumber String?
   bankAccountNumber String?
-  bankAccountType   String?  // Checking | Savings
+  bankAccountType   String? // Checking | Savings
 
   // Escrow
-  escrowBalance     Float    @default(0)
-  escrowPulledAt    DateTime?
-  feePaidInFull     Boolean  @default(false)
+  escrowBalance  Float     @default(0)
+  escrowPulledAt DateTime?
+  feePaidInFull  Boolean   @default(false)
 
   // Health Check
-  welcomeCallCompleted   Boolean @default(false)
-  firstPaymentReceived   Boolean @default(false)
+  welcomeCallCompleted Boolean @default(false)
+  firstPaymentReceived Boolean @default(false)
 
   // Total current debt cached for display (computed from active opps)
-  currentTotalDebt  Float?
+  currentTotalDebt Float?
 
   // First contract signed timestamp (set by envelope-trigger on first COMPLETED envelope)
   firstContractSignedDate DateTime?
 
-  contacts          AccountContactRelation[]
-  opportunities     Opportunity[]
-  creditor          Creditor?
-  convertedFromLead Lead[]                   @relation("LeadConvertedAccount")
-  primaryForContact Contact[]                @relation("PrimaryContactAccount")
-  programPlans      ProgramPlan[]
-  paymentSummary    PaymentSummary?
+  contacts           AccountContactRelation[]
+  opportunities      Opportunity[]
+  creditor           Creditor?
+  convertedFromLead  Lead[]                   @relation("LeadConvertedAccount")
+  primaryForContact  Contact[]                @relation("PrimaryContactAccount")
+  programPlans       ProgramPlan[]
+  paymentSummary     PaymentSummary?
   financialSummaries FinancialSummary[]
-  tasks             Task[]                   @relation("AccountTasks")
-  events            Event[]                  @relation("AccountEvents")
-  emails            EmailMessage[]           @relation("AccountEmails")
-  sms               SmsMessage[]             @relation("AccountSms")
-  cases             Case[]                   @relation("AccountCases")
-  history           AccountHistory[]
-  documents         Document[]               @relation("AccountDocuments")
-  envelopes         Envelope[]               @relation("AccountEnvelopes")
-  cadenceEnrollments CadenceEnrollment[]     @relation("AccountCadenceEnrollments")
+  tasks              Task[]                   @relation("AccountTasks")
+  events             Event[]                  @relation("AccountEvents")
+  emails             EmailMessage[]           @relation("AccountEmails")
+  sms                SmsMessage[]             @relation("AccountSms")
+  cases              Case[]                   @relation("AccountCases")
+  history            AccountHistory[]
+  documents          Document[]               @relation("AccountDocuments")
+  envelopes          Envelope[]               @relation("AccountEnvelopes")
+  cadenceEnrollments CadenceEnrollment[]      @relation("AccountCadenceEnrollments")
 
   @@index([recordType])
   @@index([stage])
@@ -385,18 +404,18 @@ model Account {
 // ============ DNC / SUPPRESSION LIST (replaces SF SuppressionList + Five9 DNC sync) ============
 
 model SuppressionEntry {
-  id          String   @id @default(cuid())
-  phone       String   @unique  // normalized: digits only, 10 chars (e.g. "5551234567")
-  reason      String   @default("Manual") // Manual | LeadArchived | DispositionDNC | Customer | LitigationHold | RegulatoryDNC | Imported
-  source      String?              // free-text source label (e.g. "CSV: 2026-06-04 cleanup")
-  leadId      String?
-  lead        Lead?    @relation("LeadSuppressionEntries", fields: [leadId], references: [id])
-  addedById   String?
-  addedBy     User?    @relation("SuppressionAddedBy", fields: [addedById], references: [id])
-  notes       String?
-  expiresAt   DateTime?            // optional; null = permanent
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String    @id @default(cuid())
+  phone     String    @unique // normalized: digits only, 10 chars (e.g. "5551234567")
+  reason    String    @default("Manual") // Manual | LeadArchived | DispositionDNC | Customer | LitigationHold | RegulatoryDNC | Imported
+  source    String? // free-text source label (e.g. "CSV: 2026-06-04 cleanup")
+  leadId    String?
+  lead      Lead?     @relation("LeadSuppressionEntries", fields: [leadId], references: [id])
+  addedById String?
+  addedBy   User?     @relation("SuppressionAddedBy", fields: [addedById], references: [id])
+  notes     String?
+  expiresAt DateTime? // optional; null = permanent
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([reason])
   @@index([leadId])
@@ -420,13 +439,13 @@ model CallCadence {
 }
 
 model CadenceStep {
-  id          String      @id @default(cuid())
-  cadenceId   String
-  cadence     CallCadence @relation(fields: [cadenceId], references: [id], onDelete: Cascade)
-  stepOrder   Int                                       // 1-based
-  action      String                                    // CALL | EMAIL | SMS | TASK | WAIT
-  delayDays   Int         @default(0)                   // days after the previous step (or enrollment for step 1)
-  delayHours  Int         @default(0)
+  id              String         @id @default(cuid())
+  cadenceId       String
+  cadence         CallCadence    @relation(fields: [cadenceId], references: [id], onDelete: Cascade)
+  stepOrder       Int // 1-based
+  action          String // CALL | EMAIL | SMS | TASK | WAIT
+  delayDays       Int            @default(0) // days after the previous step (or enrollment for step 1)
+  delayHours      Int            @default(0)
   // Action-specific payloads:
   emailTemplateId String?
   emailTemplate   EmailTemplate? @relation("CadenceStepEmailTemplate", fields: [emailTemplateId], references: [id])
@@ -434,30 +453,30 @@ model CadenceStep {
   callScript      String?
   taskSubject     String?
   // Branching: if previous step's outcome equals this value, jump to stepOrder
-  branchOn        String?                               // e.g. "ANSWERED" | "VOICEMAIL" | null
+  branchOn        String? // e.g. "ANSWERED" | "VOICEMAIL" | null
   branchToStep    Int?
 
   @@unique([cadenceId, stepOrder])
 }
 
 model CadenceEnrollment {
-  id              String       @id @default(cuid())
-  cadenceId       String
-  cadence         CallCadence  @relation(fields: [cadenceId], references: [id], onDelete: Cascade)
-  leadId          String?
-  lead            Lead?        @relation("LeadCadenceEnrollments", fields: [leadId], references: [id], onDelete: Cascade)
-  opportunityId   String?
-  opportunity     Opportunity? @relation("OpportunityCadenceEnrollments", fields: [opportunityId], references: [id], onDelete: Cascade)
-  accountId       String?
-  account         Account?     @relation("AccountCadenceEnrollments", fields: [accountId], references: [id], onDelete: Cascade)
-  status          String       @default("ACTIVE") // ACTIVE | PAUSED | COMPLETED | UNENROLLED
-  currentStepOrder Int         @default(0)        // 0 = not started yet
-  nextRunAt       DateTime?                       // when the runner should look at this enrollment
-  lastStepAt      DateTime?
-  enrolledById    String?
-  enrolledBy      User?        @relation("CadenceEnrolledBy", fields: [enrolledById], references: [id])
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id               String       @id @default(cuid())
+  cadenceId        String
+  cadence          CallCadence  @relation(fields: [cadenceId], references: [id], onDelete: Cascade)
+  leadId           String?
+  lead             Lead?        @relation("LeadCadenceEnrollments", fields: [leadId], references: [id], onDelete: Cascade)
+  opportunityId    String?
+  opportunity      Opportunity? @relation("OpportunityCadenceEnrollments", fields: [opportunityId], references: [id], onDelete: Cascade)
+  accountId        String?
+  account          Account?     @relation("AccountCadenceEnrollments", fields: [accountId], references: [id], onDelete: Cascade)
+  status           String       @default("ACTIVE") // ACTIVE | PAUSED | COMPLETED | UNENROLLED
+  currentStepOrder Int          @default(0) // 0 = not started yet
+  nextRunAt        DateTime? // when the runner should look at this enrollment
+  lastStepAt       DateTime?
+  enrolledById     String?
+  enrolledBy       User?        @relation("CadenceEnrolledBy", fields: [enrolledById], references: [id])
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   @@index([status, nextRunAt])
   @@index([leadId])
@@ -468,56 +487,56 @@ model CadenceEnrollment {
 // ============ ENVELOPE / E-SIGNATURE (replaces SF DocuSign integration) ============
 
 model Envelope {
-  id              String   @id @default(cuid())
+  id            String       @id @default(cuid())
   // What this envelope is for
-  recordType      String   @default("CONTRACT") // CONTRACT | BANK_CHANGE | DISCLOSURE | AMENDMENT | OTHER
-  opportunityId   String?
-  opportunity     Opportunity? @relation("OpportunityEnvelopes", fields: [opportunityId], references: [id], onDelete: Cascade)
-  accountId       String?
-  account         Account?  @relation("AccountEnvelopes", fields: [accountId], references: [id], onDelete: Cascade)
-  leadId          String?
-  lead            Lead?     @relation("LeadEnvelopes", fields: [leadId], references: [id], onDelete: Cascade)
+  recordType    String       @default("CONTRACT") // CONTRACT | BANK_CHANGE | DISCLOSURE | AMENDMENT | OTHER
+  opportunityId String?
+  opportunity   Opportunity? @relation("OpportunityEnvelopes", fields: [opportunityId], references: [id], onDelete: Cascade)
+  accountId     String?
+  account       Account?     @relation("AccountEnvelopes", fields: [accountId], references: [id], onDelete: Cascade)
+  leadId        String?
+  lead          Lead?        @relation("LeadEnvelopes", fields: [leadId], references: [id], onDelete: Cascade)
 
   // Status flow: DRAFT → SENT → VIEWED → SIGNED → COMPLETED
   // VOIDED, DECLINED are terminal states from any non-COMPLETED state
-  status          String   @default("DRAFT") // DRAFT | SENT | VIEWED | SIGNED | COMPLETED | DECLINED | VOIDED
+  status String @default("DRAFT") // DRAFT | SENT | VIEWED | SIGNED | COMPLETED | DECLINED | VOIDED
 
   // Signer info
-  signerName      String
-  signerEmail     String
-  signerPhone     String?
+  signerName  String
+  signerEmail String
+  signerPhone String?
 
   // Public-access token for the signing page
-  signingToken    String   @unique @default(cuid())
+  signingToken String @unique @default(cuid())
 
   // Document
-  templateName    String?           // e.g. "Engagement Agreement", "Bank Change Authorization"
-  documentName    String            // display name shown to signer
-  documentUrl     String?           // pre-signed S3 URL or relative path to PDF
-  signedDocumentUrl String?         // saved after signing
-  pages           Int?              // number of pages
+  templateName      String? // e.g. "Engagement Agreement", "Bank Change Authorization"
+  documentName      String // display name shown to signer
+  documentUrl       String? // pre-signed S3 URL or relative path to PDF
+  signedDocumentUrl String? // saved after signing
+  pages             Int? // number of pages
 
   // Signature capture (data URL or relative path to PNG)
-  signatureImage  String?           // base64 PNG of signature drawn on the public page
-  signatureIp     String?           // signer's IP at sign time (audit)
+  signatureImage     String? // base64 PNG of signature drawn on the public page
+  signatureIp        String? // signer's IP at sign time (audit)
   signatureUserAgent String?
 
   // Lifecycle
-  sentAt          DateTime?
-  viewedAt        DateTime?
-  signedAt        DateTime?
-  completedAt     DateTime?
-  voidedAt        DateTime?
-  voidReason      String?
-  expiresAt       DateTime?
+  sentAt      DateTime?
+  viewedAt    DateTime?
+  signedAt    DateTime?
+  completedAt DateTime?
+  voidedAt    DateTime?
+  voidReason  String?
+  expiresAt   DateTime?
 
   // Audit
-  createdById     String?
-  createdBy       User?    @relation("EnvelopeCreatedBy", fields: [createdById], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdById String?
+  createdBy   User?    @relation("EnvelopeCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  events          EnvelopeEvent[]
+  events EnvelopeEvent[]
 
   @@index([opportunityId])
   @@index([accountId])
@@ -527,14 +546,14 @@ model Envelope {
 }
 
 model EnvelopeEvent {
-  id          String   @id @default(cuid())
-  envelopeId  String
-  envelope    Envelope @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
-  eventType   String   // CREATED | SENT | VIEWED | SIGNED | COMPLETED | VOIDED | DECLINED | REMINDER_SENT
-  details     String?
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  envelopeId String
+  envelope   Envelope @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  eventType  String // CREATED | SENT | VIEWED | SIGNED | COMPLETED | VOIDED | DECLINED | REMINDER_SENT
+  details    String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
 
   @@index([envelopeId, createdAt])
 }
@@ -556,34 +575,34 @@ model AccountHistory {
 }
 
 model Contact {
-  id            String   @id @default(cuid())
-  sfId          String?  @unique // Salesforce 18-char ID
-  sfDataJson    String?  // Lossless SF row snapshot
-  firstName     String
-  lastName      String
-  fullName      String                          // derived; stored for sort/search
-  email         String?
-  phone         String?
-  mobilePhone   String?
-  title         String?
-  birthdate     DateTime?
+  id               String    @id @default(cuid())
+  sfId             String?   @unique // Salesforce 18-char ID
+  sfDataJson       String? // Lossless SF row snapshot
+  firstName        String
+  lastName         String
+  fullName         String // derived; stored for sort/search
+  email            String?
+  phone            String?
+  mobilePhone      String?
+  title            String?
+  birthdate        DateTime?
   primaryAccountId String?
-  primaryAccount   Account? @relation("PrimaryContactAccount", fields: [primaryAccountId], references: [id])
-  ownerId       String?
-  owner         User?    @relation("ContactOwner", fields: [ownerId], references: [id])
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  primaryAccount   Account?  @relation("PrimaryContactAccount", fields: [primaryAccountId], references: [id])
+  ownerId          String?
+  owner            User?     @relation("ContactOwner", fields: [ownerId], references: [id])
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  accountRelations    AccountContactRelation[]
-  primaryForOpportunity Opportunity[]          @relation("OpportunityPrimaryContact")
-  primaryForAccount   Account[]                @relation("AccountPrimaryContact")
-  convertedFromLead   Lead[]                   @relation("LeadConvertedContact")
-  tasks               Task[]                   @relation("ContactTasks")
-  events              Event[]                  @relation("ContactEvents")
-  emails              EmailMessage[]           @relation("ContactEmails")
-  sms                 SmsMessage[]             @relation("ContactSms")
-  cases               Case[]                   @relation("ContactCases")
+  accountRelations      AccountContactRelation[]
+  primaryForOpportunity Opportunity[]            @relation("OpportunityPrimaryContact")
+  primaryForAccount     Account[]                @relation("AccountPrimaryContact")
+  convertedFromLead     Lead[]                   @relation("LeadConvertedContact")
+  tasks                 Task[]                   @relation("ContactTasks")
+  events                Event[]                  @relation("ContactEvents")
+  emails                EmailMessage[]           @relation("ContactEmails")
+  sms                   SmsMessage[]             @relation("ContactSms")
+  cases                 Case[]                   @relation("ContactCases")
 }
 
 model AccountContactRelation {
@@ -592,7 +611,7 @@ model AccountContactRelation {
   account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   contactId String
   contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  role      String?                             // "Owner" | "CFO" | "Authorized Rep" | "Spouse"
+  role      String? // "Owner" | "CFO" | "Authorized Rep" | "Spouse"
   isDirect  Boolean  @default(true)
   createdAt DateTime @default(now())
 
@@ -614,7 +633,7 @@ model Creditor {
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 
-  debts                  Debt[]
+  debts Debt[]
 }
 
 // ============ LEADS ============
@@ -650,33 +669,33 @@ model Lead {
   redtrackClickId String?
   gclid           String?
   fbclid          String?
-  adClickId       String?     // SF: Ad_Click_Id__c (populated by inbound ad-click webhook)
+  adClickId       String? // SF: Ad_Click_Id__c (populated by inbound ad-click webhook)
 
   // Ad attribution (SF parity: Lead_Vendor_Id_Text__c, Ad_Id__c, Campaign_Name__c)
-  leadVendorId    String?
-  adId            String?
-  campaignName    String?
-  hasMultipleMca  Boolean?
-  state           String?     // SF state code (NY, FL, etc.) for compliance routing
-  lastContactedAt DateTime?
-  nextFollowUpAt  DateTime?
-  assignedToId    String?
-  assignedTo      User?     @relation(fields: [assignedToId], references: [id])
+  leadVendorId              String?
+  adId                      String?
+  campaignName              String?
+  hasMultipleMca            Boolean?
+  state                     String? // SF state code (NY, FL, etc.) for compliance routing
+  lastContactedAt           DateTime?
+  nextFollowUpAt            DateTime?
+  assignedToId              String?
+  assignedTo                User?     @relation(fields: [assignedToId], references: [id])
   // SF parity: track last disposition + assignment date (via triggers)
-  lastDisposition       String?
-  lastSubDisposition    String?
-  lastDispositionAt     DateTime?
-  leadAssignmentDate    DateTime?
+  lastDisposition           String?
+  lastSubDisposition        String?
+  lastDispositionAt         DateTime?
+  leadAssignmentDate        DateTime?
   // Derived weekly payment from creditor / debt info
   currentTotalWeeklyPayment Float?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
 
   // Conversion (Phase 2)
   convertedAccountId     String?
-  convertedAccount       Account?     @relation("LeadConvertedAccount", fields: [convertedAccountId], references: [id])
+  convertedAccount       Account?  @relation("LeadConvertedAccount", fields: [convertedAccountId], references: [id])
   convertedContactId     String?
-  convertedContact       Contact?     @relation("LeadConvertedContact", fields: [convertedContactId], references: [id])
+  convertedContact       Contact?  @relation("LeadConvertedContact", fields: [convertedContactId], references: [id])
   convertedOpportunityId String?
   convertedAt            DateTime?
 
@@ -773,19 +792,19 @@ model Call {
   task       Task?
 
   // Five9 webhook fields (port of five9_Call_Log__c)
-  five9CallId          String?  @unique
-  five9SessionId       String?
-  five9AgentFullName   String?
-  five9CampaignName    String?
-  five9DialerGroup     String?
-  five9DispositionName String?
-  five9Skill           String?
-  five9DnisAni         String?    // dialed-from (inbound) or dialed-to (outbound)
-  five9CallType        String?    // Manual | Outbound | Inbound | Internal
-  five9AttemptCount    Int?
-  five9HandleTime      Int?       // seconds
-  five9HoldTime        Int?
-  five9LastDisposition String?
+  five9CallId              String?   @unique
+  five9SessionId           String?
+  five9AgentFullName       String?
+  five9CampaignName        String?
+  five9DialerGroup         String?
+  five9DispositionName     String?
+  five9Skill               String?
+  five9DnisAni             String? // dialed-from (inbound) or dialed-to (outbound)
+  five9CallType            String? // Manual | Outbound | Inbound | Internal
+  five9AttemptCount        Int?
+  five9HandleTime          Int? // seconds
+  five9HoldTime            Int?
+  five9LastDisposition     String?
   five9LastDispositionDate DateTime?
 }
 
@@ -823,109 +842,109 @@ model CallFeedback {
 // ============ CLIENTS (Post-Enrollment) ============
 
 model Opportunity {
-  id                String     @id @default(cuid())
-  sfId              String?    @unique // Salesforce 18-char ID
+  id                          String                          @id @default(cuid())
+  sfId                        String?                         @unique // Salesforce 18-char ID
   // Lossless JSON snapshot of the SF row — every SF field captured here even if
   // we don't have a typed column yet. Use Postgres -> '$.field' for ad-hoc reads.
-  sfDataJson        String?
-  recordType        String     @default("DEBT_SETTLEMENT") // DEBT_SETTLEMENT | BUYOUT | RESTRUCTURE | LIMITED_ASSET_PROTECTION
-  name              String?    // canonical SF Opportunity Name; defaults to "<Account> — <Product>"
-  version           String     @default("1.0") // SF Version field, bumps on Amend
-  leadId            String?    @unique
-  lead              Lead?      @relation(fields: [leadId], references: [id])
-  accountId         String?
-  account           Account?   @relation(fields: [accountId], references: [id])
-  primaryContactId  String?
-  primaryContact    Contact?   @relation("OpportunityPrimaryContact", fields: [primaryContactId], references: [id])
-  stage             String     @default("Working Opportunity")
+  sfDataJson                  String?
+  recordType                  String                          @default("DEBT_SETTLEMENT") // DEBT_SETTLEMENT | BUYOUT | RESTRUCTURE | LIMITED_ASSET_PROTECTION
+  name                        String? // canonical SF Opportunity Name; defaults to "<Account> — <Product>"
+  version                     String                          @default("1.0") // SF Version field, bumps on Amend
+  leadId                      String?                         @unique
+  lead                        Lead?                           @relation(fields: [leadId], references: [id])
+  accountId                   String?
+  account                     Account?                        @relation(fields: [accountId], references: [id])
+  primaryContactId            String?
+  primaryContact              Contact?                        @relation("OpportunityPrimaryContact", fields: [primaryContactId], references: [id])
+  stage                       String                          @default("Working Opportunity")
   // SF parity: track previous stage / sub-disposition (set by OpportunityTrigger)
-  lastDisposition       String?
-  lastSubDisposition    String?
-  lastDispositionAt     DateTime?
+  lastDisposition             String?
+  lastSubDisposition          String?
+  lastDispositionAt           DateTime?
   // Bank-change envelope status (ported from SF: Bank_Change_Contract_Status__c)
-  bankChangeContractStatus String?  // null | "Pending" | "Completed"
-  totalDebt         Float?
-  currentTotalDebt  Float?  // SF Current_Total_Debt__c
-  estimatedTotalDebt Float? // SF Estimated_Total_Debt__c
-  currentWeeklyPayment  Float? // SF Current_Weekly_Payment__c
-  currentMonthlyPayment Float? // SF Current_Monthly_Payment__c
-  weeklyPaymentToDebtRatio Float? // SF Weekly_Payment_To_Debt_Ratio__c
-  expectedCloseDate DateTime?
-  closeDate         DateTime? // SF CloseDate (separate from expectedCloseDate)
-  firstDraftDate    DateTime? // SF First_Draft_Date__c
-  firstContractSignedDateOpp DateTime? // SF First_Contract_Signed_Date__c
-  lastContactedAt   DateTime? // SF Last_Contacted_DateTime__c
-  lastCallAt        DateTime? // SF Last_Call__c
-  lastEmailAt       DateTime? // SF Last_Email__c
-  lastSmsAt         DateTime? // SF Last_SMS__c
-  probability       Float?    // SF Probability
+  bankChangeContractStatus    String? // null | "Pending" | "Completed"
+  totalDebt                   Float?
+  currentTotalDebt            Float? // SF Current_Total_Debt__c
+  estimatedTotalDebt          Float? // SF Estimated_Total_Debt__c
+  currentWeeklyPayment        Float? // SF Current_Weekly_Payment__c
+  currentMonthlyPayment       Float? // SF Current_Monthly_Payment__c
+  weeklyPaymentToDebtRatio    Float? // SF Weekly_Payment_To_Debt_Ratio__c
+  expectedCloseDate           DateTime?
+  closeDate                   DateTime? // SF CloseDate (separate from expectedCloseDate)
+  firstDraftDate              DateTime? // SF First_Draft_Date__c
+  firstContractSignedDateOpp  DateTime? // SF First_Contract_Signed_Date__c
+  lastContactedAt             DateTime? // SF Last_Contacted_DateTime__c
+  lastCallAt                  DateTime? // SF Last_Call__c
+  lastEmailAt                 DateTime? // SF Last_Email__c
+  lastSmsAt                   DateTime? // SF Last_SMS__c
+  probability                 Float? // SF Probability
   // Contact info (denormalized from primary contact / lead)
-  oppPhone          String?   // SF Phone__c
-  oppEmail          String?   // SF Email__c
+  oppPhone                    String? // SF Phone__c
+  oppEmail                    String? // SF Email__c
   // Sub-disposition + call flow
-  subDisposition    String?
-  fronter           String?
-  closer            String?
-  callTransferStatus String?
-  transferQualification String?
+  subDisposition              String?
+  fronter                     String?
+  closer                      String?
+  callTransferStatus          String?
+  transferQualification       String?
   // SF Lead_Id__c — links opp to its source lead
-  sfLeadIdText      String?
+  sfLeadIdText                String?
   // Source / category
-  leadSource        String?   // SF LeadSource (picklist)
-  leadSourceCategory String?  // SF Lead_Source_Category__c
+  leadSource                  String? // SF LeadSource (picklist)
+  leadSourceCategory          String? // SF Lead_Source_Category__c
   // Risk / requirements
-  legalPlanRequired   Boolean? // SF Legal_Plan_Required__c
-  addendumRequired    Boolean? // SF Addendum_Required__c
-  securedParty        String?  // SF Secured_Party__c
-  highUccRisk         Boolean? // SF HIGH_UCC_RISK__c
+  legalPlanRequired           Boolean? // SF Legal_Plan_Required__c
+  addendumRequired            Boolean? // SF Addendum_Required__c
+  securedParty                String? // SF Secured_Party__c
+  highUccRisk                 Boolean? // SF HIGH_UCC_RISK__c
   // Misc
-  timezone            String?  // SF Timezone__c
-  preferredLanguage   String?  // SF Preferred_Language__c
-  preferredMethodOfContact String? // SF Preferred_method_of_Contact__c
-  dialerGroup         String?  // SF Dialer_Group__c
-  businessStartDate   DateTime? // SF Business_Start_Date__c
+  timezone                    String? // SF Timezone__c
+  preferredLanguage           String? // SF Preferred_Language__c
+  preferredMethodOfContact    String? // SF Preferred_method_of_Contact__c
+  dialerGroup                 String? // SF Dialer_Group__c
+  businessStartDate           DateTime? // SF Business_Start_Date__c
   // Client Questionnaire (more)
-  processorInfo       String?  // SF Processor_Info__c
-  lenderAgreementsCollected String? // SF Lender_Agreements_Collected__c
-  statusWithLenders   String?  // SF Status_with_Lender_s__c
-  firstPaymentToLegal Boolean? // SF First_Payment_to_Legal__c
-  welcomeCallScheduled DateTime? // SF Welcome_Call_Scheduled__c
-  whatWasExplainedToClient String? // SF What_was_explained_to_client__c
-  mainCompetitors     String?  // SF MainCompetitors__c
-  deliveryInstallationStatus String? // SF DeliveryInstallationStatus__c
-  cojOrTro            String?  // SF COJ_or_TRO__c
-  summonsOrJudgment   String?  // SF Summons_or_Judgment__c
-  orderNumber         String?  // SF OrderNumber__c
-  currentGenerators   String?  // SF CurrentGenerators__c
-  trackingNumber      String?  // SF TrackingNumber__c
-  lossReason          String?  // SF Loss_Reason__c
+  processorInfo               String? // SF Processor_Info__c
+  lenderAgreementsCollected   String? // SF Lender_Agreements_Collected__c
+  statusWithLenders           String? // SF Status_with_Lender_s__c
+  firstPaymentToLegal         Boolean? // SF First_Payment_to_Legal__c
+  welcomeCallScheduled        DateTime? // SF Welcome_Call_Scheduled__c
+  whatWasExplainedToClient    String? // SF What_was_explained_to_client__c
+  mainCompetitors             String? // SF MainCompetitors__c
+  deliveryInstallationStatus  String? // SF DeliveryInstallationStatus__c
+  cojOrTro                    String? // SF COJ_or_TRO__c
+  summonsOrJudgment           String? // SF Summons_or_Judgment__c
+  orderNumber                 String? // SF OrderNumber__c
+  currentGenerators           String? // SF CurrentGenerators__c
+  trackingNumber              String? // SF TrackingNumber__c
+  lossReason                  String? // SF Loss_Reason__c
   // Standard SF fields
-  nextStep            String?  // SF NextStep
-  isClosed            Boolean? // SF IsClosed
-  isWon               Boolean? // SF IsWon
-  amount              Float?   // SF Amount
-  assignedToId      String?
-  assignedTo        User?      @relation("OpportunityAssignee", fields: [assignedToId], references: [id])
+  nextStep                    String? // SF NextStep
+  isClosed                    Boolean? // SF IsClosed
+  isWon                       Boolean? // SF IsWon
+  amount                      Float? // SF Amount
+  assignedToId                String?
+  assignedTo                  User?                           @relation("OpportunityAssignee", fields: [assignedToId], references: [id])
   // SF Client Questionnaire
-  typeOfBusiness          String?
+  typeOfBusiness              String?
   receivablesCollectionMethod String?
-  bankChange              String?
-  highLienRisk            String?
-  notes             String?
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  client            Client?
-  debts             Debt[]
-  documents         Document[]
-  programPlans      ProgramPlan[]
-  financialSummaries FinancialSummary[]
-  tasks             Task[]      @relation("OpportunityTasks")
-  events            Event[]     @relation("OpportunityEvents")
-  emails            EmailMessage[] @relation("OpportunityEmails")
-  history           OpportunityHistory[]
-  paymentCalculations OpportunityPaymentCalculation[]
-  envelopes         Envelope[]     @relation("OpportunityEnvelopes")
-  cadenceEnrollments CadenceEnrollment[] @relation("OpportunityCadenceEnrollments")
+  bankChange                  String?
+  highLienRisk                String?
+  notes                       String?
+  createdAt                   DateTime                        @default(now())
+  updatedAt                   DateTime                        @updatedAt
+  client                      Client?
+  debts                       Debt[]
+  documents                   Document[]
+  programPlans                ProgramPlan[]
+  financialSummaries          FinancialSummary[]
+  tasks                       Task[]                          @relation("OpportunityTasks")
+  events                      Event[]                         @relation("OpportunityEvents")
+  emails                      EmailMessage[]                  @relation("OpportunityEmails")
+  history                     OpportunityHistory[]
+  paymentCalculations         OpportunityPaymentCalculation[]
+  envelopes                   Envelope[]                      @relation("OpportunityEnvelopes")
+  cadenceEnrollments          CadenceEnrollment[]             @relation("OpportunityCadenceEnrollments")
 
   @@index([recordType])
   @@index([accountId])
@@ -934,15 +953,15 @@ model Opportunity {
 // ============ OPPORTUNITY HISTORY (SF Opportunity Field History parity) ============
 
 model OpportunityHistory {
-  id            String       @id @default(cuid())
+  id            String      @id @default(cuid())
   opportunityId String
-  opportunity   Opportunity  @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   field         String
   oldValue      String?
   newValue      String?
   changedById   String?
-  changedBy     User?        @relation("OpportunityHistoryChangedBy", fields: [changedById], references: [id])
-  changedAt     DateTime     @default(now())
+  changedBy     User?       @relation("OpportunityHistoryChangedBy", fields: [changedById], references: [id])
+  changedAt     DateTime    @default(now())
 
   @@index([opportunityId, changedAt])
 }
@@ -950,9 +969,9 @@ model OpportunityHistory {
 // ============ OPPORTUNITY PAYMENT CALCULATOR (Lead-side equivalent for opps) ============
 
 model OpportunityPaymentCalculation {
-  id                   String       @id @default(cuid())
+  id                   String      @id @default(cuid())
   opportunityId        String
-  opportunity          Opportunity  @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  opportunity          Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   totalDebt            Float?
   setupFee             Float?
   serviceFee           Float?
@@ -967,10 +986,10 @@ model OpportunityPaymentCalculation {
   estimatedAmount      Float?
   retainerPercentage   Float?
   savedById            String?
-  savedBy              User?        @relation("OppPaymentCalcSavedBy", fields: [savedById], references: [id])
-  savedAt              DateTime     @default(now())
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
+  savedBy              User?       @relation("OppPaymentCalcSavedBy", fields: [savedById], references: [id])
+  savedAt              DateTime    @default(now())
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
 
   @@index([opportunityId, savedAt])
 }
@@ -1001,35 +1020,35 @@ model Client {
 }
 
 model Debt {
-  id              String       @id @default(cuid())
-  clientId        String?
-  client          Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  opportunityId   String?
-  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  programPlanId   String?
-  programPlan     ProgramPlan? @relation(fields: [programPlanId], references: [id])
-  creditorId      String?
-  creditor        Creditor?    @relation(fields: [creditorId], references: [id])
-  creditorName    String       // legacy free-form; preferred is creditorId. Kept for now.
-  creditorPhone   String?
-  creditorEmail   String?
-  accountNumber   String?
-  debtType        String?      // MCA | CREDIT_LINE | TERM_LOAN | BUSINESS_CC | EQUIPMENT | INVOICE_FACTORING | OTHER (carried from LeadDebt)
-  paymentFrequency String?     // DAILY | WEEKLY | BI_WEEKLY | MONTHLY | LUMP_SUM
-  paymentAmount   Float?
-  originalBalance Float
-  currentBalance  Float
-  enrolledBalance Float
-  status          String       @default("ENROLLED") // ENROLLED, NEGOTIATING, SETTLED, PAID, DISPUTED, WRITTEN_OFF
-  settledAmount   Float?
-  settledDate     DateTime?
-  savingsAmount   Float?
-  savingsPercent  Float?
-  lastPaymentDate DateTime?
-  isDelinquent    Boolean      @default(false)
-  notes           String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id               String       @id @default(cuid())
+  clientId         String?
+  client           Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  opportunityId    String?
+  opportunity      Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  programPlanId    String?
+  programPlan      ProgramPlan? @relation(fields: [programPlanId], references: [id])
+  creditorId       String?
+  creditor         Creditor?    @relation(fields: [creditorId], references: [id])
+  creditorName     String // legacy free-form; preferred is creditorId. Kept for now.
+  creditorPhone    String?
+  creditorEmail    String?
+  accountNumber    String?
+  debtType         String? // MCA | CREDIT_LINE | TERM_LOAN | BUSINESS_CC | EQUIPMENT | INVOICE_FACTORING | OTHER (carried from LeadDebt)
+  paymentFrequency String? // DAILY | WEEKLY | BI_WEEKLY | MONTHLY | LUMP_SUM
+  paymentAmount    Float?
+  originalBalance  Float
+  currentBalance   Float
+  enrolledBalance  Float
+  status           String       @default("ENROLLED") // ENROLLED, NEGOTIATING, SETTLED, PAID, DISPUTED, WRITTEN_OFF
+  settledAmount    Float?
+  settledDate      DateTime?
+  savingsAmount    Float?
+  savingsPercent   Float?
+  lastPaymentDate  DateTime?
+  isDelinquent     Boolean      @default(false)
+  notes            String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   negotiations Negotiation[]
   payments     Payment[]
@@ -1058,7 +1077,6 @@ model Negotiation {
   offer         Offer?   @relation(fields: [offerId], references: [id])
   createdAt     DateTime @default(now())
 }
-
 
 model Payment {
   id            String    @id @default(cuid())
@@ -1101,55 +1119,55 @@ model Document {
 // ============ PHASE 3: DEBT OPERATIONS ============
 
 model PaymentProcessor {
-  id           String   @id @default(cuid())
-  name         String   @unique           // "RAM Payment Services"
-  code         String   @unique           // "RAM"
-  description  String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  name        String   @unique // "RAM Payment Services"
+  code        String   @unique // "RAM"
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
 
   programPlans ProgramPlan[]
 }
 
 model ProgramPlan {
-  id              String   @id @default(cuid())
-  recordType      String   @default("DEBT_SETTLEMENT") // DEBT_SETTLEMENT | BUYOUT | RESTRUCTURE | LIMITED_ASSET_PROTECTION
-  accountId       String
-  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  opportunityId   String?
-  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id])
-  processorId     String?
-  processor       PaymentProcessor? @relation(fields: [processorId], references: [id])
-  assignedToId    String?
-  assignedTo      User?    @relation("ProgramPlanAssignedTo", fields: [assignedToId], references: [id])
+  id            String            @id @default(cuid())
+  recordType    String            @default("DEBT_SETTLEMENT") // DEBT_SETTLEMENT | BUYOUT | RESTRUCTURE | LIMITED_ASSET_PROTECTION
+  accountId     String
+  account       Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  opportunityId String?
+  opportunity   Opportunity?      @relation(fields: [opportunityId], references: [id])
+  processorId   String?
+  processor     PaymentProcessor? @relation(fields: [processorId], references: [id])
+  assignedToId  String?
+  assignedTo    User?             @relation("ProgramPlanAssignedTo", fields: [assignedToId], references: [id])
 
-  status          String   @default("ACTIVE")  // PROPOSED | ACTIVE | PAUSED | COMPLETED | CANCELLED
-  startDate       DateTime
-  termMonths      Int
-  monthlyAmount   Float                        // recurring draft amount
-  totalProgramCost Float?                       // computed: termMonths * monthlyAmount + projected fees
-  totalEnrolledDebt Float?
+  status                 String    @default("ACTIVE") // PROPOSED | ACTIVE | PAUSED | COMPLETED | CANCELLED
+  startDate              DateTime
+  termMonths             Int
+  monthlyAmount          Float // recurring draft amount
+  totalProgramCost       Float? // computed: termMonths * monthlyAmount + projected fees
+  totalEnrolledDebt      Float?
   // Draft rollups maintained by draftTrigger
-  completedPaymentsCount Int @default(0)
-  failedPaymentsCount    Int @default(0)
+  completedPaymentsCount Int       @default(0)
+  failedPaymentsCount    Int       @default(0)
   firstDraftDate         DateTime?
 
-  bankAccountLast4 String?
-  bankRoutingLast4 String?
-  signedDate      DateTime?
+  bankAccountLast4  String?
+  bankRoutingLast4  String?
+  signedDate        DateTime?
   signedDocumentUrl String?
-  notes           String?
+  notes             String?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  debts           Debt[]
-  debitSchedules  DebitSchedule[]
-  drafts          Draft[]
-  fees            Fee[]
-  client          Client?
-  tasks           Task[]   @relation("ProgramPlanTasks")
-  cases           Case[]   @relation("ProgramPlanCases")
+  debts          Debt[]
+  debitSchedules DebitSchedule[]
+  drafts         Draft[]
+  fees           Fee[]
+  client         Client?
+  tasks          Task[]          @relation("ProgramPlanTasks")
+  cases          Case[]          @relation("ProgramPlanCases")
 
   @@index([accountId])
   @@index([opportunityId])
@@ -1157,53 +1175,53 @@ model ProgramPlan {
 }
 
 model DebitSchedule {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   programPlanId String
   programPlan   ProgramPlan @relation(fields: [programPlanId], references: [id], onDelete: Cascade)
-  frequency     String   @default("MONTHLY")  // MONTHLY | BIWEEKLY | WEEKLY
-  dayOfMonth    Int?                          // 1-28 for MONTHLY
-  dayOfWeek     Int?                          // 0-6 for WEEKLY/BIWEEKLY (0=Sunday)
+  frequency     String      @default("MONTHLY") // MONTHLY | BIWEEKLY | WEEKLY
+  dayOfMonth    Int? // 1-28 for MONTHLY
+  dayOfWeek     Int? // 0-6 for WEEKLY/BIWEEKLY (0=Sunday)
   amount        Float
   startDate     DateTime
   endDate       DateTime?
   nextRunDate   DateTime?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
-  drafts        Draft[]
+  drafts Draft[]
 
   @@index([programPlanId])
   @@index([nextRunDate])
 }
 
 model Draft {
-  id              String   @id @default(cuid())
+  id              String         @id @default(cuid())
   programPlanId   String
-  programPlan     ProgramPlan @relation(fields: [programPlanId], references: [id], onDelete: Cascade)
+  programPlan     ProgramPlan    @relation(fields: [programPlanId], references: [id], onDelete: Cascade)
   debitScheduleId String?
   debitSchedule   DebitSchedule? @relation(fields: [debitScheduleId], references: [id])
   scheduledDate   DateTime
   amount          Float
-  status          String   @default("SCHEDULED") // SCHEDULED | PROCESSING | SUCCESS | FAILED | RETRYING | CANCELLED
-  attemptNumber   Int      @default(1)
-  maxAttempts     Int      @default(3)
+  status          String         @default("SCHEDULED") // SCHEDULED | PROCESSING | SUCCESS | FAILED | RETRYING | CANCELLED
+  attemptNumber   Int            @default(1)
+  maxAttempts     Int            @default(3)
   parentDraftId   String?
-  parentDraft     Draft?   @relation("DraftRetries", fields: [parentDraftId], references: [id])
-  retries         Draft[]  @relation("DraftRetries")
+  parentDraft     Draft?         @relation("DraftRetries", fields: [parentDraftId], references: [id])
+  retries         Draft[]        @relation("DraftRetries")
 
   // Processor data
   processorReference String?
-  returnCode      String?      // ACH return code (R01, R02, etc.) when failed
-  returnReason    String?
-  processedAt     DateTime?
-  settledAt       DateTime?
+  returnCode         String? // ACH return code (R01, R02, etc.) when failed
+  returnReason       String?
+  processedAt        DateTime?
+  settledAt          DateTime?
 
-  cases           Case[]   @relation("DraftCases")
+  cases Case[] @relation("DraftCases")
 
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([programPlanId])
   @@index([debitScheduleId])
@@ -1212,99 +1230,99 @@ model Draft {
 }
 
 model Offer {
-  id            String   @id @default(cuid())
-  debtId        String
-  debt          Debt     @relation(fields: [debtId], references: [id], onDelete: Cascade)
-  direction     String   @default("FROM_US")  // FROM_US | FROM_CREDITOR
-  amountOffered Float
-  percentOffered Float                        // amountOffered / debt.currentBalance
-  expiresAt     DateTime?
-  status        String   @default("PENDING")  // PENDING | COUNTERED | ACCEPTED | REJECTED | EXPIRED | WITHDRAWN
-  counterAmount Float?
-  termsNotes    String?
-  documentUrl   String?
-  createdById   String?
-  createdBy     User?    @relation("OfferCreatedBy", fields: [createdById], references: [id])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String    @id @default(cuid())
+  debtId         String
+  debt           Debt      @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  direction      String    @default("FROM_US") // FROM_US | FROM_CREDITOR
+  amountOffered  Float
+  percentOffered Float // amountOffered / debt.currentBalance
+  expiresAt      DateTime?
+  status         String    @default("PENDING") // PENDING | COUNTERED | ACCEPTED | REJECTED | EXPIRED | WITHDRAWN
+  counterAmount  Float?
+  termsNotes     String?
+  documentUrl    String?
+  createdById    String?
+  createdBy      User?     @relation("OfferCreatedBy", fields: [createdById], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  negotiations  Negotiation[]
-  settlement    Settlement?
+  negotiations Negotiation[]
+  settlement   Settlement?
 
   @@index([debtId])
   @@index([status])
 }
 
 model Settlement {
-  id              String   @id @default(cuid())
-  debtId          String   @unique
-  debt            Debt     @relation(fields: [debtId], references: [id], onDelete: Cascade)
-  offerId         String?  @unique
-  offer           Offer?   @relation(fields: [offerId], references: [id])
-  recordType      String   @default("STANDARD") // STANDARD | LITIGATION | BUYOUT | WORKOUT
-  settledAmount   Float
-  savingsAmount   Float
-  savingsPercent  Float
-  settledDate     DateTime
-  payoffDueDate   DateTime?
-  payoffPaidDate  DateTime?
-  status          String   @default("PENDING_PAYOFF") // PENDING_PAYOFF | PAID | CANCELLED
-  approvedById    String?
-  approvedBy      User?    @relation("SettlementApprovedBy", fields: [approvedById], references: [id])
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String    @id @default(cuid())
+  debtId         String    @unique
+  debt           Debt      @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  offerId        String?   @unique
+  offer          Offer?    @relation(fields: [offerId], references: [id])
+  recordType     String    @default("STANDARD") // STANDARD | LITIGATION | BUYOUT | WORKOUT
+  settledAmount  Float
+  savingsAmount  Float
+  savingsPercent Float
+  settledDate    DateTime
+  payoffDueDate  DateTime?
+  payoffPaidDate DateTime?
+  status         String    @default("PENDING_PAYOFF") // PENDING_PAYOFF | PAID | CANCELLED
+  approvedById   String?
+  approvedBy     User?     @relation("SettlementApprovedBy", fields: [approvedById], references: [id])
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([status])
 }
 
 model Fee {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   programPlanId String
   programPlan   ProgramPlan @relation(fields: [programPlanId], references: [id], onDelete: Cascade)
-  recordType    String   @default("MONTHLY_ADMIN") // SETUP | MONTHLY_ADMIN | SETTLEMENT_SUCCESS | CANCELLATION | OTHER
+  recordType    String      @default("MONTHLY_ADMIN") // SETUP | MONTHLY_ADMIN | SETTLEMENT_SUCCESS | CANCELLATION | OTHER
   amount        Float
   chargedDate   DateTime
-  status        String   @default("PENDING") // PENDING | CHARGED | WAIVED | REFUNDED
+  status        String      @default("PENDING") // PENDING | CHARGED | WAIVED | REFUNDED
   chargedById   String?
-  chargedBy     User?    @relation("FeeChargedBy", fields: [chargedById], references: [id])
+  chargedBy     User?       @relation("FeeChargedBy", fields: [chargedById], references: [id])
   notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   @@index([programPlanId])
   @@index([recordType])
 }
 
 model PaymentSummary {
-  id               String   @id @default(cuid())
-  accountId        String   @unique
-  account          Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  totalCollected   Float    @default(0)
-  totalDisbursed   Float    @default(0)
-  totalFees        Float    @default(0)
-  totalSettled     Float    @default(0)
-  totalSavings     Float    @default(0)
-  draftSuccessCount Int     @default(0)
-  draftFailedCount  Int     @default(0)
-  lastDraftDate    DateTime?
-  recomputedAt     DateTime @default(now())
+  id                String    @id @default(cuid())
+  accountId         String    @unique
+  account           Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  totalCollected    Float     @default(0)
+  totalDisbursed    Float     @default(0)
+  totalFees         Float     @default(0)
+  totalSettled      Float     @default(0)
+  totalSavings      Float     @default(0)
+  draftSuccessCount Int       @default(0)
+  draftFailedCount  Int       @default(0)
+  lastDraftDate     DateTime?
+  recomputedAt      DateTime  @default(now())
 }
 
 model FinancialSummary {
-  id              String   @id @default(cuid())
-  accountId       String
-  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  opportunityId   String?
-  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id])
-  monthlyIncome   Float
-  monthlyExpenses Float
-  disposableIncome Float                       // computed: income - expenses
-  totalAssets     Float?
+  id               String       @id @default(cuid())
+  accountId        String
+  account          Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  opportunityId    String?
+  opportunity      Opportunity? @relation(fields: [opportunityId], references: [id])
+  monthlyIncome    Float
+  monthlyExpenses  Float
+  disposableIncome Float // computed: income - expenses
+  totalAssets      Float?
   totalLiabilities Float?
-  notes           String?
-  capturedAt      DateTime @default(now())
-  capturedById    String?
+  notes            String?
+  capturedAt       DateTime     @default(now())
+  capturedById     String?
 
   @@index([accountId, capturedAt])
 }
@@ -1312,22 +1330,22 @@ model FinancialSummary {
 // ============ PHASE 4: ACTIVITIES (Task + Event) ============
 
 model Task {
-  id           String   @id @default(cuid())
-  recordType   String   @default("ACTIVITY") // ACTIVITY | DISPOSITION
-  subject      String
-  type         String   @default("TASK")     // CALL | EMAIL | LETTER | TASK | NOTE | OTHER
-  status       String   @default("NOT_STARTED") // NOT_STARTED | IN_PROGRESS | COMPLETED | DEFERRED | WAITING
-  priority     String   @default("NORMAL")   // LOW | NORMAL | HIGH
+  id         String @id @default(cuid())
+  recordType String @default("ACTIVITY") // ACTIVITY | DISPOSITION
+  subject    String
+  type       String @default("TASK") // CALL | EMAIL | LETTER | TASK | NOTE | OTHER
+  status     String @default("NOT_STARTED") // NOT_STARTED | IN_PROGRESS | COMPLETED | DEFERRED | WAITING
+  priority   String @default("NORMAL") // LOW | NORMAL | HIGH
 
   // Polymorphic "what"
-  accountId      String?
-  account        Account?     @relation("AccountTasks", fields: [accountId], references: [id])
-  opportunityId  String?
-  opportunity    Opportunity? @relation("OpportunityTasks", fields: [opportunityId], references: [id])
-  debtId         String?
-  debt           Debt?        @relation("DebtTasks", fields: [debtId], references: [id])
-  programPlanId  String?
-  programPlan    ProgramPlan? @relation("ProgramPlanTasks", fields: [programPlanId], references: [id])
+  accountId     String?
+  account       Account?     @relation("AccountTasks", fields: [accountId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity? @relation("OpportunityTasks", fields: [opportunityId], references: [id])
+  debtId        String?
+  debt          Debt?        @relation("DebtTasks", fields: [debtId], references: [id])
+  programPlanId String?
+  programPlan   ProgramPlan? @relation("ProgramPlanTasks", fields: [programPlanId], references: [id])
 
   // Polymorphic "who"
   leadId    String?
@@ -1337,7 +1355,7 @@ model Task {
 
   // Ownership / scheduling
   ownerId     String?
-  owner       User?    @relation("TaskOwner", fields: [ownerId], references: [id])
+  owner       User?     @relation("TaskOwner", fields: [ownerId], references: [id])
   dueDate     DateTime?
   reminderAt  DateTime?
   completedAt DateTime?
@@ -1346,14 +1364,14 @@ model Task {
   disposition  String?
   callbackDate DateTime?
   outcome      String?
-  callId       String?  @unique
-  call         Call?    @relation(fields: [callId], references: [id])
+  callId       String?   @unique
+  call         Call?     @relation(fields: [callId], references: [id])
   caseId       String?
-  case         Case?    @relation("CaseTasks", fields: [caseId], references: [id])
+  case         Case?     @relation("CaseTasks", fields: [caseId], references: [id])
 
-  notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([ownerId, status])
   @@index([dueDate])
@@ -1365,38 +1383,38 @@ model Task {
 }
 
 model Event {
-  id           String   @id @default(cuid())
-  recordType   String   @default("EVENT")    // EVENT | EVENT_DISPOSITION
-  subject      String
-  description  String?
-  location     String?
-  status       String   @default("SCHEDULED") // SCHEDULED | COMPLETED | CANCELLED | NO_SHOW
-  startAt      DateTime
-  endAt        DateTime
-  allDay       Boolean  @default(false)
+  id          String   @id @default(cuid())
+  recordType  String   @default("EVENT") // EVENT | EVENT_DISPOSITION
+  subject     String
+  description String?
+  location    String?
+  status      String   @default("SCHEDULED") // SCHEDULED | COMPLETED | CANCELLED | NO_SHOW
+  startAt     DateTime
+  endAt       DateTime
+  allDay      Boolean  @default(false)
 
   // Polymorphic relations
-  accountId      String?
-  account        Account?     @relation("AccountEvents", fields: [accountId], references: [id])
-  opportunityId  String?
-  opportunity    Opportunity? @relation("OpportunityEvents", fields: [opportunityId], references: [id])
-  leadId         String?
-  lead           Lead?        @relation("LeadEvents", fields: [leadId], references: [id])
-  contactId      String?
-  contact        Contact?     @relation("ContactEvents", fields: [contactId], references: [id])
+  accountId     String?
+  account       Account?     @relation("AccountEvents", fields: [accountId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity? @relation("OpportunityEvents", fields: [opportunityId], references: [id])
+  leadId        String?
+  lead          Lead?        @relation("LeadEvents", fields: [leadId], references: [id])
+  contactId     String?
+  contact       Contact?     @relation("ContactEvents", fields: [contactId], references: [id])
 
-  ownerId      String?
-  owner        User?    @relation("EventOwner", fields: [ownerId], references: [id])
+  ownerId String?
+  owner   User?   @relation("EventOwner", fields: [ownerId], references: [id])
 
-  caseId       String?
-  case         Case?    @relation("CaseEvents", fields: [caseId], references: [id])
+  caseId String?
+  case   Case?   @relation("CaseEvents", fields: [caseId], references: [id])
 
-  disposition  String?
-  outcome      String?
+  disposition String?
+  outcome     String?
 
-  notes        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([ownerId, status])
   @@index([startAt])
@@ -1410,15 +1428,15 @@ model Event {
 // ============ PHASE 5: CASE MANAGEMENT ============
 
 model Case {
-  id              String   @id @default(cuid())
-  caseNumber      String   @unique
-  recordType      String   @default("SUPPORT") // SUPPORT | PAYMENT_ISSUE | SKIP_PAYMENT | CANCELLATION | BANK_UPDATE | DOCUMENT_REQUEST
+  id              String  @id @default(cuid())
+  caseNumber      String  @unique
+  recordType      String  @default("SUPPORT") // SUPPORT | PAYMENT_ISSUE | SKIP_PAYMENT | CANCELLATION | BANK_UPDATE | DOCUMENT_REQUEST
   subject         String
   description     String?
-  status          String   @default("NEW")     // NEW | OPEN | IN_PROGRESS | WAITING_ON_CUSTOMER | ESCALATED | RESOLVED | CLOSED
-  priority        String   @default("NORMAL")  // LOW | NORMAL | HIGH | URGENT
-  origin          String   @default("PHONE")   // PHONE | EMAIL | WEB | CHAT | OTHER
-  escalationLevel String   @default("L1")      // L1 | L2 | L3
+  status          String  @default("NEW") // NEW | OPEN | IN_PROGRESS | WAITING_ON_CUSTOMER | ESCALATED | RESOLVED | CLOSED
+  priority        String  @default("NORMAL") // LOW | NORMAL | HIGH | URGENT
+  origin          String  @default("PHONE") // PHONE | EMAIL | WEB | CHAT | OTHER
+  escalationLevel String  @default("L1") // L1 | L2 | L3
 
   // Polymorphic "what"
   accountId     String?
@@ -1432,9 +1450,9 @@ model Case {
 
   // Ownership: user OR queue (Group)
   ownerId      String?
-  owner        User?    @relation("CaseOwner", fields: [ownerId], references: [id])
+  owner        User?   @relation("CaseOwner", fields: [ownerId], references: [id])
   ownerGroupId String?
-  ownerGroup   Group?   @relation("CaseOwnerGroup", fields: [ownerGroupId], references: [id])
+  ownerGroup   Group?  @relation("CaseOwnerGroup", fields: [ownerGroupId], references: [id])
 
   parentCaseId String?
   parentCase   Case?   @relation("CaseHierarchy", fields: [parentCaseId], references: [id])
@@ -1460,8 +1478,8 @@ model Case {
   updatedAt DateTime @updatedAt
 
   comments CaseComment[]
-  tasks    Task[]      @relation("CaseTasks")
-  events   Event[]     @relation("CaseEvents")
+  tasks    Task[]         @relation("CaseTasks")
+  events   Event[]        @relation("CaseEvents")
   emails   EmailMessage[] @relation("CaseEmails")
   sms      SmsMessage[]   @relation("CaseSms")
 
@@ -1490,9 +1508,9 @@ model CaseComment {
 model EmailMessage {
   id          String  @id @default(cuid())
   direction   String  @default("OUTBOUND") // INBOUND | OUTBOUND
-  status      String  @default("DRAFT")    // DRAFT | QUEUED | SENT | DELIVERED | OPENED | CLICKED | BOUNCED | COMPLAINED | FAILED
+  status      String  @default("DRAFT") // DRAFT | QUEUED | SENT | DELIVERED | OPENED | CLICKED | BOUNCED | COMPLAINED | FAILED
   fromAddress String
-  toAddresses String                       // CSV
+  toAddresses String // CSV
   cc          String?
   bcc         String?
   subject     String
@@ -1537,13 +1555,13 @@ model EmailMessage {
 }
 
 model SmsMessage {
-  id         String  @id @default(cuid())
-  direction  String  @default("OUTBOUND") // INBOUND | OUTBOUND
-  status     String  @default("QUEUED")   // QUEUED | SENT | DELIVERED | FAILED | RECEIVED
+  id         String @id @default(cuid())
+  direction  String @default("OUTBOUND") // INBOUND | OUTBOUND
+  status     String @default("QUEUED") // QUEUED | SENT | DELIVERED | FAILED | RECEIVED
   fromNumber String
   toNumber   String
   body       String
-  segments   Int     @default(1)
+  segments   Int    @default(1)
 
   accountId String?
   account   Account? @relation("AccountSms", fields: [accountId], references: [id])
@@ -1574,35 +1592,35 @@ model SmsMessage {
 }
 
 model EmailTemplate {
-  id            String   @id @default(cuid())
-  name          String   @unique
-  developerName String   @unique
+  id            String  @id @default(cuid())
+  name          String  @unique
+  developerName String  @unique
   subject       String
   bodyText      String?
   bodyHtml      String?
   description   String?
-  folder        String?  @default("General")
-  isActive      Boolean  @default(true)
+  folder        String? @default("General")
+  isActive      Boolean @default(true)
   createdById   String?
-  createdBy     User?    @relation("EmailTemplateAuthor", fields: [createdById], references: [id])
+  createdBy     User?   @relation("EmailTemplateAuthor", fields: [createdById], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  emails EmailMessage[]
-  cadenceSteps CadenceStep[] @relation("CadenceStepEmailTemplate")
+  emails       EmailMessage[]
+  cadenceSteps CadenceStep[]  @relation("CadenceStepEmailTemplate")
 }
 
 model IntegrationCredential {
-  id          String   @id @default(cuid())
-  provider    String                       // FIVE9 | TWILIO | TELNYX | DOCUSIGN | PARDOT | KLAVIYO | SENDGRID
+  id          String    @id @default(cuid())
+  provider    String // FIVE9 | TWILIO | TELNYX | DOCUSIGN | PARDOT | KLAVIYO | SENDGRID
   name        String
-  isActive    Boolean  @default(true)
+  isActive    Boolean   @default(true)
   config      Json
   scopes      String?
   rotatedAt   DateTime?
   createdById String?
-  createdBy   User?    @relation("IntegrationCredentialAuthor", fields: [createdById], references: [id])
+  createdBy   User?     @relation("IntegrationCredentialAuthor", fields: [createdById], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1612,15 +1630,15 @@ model IntegrationCredential {
 }
 
 model WebhookEvent {
-  id             String   @id @default(cuid())
-  source         String                       // PAYMENT_PROCESSOR | LEAD_IMPORT | OPT_OUT | AD_CLICK | TWILIO | SENDGRID
+  id             String    @id @default(cuid())
+  source         String // PAYMENT_PROCESSOR | LEAD_IMPORT | OPT_OUT | AD_CLICK | TWILIO | SENDGRID
   endpoint       String
   ipAddress      String?
   headers        Json?
   payload        Json?
   signature      String?
   signatureValid Boolean?
-  status         String   @default("RECEIVED") // RECEIVED | PROCESSED | FAILED | IGNORED
+  status         String    @default("RECEIVED") // RECEIVED | PROCESSED | FAILED | IGNORED
   resultNote     String?
   processedAt    DateTime?
 
@@ -1633,19 +1651,19 @@ model WebhookEvent {
 // ============ DISPOSITIONS (SF picklist parity — per-entity picklist values) ============
 
 model Disposition {
-  id        String   @id @default(cuid())
-  entity    String   // "Lead" | "Task" | "Call" | "Negotiation"
-  category  String   // "SUB_DISPOSITION" | "CALL_OUTCOME"
-  value     String   // canonical stored value
-  label     String   // UI label
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
+  id                String   @id @default(cuid())
+  entity            String // "Lead" | "Task" | "Call" | "Negotiation"
+  category          String // "SUB_DISPOSITION" | "CALL_OUTCOME"
+  value             String // canonical stored value
+  label             String // UI label
+  sortOrder         Int      @default(0)
+  isActive          Boolean  @default(true)
   // When set, picking this disposition updates Lead.status to this value
   leadStatusMapping String?
   // Stage gate — when set, this sub-disposition is only selectable when Stage = this value
-  stage     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  stage             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@unique([entity, category, value, stage])
   @@index([entity, category, isActive])
@@ -1655,27 +1673,27 @@ model Disposition {
 // ============ LEAD PAYMENT CALCULATOR (SF parity) ============
 
 model LeadPaymentCalculation {
-  id                   String   @id @default(cuid())
+  id                   String    @id @default(cuid())
   leadId               String
-  lead                 Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  lead                 Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
   totalDebt            Float?
   setupFee             Float?
   serviceFee           Float?
   monthlyBankFee       Float?
   citadelFee           Float?
-  settlementPercentage Float?   // e.g. 50.0 = 50%
+  settlementPercentage Float? // e.g. 50.0 = 50%
   programFeePercent    Float?
   totalSettlement      Float?
-  programFeePeriod     Int?     // periods (weeks/months)
-  frequency            String?  // DAILY | WEEKLY | BI_WEEKLY | MONTHLY
+  programFeePeriod     Int? // periods (weeks/months)
+  frequency            String? // DAILY | WEEKLY | BI_WEEKLY | MONTHLY
   firstPaymentDate     DateTime?
   estimatedAmount      Float?
   retainerPercentage   Float?
   savedById            String?
-  savedBy              User?    @relation("PaymentCalcSavedBy", fields: [savedById], references: [id])
-  savedAt              DateTime @default(now())
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  savedBy              User?     @relation("PaymentCalcSavedBy", fields: [savedById], references: [id])
+  savedAt              DateTime  @default(now())
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   @@index([leadId, savedAt])
 }
@@ -1686,10 +1704,10 @@ model LeadDebt {
   id            String   @id @default(cuid())
   leadId        String
   lead          Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  type          String   // MCA | CREDIT_LINE | TERM_LOAN | BUSINESS_CC | EQUIPMENT | INVOICE_FACTORING | OTHER
+  type          String // MCA | CREDIT_LINE | TERM_LOAN | BUSINESS_CC | EQUIPMENT | INVOICE_FACTORING | OTHER
   creditorName  String?
   amount        Float
-  frequency     String   // DAILY | WEEKLY | BI_WEEKLY | MONTHLY | LUMP_SUM
+  frequency     String // DAILY | WEEKLY | BI_WEEKLY | MONTHLY | LUMP_SUM
   paymentAmount Float?
   status        String   @default("ACTIVE") // ACTIVE | DEFAULTED | SETTLED | PAID_OFF | DISPUTED
   notes         String?
@@ -1707,7 +1725,7 @@ model LeadHistory {
   id          String   @id @default(cuid())
   leadId      String
   lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  field       String   // canonical field name on Lead
+  field       String // canonical field name on Lead
   oldValue    String?
   newValue    String?
   changedById String?
@@ -1721,19 +1739,19 @@ model LeadHistory {
 
 model ListView {
   id            String   @id @default(cuid())
-  entity        String   // "Lead" | "Account" | "Contact" | "Opportunity" | "Case" | ...
-  name          String                     // "Web Leads"
-  developerName String?                    // "Web_Leads" — optional for user views
-  filters       Json     @default("[]")    // [{ field, op, value }]
-  columns       Json?                      // [string] — column keys to show
+  entity        String // "Lead" | "Account" | "Contact" | "Opportunity" | "Case" | ...
+  name          String // "Web Leads"
+  developerName String? // "Web_Leads" — optional for user views
+  filters       Json     @default("[]") // [{ field, op, value }]
+  columns       Json? // [string] — column keys to show
   sortField     String?
-  sortDir       String   @default("desc")  // asc | desc
+  sortDir       String   @default("desc") // asc | desc
   ownerId       String?
   owner         User?    @relation("ListViewOwner", fields: [ownerId], references: [id])
-  isShared      Boolean  @default(false)   // visible to all users
-  isPinned      Boolean  @default(false)   // pin on the view picker
-  isSystem      Boolean  @default(false)   // pre-seeded, can't be deleted by users
-  sortOrder     Int      @default(0)       // for ordering in the picker
+  isShared      Boolean  @default(false) // visible to all users
+  isPinned      Boolean  @default(false) // pin on the view picker
+  isSystem      Boolean  @default(false) // pre-seeded, can't be deleted by users
+  sortOrder     Int      @default(0) // for ordering in the picker
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

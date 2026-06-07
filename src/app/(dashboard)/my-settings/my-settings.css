@@ -1,0 +1,357 @@
+/* Salesforce-style "My Personal Information" settings shell. */
+
+.ms-shell {
+  display: flex;
+  align-items: stretch;
+  min-height: calc(100vh - 110px);
+  background: #fff;
+  border: 1px solid #d8dde6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ms-tree-aside {
+  width: 240px;
+  flex: 0 0 240px;
+  background: #fafaf9;
+  border-right: 1px solid #d8dde6;
+  display: flex;
+  flex-direction: column;
+}
+
+.ms-tree-search {
+  position: relative;
+  padding: 10px 12px;
+  border-bottom: 1px solid #d8dde6;
+  background: #fff;
+}
+
+.ms-tree-search-icon {
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  fill: #706e6b;
+}
+
+.ms-tree-search-input {
+  width: 100%;
+  padding: 6px 8px 6px 28px;
+  border: 1px solid #d8dde6;
+  border-radius: 4px;
+  font-size: 13px;
+  background: #fff;
+  color: #080707;
+  outline: none;
+}
+
+.ms-tree-search-input:focus {
+  border-color: #1589ee;
+  box-shadow: 0 0 3px #1589ee;
+}
+
+.ms-tree {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  font-size: 13px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.ms-tree li {
+  list-style: none;
+}
+
+.ms-tree-parent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 12px;
+  background: transparent;
+  border: 0;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: #080707;
+  text-align: left;
+}
+
+.ms-tree-parent:hover {
+  background: #f3f2f2;
+}
+
+.ms-tree-chev {
+  width: 10px;
+  height: 10px;
+  fill: #706e6b;
+  transition: transform 120ms ease;
+  flex-shrink: 0;
+}
+
+.ms-tree-chev-open {
+  transform: rotate(90deg);
+}
+
+.ms-tree-children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ms-tree-leaf {
+  display: block;
+  padding: 6px 12px 6px 32px;
+  border-left: 3px solid transparent;
+  color: #080707;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.ms-tree-leaf-top {
+  padding-left: 28px;
+  font-weight: 700;
+}
+
+.ms-tree-leaf:hover {
+  background: #f3f2f2;
+}
+
+.ms-tree-leaf-active {
+  background: #e6f3ff;
+  border-left-color: #1589ee;
+  color: #080707;
+}
+
+.ms-main {
+  flex: 1;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ---- Page title bar ---- */
+.ms-title-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #005fb2;
+  color: #fff;
+  padding: 10px 16px;
+  height: 44px;
+  border-bottom: 1px solid #014486;
+}
+
+.ms-title-bar-icon {
+  width: 18px;
+  height: 18px;
+  fill: #fff;
+  flex-shrink: 0;
+}
+
+.ms-title-bar-text {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* ---- Yellow banner ---- */
+.ms-banner {
+  background: #fef3d1;
+  border-bottom: 1px solid #f4d68b;
+  color: #080707;
+  padding: 10px 16px;
+  font-size: 13px;
+}
+
+.ms-banner a {
+  color: #0070d2;
+  text-decoration: none;
+}
+
+.ms-banner a:hover {
+  text-decoration: underline;
+}
+
+/* ---- Page body ---- */
+.ms-body {
+  padding: 16px 20px 32px;
+}
+
+.ms-section {
+  border: 1px solid #d8dde6;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  background: #fff;
+}
+
+.ms-section-header {
+  background: #f3f2f2;
+  border-bottom: 1px solid #d8dde6;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #54698d;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ms-section-caret {
+  width: 10px;
+  height: 10px;
+  fill: #54698d;
+  transition: transform 120ms ease;
+}
+
+.ms-section-caret-open {
+  transform: rotate(90deg);
+}
+
+.ms-row {
+  display: grid;
+  grid-template-columns: 220px 1fr 32px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f3f2f2;
+  min-height: 44px;
+}
+
+.ms-row:last-child {
+  border-bottom: 0;
+}
+
+.ms-row-label {
+  color: #54698d;
+  font-size: 12px;
+  font-weight: 700;
+  padding-right: 8px;
+  text-align: right;
+}
+
+.ms-row-input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #d8dde6;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #080707;
+  background: #fff;
+  outline: none;
+  font-family: inherit;
+}
+
+.ms-row-input:focus {
+  border-color: #1589ee;
+  box-shadow: 0 0 3px #1589ee;
+}
+
+.ms-row-input[readonly] {
+  background: #f3f2f2;
+  color: #706e6b;
+}
+
+.ms-row-textarea {
+  resize: vertical;
+  min-height: 44px;
+}
+
+.ms-row-helper {
+  font-size: 12px;
+  color: #706e6b;
+  margin-top: 4px;
+}
+
+.ms-row-edit-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: #706e6b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ms-row-edit-btn:hover {
+  background: #f3f2f2;
+  color: #080707;
+}
+
+.ms-row-edit-icon {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* ---- Save bar ---- */
+.ms-save-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f3f2f2;
+  border: 1px solid #d8dde6;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.ms-btn {
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  border: 1px solid #0070d2;
+  font-family: inherit;
+}
+
+.ms-btn-primary {
+  background: #0070d2;
+  color: #fff;
+}
+
+.ms-btn-primary:hover {
+  background: #005fb2;
+}
+
+.ms-btn-primary:disabled {
+  background: #c9c7c5;
+  border-color: #c9c7c5;
+  cursor: not-allowed;
+}
+
+.ms-btn-secondary {
+  background: #fff;
+  color: #0070d2;
+}
+
+.ms-btn-secondary:hover {
+  background: #f4f6f9;
+}
+
+.ms-toast {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.ms-toast-success {
+  background: #04844b;
+  color: #fff;
+}
+
+.ms-toast-error {
+  background: #c23934;
+  color: #fff;
+}
