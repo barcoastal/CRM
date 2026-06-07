@@ -165,8 +165,8 @@ export function InlineEditableField({
     >
       <div
         style={{
-          color: "#706e6b",
-          fontWeight: 400,
+          color: "#3e3e3c",
+          fontWeight: 700,
           fontSize: 11,
           lineHeight: 1.35,
           wordBreak: "break-word",

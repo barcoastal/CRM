@@ -201,8 +201,8 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
       <div
         style={{
           fontSize: 11,
-          color: "#706e6b",
-          fontWeight: 400,
+          color: "#3e3e3c",
+          fontWeight: 700,
           lineHeight: 1.35,
           paddingTop: 1,
         }}
