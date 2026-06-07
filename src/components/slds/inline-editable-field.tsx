@@ -147,12 +147,16 @@ export function InlineEditableField({
     <div
       className="sf-ief sf-field"
       style={{
+        // SF Lightning record-page field row: HORIZONTAL — label LEFT (33%),
+        // value middle, action column (pencil OR save/cancel) on the far RIGHT.
+        // Matches the SF Roberto Suarez Lead, Kenya Palmer Opportunity, Dakota
+        // Enterprises Account and Jennifer Stamos Contact screenshots.
         display: "grid",
-        gridTemplateColumns: "1fr 56px",
+        gridTemplateColumns: editing ? "33% 1fr 56px" : "33% 1fr 28px",
         alignItems: "start",
-        gap: "2px 8px",
-        padding: "8px 0 10px",
-        minHeight: 56,
+        gap: 8,
+        padding: "8px 0",
+        minHeight: 40,
         borderBottom: "1px solid #dddbda",
         fontSize: 13,
         lineHeight: 1.35,
@@ -161,12 +165,12 @@ export function InlineEditableField({
     >
       <div
         style={{
-          gridColumn: "1 / -1",
           color: "#3e3e3c",
           fontWeight: 400,
           fontSize: 12,
-          lineHeight: 1.35,
+          lineHeight: 1.4,
           wordBreak: "break-word",
+          paddingTop: 1,
         }}
       >
         {label}
@@ -228,17 +232,17 @@ export function InlineEditableField({
             color: "#080707",
             minWidth: 0,
             wordBreak: "break-word",
-            paddingTop: 2,
+            lineHeight: 1.4,
           }}
         >
-          {isEmpty ? <span style={{ color: "#b0adab" }}>{"-"}</span> : readValue}
+          {isEmpty ? <span aria-hidden="true" style={{ color: "transparent" }}>-</span> : readValue}
           {error && (
             <div style={{ color: "#c23934", fontSize: 11, marginTop: 2 }}>{error}</div>
           )}
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 2, justifyContent: "flex-end", alignSelf: "start", marginTop: -2 }}>
+      <div style={{ display: "flex", gap: 2, justifyContent: "flex-end", alignSelf: "start" }}>
         {editing ? (
           <>
             <button
