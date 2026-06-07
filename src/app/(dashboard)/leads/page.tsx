@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
+import { auth } from "@/lib/auth";
 import {
   SfListPage,
   type SfColumn,
   type SfRow,
   ownerAlias,
 } from "@/components/slds/sf-list-page";
+import { LEAD_STATUSES } from "@/lib/validations/lead";
 
 interface LeadsPageProps {
   searchParams: Promise<{
@@ -17,6 +19,7 @@ interface LeadsPageProps {
     assignedToId?: string;
     sort?: string;
     dir?: string;
+    view?: string;
   }>;
 }
 
@@ -47,11 +50,23 @@ const SORT_MAP: Record<string, Prisma.LeadOrderByWithRelationInput> = {
   source: { source: "asc" },
 };
 
+const VIEWS = [
+  { value: "recent", label: "Recently Viewed" },
+  { value: "all", label: "All Leads" },
+  { value: "my-open", label: "My Open Leads" },
+  { value: "this-week", label: "This Week's Leads" },
+  { value: "today-activity", label: "Today's Activity" },
+];
+
 export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const params = await searchParams;
   const search = params.search?.trim() ?? "";
   const sort = params.sort ?? "";
   const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
+  const view = params.view ?? "recent";
+
+  const session = await auth();
+  const myId = session?.user?.id ?? "";
 
   const where: Prisma.LeadWhereInput = {};
   if (search) {
@@ -67,9 +82,31 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   if (params.recordType) where.recordType = params.recordType;
   if (params.assignedToId) where.assignedToId = params.assignedToId;
 
+  // Apply view-based filters
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(todayStart);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Sunday
+  const tomorrow = new Date(todayStart);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  if (view === "my-open" && myId) {
+    where.assignedToId = myId;
+    where.status = { notIn: ["ENROLLED", "LOST", "DNC"] };
+  } else if (view === "this-week") {
+    where.createdAt = { gte: weekStart };
+  } else if (view === "today-activity") {
+    where.OR = [
+      ...(where.OR ?? []),
+      { lastContactedAt: { gte: todayStart, lt: tomorrow } },
+      { updatedAt: { gte: todayStart, lt: tomorrow } },
+    ];
+  }
+  // "all" → no extra filter. "recent" → default order = most recently updated/created.
+
   // Build prisma orderBy from sort key
   let orderBy: Prisma.LeadOrderByWithRelationInput =
-    { createdAt: "desc" };
+    view === "recent" ? { updatedAt: "desc" } : { createdAt: "desc" };
   if (sort && SORT_MAP[sort]) {
     const key = Object.keys(SORT_MAP[sort])[0] as keyof Prisma.LeadOrderByWithRelationInput;
     orderBy = { [key]: dir } as Prisma.LeadOrderByWithRelationInput;
@@ -143,12 +180,15 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   if (params.source) preservedParams.source = params.source;
   if (params.recordType) preservedParams.recordType = params.recordType;
   if (params.assignedToId) preservedParams.assignedToId = params.assignedToId;
+  if (params.view) preservedParams.view = params.view;
+
+  const subtitle = VIEWS.find((v) => v.value === view)?.label ?? "Recently Viewed";
 
   return (
     <SfListPage
       entity="lead"
       title="Leads"
-      subtitle="Recently Viewed"
+      subtitle={subtitle}
       count={total}
       iconColor="#f88962"
       iconSlug="lead"
@@ -166,6 +206,14 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       sortDir={dir}
       searchQuery={search}
       preservedParams={preservedParams}
+      views={VIEWS}
+      currentView={view}
+      massConfig={{
+        entity: "lead",
+        statusField: "status",
+        statusLabel: "Status",
+        statusOptions: LEAD_STATUSES.map((s) => ({ value: s, label: s })),
+      }}
     />
   );
 }

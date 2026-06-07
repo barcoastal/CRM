@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
+import { auth } from "@/lib/auth";
 import Link from "next/link";
 import {
   SfListPage,
@@ -14,6 +15,7 @@ interface ContactsPageProps {
     search?: string;
     sort?: string;
     dir?: string;
+    view?: string;
   }>;
 }
 
@@ -37,11 +39,23 @@ const SORT_MAP: Record<string, Prisma.ContactOrderByWithRelationInput> = {
   email: { email: "asc" },
 };
 
+const VIEWS = [
+  { value: "recent", label: "Recently Viewed" },
+  { value: "all", label: "All Contacts" },
+  { value: "my-open", label: "My Contacts" },
+  { value: "this-week", label: "This Week's New" },
+  { value: "today-activity", label: "Today's Activity" },
+];
+
 export default async function ContactsPage({ searchParams }: ContactsPageProps) {
   const params = await searchParams;
   const search = params.search?.trim() ?? "";
   const sort = params.sort ?? "";
   const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
+  const view = params.view ?? "recent";
+
+  const session = await auth();
+  const myId = session?.user?.id ?? "";
 
   const where: Prisma.ContactWhereInput = { isActive: true };
   if (params.accountId) where.primaryAccountId = params.accountId;
@@ -51,6 +65,21 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
       { email: { contains: search } },
       { phone: { contains: search } },
     ];
+  }
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(todayStart);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const tomorrow = new Date(todayStart);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  if (view === "my-open" && myId) {
+    where.ownerId = myId;
+  } else if (view === "this-week") {
+    where.createdAt = { gte: weekStart };
+  } else if (view === "today-activity") {
+    where.updatedAt = { gte: todayStart, lt: tomorrow };
   }
 
   let orderBy: Prisma.ContactOrderByWithRelationInput = { updatedAt: "desc" };
@@ -123,12 +152,15 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
 
   const preservedParams: Record<string, string> = {};
   if (params.accountId) preservedParams.accountId = params.accountId;
+  if (params.view) preservedParams.view = params.view;
+
+  const subtitle = VIEWS.find((v) => v.value === view)?.label ?? "Recently Viewed";
 
   return (
     <SfListPage
       entity="contact"
       title="Contacts"
-      subtitle="Recently Viewed"
+      subtitle={subtitle}
       count={total}
       iconColor="#a094ed"
       iconSlug="contact"
@@ -144,6 +176,12 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
       sortDir={dir}
       searchQuery={search}
       preservedParams={preservedParams}
+      views={VIEWS}
+      currentView={view}
+      massConfig={{
+        entity: "contact",
+        // Contacts don't have a status field; only Change Owner / Send Email work
+      }}
     />
   );
 }
