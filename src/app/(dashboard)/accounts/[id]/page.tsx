@@ -23,6 +23,7 @@ import { ComposeEmailButton } from "@/components/emails/compose-email-button";
 import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { genericTone } from "@/lib/slds/status-tones";
+import { LeadHistoryCard } from "@/components/leads/lead-history-card";
 
 const PATH = ACCOUNT_STAGES.map((s) => ({ label: s }));
 
@@ -581,19 +582,16 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         )}
         emptyHint="No contacts."
       />
-      <RelatedList
-        entity="Account"
-        title="Account History"
-        items={account.history}
-        renderItem={(h) => (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12 }}>
-            <div>{new Date(h.changedAt).toLocaleString()}</div>
-            <div>{h.field}</div>
-            <div>{h.changedBy?.name ?? "System"}</div>
-            <div style={{ color: "#706e6b" }}>{h.oldValue ?? "—"}</div>
-            <div>{h.newValue ?? "—"}</div>
-          </div>
-        )}
+      <LeadHistoryCard
+        rows={account.history.map((h) => ({
+          id: h.id,
+          field: h.field,
+          oldValue: h.oldValue,
+          newValue: h.newValue,
+          changedBy: h.changedBy,
+          changedAt: h.changedAt,
+        }))}
+        entityLabel="Account History"
         emptyHint="No history."
       />
     </>

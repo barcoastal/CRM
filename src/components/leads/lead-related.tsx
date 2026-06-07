@@ -1,4 +1,5 @@
 import { RelatedList } from "@/components/slds/related-list";
+import { LeadHistoryCard } from "@/components/leads/lead-history-card";
 
 export type AsyncOpRow = {
   id: string;
@@ -172,20 +173,17 @@ export function LeadRelated({
         )}
       />
 
-      <RelatedList
-        entity="Account"
-        title="Lead History"
-        items={leadHistory}
+      <LeadHistoryCard
+        rows={leadHistory.map((h) => ({
+          id: h.id,
+          field: h.field,
+          oldValue: h.oldValue,
+          newValue: h.newValue,
+          changedBy: h.changedBy,
+          changedAt: h.changedAt,
+        }))}
+        entityLabel="Lead History"
         emptyHint="No history yet"
-        renderItem={(h) => (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12 }}>
-            <div>{new Date(h.changedAt).toLocaleString()}</div>
-            <div>{h.field}</div>
-            <div>{h.changedBy?.name ?? "System"}</div>
-            <div style={{ color: "#706e6b" }}>{h.oldValue ?? "—"}</div>
-            <div>{h.newValue ?? "—"}</div>
-          </div>
-        )}
       />
     </div>
   );

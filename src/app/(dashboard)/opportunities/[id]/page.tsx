@@ -20,6 +20,7 @@ import { opportunityStageTone, settlementStatusTone, genericTone } from "@/lib/s
 import { OPP_STAGES } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { computeOppFormulas, fmtMoney, fmtPercent } from "@/lib/opp-formulas";
+import { LeadHistoryCard } from "@/components/leads/lead-history-card";
 
 /**
  * SF path strip — mirrors the green-arrow path on the Kenya Palmer screenshot.
@@ -774,20 +775,17 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           </div>
         )}
       />
-      <RelatedList
-        entity="Account"
-        title="Opportunity Field History"
-        items={opp.history}
+      <LeadHistoryCard
+        rows={opp.history.map((h) => ({
+          id: h.id,
+          field: h.field,
+          oldValue: h.oldValue,
+          newValue: h.newValue,
+          changedBy: h.changedBy,
+          changedAt: h.changedAt,
+        }))}
+        entityLabel="Opportunity Field History"
         emptyHint="No history."
-        renderItem={(h) => (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12 }}>
-            <div>{new Date(h.changedAt).toLocaleString()}</div>
-            <div>{h.field}</div>
-            <div>{h.changedBy?.name ?? "System"}</div>
-            <div style={{ color: "#706e6b" }}>{h.oldValue ?? "-"}</div>
-            <div>{h.newValue ?? "-"}</div>
-          </div>
-        )}
       />
     </>
   );

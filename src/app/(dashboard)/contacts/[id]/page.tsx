@@ -13,6 +13,7 @@ import { ContactFieldGrid } from "@/components/contacts/contact-field-grid";
 import { CE } from "@/components/contacts/contact-field-helpers";
 import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
+import { LeadHistoryCard, type HistoryRow } from "@/components/leads/lead-history-card";
 
 export default async function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,6 +47,33 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     },
   });
   if (!contact) notFound();
+
+  // Contact audit history — Contact has no dedicated history table in schema,
+  // so we surface the last 100 AuditLog rows for this entity. The audit
+  // payload stores before/after snapshots; we flatten the first changed
+  // field per entry so the history card stays scannable.
+  const auditRows = await prisma.auditLog.findMany({
+    where: { entity: "Contact", entityId: id, action: "UPDATE" },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+    include: { user: { select: { name: true } } },
+  });
+  const contactHistory: HistoryRow[] = auditRows.flatMap((row) => {
+    const before = (row.before ?? {}) as Record<string, unknown>;
+    const after = (row.after ?? {}) as Record<string, unknown>;
+    const changedFields = Array.from(new Set([...Object.keys(before), ...Object.keys(after)]));
+    return changedFields
+      .filter((f) => String(before[f] ?? "") !== String(after[f] ?? ""))
+      .slice(0, 3)
+      .map((field, i) => ({
+        id: `${row.id}-${i}`,
+        field,
+        oldValue: before[field] == null ? null : String(before[field]),
+        newValue: after[field] == null ? null : String(after[field]),
+        changedBy: row.user ? { name: row.user.name } : null,
+        changedAt: row.createdAt,
+      }));
+  });
 
   // ---------- sfDataJson helpers ----------
   let ctSf: Record<string, unknown> = {};
@@ -436,6 +464,11 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           </div>
         )}
         emptyHint="No open tasks."
+      />
+      <LeadHistoryCard
+        rows={contactHistory}
+        entityLabel="Contact History"
+        emptyHint="No changes recorded."
       />
     </ContactSection>
   );
