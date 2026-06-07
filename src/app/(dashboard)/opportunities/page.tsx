@@ -10,6 +10,21 @@ import {
 } from "@/components/slds/sf-list-page";
 import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
 
+// Display labels for opportunity stages — match SF screenshots which show
+// title-case ("Working Opportunity") rather than DB enum upper-snake.
+const STAGE_LABEL: Record<string, string> = {
+  WORKING_OPPORTUNITY: "Working Opportunity",
+  WAITING_FOR_AGREEMENTS: "Waiting for Agreements",
+  READY_TO_CLOSE: "Ready To Close",
+  CONTRACT_SENT: "Contract Sent",
+  CONTRACT_SIGNED: "Contract Signed",
+  ARCHIVED: "Archived",
+  CLOSED_WON_FIRST_PAYMENT: "Closed Won First Payment Pending",
+  CLOSED: "Closed",
+};
+const formatStage = (s: string | null | undefined) =>
+  s ? STAGE_LABEL[s] ?? s.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : "—";
+
 interface OpportunitiesPageProps {
   searchParams: Promise<{
     recordType?: string;
@@ -26,15 +41,20 @@ const LIMIT = 50;
 // SF Opportunity list columns (match docs/sf-screenshots/sf-opp-list.png):
 // # | checkbox | Opportunity Name | Account Name | Stage | Close Date |
 // Total Debt Including Fees | Lead Id | Opp ID | Owner Alias
+// SF Opportunity list columns (docs/sf-screenshots/sf-opp-list.png):
+// # | checkbox | Opportunity Name | Account Name | A...(Account Site) |
+// Stage | Close Date | Total Debt Includ... | Lead Id | Opp... |
+// Opportunity Owner Alias
 const COLUMNS: SfColumn[] = [
   { key: "name", label: "Opportunity Name", width: 240, sortable: true },
   { key: "account", label: "Account Name", width: 220, sortable: true },
+  { key: "accountSite", label: "Account Site", width: 110, sortable: false },
   { key: "stage", label: "Stage", width: 200, sortable: true },
   { key: "close", label: "Close Date", width: 110, sortable: true },
   { key: "debt", label: "Total Debt Including Fees", width: 170, sortable: true, align: "right" },
   { key: "leadId", label: "Lead Id", width: 110, sortable: true },
   { key: "oppId", label: "Opp ID", width: 110, sortable: true },
-  { key: "ownerAlias", label: "Owner Alias", width: 110, sortable: true },
+  { key: "ownerAlias", label: "Opportunity Owner Alias", width: 160, sortable: true },
 ];
 
 const SORT_MAP: Record<string, Prisma.OpportunityOrderByWithRelationInput> = {
@@ -104,7 +124,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         stage: true,
         totalDebt: true,
         expectedCloseDate: true,
-        account: { select: { id: true, name: true } },
+        account: { select: { id: true, name: true, website: true } },
         assignedTo: { select: { id: true, name: true, email: true } },
         lead: { select: { id: true, sfId: true } },
       },
@@ -132,6 +152,9 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
       ? (o.lead.sfId ?? o.lead.id.slice(-8).toUpperCase())
       : "—";
     const oppIdShort = o.sfId ?? o.id.slice(-8).toUpperCase();
+    const accountSite = o.account?.website
+      ? o.account.website.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "")
+      : "";
     return {
       id: o.id,
       href: `/opportunities/${o.id}`,
@@ -149,7 +172,8 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         ) : (
           "—"
         ),
-        o.stage || "—",
+        accountSite || "—",
+        formatStage(o.stage),
         closeDate,
         debt,
         leadIdShort,
