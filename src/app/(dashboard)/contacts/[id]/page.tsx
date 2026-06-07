@@ -179,10 +179,16 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     </Link>
   ) : null;
 
+  // SF Contact Details — field pairs verified against docs/sf-screenshots/sf-contact-detail.png
+  // (Jennifer Stamos Sample). Even index = left col, odd index = right col.
+  // Labels match SF verbatim ("Phone" not "Business Phone", "Mobile" not
+  // "Mobile Phone", "Fax" not "Business Fax", "Birthdate" not "Date of Birth",
+  // "Assistant" not "Assistant's Name").
   const contactInformationFields: import("@/components/contacts/contact-field-grid").ContactGridField[] = [
+    // Row 1: Contact Owner | Phone
     ["Contact Owner", ownerNode],
     [
-      "Business Phone",
+      "Phone",
       phoneVal ? (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
           <span style={{ color: "#1589ee" }}>{phoneVal}</span>
@@ -191,14 +197,19 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       ) : null,
       { fieldKey: "phone", type: "phone", rawValue: contact.phone ?? phoneVal },
     ],
-    CE("Full Name", nameNode, "fullName", "text", { rawValue: contact.fullName }),
+    // Row 2: Name | Home Phone
+    CE("Name", nameNode, "fullName", "text", { rawValue: contact.fullName }),
     CE("Home Phone", sfc("HomePhone"), "HomePhone", "phone"),
+    // Row 3: Account Name | Mobile
     ["Account Name", accountNameNode],
-    CE("Mobile Phone", contact.mobilePhone ?? sfc("MobilePhone"), "mobilePhone", "phone", { rawValue: contact.mobilePhone }),
+    CE("Mobile", contact.mobilePhone ?? sfc("MobilePhone"), "mobilePhone", "phone", { rawValue: contact.mobilePhone }),
+    // Row 4: Title | Other Phone
     CE("Title", contact.title ?? sfc("Title"), "title", "text", { rawValue: contact.title }),
     CE("Other Phone", sfc("OtherPhone"), "OtherPhone", "phone"),
+    // Row 5: Department | Fax
     CE("Department", sfc("Department"), "Department"),
-    CE("Business Fax", sfc("Fax"), "Fax"),
+    CE("Fax", sfc("Fax"), "Fax"),
+    // Row 6: Birthdate | Email
     CE("Birthdate", contact.birthdate?.toLocaleDateString() ?? sfcDate("Birthdate"), "birthdate", "date", { rawValue: contact.birthdate ?? null }),
     [
       "Email",
@@ -210,16 +221,22 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       ) : null,
       { fieldKey: "email", type: "email", rawValue: contact.email ?? emailVal },
     ],
+    // Row 7: Reports To | SSN
     ["Reports To", reportsToNode],
     CE("SSN", sfc("SSN__c") ?? sfc("SSN_Encrypted__c") ?? sfc("SSN"), "SSN__c"),
+    // Row 8: Lead Source | Preferred Method of Contact
     CE("Lead Source", sfc("LeadSource"), "LeadSource"),
     CE("Preferred Method of Contact", sfc("Preferred_Method_of_Contact__c") ?? sfc("Preferred_Method__c"), "Preferred_Method_of_Contact__c"),
+    // Row 9: Lead Id | Assistant
     ["Lead Id", sfc("Lead_Number__c") ?? sfc("Lead_Id__c") ?? sfc("LeadId__c") ?? sfc("Lead_ID__c")],
-    CE("Assistant's Name", sfc("AssistantName"), "AssistantName"),
+    CE("Assistant", sfc("AssistantName"), "AssistantName"),
+    // Row 10: Verified Phone Number | Asst. Phone
     CE("Verified Phone Number", sfcBool("Verified_Phone_Number__c"), "Verified_Phone_Number__c", "checkbox"),
     CE("Asst. Phone", sfc("AssistantPhone"), "AssistantPhone", "phone"),
+    // Row 11: Sync To Account Engagement | (empty right — SF leaves blank)
     CE("Sync To Account Engagement", sfcBool("Sync_To_Account_Engagement__c") ?? sfcBool("Sync_to_Pardot__c"), "Sync_To_Account_Engagement__c", "checkbox"),
-    ["__PAD__", null], // empty right-column cell so Mailing/Other align side-by-side
+    ["__PAD__", null],
+    // Row 12: Mailing Address | Other Address
     ["Mailing Address", mailingAddress],
     ["Other Address", otherAddress],
   ];
@@ -304,24 +321,45 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   const marketingPanel = (
     <>
       <ContactSection title="Account Engagement">
+        {/* SF Account Engagement section — pair-by-pair from SF Jennifer Stamos. */}
         <ContactFieldGrid
           fields={[
+            // Row 1: Email Opt Out | Account Engagement Grade
             ["Email Opt Out", sfcBool("HasOptedOutOfEmail")],
             ["Account Engagement Grade", sfc("pi__grade__c")],
+            // Row 2: Account Engagement Campaign | Account Engagement First Referrer Type
             ["Account Engagement Campaign", sfc("pi__campaign__c")],
-            ["Account Engagement First Referrer", sfc("pi__first_touch_url__c") ?? sfc("pi__first_referrer_type__c")],
+            ["Account Engagement First Referrer Type", sfc("pi__first_referrer_type__c")],
+            // Row 3: Account Engagement Comments | Account Engagement Hard Bounced
             ["Account Engagement Comments", sfc("pi__comments__c")],
             ["Account Engagement Hard Bounced", sfcBool("pi__pardot_hard_bounced__c")],
-            ["Account Engagement Last Activity", sfcDate("pi__last_activity__c")],
-            ["Account Engagement Score", sfc("pi__score__c")],
-            ["Account Engagement First Activity", sfcDate("pi__first_activity__c")],
+            // Row 4: Account Engagement Conversion Date | Account Engagement Last Activity
             ["Account Engagement Conversion Date", sfcDate("pi__conversion_date__c")],
+            ["Account Engagement Last Activity", sfcDate("pi__last_activity__c")],
+            // Row 5: Account Engagement Created Date | Account Engagement Last Scored At
+            ["Account Engagement Created Date", sfcDate("pi__created_date__c")],
+            ["Account Engagement Last Scored At", sfcDate("pi__last_scored_at__c")],
+            // Row 6: Account Engagement First Activity | Account Engagement Notes
+            ["Account Engagement First Activity", sfcDate("pi__first_activity__c")],
             ["Account Engagement Notes", sfc("pi__notes__c")],
-            ["Email Bounced Reason", sfc("EmailBouncedReason")],
-            ["Email Bounced Date", sfcDate("EmailBouncedDate")],
-            ["Last Activity", sfcDate("LastActivityDate")],
+            // Row 7: Account Engagement First Referrer | Account Engagement Score
+            ["Account Engagement First Referrer", sfc("pi__first_referrer__c") ?? sfc("pi__first_touch_url__c")],
+            ["Account Engagement Score", sfc("pi__score__c")],
+            // Row 8: Account Engagement First Referrer Query | Account Engagement URL
+            ["Account Engagement First Referrer Query", sfc("pi__first_referrer_query__c") ?? sfc("pi__first_search__c")],
+            ["Account Engagement URL", sfc("pi__url__c")],
+            // Row 9: Created By | Last Modified By
+            ["Created By", `${sfc("CreatedBy_Full_Name__c") ?? ""}${sfcDate("CreatedDate") ? `, ${sfcDate("CreatedDate")}` : ""}`.trim() || sfcDate("CreatedDate")],
+            ["Last Modified By", `${sfc("LastModifiedBy_Full_Name__c") ?? ""}${sfcDate("LastModifiedDate") ? `, ${sfcDate("LastModifiedDate")}` : ""}`.trim() || sfcDate("LastModifiedDate")],
           ]}
         />
+        {/* Description (full width) — SF renders Description as a full-row
+            below the Account Engagement pair grid. */}
+        <div style={{ padding: "8px 0", display: "grid", gridTemplateColumns: "minmax(120px, 165px) 1fr 24px", gap: 12, alignItems: "start" }}>
+          <div style={{ fontSize: 12, color: "#3e3e3c", paddingTop: 1 }}>Description</div>
+          <div style={{ fontSize: 13, color: "#080707", whiteSpace: "pre-wrap" }}>{sfc("Description") ?? ""}</div>
+          <div />
+        </div>
       </ContactSection>
 
       <ContactSection title="Google Analytics" defaultOpen={false}>
