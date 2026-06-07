@@ -9,7 +9,8 @@ import { SfDataSection } from "@/components/slds/sf-data-section";
 import { ContactTabs } from "@/components/contacts/contact-tabs";
 import { ContactHeaderButtons } from "@/components/contacts/contact-header-buttons";
 import { ContactSection } from "@/components/contacts/contact-section";
-import { ContactFieldGrid, CE } from "@/components/contacts/contact-field-grid";
+import { ContactFieldGrid } from "@/components/contacts/contact-field-grid";
+import { CE } from "@/components/contacts/contact-field-helpers";
 import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
 
