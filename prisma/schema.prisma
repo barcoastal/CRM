@@ -70,6 +70,7 @@ model User {
   envelopesCreated       Envelope[]                      @relation("EnvelopeCreatedBy")
   suppressionsAdded      SuppressionEntry[]              @relation("SuppressionAddedBy")
   cadenceEnrollments     CadenceEnrollment[]             @relation("CadenceEnrolledBy")
+  marketingSources       MarketingSource[]               @relation("MktSourceOwner")
 
   // Five9 AgentREST credentials per user — used to log the agent into Five9
   // and trigger click-to-dial on their behalf. Password is encrypted at rest
@@ -198,16 +199,17 @@ model UserPermissionSet {
 // ============ GROUPS / QUEUES (SF Group object, Type=Queue|Role|PublicGroup) ============
 
 model Group {
-  id                String        @id @default(cuid())
+  id                String            @id @default(cuid())
   name              String // "Closer Pool"
-  developerName     String        @unique // "Closer_Pool"
-  type              String        @default("PUBLIC_GROUP") // QUEUE | PUBLIC_GROUP | ROLE_GROUP
+  developerName     String            @unique // "Closer_Pool"
+  type              String            @default("PUBLIC_GROUP") // QUEUE | PUBLIC_GROUP | ROLE_GROUP
   description       String?
   // For queues: which sObject types can be assigned (e.g. "Lead", "Case")
   supportedEntities String? // CSV: "Lead,Case"
   members           GroupMember[]
-  casesAsOwner      Case[]        @relation("CaseOwnerGroup")
-  createdAt         DateTime      @default(now())
+  casesAsOwner      Case[]            @relation("CaseOwnerGroup")
+  marketingSources  MarketingSource[] @relation("MktSourceQueue")
+  createdAt         DateTime          @default(now())
 }
 
 model GroupMember {
@@ -1758,4 +1760,77 @@ model ListView {
   @@unique([entity, developerName])
   @@index([entity, ownerId])
   @@index([entity, isShared])
+}
+
+// ============ MARKETING (inbound lead capture + outbound postbacks) ============
+
+model MarketingSource {
+  id             String                @id @default(cuid())
+  name           String
+  slug           String                @unique
+  apiKey         String                @unique
+  isActive       Boolean               @default(true)
+  fieldMapping   Json                  @default("{}")
+  defaultOwnerId String?
+  defaultOwner   User?                 @relation("MktSourceOwner", fields: [defaultOwnerId], references: [id])
+  defaultQueueId String?
+  defaultQueue   Group?                @relation("MktSourceQueue", fields: [defaultQueueId], references: [id])
+  leadSource     String?
+  requiredFields String[]              @default([])
+  dedupeBy       String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  inboundLogs    MarketingInboundLog[]
+}
+
+model MarketingInboundLog {
+  id           String          @id @default(cuid())
+  sourceId     String
+  source       MarketingSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  rawPayload   Json
+  parsed       Json?
+  leadId       String?
+  status       String
+  errorMessage String?
+  ip           String?
+  userAgent    String?
+  receivedAt   DateTime        @default(now())
+
+  @@index([sourceId, receivedAt])
+}
+
+model MarketingPostbackEndpoint {
+  id              String                 @id @default(cuid())
+  name            String
+  url             String
+  method          String                 @default("POST")
+  authHeaderKey   String?
+  authHeaderValue String?
+  payloadTemplate String?
+  events          String[]               @default([])
+  isActive        Boolean                @default(true)
+  retryOnFail     Boolean                @default(true)
+  maxAttempts     Int                    @default(3)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  logs            MarketingPostbackLog[]
+}
+
+model MarketingPostbackLog {
+  id             String                    @id @default(cuid())
+  endpointId     String
+  endpoint       MarketingPostbackEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  event          String
+  entityType     String?
+  entityId       String?
+  requestBody    Json
+  responseBody   Json?
+  responseStatus Int?
+  status         String
+  attempts       Int                       @default(0)
+  lastError      String?
+  sentAt         DateTime?
+  createdAt      DateTime                  @default(now())
+
+  @@index([endpointId, createdAt])
 }
