@@ -63,6 +63,19 @@ export function DockedComposer() {
     })();
   }, [showTemplates, templates.length]);
 
+  // Warn before closing the tab with unsent content
+  useEffect(() => {
+    if (!state.open) return;
+    const hasContent = !!(state.to || state.subject || (state.bodyHtml && state.bodyHtml.replace(/<[^>]*>/g, "").trim()));
+    if (!hasContent) return;
+    function beforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", beforeUnload);
+    return () => window.removeEventListener("beforeunload", beforeUnload);
+  }, [state.open, state.to, state.subject, state.bodyHtml]);
+
   // Related-to search
   useEffect(() => {
     if (!relatedOpen || !relatedQ || relatedQ.trim().length < 2) {
@@ -339,6 +352,9 @@ export function DockedComposer() {
 
       {/* Footer */}
       <div style={footer}>
+        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontSize: 11, color: "#706e6b" }}>
+          Draft saved
+        </div>
         <div style={{ display: "flex", gap: 8, position: "relative" }}>
           <button type="button" style={footerIcon} title="Attach" onClick={() => toast.message("Attachments coming soon")}>
             <AttachIcon />
@@ -783,6 +799,7 @@ const footer: React.CSSProperties = {
   alignItems: "center",
   flexShrink: 0,
   background: "#fafaf9",
+  position: "relative",
 };
 
 const footerIcon: React.CSSProperties = {
