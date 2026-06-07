@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { RecordPage, StatusPill } from "@/components/slds/record-page";
-import { Section, FieldGrid, E } from "@/components/slds/section";
+import { Section, FieldGrid } from "@/components/slds/section";
+import { E } from "@/components/slds/field-helpers";
 import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activity-chatter-rail";
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { LeadTabs } from "@/components/leads/lead-tabs";
