@@ -26,6 +26,7 @@ interface ItemTile {
 
 const APPS: AppTile[] = [
   { label: "Sales Operations", href: "/dashboard", description: "Full pipeline + reports" },
+  { label: "Dashboards", href: "/dashboards", description: "KPIs and charts" },
   { label: "Sales Console", href: "/opportunities", description: "Closer workspace" },
   { label: "Customer Service", href: "/cases", description: "Cases + case feed" },
   { label: "Debt Negotiation", href: "/offers", description: "Offers + settlements" },
@@ -38,6 +39,7 @@ const APPS: AppTile[] = [
 
 const ITEMS: ItemTile[] = [
   { label: "Home", href: "/dashboard", entity: "Dashboard" },
+  { label: "Dashboards", href: "/dashboards", entity: "Dashboard" },
   { label: "Leads", href: "/leads", entity: "Lead" },
   { label: "Accounts", href: "/accounts", entity: "Account" },
   { label: "Contacts", href: "/contacts", entity: "Contact" },

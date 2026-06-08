@@ -16,6 +16,7 @@ interface TabItem {
 
 const TABS: TabItem[] = [
   { label: "Home", href: "/dashboard" },
+  { label: "Dashboards", href: "/dashboards", entity: "Dashboard" },
   { label: "Leads", href: "/leads", entity: "Lead" },
   { label: "Accounts", href: "/accounts", entity: "Account" },
   { label: "Contacts", href: "/contacts", entity: "Contact" },

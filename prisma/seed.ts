@@ -1137,7 +1137,48 @@ async function main() {
     }
   }
 
+  // ============ DASHBOARDS (idempotent — only seed when empty) ============
+  const existingDashboards = await prisma.dashboard.count();
+  let dashboardCount = 0;
+  if (existingDashboards === 0) {
+    const dash = await prisma.dashboard.create({
+      data: {
+        name: "Sales Overview",
+        description: "Open leads, pipeline value, closed won MTD, and pending signatures.",
+        isShared: true,
+      },
+    });
+    const kpiSpecs: { title: string; queryKey: string; x: number }[] = [
+      { title: "Open Leads", queryKey: "leads.total_open", x: 0 },
+      { title: "Pipeline Value", queryKey: "opportunities.pipeline_value", x: 3 },
+      { title: "Closed Won MTD", queryKey: "opportunities.closed_won_mtd", x: 6 },
+      { title: "Pending Signatures", queryKey: "envelopes.pending_signatures", x: 9 },
+    ];
+    for (const spec of kpiSpecs) {
+      await prisma.dashboardTile.create({
+        data: {
+          dashboardId: dash.id,
+          kind: "kpi",
+          title: spec.title,
+          queryKey: spec.queryKey,
+          position: { x: spec.x, y: 0, w: 3, h: 2 },
+        },
+      });
+    }
+    await prisma.dashboardTile.create({
+      data: {
+        dashboardId: dash.id,
+        kind: "bar",
+        title: "Opportunities by Stage",
+        queryKey: "opportunities.by_stage",
+        position: { x: 0, y: 2, w: 12, h: 3 },
+      },
+    });
+    dashboardCount = 1;
+  }
+
   console.log("\nSeed complete!");
+  console.log(`  Dashboards:       ${dashboardCount} (Sales Overview w/ 5 tiles)`);
   console.log(`  List Views:       ${listViewCount}`);
   console.log(`  Dispositions:     ${dispositionCount} (Lead sub-dispositions, SF parity)`);
   console.log(`  Roles:            ${ROLES.length}`);
