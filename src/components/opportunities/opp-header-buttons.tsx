@@ -6,6 +6,12 @@ import { DispositionModal } from "@/components/leads/disposition-modal";
 import { QuickActionsRow } from "@/components/quick-actions/quick-actions-row";
 import { SendContractModal } from "@/components/esign/send-contract-modal";
 import { OPP_STAGES, OPP_STAGE_TO_SUB_DISPOSITIONS } from "@/lib/sf-canonical";
+import { CategoryPicker } from "@/components/forecasting/category-picker";
+import {
+  defaultCategoryForStage,
+  isForecastCategory,
+  type ForecastCategory,
+} from "@/lib/forecasting/categories";
 
 const btn: React.CSSProperties = {
   background: "#fff",
@@ -31,13 +37,19 @@ export function OppHeaderButtons({
   defaultEmail,
   defaultPhone,
   defaultSignerName,
+  forecastCategory,
 }: {
   opportunityId: string;
   currentStage: string;
   defaultEmail?: string | null;
   defaultPhone?: string | null;
   defaultSignerName?: string | null;
+  forecastCategory?: string | null;
 }) {
+  const initialCategory: ForecastCategory =
+    forecastCategory && isForecastCategory(forecastCategory)
+      ? (forecastCategory as ForecastCategory)
+      : defaultCategoryForStage(currentStage);
   const router = useRouter();
   const [modal, setModal] = useState(false);
   const [contractModal, setContractModal] = useState(false);
@@ -54,6 +66,7 @@ export function OppHeaderButtons({
   return (
     <>
       <QuickActionsRow opportunityId={opportunityId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
+      <CategoryPicker opportunityId={opportunityId} value={initialCategory} size="sm" />
       <button style={primaryBtn} onClick={() => setContractModal(true)}>
         Send Contract
       </button>
