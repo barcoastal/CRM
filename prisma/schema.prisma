@@ -1613,6 +1613,17 @@ model EmailMessage {
   clickedAt   DateTime?
   bouncedAt   DateTime?
 
+  // Mass email tracking. trackingId is a short random token embedded in
+  // the open-pixel URL + click-rewrite URLs. openCount/clickCount increment
+  // every time the pixel/click endpoint is hit. firstClickedAt is the first
+  // click timestamp (clickedAt is kept as the "last clicked" for back compat).
+  massEmailId    String?
+  massEmail      MassEmail? @relation("MassEmailMessages", fields: [massEmailId], references: [id])
+  trackingId     String?    @unique
+  firstClickedAt DateTime?
+  openCount      Int        @default(0)
+  clickCount     Int        @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1621,6 +1632,36 @@ model EmailMessage {
   @@index([accountId])
   @@index([leadId])
   @@index([caseId])
+  @@index([massEmailId])
+  @@index([trackingId])
+}
+
+model MassEmail {
+  id             String         @id @default(cuid())
+  name           String
+  templateId     String?
+  template       EmailTemplate? @relation("MassEmailTemplate", fields: [templateId], references: [id])
+  fromUserId     String?
+  fromUser       User?          @relation("MassEmailFromUser", fields: [fromUserId], references: [id])
+  audienceType   String // "filter" | "list"
+  audienceFilter Json           @default("{}") // { entityType, filters }
+  audienceIds    String[]       @default([]) // if list type, the specific entity IDs
+  totalCount     Int            @default(0)
+  sentCount      Int            @default(0)
+  failedCount    Int            @default(0)
+  openCount      Int            @default(0)
+  clickCount     Int            @default(0)
+  status         String         @default("DRAFT") // DRAFT | SENDING | SENT | FAILED
+  scheduledAt    DateTime?
+  sentAt         DateTime?
+  createdById    String?
+  createdBy      User?          @relation("MassEmailCreatedBy", fields: [createdById], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  messages       EmailMessage[] @relation("MassEmailMessages")
+
+  @@index([status])
+  @@index([createdById])
 }
 
 model SmsMessage {
@@ -1678,6 +1719,7 @@ model EmailTemplate {
 
   emails       EmailMessage[]
   cadenceSteps CadenceStep[]  @relation("CadenceStepEmailTemplate")
+  massEmails   MassEmail[]    @relation("MassEmailTemplate")
 }
 
 model IntegrationCredential {
