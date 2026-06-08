@@ -223,7 +223,7 @@ export function NewSourceForm({ users, queues }: Props) {
           <button
             type="button"
             onClick={addRow}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-semibold text-[#3052ff] border border-[#3052ff]"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-semibold text-white bg-[#3052ff] border border-[#3052ff]"
           >
             <Plus className="size-3.5" />
             Add Field

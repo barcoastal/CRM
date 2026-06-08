@@ -93,7 +93,7 @@ export default async function MarketingIndexPage() {
         </div>
         <Link
           href="/marketing/logs"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-[13px] font-semibold text-[#3052ff] bg-white shadow-[0_8px_24px_rgba(48,82,255,0.12)]"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-[13px] font-semibold text-white bg-[#3052ff] shadow-[0_8px_24px_rgba(48,82,255,0.12)]"
         >
           <Activity className="size-4" />
           View All Logs

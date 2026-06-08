@@ -88,7 +88,7 @@ export default async function SignDocsHubPage() {
         <div className="flex gap-2">
           <Link
             href="/templates/esign"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-[13px] font-semibold text-[#3052ff] bg-white border border-[#d8dde6]"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-[13px] font-semibold text-white bg-[#3052ff] border border-[#3052ff]"
           >
             <Layers className="size-4" />
             Templates

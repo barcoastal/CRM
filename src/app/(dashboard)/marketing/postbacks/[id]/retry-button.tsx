@@ -26,7 +26,7 @@ export function RetryButton({ endpointId, logId }: { endpointId: string; logId: 
       type="button"
       onClick={retry}
       disabled={busy}
-      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold text-[#3052ff] border border-[#3052ff] disabled:opacity-50"
+      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold text-white bg-[#3052ff] border border-[#3052ff] disabled:opacity-50"
     >
       <RefreshCw className={`size-3 ${busy ? "animate-spin" : ""}`} />
       Retry
