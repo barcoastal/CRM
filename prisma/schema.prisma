@@ -72,6 +72,8 @@ model User {
   suppressionsAdded      SuppressionEntry[]              @relation("SuppressionAddedBy")
   cadenceEnrollments     CadenceEnrollment[]             @relation("CadenceEnrolledBy")
   marketingSources       MarketingSource[]               @relation("MktSourceOwner")
+  dashboards             Dashboard[]                     @relation("DashboardCreatedBy")
+  reportsCreated         Report[]                        @relation("ReportCreatedBy")
 
   // Five9 AgentREST credentials per user — used to log the agent into Five9
   // and trigger click-to-dial on their behalf. Password is encrypted at rest
@@ -1890,4 +1892,66 @@ model MarketingPostbackLog {
   createdAt      DateTime                  @default(now())
 
   @@index([endpointId, createdAt])
+}
+
+// ============ DASHBOARDS (managers compose KPI + chart tiles) ============
+
+model Dashboard {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  layout      Json            @default("[]") // array of {tileId, x, y, w, h} — 12-col grid
+  isShared    Boolean         @default(true)
+  createdById String?
+  createdBy   User?           @relation("DashboardCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  tiles       DashboardTile[]
+
+  @@index([createdById])
+}
+
+model DashboardTile {
+  id          String    @id @default(cuid())
+  dashboardId String
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  kind        String // "kpi" | "count" | "sum" | "bar" | "table" | "report"
+  title       String
+  // For built-in kinds: the queryKey selects a hardcoded query
+  queryKey    String?
+  // For report-backed kinds: reference a saved Report
+  reportId    String?
+  // Free-form display config: { color, format, valueLabel, etc. }
+  config      Json      @default("{}")
+  position    Json      @default("{\"x\":0,\"y\":0,\"w\":3,\"h\":2}")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([dashboardId])
+}
+
+// ============ REPORTS (SF-style saved report definitions) ============
+
+model Report {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  objectType  String // "Lead" | "Opportunity" | "Account" | "Case" | "Task" | "Event" | "Envelope"
+  // JSON arrays
+  columns     Json      @default("[]") // string[] of field keys like "owner.name"
+  filters     Json      @default("[]") // [{ field, operator, value }]
+  groupBy     String?
+  sortBy      String?
+  sortDir     String    @default("asc") // asc | desc
+  summarize   Json      @default("[]") // [{ field, kind: "count" | "sum" | "avg" }]
+  rowLimit    Int       @default(2000)
+  isShared    Boolean   @default(true)
+  createdById String?
+  createdBy   User?     @relation("ReportCreatedBy", fields: [createdById], references: [id])
+  lastRunAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([objectType])
+  @@index([createdById])
 }
