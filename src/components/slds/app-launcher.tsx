@@ -54,6 +54,7 @@ const ITEMS: ItemTile[] = [
   { label: "Emails", href: "/emails", entity: "Email" },
   { label: "SMS", href: "/sms", entity: "Sms" },
   { label: "Email Templates", href: "/email-templates", entity: "Email" },
+  { label: "E-Sign Templates", href: "/templates/esign", entity: "ProgramPlan" },
   { label: "Integrations", href: "/integrations", entity: "Settings" },
   { label: "Dialer", href: "/dialer", entity: "Dialer" },
   { label: "Campaigns", href: "/campaigns", entity: "Campaign" },
