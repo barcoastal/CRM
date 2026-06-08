@@ -10,6 +10,7 @@ import {
   OPP_STAGE_TO_SUB_DISPOSITIONS,
 } from "../src/lib/sf-canonical";
 import { SYSTEM_VIEWS } from "../src/lib/list-views";
+import { ensureDirs as ensureESignDirs } from "../src/lib/esign/storage";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter } as any);
@@ -428,6 +429,9 @@ async function seedQueues() {
 }
 
 async function main() {
+  console.log("Ensuring e-sign storage dirs...");
+  await ensureESignDirs();
+
   console.log("Wiping data...");
   await nukeBusinessData();
   await nukeAccessControl();

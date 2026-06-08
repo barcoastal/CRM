@@ -68,6 +68,7 @@ model User {
   oppHistoryChanges      OpportunityHistory[]            @relation("OpportunityHistoryChangedBy")
   accountHistoryChanges  AccountHistory[]                @relation("AccountHistoryChangedBy")
   envelopesCreated       Envelope[]                      @relation("EnvelopeCreatedBy")
+  envelopeTemplates      EnvelopeTemplate[]              @relation("EnvelopeTemplateCreatedBy")
   suppressionsAdded      SuppressionEntry[]              @relation("SuppressionAddedBy")
   cadenceEnrollments     CadenceEnrollment[]             @relation("CadenceEnrolledBy")
   marketingSources       MarketingSource[]               @relation("MktSourceOwner")
@@ -532,6 +533,16 @@ model Envelope {
   voidReason  String?
   expiresAt   DateTime?
 
+  // Template the envelope was generated from (optional). For non-template
+  // envelopes we still snapshot signature/initial/date boxes below so the
+  // signer page does not depend on the template still existing.
+  templateId String?
+  template   EnvelopeTemplate? @relation("TemplateEnvelopes", fields: [templateId], references: [id])
+
+  signatureBoxes Json @default("[]")
+  initialBoxes   Json @default("[]")
+  dateBoxes      Json @default("[]")
+
   // Audit
   createdById String?
   createdBy   User?    @relation("EnvelopeCreatedBy", fields: [createdById], references: [id])
@@ -545,6 +556,41 @@ model Envelope {
   @@index([leadId])
   @@index([status])
   @@index([signingToken])
+  @@index([templateId])
+}
+
+// Reusable PDF template that gets filled with merge data when an Envelope is
+// sent. PDFs live on the Railway persistent volume at /data/esign-templates/
+// and are referenced here by relative path.
+model EnvelopeTemplate {
+  id          String  @id @default(cuid())
+  name        String
+  recordType  String  @default("CONTRACT") // CONTRACT | BANK_CHANGE | DISCLOSURE | AMENDMENT | OTHER
+  description String?
+  pdfPath     String // relative path on disk under /data/esign-templates/
+  pdfFilename String // original upload name for display
+  pageCount   Int     @default(1)
+  isActive    Boolean @default(true)
+
+  // AcroForm field merges, e.g. { "ClientFirstName": "account.firstName" }.
+  // Dot-paths resolve against the merge context built at send time.
+  mergeMapping Json @default("{}")
+
+  // Signature box(es): array of { page: 1-based, x, y, width, height, label }.
+  // Coordinates are PDF points (72 dpi), origin BOTTOM-LEFT.
+  signatureBoxes Json @default("[]")
+  initialBoxes   Json @default("[]")
+  dateBoxes      Json @default("[]")
+
+  createdById String?
+  createdBy   User?    @relation("EnvelopeTemplateCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  envelopes Envelope[] @relation("TemplateEnvelopes")
+
+  @@index([recordType])
+  @@index([isActive])
 }
 
 model EnvelopeEvent {
