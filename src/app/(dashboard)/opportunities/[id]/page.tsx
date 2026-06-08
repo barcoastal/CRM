@@ -860,7 +860,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           { label: "Opportunity Owner", value: ownerDisplay },
           { label: "Opp Id", value: sfOppIdDisplay },
         ]}
-        actions={<OppHeaderButtons opportunityId={opp.id} currentStage={opp.stage} defaultEmail={emailDisplay ?? opp.lead?.email ?? null} defaultPhone={phoneDisplay ?? opp.lead?.phone ?? null} />}
+        actions={<OppHeaderButtons opportunityId={opp.id} currentStage={opp.stage} defaultEmail={emailDisplay ?? opp.lead?.email ?? null} defaultPhone={phoneDisplay ?? opp.lead?.phone ?? null} defaultSignerName={opp.primaryContact?.fullName ?? opp.lead?.contactName ?? null} />}
         pathStages={PATH}
         pathCurrentIndex={oppPathIndex(opp.stage)}
         pathActionLabel={(() => {

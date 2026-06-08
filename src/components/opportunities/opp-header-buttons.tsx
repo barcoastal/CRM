@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DispositionModal } from "@/components/leads/disposition-modal";
 import { QuickActionsRow } from "@/components/quick-actions/quick-actions-row";
+import { SendContractModal } from "@/components/esign/send-contract-modal";
 import { OPP_STAGES, OPP_STAGE_TO_SUB_DISPOSITIONS } from "@/lib/sf-canonical";
 
 const btn: React.CSSProperties = {
@@ -17,19 +18,29 @@ const btn: React.CSSProperties = {
   cursor: "pointer",
 };
 
+const primaryBtn: React.CSSProperties = {
+  ...btn,
+  background: "#0070d2",
+  color: "#fff",
+  borderColor: "#0070d2",
+};
+
 export function OppHeaderButtons({
   opportunityId,
   currentStage,
   defaultEmail,
   defaultPhone,
+  defaultSignerName,
 }: {
   opportunityId: string;
   currentStage: string;
   defaultEmail?: string | null;
   defaultPhone?: string | null;
+  defaultSignerName?: string | null;
 }) {
   const router = useRouter();
   const [modal, setModal] = useState(false);
+  const [contractModal, setContractModal] = useState(false);
 
   async function updateOpp() {
     router.push(`/opportunities/${opportunityId}/edit`);
@@ -43,6 +54,9 @@ export function OppHeaderButtons({
   return (
     <>
       <QuickActionsRow opportunityId={opportunityId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
+      <button style={primaryBtn} onClick={() => setContractModal(true)}>
+        Send Contract
+      </button>
       <button style={btn} onClick={() => setModal(true)}>
         Disposition
       </button>
@@ -59,6 +73,12 @@ export function OppHeaderButtons({
         currentStage={currentStage}
         open={modal}
         onClose={() => setModal(false)}
+      />
+      <SendContractModal
+        opportunityId={opportunityId}
+        defaultSigner={{ name: defaultSignerName ?? null, email: defaultEmail ?? null, phone: defaultPhone ?? null }}
+        open={contractModal}
+        onClose={() => setContractModal(false)}
       />
     </>
   );

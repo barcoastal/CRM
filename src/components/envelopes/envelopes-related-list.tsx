@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { NewEnvelopeModal } from "./new-envelope-modal";
+import { SendContractModal } from "@/components/esign/send-contract-modal";
 
 export type EnvelopeRow = {
   id: string;
@@ -55,6 +56,7 @@ export function EnvelopesRelatedList({
 }) {
   const router = useRouter();
   const [modal, setModal] = useState(false);
+  const [templateModal, setTemplateModal] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
 
   async function copyLink(token: string) {
@@ -112,21 +114,40 @@ export function EnvelopesRelatedList({
         <h2 style={{ fontSize: 13, fontWeight: 700, margin: 0 }}>
           Envelopes ({envelopes.length})
         </h2>
-        <button
-          onClick={() => setModal(true)}
-          style={{
-            background: "#fff",
-            border: "1px solid #d8dde6",
-            color: "#0070d2",
-            padding: "4px 12px",
-            borderRadius: 4,
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          + New Envelope
-        </button>
+        <div style={{ display: "flex", gap: 6 }}>
+          {opportunityId && (
+            <button
+              onClick={() => setTemplateModal(true)}
+              style={{
+                background: "#fff",
+                border: "1px solid #d8dde6",
+                color: "#0070d2",
+                padding: "4px 12px",
+                borderRadius: 4,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              + New from Template
+            </button>
+          )}
+          <button
+            onClick={() => setModal(true)}
+            style={{
+              background: "#fff",
+              border: "1px solid #d8dde6",
+              color: "#0070d2",
+              padding: "4px 12px",
+              borderRadius: 4,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            + New Envelope
+          </button>
+        </div>
       </header>
       {envelopes.length === 0 ? (
         <div style={{ padding: 16, fontSize: 12, color: "#706e6b" }}>No envelopes yet.</div>
@@ -196,6 +217,14 @@ export function EnvelopesRelatedList({
         defaultSignerName={defaultSignerName}
         defaultSignerEmail={defaultSignerEmail}
       />
+      {opportunityId && (
+        <SendContractModal
+          opportunityId={opportunityId}
+          defaultSigner={{ name: defaultSignerName ?? null, email: defaultSignerEmail ?? null }}
+          open={templateModal}
+          onClose={() => setTemplateModal(false)}
+        />
+      )}
     </article>
   );
 }

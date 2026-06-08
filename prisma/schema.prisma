@@ -543,6 +543,11 @@ model Envelope {
   initialBoxes   Json @default("[]")
   dateBoxes      Json @default("[]")
 
+  // Per-envelope merged PDF (template filled with merge values at send time).
+  // Path is relative to envelopeDir() helper. Chunk 3 will overlay signatures
+  // and write the signed result to signedDocumentUrl.
+  preparedPdfPath String?
+
   // Audit
   createdById String?
   createdBy   User?    @relation("EnvelopeCreatedBy", fields: [createdById], references: [id])
