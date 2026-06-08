@@ -12,6 +12,7 @@ import {
   isForecastCategory,
   type ForecastCategory,
 } from "@/lib/forecasting/categories";
+import { SubmitButton as SubmitForApprovalButton } from "@/components/approvals/submit-button";
 
 const btn: React.CSSProperties = {
   background: "#fff",
@@ -67,6 +68,7 @@ export function OppHeaderButtons({
     <>
       <QuickActionsRow opportunityId={opportunityId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
       <CategoryPicker opportunityId={opportunityId} value={initialCategory} size="sm" />
+      <SubmitForApprovalButton entityType="Opportunity" entityId={opportunityId} />
       <button style={primaryBtn} onClick={() => setContractModal(true)}>
         Send Contract
       </button>

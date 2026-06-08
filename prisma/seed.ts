@@ -1252,6 +1252,34 @@ async function main() {
   console.log(`  PermSet groups:   ${PSGS.length}`);
   console.log(`  Profiles:         ${PROFILES.length}`);
   console.log(`  Queues:           ${QUEUES.length}`);
+  // ---------- APPROVAL PROCESSES (idempotent — only if none exist) ----------
+  const existingApprovalCount = await prisma.approvalProcess.count();
+  if (existingApprovalCount === 0) {
+    const sampleProcess = await prisma.approvalProcess.create({
+      data: {
+        name: "Settlement over $25K needs Manager Approval",
+        description: "Any settlement with a settled amount of $25,000 or more must be approved by the submitter's manager before being marked paid.",
+        entityType: "Settlement",
+        isActive: true,
+        entryCriteria: [{ field: "settledAmount", operator: "gte", value: 25000 }] as never,
+        finalApprovalActions: [] as never,
+        rejectionActions: [] as never,
+        initialSubmitters: [] as never,
+      },
+    });
+    await prisma.approvalStep.create({
+      data: {
+        processId: sampleProcess.id,
+        order: 1,
+        name: "Manager Review",
+        useSubmitterManager: true,
+        approverUserIds: [],
+        criteria: [] as never,
+      },
+    });
+    console.log(`  Approval Processes: 1 (Settlement over $25K)`);
+  }
+
   console.log(`  Users:            5 (admin, sales mgr, closer, csa, negotiator)`);
   console.log(`  Accounts:         5 (2 clients, 3 creditors)`);
   console.log(`  Contacts:         2`);

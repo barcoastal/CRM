@@ -36,6 +36,7 @@ const APPS: AppTile[] = [
   { label: "Mass Email", href: "/emails/mass", description: "Bulk send + open/click tracking" },
   { label: "Sign Docs", href: "/sign-docs", description: "Contracts, templates, signatures" },
   { label: "Dialer", href: "/dialer", description: "Power dialer + dispositions" },
+  { label: "Approvals", href: "/approvals", description: "Review and submit approval requests" },
   { label: "Admin", href: "/integrations", description: "Integrations + users" },
 ];
 
@@ -51,6 +52,7 @@ const ITEMS: ItemTile[] = [
   { label: "Creditors", href: "/creditors", entity: "Creditor" },
   { label: "Cases", href: "/cases", entity: "Case" },
   { label: "Tasks", href: "/tasks", entity: "Task" },
+  { label: "Approvals", href: "/approvals", entity: "Case" },
   { label: "Events", href: "/events", entity: "Event" },
   { label: "Program Plans", href: "/program-plans", entity: "ProgramPlan" },
   { label: "Drafts", href: "/drafts", entity: "Draft" },

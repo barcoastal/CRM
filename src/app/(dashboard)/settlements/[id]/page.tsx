@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { RecordPage, HeaderActions, StatusPill } from "@/components/slds/record-page";
 import { Section, FieldGrid } from "@/components/slds/section";
 import { settlementStatusTone } from "@/lib/slds/status-tones";
+import { SubmitButton as SubmitForApprovalButton } from "@/components/approvals/submit-button";
 
 export default async function SettlementDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -40,7 +41,12 @@ export default async function SettlementDetailPage({ params }: { params: Promise
         { label: "Settled Date", value: s.settledDate.toLocaleDateString() },
         { label: "Payoff Due", value: s.payoffDueDate?.toLocaleDateString() },
       ]}
-      actions={<HeaderActions buttons={[{ label: "Edit" }, { label: "Mark Paid", primary: true }]} />}
+      actions={
+        <>
+          <SubmitForApprovalButton entityType="Settlement" entityId={s.id} />
+          <HeaderActions buttons={[{ label: "Edit" }, { label: "Mark Paid", primary: true }]} />
+        </>
+      }
       details={
         <>
           <Section title="Settlement Information">
