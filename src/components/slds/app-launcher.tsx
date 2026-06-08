@@ -38,6 +38,7 @@ const APPS: AppTile[] = [
   { label: "Dialer", href: "/dialer", description: "Power dialer + dispositions" },
   { label: "Approvals", href: "/approvals", description: "Review and submit approval requests" },
   { label: "Admin", href: "/integrations", description: "Integrations + users" },
+  { label: "Chatter", href: "/chatter", description: "Team feeds + groups + mentions" },
 ];
 
 const ITEMS: ItemTile[] = [
@@ -73,6 +74,8 @@ const ITEMS: ItemTile[] = [
   { label: "Inbound Sources", href: "/marketing/sources", entity: "Campaign" },
   { label: "Postback Endpoints", href: "/marketing/postbacks", entity: "Campaign" },
   { label: "Reports", href: "/reports", entity: "Report" },
+  { label: "Chatter", href: "/chatter", entity: "Lead" },
+  { label: "Groups", href: "/chatter/groups", entity: "Lead" },
 ];
 
 export function AppLauncher({ open, onClose }: { open: boolean; onClose: () => void }) {

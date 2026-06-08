@@ -1280,6 +1280,41 @@ async function main() {
     console.log(`  Approval Processes: 1 (Settlement over $25K)`);
   }
 
+  // ---------- CHATTER GROUPS (idempotent, only if none exist) ----------
+  const existingChatterGroupCount = await prisma.chatterGroup.count();
+  if (existingChatterGroupCount === 0) {
+    const adminUser = await prisma.user.findUnique({ where: { email: "bar@coastaldebt.com" }, select: { id: true } });
+    if (adminUser) {
+      const allHands = await prisma.chatterGroup.create({
+        data: {
+          name: "All Hands",
+          description: "Company-wide announcements and discussion.",
+          visibility: "public",
+          ownerId: adminUser.id,
+          members: { create: { userId: adminUser.id, role: "owner" } },
+        },
+      });
+      await prisma.chatterGroup.create({
+        data: {
+          name: "Sales Team",
+          description: "Sales floor updates, wins, and questions.",
+          visibility: "public",
+          ownerId: adminUser.id,
+          members: { create: { userId: adminUser.id, role: "owner" } },
+        },
+      });
+      await prisma.chatterPost.create({
+        data: {
+          groupId: allHands.id,
+          authorId: adminUser.id,
+          body: "Welcome to Chatter! Use @mentions to tag teammates.",
+          mentions: [],
+        },
+      });
+      console.log(`  Chatter Groups:   2 (All Hands, Sales Team) + 1 welcome post`);
+    }
+  }
+
   console.log(`  Users:            5 (admin, sales mgr, closer, csa, negotiator)`);
   console.log(`  Accounts:         5 (2 clients, 3 creditors)`);
   console.log(`  Contacts:         2`);
