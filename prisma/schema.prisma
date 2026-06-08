@@ -36,45 +36,50 @@ model User {
   auditEntries    AuditLog[]
   appLogs         ApplicationLog[]
 
-  leads                  Lead[]
-  calls                  Call[]
-  campaigns              CampaignAgent[]
-  callFeedbacks          CallFeedback[]
-  assignedClients        Client[]                        @relation("ClientNegotiator")
-  negotiations           Negotiation[]
-  uploadedDocuments      Document[]
-  opportunities          Opportunity[]                   @relation("OpportunityAssignee")
-  ownedAccounts          Account[]                       @relation("AccountOwner")
-  ownedContacts          Contact[]                       @relation("ContactOwner")
-  programPlansAssigned   ProgramPlan[]                   @relation("ProgramPlanAssignedTo")
-  feesCharged            Fee[]                           @relation("FeeChargedBy")
-  offersCreated          Offer[]                         @relation("OfferCreatedBy")
-  settlementsApproved    Settlement[]                    @relation("SettlementApprovedBy")
-  tasksOwned             Task[]                          @relation("TaskOwner")
-  eventsOwned            Event[]                         @relation("EventOwner")
-  casesOwned             Case[]                          @relation("CaseOwner")
-  casesCreated           Case[]                          @relation("CaseCreatedBy")
-  casesApproved          Case[]                          @relation("CaseApprover")
-  caseComments           CaseComment[]                   @relation("CaseCommentAuthor")
-  listViews              ListView[]                      @relation("ListViewOwner")
-  emailsOwned            EmailMessage[]                  @relation("EmailOwner")
-  smsOwned               SmsMessage[]                    @relation("SmsOwner")
-  emailTemplates         EmailTemplate[]                 @relation("EmailTemplateAuthor")
-  integrationCredentials IntegrationCredential[]         @relation("IntegrationCredentialAuthor")
-  paymentCalcsSaved      LeadPaymentCalculation[]        @relation("PaymentCalcSavedBy")
-  leadHistoryChanges     LeadHistory[]                   @relation("LeadHistoryChangedBy")
-  leadDebtsCreated       LeadDebt[]                      @relation("LeadDebtCreatedBy")
-  oppPaymentCalcsSaved   OpportunityPaymentCalculation[] @relation("OppPaymentCalcSavedBy")
-  oppHistoryChanges      OpportunityHistory[]            @relation("OpportunityHistoryChangedBy")
-  accountHistoryChanges  AccountHistory[]                @relation("AccountHistoryChangedBy")
-  envelopesCreated       Envelope[]                      @relation("EnvelopeCreatedBy")
-  envelopeTemplates      EnvelopeTemplate[]              @relation("EnvelopeTemplateCreatedBy")
-  suppressionsAdded      SuppressionEntry[]              @relation("SuppressionAddedBy")
-  cadenceEnrollments     CadenceEnrollment[]             @relation("CadenceEnrolledBy")
-  marketingSources       MarketingSource[]               @relation("MktSourceOwner")
-  dashboards             Dashboard[]                     @relation("DashboardCreatedBy")
-  reportsCreated         Report[]                        @relation("ReportCreatedBy")
-  quotas                 Quota[]                         @relation("QuotaUser")
+  leads                     Lead[]
+  calls                     Call[]
+  campaigns                 CampaignAgent[]
+  callFeedbacks             CallFeedback[]
+  assignedClients           Client[]                        @relation("ClientNegotiator")
+  negotiations              Negotiation[]
+  uploadedDocuments         Document[]
+  opportunities             Opportunity[]                   @relation("OpportunityAssignee")
+  ownedAccounts             Account[]                       @relation("AccountOwner")
+  ownedContacts             Contact[]                       @relation("ContactOwner")
+  programPlansAssigned      ProgramPlan[]                   @relation("ProgramPlanAssignedTo")
+  feesCharged               Fee[]                           @relation("FeeChargedBy")
+  offersCreated             Offer[]                         @relation("OfferCreatedBy")
+  settlementsApproved       Settlement[]                    @relation("SettlementApprovedBy")
+  tasksOwned                Task[]                          @relation("TaskOwner")
+  eventsOwned               Event[]                         @relation("EventOwner")
+  casesOwned                Case[]                          @relation("CaseOwner")
+  casesCreated              Case[]                          @relation("CaseCreatedBy")
+  casesApproved             Case[]                          @relation("CaseApprover")
+  caseComments              CaseComment[]                   @relation("CaseCommentAuthor")
+  listViews                 ListView[]                      @relation("ListViewOwner")
+  emailsOwned               EmailMessage[]                  @relation("EmailOwner")
+  smsOwned                  SmsMessage[]                    @relation("SmsOwner")
+  emailTemplates            EmailTemplate[]                 @relation("EmailTemplateAuthor")
+  integrationCredentials    IntegrationCredential[]         @relation("IntegrationCredentialAuthor")
+  paymentCalcsSaved         LeadPaymentCalculation[]        @relation("PaymentCalcSavedBy")
+  leadHistoryChanges        LeadHistory[]                   @relation("LeadHistoryChangedBy")
+  leadDebtsCreated          LeadDebt[]                      @relation("LeadDebtCreatedBy")
+  oppPaymentCalcsSaved      OpportunityPaymentCalculation[] @relation("OppPaymentCalcSavedBy")
+  oppHistoryChanges         OpportunityHistory[]            @relation("OpportunityHistoryChangedBy")
+  accountHistoryChanges     AccountHistory[]                @relation("AccountHistoryChangedBy")
+  envelopesCreated          Envelope[]                      @relation("EnvelopeCreatedBy")
+  envelopeTemplates         EnvelopeTemplate[]              @relation("EnvelopeTemplateCreatedBy")
+  suppressionsAdded         SuppressionEntry[]              @relation("SuppressionAddedBy")
+  cadenceEnrollments        CadenceEnrollment[]             @relation("CadenceEnrolledBy")
+  marketingSources          MarketingSource[]               @relation("MktSourceOwner")
+  dashboards                Dashboard[]                     @relation("DashboardCreatedBy")
+  reportsCreated            Report[]                        @relation("ReportCreatedBy")
+  quotas                    Quota[]                         @relation("QuotaUser")
+  approvalProcessesCreated  ApprovalProcess[]               @relation("ApprovalProcessCreatedBy")
+  approvalRequestsSubmitted ApprovalRequest[]               @relation("ApprovalRequestSubmittedBy")
+  approvalActions           ApprovalAction[]                @relation("ApprovalActionActor")
+  massEmailsSent            MassEmail[]                     @relation("MassEmailFromUser")
+  massEmailsCreated         MassEmail[]                     @relation("MassEmailCreatedBy")
 
   // Five9 AgentREST credentials per user — used to log the agent into Five9
   // and trigger click-to-dial on their behalf. Password is encrypted at rest
@@ -1973,4 +1978,89 @@ model Report {
 
   @@index([objectType])
   @@index([createdById])
+}
+
+// ============ APPROVAL PROCESSES (SF Approval Process parity) ============
+
+model ApprovalProcess {
+  id                   String            @id @default(cuid())
+  name                 String
+  description          String?
+  entityType           String // "Opportunity" | "Settlement" | "Fee" | "Offer" | "Lead" | "Case"
+  isActive             Boolean           @default(true)
+  // JSON entry criteria: [{ field, operator, value }]
+  entryCriteria        Json              @default("[]")
+  // What happens on final approval: [{ kind: "setField", field, value }] etc.
+  finalApprovalActions Json              @default("[]")
+  // What happens on rejection
+  rejectionActions     Json              @default("[]")
+  // user IDs or role names that can submit; empty = anyone
+  initialSubmitters    Json              @default("[]")
+  createdById          String?
+  createdBy            User?             @relation("ApprovalProcessCreatedBy", fields: [createdById], references: [id])
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  steps                ApprovalStep[]
+  requests             ApprovalRequest[]
+
+  @@index([entityType, isActive])
+}
+
+model ApprovalStep {
+  id                  String            @id @default(cuid())
+  processId           String
+  process             ApprovalProcess   @relation(fields: [processId], references: [id], onDelete: Cascade)
+  order               Int
+  name                String
+  // JSON criteria specific to this step (e.g. only fire if amount > X)
+  criteria            Json              @default("[]")
+  // Approver IDs (User.id). The first one to approve advances.
+  approverUserIds     String[]          @default([])
+  // For "manager of submitter" pattern: if true, use submitter's manager instead of a fixed list.
+  useSubmitterManager Boolean           @default(false)
+  // Allow any approver to skip ahead.
+  allowSkip           Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  requests            ApprovalRequest[] @relation("ApprovalRequestCurrentStep")
+  actions             ApprovalAction[]
+
+  @@index([processId, order])
+}
+
+model ApprovalRequest {
+  id            String           @id @default(cuid())
+  processId     String
+  process       ApprovalProcess  @relation(fields: [processId], references: [id])
+  entityType    String
+  entityId      String
+  submittedById String?
+  submittedBy   User?            @relation("ApprovalRequestSubmittedBy", fields: [submittedById], references: [id])
+  status        String           @default("PENDING") // PENDING | APPROVED | REJECTED | RECALLED
+  currentStepId String?
+  currentStep   ApprovalStep?    @relation("ApprovalRequestCurrentStep", fields: [currentStepId], references: [id])
+  comments      String?
+  submittedAt   DateTime         @default(now())
+  decidedAt     DateTime?
+  // Snapshot of the record at submission (audit)
+  snapshot      Json?
+  actions       ApprovalAction[]
+
+  @@index([entityType, entityId])
+  @@index([status])
+  @@index([submittedById])
+}
+
+model ApprovalAction {
+  id        String          @id @default(cuid())
+  requestId String
+  request   ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  stepId    String?
+  step      ApprovalStep?   @relation(fields: [stepId], references: [id])
+  actorId   String?
+  actor     User?           @relation("ApprovalActionActor", fields: [actorId], references: [id])
+  kind      String // SUBMITTED | APPROVED | REJECTED | RECALLED | REASSIGNED | COMMENT
+  comments  String?
+  createdAt DateTime        @default(now())
+
+  @@index([requestId, createdAt])
 }
