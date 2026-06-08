@@ -30,7 +30,7 @@ const APPS: AppTile[] = [
   { label: "Customer Service", href: "/cases", description: "Cases + case feed" },
   { label: "Debt Negotiation", href: "/offers", description: "Offers + settlements" },
   { label: "BackOffice", href: "/program-plans", description: "Plans, drafts, fees" },
-  { label: "Marketing", href: "/campaigns", description: "Campaigns + lead sources" },
+  { label: "Marketing", href: "/marketing", description: "Inbound sources + postbacks" },
   { label: "Dialer", href: "/dialer", description: "Power dialer + dispositions" },
   { label: "Admin", href: "/integrations", description: "Integrations + users" },
 ];
@@ -57,6 +57,9 @@ const ITEMS: ItemTile[] = [
   { label: "Integrations", href: "/integrations", entity: "Settings" },
   { label: "Dialer", href: "/dialer", entity: "Dialer" },
   { label: "Campaigns", href: "/campaigns", entity: "Campaign" },
+  { label: "Marketing", href: "/marketing", entity: "Campaign" },
+  { label: "Inbound Sources", href: "/marketing/sources", entity: "Campaign" },
+  { label: "Postback Endpoints", href: "/marketing/postbacks", entity: "Campaign" },
   { label: "Reports", href: "/reports", entity: "Report" },
 ];
 
