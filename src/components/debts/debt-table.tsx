@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, ChevronDown, ChevronRight } from "@/components/icons/lucide";
 import { AddDebtDialog } from "@/components/debts/add-debt-dialog";
 import { DebtDetailPanel } from "@/components/debts/debt-detail-panel";
 

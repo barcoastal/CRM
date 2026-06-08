@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Phone, PhoneIncoming, PhoneOutgoing, MessageSquare, Calendar, Target } from "lucide-react";
+import { Phone, PhoneIncoming, PhoneOutgoing, MessageSquare, Calendar, Target } from "@/components/icons/lucide";
 import Link from "next/link";
 
 interface CallData {

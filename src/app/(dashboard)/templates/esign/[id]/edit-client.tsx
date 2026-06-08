@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Plus, Save } from "lucide-react";
+import { Trash2, Plus, Save } from "@/components/icons/lucide";
 import { MERGE_PATHS, RECORD_TYPES } from "@/lib/esign/merge-paths";
 
 interface Box {

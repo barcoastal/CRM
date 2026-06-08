@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Bell, LogOut, Menu } from "lucide-react";
+import { Search, Bell, LogOut, Menu } from "@/components/icons/lucide";
 import { useSession, signOut } from "next-auth/react";
 import {
   DropdownMenu,

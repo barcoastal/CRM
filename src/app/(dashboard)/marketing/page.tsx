@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ArrowDownToLine, ArrowUpFromLine, Activity } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Activity } from "@/components/icons/lucide";
 
 const STATUS_BADGE: Record<string, { bg: string; text: string }> = {
   created: { bg: "bg-[rgba(26,125,55,0.1)]", text: "text-[#1a7d37]" },

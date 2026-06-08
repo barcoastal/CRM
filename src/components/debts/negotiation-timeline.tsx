@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Phone, Mail, FileText, Send, Plus } from "lucide-react";
+import { Phone, Mail, FileText, Send, Plus } from "@/components/icons/lucide";
 import { NEGOTIATION_TYPES, NEGOTIATION_RESPONSES } from "@/lib/validations/debt";
 
 interface NegotiationData {

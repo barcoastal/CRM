@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CallLogTable } from "@/components/calls/call-log-table";
-import { Download } from "lucide-react";
+import { Download } from "@/components/icons/lucide";
 
 interface CallsPageProps {
   searchParams: Promise<{

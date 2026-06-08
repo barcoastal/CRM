@@ -9,7 +9,7 @@ import {
   Lightbulb,
   ShieldAlert,
   X,
-} from "lucide-react";
+} from "@/components/icons/lucide";
 
 interface CoachingTipsProps {
   tips: CoachingTip[];

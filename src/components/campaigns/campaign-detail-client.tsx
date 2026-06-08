@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { AddLeadsDialog } from "@/components/campaigns/add-leads-dialog";
 import { DIALER_MODES } from "@/lib/validations/campaign";
-import { Phone, Pause, Play, Plus, UserMinus } from "lucide-react";
+import { Phone, Pause, Play, Plus, UserMinus } from "@/components/icons/lucide";
 
 const STATUS_STYLES: Record<
   string,

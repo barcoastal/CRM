@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/icons/lucide";
 import Link from "next/link";
 
 interface UserOption {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Plus, Copy } from "lucide-react";
+import { Plus, Copy } from "@/components/icons/lucide";
 
 function baseUrl(): string {
   return process.env.NEXTAUTH_URL ?? "https://crm.coastaldebt-tools.com";

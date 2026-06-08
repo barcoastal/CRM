@@ -74,6 +74,7 @@ model User {
   marketingSources       MarketingSource[]               @relation("MktSourceOwner")
   dashboards             Dashboard[]                     @relation("DashboardCreatedBy")
   reportsCreated         Report[]                        @relation("ReportCreatedBy")
+  quotas                 Quota[]                         @relation("QuotaUser")
 
   // Five9 AgentREST credentials per user — used to log the agent into Five9
   // and trigger click-to-dial on their behalf. Password is encrypted at rest
@@ -918,6 +919,8 @@ model Opportunity {
   primaryContactId            String?
   primaryContact              Contact?                        @relation("OpportunityPrimaryContact", fields: [primaryContactId], references: [id])
   stage                       String                          @default("Working Opportunity")
+  // SF Forecast Category — defaults from stage, can be overridden per Opp
+  forecastCategory            String                          @default("PIPELINE") // COMMIT | BEST_CASE | PIPELINE | CLOSED | OMITTED
   // SF parity: track previous stage / sub-disposition (set by OpportunityTrigger)
   lastDisposition             String?
   lastSubDisposition          String?
@@ -1873,6 +1876,22 @@ model MarketingPostbackEndpoint {
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
   logs            MarketingPostbackLog[]
+}
+
+// ============ FORECASTING (Quotas) ============
+
+model Quota {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("QuotaUser", fields: [userId], references: [id], onDelete: Cascade)
+  period    String // YYYY-MM (monthly) or YYYY-Qn (quarterly)
+  amount    Decimal  @db.Decimal(14, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, period])
+  @@index([userId])
+  @@index([period])
 }
 
 model MarketingPostbackLog {

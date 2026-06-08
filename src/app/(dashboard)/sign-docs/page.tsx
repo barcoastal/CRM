@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { FileText, Clock, CheckCircle2, Send, Plus, Layers } from "lucide-react";
+import { FileText, Clock, CheckCircle2, Send, Plus, Layers } from "@/components/icons/lucide";
 
 function startOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);

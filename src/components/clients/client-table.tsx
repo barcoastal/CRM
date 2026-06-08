@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, MoreHorizontal } from "@/components/icons/lucide";
 import { CLIENT_STATUSES } from "@/lib/validations/client";
 
 interface ClientLead {

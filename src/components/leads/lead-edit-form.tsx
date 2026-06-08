@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, Check } from "lucide-react";
+import { ChevronRight, Check } from "@/components/icons/lucide";
 import {
   Select,
   SelectContent,

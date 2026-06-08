@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { LayoutGrid, TableProperties } from "lucide-react";
+import { LayoutGrid, TableProperties } from "@/components/icons/lucide";
 
 export function LeadViewToggle() {
   const router = useRouter();

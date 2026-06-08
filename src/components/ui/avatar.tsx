@@ -4,6 +4,7 @@ import * as React from "react"
 import { Avatar as AvatarPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { avatarFor } from "@/lib/avatars"
 
 function Avatar({
   className,
@@ -40,17 +41,37 @@ function AvatarImage({
 
 function AvatarFallback({
   className,
+  seed,
+  children,
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+}: React.ComponentProps<typeof AvatarPrimitive.Fallback> & { seed?: string | null }) {
+  // When the fallback represents a person (initials text, or an explicit seed),
+  // show a deterministic playful illustrated avatar instead of plain initials.
+  // Icon-based fallbacks (e.g. group avatars) are left untouched.
+  const childText = typeof children === "string" ? children.trim() : null
+  const usePerson = seed != null || (childText !== null && /^[\p{L}\p{N}]{1,3}$/u.test(childText))
+  const [imgOk, setImgOk] = React.useState(true)
+
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        "bg-muted text-muted-foreground flex size-full items-center justify-center rounded-full text-sm group-data-[size=sm]/avatar:text-xs",
+        "bg-muted text-muted-foreground relative flex size-full items-center justify-center overflow-hidden rounded-full text-sm group-data-[size=sm]/avatar:text-xs",
         className
       )}
       {...props}
-    />
+    >
+      {children}
+      {usePerson && imgOk ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={avatarFor(seed ?? childText)}
+          alt={childText ?? "avatar"}
+          className="absolute inset-0 size-full object-cover"
+          onError={() => setImgOk(false)}
+        />
+      ) : null}
+    </AvatarPrimitive.Fallback>
   )
 }
 

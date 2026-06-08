@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { DIALER_MODES } from "@/lib/validations/campaign";
-import { Zap, Users, Eye, Search } from "lucide-react";
+import { Zap, Users, Eye, Search } from "@/components/icons/lucide";
 
 const TIMEZONES = [
   "America/New_York",

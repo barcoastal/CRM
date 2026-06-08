@@ -23,7 +23,7 @@ import {
   Clock,
   FileText,
   SkipForward,
-} from "lucide-react";
+} from "@/components/icons/lucide";
 
 import { CampaignSelector } from "./campaign-selector";
 import { CallTimer } from "./call-timer";

@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
+import { Play } from "@/components/icons/lucide";
 
 interface Campaign {
   id: string;

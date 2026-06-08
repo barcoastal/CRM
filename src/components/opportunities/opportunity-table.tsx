@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, ChevronLeft, ChevronRight, LayoutList, Kanban, SlidersHorizontal } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, LayoutList, Kanban, SlidersHorizontal } from "@/components/icons/lucide";
 import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
 import { OpportunityKanban } from "@/components/opportunities/opportunity-kanban";
 

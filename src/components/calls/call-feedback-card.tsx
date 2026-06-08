@@ -16,7 +16,7 @@ import {
   MessageSquare,
   Target,
   Clock,
-} from "lucide-react";
+} from "@/components/icons/lucide";
 
 interface CallFeedbackCardProps {
   feedback: CallFeedbackData;

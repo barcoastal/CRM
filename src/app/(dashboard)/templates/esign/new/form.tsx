@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Upload } from "lucide-react";
+import { Upload } from "@/components/icons/lucide";
 import { RECORD_TYPES } from "@/lib/esign/merge-paths";
 
 function fmtBytes(n: number): string {

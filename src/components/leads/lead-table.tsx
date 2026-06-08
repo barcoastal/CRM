@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, MoreHorizontal, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreHorizontal, Search } from "@/components/icons/lucide";
 import { LEAD_STATUSES, LEAD_SOURCES } from "@/lib/validations/lead";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

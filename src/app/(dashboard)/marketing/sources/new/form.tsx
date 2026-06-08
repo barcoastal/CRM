@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "@/components/icons/lucide";
 import { CRM_LEAD_FIELDS } from "../../lead-fields";
 
 type Option = { id: string; name: string | null; email?: string };

@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/components/icons/lucide";
 import { CLIENT_STATUSES } from "@/lib/validations/client";
 import { DebtTable } from "@/components/debts/debt-table";
 import { PaymentTable } from "@/components/payments/payment-table";

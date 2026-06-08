@@ -7,6 +7,22 @@ import { usePathname } from "next/navigation";
 import { ObjectIcon } from "./icon";
 import { AppLauncher } from "./app-launcher";
 import { GlobalSearch } from "./global-search";
+import { avatarFor } from "@/lib/avatars";
+
+/** Circular user avatar — playful illustrated portrait, initials behind it. */
+function SfAvatar({ seed, initials, className }: { seed?: string; initials: string; className?: string }) {
+  return (
+    <span className={`sf-avatar${className ? ` ${className}` : ""}`} style={{ position: "relative", overflow: "hidden" }}>
+      {initials}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={avatarFor(seed ?? initials)}
+        alt={initials}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+      />
+    </span>
+  );
+}
 
 interface TabItem {
   label: string;
@@ -152,7 +168,7 @@ export function SldsHeader({
             onClick={() => setProfileOpen((o) => !o)}
             title={userName ?? "Profile"}
           >
-            <span className="sf-avatar">{userInitials}</span>
+            <SfAvatar seed={userName} initials={userInitials} />
           </button>
           {profileOpen && (
             <SldsProfileMenu
@@ -227,7 +243,7 @@ function SldsProfileMenu({
       style={{ minWidth: 280, padding: 0 }}
     >
       <div className="sf-profile-header">
-        <span className="sf-avatar sf-profile-header-avatar">{userInitials}</span>
+        <SfAvatar seed={userName} initials={userInitials} className="sf-profile-header-avatar" />
         <div className="sf-profile-header-body">
           <div className="sf-profile-header-name">{userName ?? "User"}</div>
           <div className="sf-profile-header-links">

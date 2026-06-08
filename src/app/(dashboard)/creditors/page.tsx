@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Landmark, Search } from "lucide-react";
+import { Landmark, Search } from "@/components/icons/lucide";
 
 interface CreditorsPageProps {
   searchParams: Promise<{ q?: string }>;

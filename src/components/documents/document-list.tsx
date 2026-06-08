@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Plus, Trash2, Download } from "lucide-react";
+import { FileText, Plus, Trash2, Download } from "@/components/icons/lucide";
 import { UploadDocumentDialog } from "@/components/documents/upload-document-dialog";
 import { DOCUMENT_TYPES } from "@/lib/validations/payment";
 

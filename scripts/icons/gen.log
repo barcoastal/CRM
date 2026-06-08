@@ -1,0 +1,118 @@
+
+== tiles (24) ==
+  ok public/icons/custom/tiles/Account.png
+  ok public/icons/custom/tiles/Lead.png
+  ok public/icons/custom/tiles/Dashboard.png
+  ok public/icons/custom/tiles/Contact.png
+  ok public/icons/custom/tiles/Opportunity.png
+  ok public/icons/custom/tiles/Creditor.png
+  ok public/icons/custom/tiles/Case.png
+  ok public/icons/custom/tiles/Client.png
+  ok public/icons/custom/tiles/ProgramPlan.png
+  ok public/icons/custom/tiles/Offer.png
+  ok public/icons/custom/tiles/Draft.png
+  ok public/icons/custom/tiles/Settlement.png
+  ok public/icons/custom/tiles/Fee.png
+  ok public/icons/custom/tiles/Task.png
+  ok public/icons/custom/tiles/Event.png
+  ok public/icons/custom/tiles/Email.png
+  ok public/icons/custom/tiles/Sms.png
+  ok public/icons/custom/tiles/Campaign.png
+  ok public/icons/custom/tiles/User.png
+  ok public/icons/custom/tiles/Report.png
+  ok public/icons/custom/tiles/Calculator.png
+  ok public/icons/custom/tiles/Settings.png
+  ok public/icons/custom/tiles/Dialer.png
+  ok public/icons/custom/tiles/Marketing.png
+
+== apps (9) ==
+  ok public/icons/custom/apps/sales-operations.png
+  ok public/icons/custom/apps/debt-negotiation.png
+  ok public/icons/custom/apps/customer-service.png
+  ok public/icons/custom/apps/sales-console.png
+  ok public/icons/custom/apps/backoffice.png
+  ok public/icons/custom/apps/sign-docs.png
+  ok public/icons/custom/apps/marketing-app.png
+  ok public/icons/custom/apps/dialer-app.png
+  ok public/icons/custom/apps/admin.png
+
+== avatars (12) ==
+  ok public/icons/custom/avatars/avatar-1.png
+  ok public/icons/custom/avatars/avatar-3.png
+  ok public/icons/custom/avatars/avatar-4.png
+  ok public/icons/custom/avatars/avatar-2.png
+  ok public/icons/custom/avatars/avatar-5.png
+  ok public/icons/custom/avatars/avatar-6.png
+  ok public/icons/custom/avatars/avatar-7.png
+  ok public/icons/custom/avatars/avatar-8.png
+  ok public/icons/custom/avatars/avatar-9.png
+  ok public/icons/custom/avatars/avatar-10.png
+  ok public/icons/custom/avatars/avatar-12.png
+  ok public/icons/custom/avatars/avatar-11.png
+
+== logo + favicon ==
+
+== glyphs (61) ==
+  ok ArrowDownToLine
+  ok AlertTriangle
+  ok Activity
+  ok ArrowLeft
+  ok ArrowUpFromLine
+  ok ArrowRight
+  ok Bell
+  ok Calendar
+  ok CalendarClock
+  ok CheckCircle
+  ok Check
+  ok ChevronDown
+  ok CheckCircle2
+  ok CheckIcon
+  ok ChevronLeft
+  ok ChevronRightIcon
+  ok ChevronRight
+  ok CircleIcon
+  ok Copy
+  ok ChevronUpIcon
+  ok Eye
+  ok DollarSign
+  ok Download
+  ok FileText
+  ok Kanban
+  ok EyeOff
+  ok LayoutGrid
+  ok Landmark
+  ok LayoutList
+  ok Loader2
+  ok LogOut
+  ok Menu
+  ok Mail
+  ok MoreHorizontal
+  ok Pause
+  ok MessageSquare
+  ok Phone
+  ok Pencil
+  ok PhoneIncoming
+  ok Plus
+  ok Play
+  ok Save
+  ok Search
+  ok PhoneOutgoing
+  ok RefreshCw
+  ok SearchIcon
+  ok Send
+  ok SkipForward
+  ok SlidersHorizontal
+  ok Sparkles
+  ok Square
+  ok Target
+  ok TestTube2
+  ok TableProperties
+  ok Upload
+  ok UserMinus
+  ok Trash2
+  ok Users
+  ok Zap
+  ok XIcon
+  ok ChevronDownIcon
+
+done.

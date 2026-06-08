@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2 } from "@/components/icons/lucide";
 import Link from "next/link";
 
 function formatSourceLabel(source: string): string {

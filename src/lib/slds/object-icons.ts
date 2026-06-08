@@ -34,10 +34,11 @@ export const ENTITY_ICONS: Record<string, EntityIcon> = {
   Dialer:       { iconSet: "standard", iconName: "call",             bgClass: "sf-icon-bg-sms" },
 };
 
+// Custom playful illustrated tiles live at /icons/custom/tiles/<Entity>.png and
+// cover every ENTITY_ICONS key. We serve those instead of the old SLDS sprites.
 export function iconUrl(entity: keyof typeof ENTITY_ICONS): string {
-  const i = ENTITY_ICONS[entity];
-  if (!i) return "/slds/icons/standard/account.svg";
-  return `/slds/icons/${i.iconSet}/${i.iconName}.svg`;
+  if (ENTITY_ICONS[entity]) return `/icons/custom/tiles/${String(entity)}.png`;
+  return `/icons/custom/tiles/Account.png`;
 }
 
 export function iconBg(entity: keyof typeof ENTITY_ICONS): string {

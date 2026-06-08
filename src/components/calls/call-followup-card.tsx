@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Sparkles, Calendar, X, Check, Loader2 } from "lucide-react";
+import { Sparkles, Calendar, X, Check, Loader2 } from "@/components/icons/lucide";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";

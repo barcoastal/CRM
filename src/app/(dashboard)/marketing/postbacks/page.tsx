@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Plus } from "lucide-react";
+import { Plus } from "@/components/icons/lucide";
 
 export default async function PostbacksPage() {
   await auth();

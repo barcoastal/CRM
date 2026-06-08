@@ -22,7 +22,7 @@ import {
   Loader2,
   TrendingUp,
   TrendingDown,
-} from "lucide-react";
+} from "@/components/icons/lucide";
 import Link from "next/link";
 
 // ─── Constants ───────────────────────────────────────────────────────────────

@@ -18,7 +18,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react";
+} from "@/components/icons/lucide";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import {

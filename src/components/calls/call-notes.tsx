@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2, Check, Save } from "lucide-react";
+import { Loader2, Check, Save } from "@/components/icons/lucide";
 
 interface CallNotesProps {
   callId: string;

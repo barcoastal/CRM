@@ -23,7 +23,7 @@ import {
   Calendar,
   ChevronRight,
   Tag,
-} from "lucide-react";
+} from "@/components/icons/lucide";
 import { StatusBadge, formatCurrency, formatPhone, formatSourceLabel } from "@/components/leads/lead-table";
 import { LEAD_STATUSES } from "@/lib/validations/lead";
 import { EnrollmentDialog } from "@/components/clients/enrollment-dialog";

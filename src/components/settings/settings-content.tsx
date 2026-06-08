@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Save, TestTube2 } from "lucide-react";
+import { Save, TestTube2 } from "@/components/icons/lucide";
 
 const STORAGE_KEY = "coastal-crm-settings";
 

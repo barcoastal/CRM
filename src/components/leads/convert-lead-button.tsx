@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, ArrowRight } from "lucide-react";
+import { CheckCircle2, ArrowRight } from "@/components/icons/lucide";
 import { OPPORTUNITY_RECORD_TYPES } from "@/lib/record-types";
 
 interface ConvertLeadButtonProps {

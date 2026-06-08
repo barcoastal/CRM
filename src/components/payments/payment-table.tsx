@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, CalendarClock, AlertTriangle, Plus, CheckCircle } from "lucide-react";
+import { DollarSign, CalendarClock, AlertTriangle, Plus, CheckCircle } from "@/components/icons/lucide";
 import { RecordPaymentDialog } from "./record-payment-dialog";
 
 interface PaymentDebt {

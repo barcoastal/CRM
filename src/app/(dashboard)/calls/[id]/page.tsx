@@ -8,7 +8,7 @@ import {
   User,
   Megaphone,
   Calendar,
-} from "lucide-react";
+} from "@/components/icons/lucide";
 import Link from "next/link";
 import { format } from "date-fns";
 

@@ -17,7 +17,7 @@ import {
   LogOut,
   ChevronDown,
   Menu,
-} from "lucide-react";
+} from "@/components/icons/lucide";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -109,7 +109,7 @@ export function Navbar() {
                 className="flex items-center gap-2 px-2 text-white hover:bg-white/10 hover:text-white"
               >
                 <Avatar className="size-7">
-                  <AvatarFallback className="text-xs bg-white/20 text-white">
+                  <AvatarFallback seed={userName} className="text-xs bg-white/20 text-white">
                     {getInitials(userName)}
                   </AvatarFallback>
                 </Avatar>

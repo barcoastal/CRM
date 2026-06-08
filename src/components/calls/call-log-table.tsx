@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Search, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Play } from "@/components/icons/lucide";
 import Link from "next/link";
 
 interface CallAgent {

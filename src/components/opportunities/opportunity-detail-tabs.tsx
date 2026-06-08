@@ -28,7 +28,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Link2,
-} from "lucide-react";
+} from "@/components/icons/lucide";
 import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
 import { EnrollmentDialog } from "@/components/clients/enrollment-dialog";
 import { PaymentCalculator } from "@/components/calculator/payment-calculator";

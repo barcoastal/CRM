@@ -1,12 +1,19 @@
 import { iconUrl, ENTITY_ICONS } from "@/lib/slds/object-icons";
 
+const OBJECT_ICON_PX: Record<string, number> = {
+  "xx-small": 16,
+  "x-small": 20,
+  small: 24,
+  medium: 32,
+  large: 48,
+};
+
 /**
- * Object icon — colored SLDS square + glyph. Uses SLDS's own
- * .slds-icon_container + .slds-icon-standard-{name} for the background
- * color (no custom CSS needed).
+ * Object icon — playful illustrated tile (custom Coastal icon set). Each
+ * illustration is self-contained on a transparent background, so it renders
+ * as a plain sized image (no SLDS colored square anymore).
  *
- * Sizes follow SLDS scale:
- *   xx-small (16px), x-small (20px), small (24px), medium (32px), large (48px)
+ * Sizes: xx-small (16px), x-small (20px), small (24px), medium (32px), large (48px)
  */
 export function ObjectIcon({
   entity,
@@ -17,19 +24,19 @@ export function ObjectIcon({
   size?: "xx-small" | "x-small" | "small" | "medium" | "large";
   title?: string;
 }) {
-  const info = ENTITY_ICONS[entity as keyof typeof ENTITY_ICONS] ?? ENTITY_ICONS.Account;
-  const url = iconUrl(entity as keyof typeof ENTITY_ICONS);
-  const sldsKey = info.iconName.replace(/_/g, "_"); // e.g. "service_contract"
+  const key = (ENTITY_ICONS[entity as keyof typeof ENTITY_ICONS] ? entity : "Account") as keyof typeof ENTITY_ICONS;
+  const url = iconUrl(key);
+  const px = OBJECT_ICON_PX[size] ?? 32;
 
   return (
-    <span
-      className={`slds-icon_container slds-icon-${info.iconSet}-${sldsKey}`}
+    <img
+      src={url}
+      alt={title ?? entity}
       title={title ?? entity}
-    >
-      <span className={`slds-icon slds-icon_container slds-icon-${info.iconSet}-${sldsKey} slds-icon_${size}`}>
-        <img src={url} alt={title ?? entity} className="slds-icon" />
-      </span>
-    </span>
+      width={px}
+      height={px}
+      style={{ width: px, height: px, objectFit: "contain", display: "inline-block", verticalAlign: "middle" }}
+    />
   );
 }
 

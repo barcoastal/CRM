@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw } from "@/components/icons/lucide";
 
 export function RetryButton({ endpointId, logId }: { endpointId: string; logId: string }) {
   const router = useRouter();
