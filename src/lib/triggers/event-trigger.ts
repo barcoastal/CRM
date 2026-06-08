@@ -13,6 +13,7 @@
 
 import type { Event } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
+import { notify } from "@/lib/notifications/notify";
 
 type EventWrite = Partial<Event> & Record<string, unknown>;
 
@@ -26,5 +27,36 @@ export const eventTrigger: Trigger<Event, EventWrite> = {
       }).catch(() => undefined);
     }
     // Opportunity has no lastContactedAt today — skip until we add one.
+
+    // Notify the event owner about new events they were assigned to.
+    if (row.ownerId) {
+      void notify({
+        recipientId: row.ownerId,
+        kind: "OWNER_ASSIGNED",
+        title: `New event: ${row.subject}`,
+        body: row.description ? String(row.description).slice(0, 200) : null,
+        url: `/events/${row.id}`,
+        entityType: "Event",
+        entityId: row.id,
+        actorId: ctx.userId,
+        skipIfSelf: true,
+      });
+    }
+  },
+
+  async afterUpdate({ row, prev, ctx }) {
+    // Owner reassignment → notify the new owner (skip self-assignment).
+    if (row.ownerId && row.ownerId !== prev.ownerId) {
+      void notify({
+        recipientId: row.ownerId,
+        kind: "OWNER_ASSIGNED",
+        title: `Event "${row.subject}" was assigned to you`,
+        url: `/events/${row.id}`,
+        entityType: "Event",
+        entityId: row.id,
+        actorId: ctx.userId,
+        skipIfSelf: true,
+      });
+    }
   },
 };

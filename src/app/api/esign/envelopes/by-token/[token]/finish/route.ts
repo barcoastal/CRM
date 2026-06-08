@@ -24,6 +24,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
 import { readEnvelopePdf, signedDir, ensureESignDirs } from "@/lib/esign/storage";
 import { renderSignedCopyHtml, renderSenderNotificationHtml, sendESignEmail } from "@/lib/esign/send-email";
+import { notify } from "@/lib/notifications/notify";
 
 type Box = { page: number; x: number; y: number; width: number; height: number; label?: string };
 
@@ -239,6 +240,20 @@ export async function POST(
       },
     }),
   ]);
+
+  // In-app notification to the envelope sender. The signer is external so
+  // actorId stays null. Fire-and-forget; never throws.
+  if (envelope.createdById) {
+    void notify({
+      recipientId: envelope.createdById,
+      kind: "ENVELOPE_SIGNED",
+      title: `${envelope.signerName} signed ${envelope.documentName}`,
+      url: `/envelopes/${envelope.id}`,
+      entityType: "Envelope",
+      entityId: envelope.id,
+      actorId: null,
+    });
+  }
 
   // Fire dual-party email notifications. Failures don't roll back the signed
   // state; we just log an EMAIL_FAILED event so the dashboard can show it.

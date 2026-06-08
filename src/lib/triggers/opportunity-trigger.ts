@@ -46,6 +46,7 @@
 import type { Opportunity } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
 import { firePostbackEvent } from "@/lib/marketing/postback";
+import { notify } from "@/lib/notifications/notify";
 
 type OppWrite = Partial<Opportunity> & Record<string, unknown>;
 
@@ -133,6 +134,23 @@ export const opportunityTrigger: Trigger<Opportunity, OppWrite> = {
           data: { ownerId: row.assignedToId },
         })
         .catch(() => undefined);
+    }
+
+    // Owner reassignment → notify new owner (skip self-assignment).
+    if (
+      row.assignedToId &&
+      row.assignedToId !== prev.assignedToId
+    ) {
+      void notify({
+        recipientId: row.assignedToId,
+        kind: "OWNER_ASSIGNED",
+        title: `Opportunity ${row.name ?? row.id} was assigned to you`,
+        url: `/opportunities/${row.id}`,
+        entityType: "Opportunity",
+        entityId: row.id,
+        actorId: ctx.userId,
+        skipIfSelf: true,
+      });
     }
 
     // Transfer Qualification change → log task

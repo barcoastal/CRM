@@ -6,6 +6,7 @@
 // the request. Final-approval/rejection actions can mutate the record.
 
 import { prisma } from "@/lib/prisma";
+import { notify, notifyMany } from "@/lib/notifications/notify";
 
 // Lower-case Prisma model accessors for each supported entity type. Used by
 // findEligibleProcesses to load the record and by setField actions to update
@@ -234,7 +235,37 @@ export async function submitForApproval(o: SubmitOpts): Promise<{ requestId: str
     },
   });
 
+  // Notify the current step's approvers (resolve manager-based steps).
+  const approverIds = await resolveStepApproverIds(
+    { approverUserIds: firstStep.approverUserIds, useSubmitterManager: firstStep.useSubmitterManager },
+    o.submitterUserId,
+  );
+  if (approverIds.length > 0) {
+    void notifyMany(approverIds, {
+      kind: "APPROVAL_REQUEST",
+      title: `Approval needed: ${process.name}`,
+      body: o.comments ?? null,
+      url: `/approvals/requests/${request.id}`,
+      entityType: "ApprovalRequest",
+      entityId: request.id,
+      actorId: o.submitterUserId,
+      skipIfSelf: true,
+    });
+  }
+
   return { requestId: request.id };
+}
+
+async function resolveStepApproverIds(
+  step: { approverUserIds: string[]; useSubmitterManager: boolean },
+  submitterId: string | null,
+): Promise<string[]> {
+  if (step.useSubmitterManager) {
+    if (!submitterId) return [];
+    const mgr = await managerOf(submitterId);
+    return mgr ? [mgr] : [];
+  }
+  return [...step.approverUserIds];
 }
 
 async function isActorAuthorizedForStep(
@@ -312,6 +343,22 @@ export async function approveStep(o: {
       where: { id: request.id },
       data: { currentStepId: next.id },
     });
+    // Notify the next step's approvers.
+    const nextApprovers = await resolveStepApproverIds(
+      { approverUserIds: next.approverUserIds, useSubmitterManager: next.useSubmitterManager },
+      request.submittedById,
+    );
+    if (nextApprovers.length > 0) {
+      void notifyMany(nextApprovers, {
+        kind: "APPROVAL_REQUEST",
+        title: `Approval needed: ${request.process.name}`,
+        url: `/approvals/requests/${request.id}`,
+        entityType: "ApprovalRequest",
+        entityId: request.id,
+        actorId: o.actorUserId,
+        skipIfSelf: true,
+      });
+    }
     return { status: "PENDING" };
   }
 
@@ -326,6 +373,21 @@ export async function approveStep(o: {
     where: { id: request.id },
     data: { status: "APPROVED", currentStepId: null, decidedAt: new Date() },
   });
+
+  // Notify the submitter that their request was approved.
+  if (request.submittedById) {
+    void notify({
+      recipientId: request.submittedById,
+      kind: "APPROVAL_DECIDED",
+      title: `Your approval request was approved`,
+      body: o.comments ?? null,
+      url: `/approvals/requests/${request.id}`,
+      entityType: "ApprovalRequest",
+      entityId: request.id,
+      actorId: o.actorUserId,
+      skipIfSelf: true,
+    });
+  }
 
   return { status: "APPROVED" };
 }
@@ -373,6 +435,21 @@ export async function rejectRequest(o: {
     where: { id: request.id },
     data: { status: "REJECTED", currentStepId: null, decidedAt: new Date() },
   });
+
+  // Notify the submitter that their request was rejected.
+  if (request.submittedById) {
+    void notify({
+      recipientId: request.submittedById,
+      kind: "APPROVAL_DECIDED",
+      title: `Your approval request was rejected`,
+      body: o.comments ?? null,
+      url: `/approvals/requests/${request.id}`,
+      entityType: "ApprovalRequest",
+      entityId: request.id,
+      actorId: o.actorUserId,
+      skipIfSelf: true,
+    });
+  }
 
   return { status: "REJECTED" };
 }

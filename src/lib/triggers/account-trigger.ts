@@ -48,6 +48,7 @@
 import type { Account } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
 import { onAccountStageChange } from "./email-automation";
+import { notify } from "@/lib/notifications/notify";
 
 type AccountWrite = Partial<Account> & Record<string, unknown>;
 
@@ -170,6 +171,18 @@ export const accountTrigger: Trigger<Account, AccountWrite> = {
           newValue: row.ownerId,
           changedById: ctx.userId,
         },
+      });
+
+      // Notify the new owner (skip self-assignment).
+      void notify({
+        recipientId: row.ownerId,
+        kind: "OWNER_ASSIGNED",
+        title: `Account ${row.name ?? row.id} was assigned to you`,
+        url: `/accounts/${row.id}`,
+        entityType: "Account",
+        entityId: row.id,
+        actorId: ctx.userId,
+        skipIfSelf: true,
       });
     }
 

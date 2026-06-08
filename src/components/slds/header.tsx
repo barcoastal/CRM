@@ -8,6 +8,7 @@ import { ObjectIcon } from "./icon";
 import { AppLauncher } from "./app-launcher";
 import { GlobalSearch } from "./global-search";
 import { avatarFor } from "@/lib/avatars";
+import { NotificationsPanel, useNotificationsCount } from "@/components/notifications/notifications-panel";
 
 /** Circular user avatar — playful illustrated portrait, initials behind it. */
 function SfAvatar({ seed, initials, className }: { seed?: string; initials: string; className?: string }) {
@@ -148,25 +149,11 @@ export function SldsHeader({
               <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#setup" />
             </svg>
           </Link>
-          <div style={{ position: "relative" }}>
-            <button
-              className="sf-util-btn"
-              title="Notifications"
-              onClick={() => setNotificationsOpen((o) => !o)}
-            >
-              <svg className="sf-util-icon" aria-hidden="true">
-                <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#notification" />
-              </svg>
-            </button>
-            {notificationsOpen && (
-              <div className="sf-profile-menu" style={{ position: "absolute", top: 36, right: 0, minWidth: 280 }}>
-                <div className="sf-profile-name">Notifications</div>
-                <div style={{ padding: "16px", color: "#706e6b", fontSize: 12 }}>
-                  You&apos;re all caught up.
-                </div>
-              </div>
-            )}
-          </div>
+          <NotificationsBell
+            open={notificationsOpen}
+            onToggle={() => setNotificationsOpen((o) => !o)}
+            onClose={() => setNotificationsOpen(false)}
+          />
           <button
             className="sf-avatar-btn"
             onClick={() => setProfileOpen((o) => !o)}
@@ -265,6 +252,67 @@ function SldsProfileMenu({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Bell-icon button + dropdown. Splits out so we can wire the unread count
+ * (kept up to date via the polling useNotificationsCount hook) to the badge
+ * even while the dropdown is closed.
+ */
+function NotificationsBell({
+  open,
+  onToggle,
+  onClose,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+}) {
+  const { unreadCount, refetch } = useNotificationsCount();
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        className="sf-util-btn"
+        title="Notifications"
+        onClick={() => {
+          onToggle();
+          // Refresh count whenever the user opens the dropdown.
+          if (!open) refetch();
+        }}
+        style={{ position: "relative" }}
+      >
+        <svg className="sf-util-icon" aria-hidden="true">
+          <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#notification" />
+        </svg>
+        {unreadCount > 0 && (
+          <span
+            aria-label={`${unreadCount} unread notifications`}
+            style={{
+              position: "absolute",
+              top: 1,
+              right: 1,
+              minWidth: 14,
+              height: 14,
+              padding: "0 4px",
+              borderRadius: 7,
+              background: "#c23934",
+              color: "#fff",
+              fontSize: 9,
+              fontWeight: 700,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              lineHeight: 1,
+              border: "1.5px solid #fff",
+            }}
+          >
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </button>
+      {open && <NotificationsPanel onClose={onClose} onCountChange={refetch} />}
     </div>
   );
 }

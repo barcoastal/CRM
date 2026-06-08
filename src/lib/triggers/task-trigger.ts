@@ -22,6 +22,7 @@
 
 import type { Task } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
+import { notify } from "@/lib/notifications/notify";
 
 type TaskWrite = Partial<Task> & Record<string, unknown>;
 
@@ -47,6 +48,20 @@ export const taskTrigger: Trigger<Task, TaskWrite> = {
         }).catch(() => undefined);
       }
     }
+
+    // Owner reassignment → notify the new owner (skip self-assignment).
+    if (row.ownerId && row.ownerId !== prev.ownerId) {
+      void notify({
+        recipientId: row.ownerId,
+        kind: "OWNER_ASSIGNED",
+        title: `Task "${row.subject}" was assigned to you`,
+        url: `/tasks/${row.id}`,
+        entityType: "Task",
+        entityId: row.id,
+        actorId: ctx.userId,
+        skipIfSelf: true,
+      });
+    }
   },
 
   async afterInsert({ row, ctx }) {
@@ -55,6 +70,21 @@ export const taskTrigger: Trigger<Task, TaskWrite> = {
         where: { id: row.leadId },
         data: { lastContactedAt: row.completedAt ?? new Date() },
       }).catch(() => undefined);
+    }
+
+    // New task assigned to someone other than the creator → notify the owner.
+    if (row.ownerId) {
+      void notify({
+        recipientId: row.ownerId,
+        kind: "OWNER_ASSIGNED",
+        title: `New task: ${row.subject}`,
+        body: row.notes ? String(row.notes).slice(0, 200) : null,
+        url: `/tasks/${row.id}`,
+        entityType: "Task",
+        entityId: row.id,
+        actorId: ctx.userId,
+        skipIfSelf: true,
+      });
     }
   },
 };

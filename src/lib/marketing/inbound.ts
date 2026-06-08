@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { firePostbackEvent } from "./postback";
+import { notify } from "@/lib/notifications/notify";
 
 /**
  * Allowed CRM lead columns the field mapping UI can target.
@@ -286,6 +287,21 @@ export async function processInboundPayload(opts: {
       entityId: lead.id,
       data: { lead, source: { id: source.id, name: source.name, slug: source.slug } },
     }).catch(() => {});
+
+    // In-app notification to the source's default owner. External webhook so
+    // actorId stays null. Fire-and-forget; never throws.
+    if (source.defaultOwnerId) {
+      void notify({
+        recipientId: source.defaultOwnerId,
+        kind: "LEAD_INBOUND",
+        title: `New lead from ${source.name}: ${lead.contactName ?? lead.businessName ?? lead.id}`,
+        body: lead.email ?? lead.phone ?? null,
+        url: `/leads/${lead.id}`,
+        entityType: "Lead",
+        entityId: lead.id,
+        actorId: null,
+      });
+    }
 
     return {
       status: "created",

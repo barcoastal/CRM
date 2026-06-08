@@ -18,6 +18,7 @@ import {
   rewriteLinksForTracking,
   getTrackingBaseUrl,
 } from "@/lib/email/tracking-rewrite";
+import { notify } from "@/lib/notifications/notify";
 
 const DEFAULT_CONCURRENCY = 5;
 
@@ -397,6 +398,19 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
         failedCount: failed,
       },
     });
+
+    // In-app notification to the blast creator (fire-and-forget).
+    if (mass.createdById) {
+      void notify({
+        recipientId: mass.createdById,
+        kind: "MASS_EMAIL_DONE",
+        title: `Mass email ${mass.name} finished: ${sent} sent, ${failed} failed`,
+        url: `/emails/mass/${massEmailId}`,
+        entityType: "MassEmail",
+        entityId: massEmailId,
+        actorId: null,
+      });
+    }
     return { ok: true };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "unknown error";

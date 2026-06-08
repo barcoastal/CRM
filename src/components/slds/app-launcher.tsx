@@ -76,6 +76,7 @@ const ITEMS: ItemTile[] = [
   { label: "Inbound Sources", href: "/marketing/sources", entity: "Campaign" },
   { label: "Postback Endpoints", href: "/marketing/postbacks", entity: "Campaign" },
   { label: "Reports", href: "/reports", entity: "Report" },
+  { label: "Notifications", href: "/notifications", entity: "Settings" },
   { label: "Chatter", href: "/chatter", entity: "Lead" },
   { label: "Groups", href: "/chatter/groups", entity: "Lead" },
 ];

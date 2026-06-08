@@ -45,6 +45,7 @@ import type { Trigger } from "./types";
 import { addSuppression } from "@/lib/dnc";
 import { onLeadStatusChange } from "./email-automation";
 import { firePostbackEvent } from "@/lib/marketing/postback";
+import { notify } from "@/lib/notifications/notify";
 
 // Use a permissive shape so trigger writers can set FK columns directly.
 type LeadWrite = Partial<Lead> & Record<string, unknown>;
@@ -221,6 +222,23 @@ export const leadTrigger: Trigger<Lead, LeadWrite> = {
   },
 
   async afterUpdate({ row, prev, ctx }) {
+    // Owner reassignment → notify the new owner (skip self-assignment).
+    if (
+      row.assignedToId &&
+      row.assignedToId !== prev.assignedToId
+    ) {
+      void notify({
+        recipientId: row.assignedToId,
+        kind: "OWNER_ASSIGNED",
+        title: `Lead ${row.contactName ?? row.businessName ?? row.id} was assigned to you`,
+        url: `/leads/${row.id}`,
+        entityType: "Lead",
+        entityId: row.id,
+        actorId: ctx.userId,
+        skipIfSelf: true,
+      });
+    }
+
     const statusChanged = row.status !== prev.status;
 
     // subDispoRequiredForArchivedLeads: log (don't throw) when archived without
