@@ -36,6 +36,7 @@ const TABS: TabItem[] = [
   { label: "Integrations", href: "/integrations", entity: "Settings" },
   { label: "Dialer", href: "/dialer" },
   { label: "Marketing", href: "/marketing", entity: "Campaign" },
+  { label: "Sign Docs", href: "/sign-docs", entity: "ProgramPlan" },
   { label: "Campaigns", href: "/campaigns", entity: "Campaign" },
   { label: "Reports", href: "/reports" },
 ];

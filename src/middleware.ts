@@ -15,5 +15,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/leads/:path*", "/accounts/:path*", "/contacts/:path*", "/opportunities/:path*", "/clients/:path*", "/creditors/:path*", "/cases/:path*", "/tasks/:path*", "/events/:path*", "/program-plans/:path*", "/drafts/:path*", "/offers/:path*", "/settlements/:path*", "/fees/:path*", "/emails/:path*", "/sms/:path*", "/email-templates/:path*", "/integrations/:path*", "/dialer/:path*", "/campaigns/:path*", "/marketing/:path*", "/calls/:path*", "/calculator/:path*", "/reports/:path*", "/settings/:path*"],
+  matcher: ["/dashboard/:path*", "/leads/:path*", "/accounts/:path*", "/contacts/:path*", "/opportunities/:path*", "/clients/:path*", "/creditors/:path*", "/cases/:path*", "/tasks/:path*", "/events/:path*", "/program-plans/:path*", "/drafts/:path*", "/offers/:path*", "/settlements/:path*", "/fees/:path*", "/emails/:path*", "/sms/:path*", "/email-templates/:path*", "/integrations/:path*", "/dialer/:path*", "/campaigns/:path*", "/marketing/:path*", "/sign-docs/:path*", "/envelopes/:path*", "/templates/:path*", "/calls/:path*", "/calculator/:path*", "/reports/:path*", "/settings/:path*"],
 };

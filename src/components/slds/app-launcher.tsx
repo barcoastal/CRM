@@ -31,6 +31,7 @@ const APPS: AppTile[] = [
   { label: "Debt Negotiation", href: "/offers", description: "Offers + settlements" },
   { label: "BackOffice", href: "/program-plans", description: "Plans, drafts, fees" },
   { label: "Marketing", href: "/marketing", description: "Inbound sources + postbacks" },
+  { label: "Sign Docs", href: "/sign-docs", description: "Contracts, templates, signatures" },
   { label: "Dialer", href: "/dialer", description: "Power dialer + dispositions" },
   { label: "Admin", href: "/integrations", description: "Integrations + users" },
 ];
@@ -54,7 +55,9 @@ const ITEMS: ItemTile[] = [
   { label: "Emails", href: "/emails", entity: "Email" },
   { label: "SMS", href: "/sms", entity: "Sms" },
   { label: "Email Templates", href: "/email-templates", entity: "Email" },
+  { label: "Sign Docs", href: "/sign-docs", entity: "ProgramPlan" },
   { label: "E-Sign Templates", href: "/templates/esign", entity: "ProgramPlan" },
+  { label: "Envelopes", href: "/envelopes", entity: "ProgramPlan" },
   { label: "Integrations", href: "/integrations", entity: "Settings" },
   { label: "Dialer", href: "/dialer", entity: "Dialer" },
   { label: "Campaigns", href: "/campaigns", entity: "Campaign" },
