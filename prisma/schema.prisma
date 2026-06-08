@@ -80,6 +80,22 @@ model User {
   approvalActions           ApprovalAction[]                @relation("ApprovalActionActor")
   massEmailsSent            MassEmail[]                     @relation("MassEmailFromUser")
   massEmailsCreated         MassEmail[]                     @relation("MassEmailCreatedBy")
+  notificationsReceived     Notification[]                  @relation("NotificationRecipient")
+  notificationsCaused       Notification[]                  @relation("NotificationActor")
+
+  // Chatter (groups + posts + reactions + follows + mentions)
+  chatterGroupsOwned ChatterGroup[]    @relation("ChatterGroupOwner")
+  chatterMemberships ChatterMember[]   @relation("ChatterMember")
+  chatterPosts       ChatterPost[]     @relation("ChatterPostAuthor")
+  chatterReactions   ChatterReaction[] @relation("ChatterReactionUser")
+  chatterFollows     ChatterFollow[]   @relation("ChatterFollow")
+
+  // Content Library (central Files)
+  contentFolders          ContentLibraryFolder[] @relation("ContentFolderOwner")
+  contentDocuments        ContentDocument[]      @relation("ContentDocOwner")
+  contentVersionsUploaded ContentVersion[]       @relation("ContentVersionUploader")
+  contentRecordLinks      ContentRecordLink[]    @relation("ContentRecordLinkedBy")
+  contentShareLinks       ContentShareLink[]     @relation("ContentShareCreatedBy")
 
   // Five9 AgentREST credentials per user — used to log the agent into Five9
   // and trigger click-to-dial on their behalf. Password is encrypted at rest
@@ -2105,4 +2121,207 @@ model ApprovalAction {
   createdAt DateTime        @default(now())
 
   @@index([requestId, createdAt])
+}
+
+// ============ IN-APP NOTIFICATIONS (SF-style) ============
+
+model Notification {
+  id          String    @id @default(cuid())
+  recipientId String
+  recipient   User      @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  // What kind of event. OWNER_ASSIGNED | MENTION | APPROVAL_REQUEST |
+  // APPROVAL_DECIDED | ENVELOPE_SIGNED | MASS_EMAIL_DONE | TASK_DUE |
+  // LEAD_INBOUND | GENERIC
+  kind        String
+  // Short headline rendered in the dropdown
+  title       String
+  // Body / preview text
+  body        String?
+  // Where to navigate when clicked (relative path)
+  url         String?
+  // Related entity (for filtering / icon)
+  entityType  String?
+  entityId    String?
+  // Optional actor (the user who caused this notification)
+  actorId     String?
+  actor       User?     @relation("NotificationActor", fields: [actorId], references: [id])
+  // Lifecycle
+  readAt      DateTime?
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([recipientId, readAt])
+  @@index([recipientId, createdAt])
+  @@index([entityType, entityId])
+}
+
+// ============ CHATTER (SF-style team feeds + groups + @mentions + follows) ============
+
+model ChatterGroup {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  /// "public" | "private"
+  visibility  String          @default("public")
+  avatarUrl   String?
+  ownerId     String?
+  owner       User?           @relation("ChatterGroupOwner", fields: [ownerId], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  members     ChatterMember[]
+  posts       ChatterPost[]
+
+  @@index([visibility])
+}
+
+model ChatterMember {
+  id       String       @id @default(cuid())
+  groupId  String
+  group    ChatterGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User         @relation("ChatterMember", fields: [userId], references: [id], onDelete: Cascade)
+  role     String       @default("member") // member | manager | owner
+  joinedAt DateTime     @default(now())
+
+  @@unique([groupId, userId])
+}
+
+model ChatterPost {
+  id         String            @id @default(cuid())
+  // Either a group post...
+  groupId    String?
+  group      ChatterGroup?     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  // ...or a per-record post (entityType + entityId)
+  entityType String?
+  entityId   String?
+  authorId   String
+  author     User              @relation("ChatterPostAuthor", fields: [authorId], references: [id])
+  body       String
+  mentions   String[]          @default([]) // user IDs extracted at post time
+  parentId   String?
+  parent     ChatterPost?      @relation("ChatterPostReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    ChatterPost[]     @relation("ChatterPostReplies")
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  reactions  ChatterReaction[]
+
+  @@index([groupId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model ChatterReaction {
+  id        String      @id @default(cuid())
+  postId    String
+  post      ChatterPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation("ChatterReactionUser", fields: [userId], references: [id])
+  emoji     String // "like" | "love" | "laugh", store as text, not Unicode
+  createdAt DateTime    @default(now())
+
+  @@unique([postId, userId])
+}
+
+model ChatterFollow {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation("ChatterFollow", fields: [userId], references: [id], onDelete: Cascade)
+  // Either follow a group OR a record
+  groupId    String?
+  entityType String?
+  entityId   String?
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, groupId, entityType, entityId])
+  @@index([groupId])
+  @@index([entityType, entityId])
+}
+
+// ============ CONTENT LIBRARY (central Files) ============
+// SF-style Files. Documents live in optional folders, have versions, can be
+// linked to many records (Lead/Opp/Account/etc.), and can be shared publicly
+// via tokenized links with optional expiry / password / revocation.
+
+model ContentLibraryFolder {
+  id        String                 @id @default(cuid())
+  name      String
+  parentId  String?
+  parent    ContentLibraryFolder?  @relation("FolderParent", fields: [parentId], references: [id])
+  children  ContentLibraryFolder[] @relation("FolderParent")
+  ownerId   String?
+  owner     User?                  @relation("ContentFolderOwner", fields: [ownerId], references: [id])
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+  files     ContentDocument[]
+
+  @@index([parentId])
+}
+
+model ContentDocument {
+  id              String                @id @default(cuid())
+  title           String
+  description     String?
+  folderId        String?
+  folder          ContentLibraryFolder? @relation(fields: [folderId], references: [id])
+  ownerId         String?
+  owner           User?                 @relation("ContentDocOwner", fields: [ownerId], references: [id])
+  latestVersionId String?               @unique
+  latestVersion   ContentVersion?       @relation("ContentLatestVersion", fields: [latestVersionId], references: [id], onDelete: SetNull)
+  versions        ContentVersion[]      @relation("ContentDocumentVersions")
+  shares          ContentShareLink[]
+  records         ContentRecordLink[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([folderId])
+  @@index([ownerId])
+}
+
+model ContentVersion {
+  id            String           @id @default(cuid())
+  documentId    String
+  document      ContentDocument  @relation("ContentDocumentVersions", fields: [documentId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  filename      String
+  contentType   String
+  byteSize      Int
+  storagePath   String
+  uploadedById  String?
+  uploadedBy    User?            @relation("ContentVersionUploader", fields: [uploadedById], references: [id])
+  createdAt     DateTime         @default(now())
+  latestDocLink ContentDocument? @relation("ContentLatestVersion")
+
+  @@unique([documentId, versionNumber])
+}
+
+model ContentRecordLink {
+  id         String          @id @default(cuid())
+  documentId String
+  document   ContentDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  entityType String
+  entityId   String
+  linkedById String?
+  linkedBy   User?           @relation("ContentRecordLinkedBy", fields: [linkedById], references: [id])
+  createdAt  DateTime        @default(now())
+
+  @@unique([documentId, entityType, entityId])
+  @@index([entityType, entityId])
+}
+
+model ContentShareLink {
+  id            String          @id @default(cuid())
+  documentId    String
+  document      ContentDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  token         String          @unique @default(cuid())
+  createdById   String?
+  createdBy     User?           @relation("ContentShareCreatedBy", fields: [createdById], references: [id])
+  expiresAt     DateTime?
+  passwordHash  String?
+  downloadCount Int             @default(0)
+  isRevoked     Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+
+  @@index([documentId])
+  @@index([token])
 }
