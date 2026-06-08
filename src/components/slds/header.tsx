@@ -210,9 +210,6 @@ export function SldsHeader({
   );
 }
 
-const DENSITY_KEY = "sf:displayDensity";
-type Density = "comfy" | "compact";
-
 function SldsProfileMenu({
   userName,
   userInitials,
@@ -222,22 +219,6 @@ function SldsProfileMenu({
   userInitials: string;
   onClose: () => void;
 }) {
-  const [density, setDensity] = useState<Density>("compact");
-
-  useEffect(() => {
-    try {
-      const v = localStorage.getItem(DENSITY_KEY);
-      if (v === "comfy" || v === "compact") setDensity(v);
-    } catch {}
-  }, []);
-
-  const pick = (next: Density) => {
-    setDensity(next);
-    try {
-      localStorage.setItem(DENSITY_KEY, next);
-    } catch {}
-  };
-
   return (
     <div
       className="sf-profile-menu sf-profile-menu-wide"
@@ -248,7 +229,6 @@ function SldsProfileMenu({
         <span className="sf-avatar sf-profile-header-avatar">{userInitials}</span>
         <div className="sf-profile-header-body">
           <div className="sf-profile-header-name">{userName ?? "User"}</div>
-          <div className="sf-profile-header-org">coastaldebt.my.salesforce.com</div>
           <div className="sf-profile-header-links">
             <Link href="/my-settings/personal-information" onClick={onClose}>
               Settings
@@ -263,30 +243,6 @@ function SldsProfileMenu({
             </button>
           </div>
         </div>
-      </div>
-
-      <div className="sf-profile-section">
-        <div className="sf-profile-section-title">Display Density</div>
-        <label className="sf-profile-radio">
-          <input
-            type="radio"
-            name="sf-density"
-            value="comfy"
-            checked={density === "comfy"}
-            onChange={() => pick("comfy")}
-          />
-          <span>Comfy</span>
-        </label>
-        <label className="sf-profile-radio">
-          <input
-            type="radio"
-            name="sf-density"
-            value="compact"
-            checked={density === "compact"}
-            onChange={() => pick("compact")}
-          />
-          <span>Compact</span>
-        </label>
       </div>
 
       <div className="sf-profile-section">
