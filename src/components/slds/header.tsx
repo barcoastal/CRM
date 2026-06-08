@@ -244,16 +244,6 @@ function SldsProfileMenu({
           </div>
         </div>
       </div>
-
-      <div className="sf-profile-section">
-        <div className="sf-profile-section-title">Options</div>
-        <a href="#" className="sf-profile-item" onClick={(e) => e.preventDefault()}>
-          Switch to Salesforce Classic
-        </a>
-        <a href="#" className="sf-profile-item" onClick={(e) => e.preventDefault()}>
-          Add Username
-        </a>
-      </div>
     </div>
   );
 }
