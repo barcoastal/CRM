@@ -53,6 +53,7 @@ const TABS: TabItem[] = [
   { label: "Emails", href: "/emails", entity: "Email" },
   { label: "SMS", href: "/sms", entity: "Sms" },
   { label: "Templates", href: "/email-templates", entity: "Email" },
+  { label: "Files", href: "/files", entity: "ProgramPlan" },
   { label: "E-Sign", href: "/envelopes", entity: "ProgramPlan" },
   { label: "Integrations", href: "/integrations", entity: "Settings" },
   { label: "Dialer", href: "/dialer" },

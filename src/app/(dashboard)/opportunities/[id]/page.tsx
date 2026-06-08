@@ -21,6 +21,7 @@ import { OPP_STAGES } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { computeOppFormulas, fmtMoney, fmtPercent } from "@/lib/opp-formulas";
 import { LeadHistoryCard } from "@/components/leads/lead-history-card";
+import { RecordFiles } from "@/components/files/record-files";
 
 /**
  * SF path strip — mirrors the green-arrow path on the Kenya Palmer screenshot.
@@ -784,6 +785,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           }))}
         />
       </Section>
+      <RecordFiles entityType="Opportunity" entityId={opp.id} title="Library Files" />
     </>
   );
 

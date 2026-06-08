@@ -39,6 +39,7 @@ const APPS: AppTile[] = [
   { label: "Approvals", href: "/approvals", description: "Review and submit approval requests" },
   { label: "Admin", href: "/integrations", description: "Integrations + users" },
   { label: "Chatter", href: "/chatter", description: "Team feeds + groups + mentions" },
+  { label: "Files", href: "/files", description: "Central content library" },
 ];
 
 const ITEMS: ItemTile[] = [
@@ -64,6 +65,7 @@ const ITEMS: ItemTile[] = [
   { label: "Mass Email", href: "/emails/mass", entity: "Email" },
   { label: "SMS", href: "/sms", entity: "Sms" },
   { label: "Email Templates", href: "/email-templates", entity: "Email" },
+  { label: "Files", href: "/files", entity: "ProgramPlan" },
   { label: "Sign Docs", href: "/sign-docs", entity: "ProgramPlan" },
   { label: "E-Sign Templates", href: "/templates/esign", entity: "ProgramPlan" },
   { label: "Envelopes", href: "/envelopes", entity: "ProgramPlan" },

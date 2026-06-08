@@ -1315,6 +1315,23 @@ async function main() {
     }
   }
 
+  // ---------- CONTENT LIBRARY FOLDERS (idempotent — only if none exist) ----------
+  const existingContentFolders = await prisma.contentLibraryFolder.count();
+  if (existingContentFolders === 0) {
+    const contentAdmin = await prisma.user.findUnique({
+      where: { email: "bar@coastaldebt.com" },
+      select: { id: true },
+    });
+    const ownerId = contentAdmin?.id ?? null;
+    await prisma.contentLibraryFolder.create({
+      data: { name: "Public Templates", ownerId },
+    });
+    await prisma.contentLibraryFolder.create({
+      data: { name: "Internal Docs", ownerId },
+    });
+    console.log(`  Content Folders:  2 (Public Templates, Internal Docs)`);
+  }
+
   console.log(`  Users:            5 (admin, sales mgr, closer, csa, negotiator)`);
   console.log(`  Accounts:         5 (2 clients, 3 creditors)`);
   console.log(`  Contacts:         2`);
