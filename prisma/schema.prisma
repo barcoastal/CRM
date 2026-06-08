@@ -548,6 +548,12 @@ model Envelope {
   // and write the signed result to signedDocumentUrl.
   preparedPdfPath String?
 
+  // Last stamping/finish error captured during the signer flow. When the
+  // signer hits Finish & Sign and PDF stamping or storage fails, we capture
+  // the message here so the dashboard can show the operator what went wrong
+  // without leaving the envelope half-completed.
+  lastError String?
+
   // Audit
   createdById String?
   createdBy   User?    @relation("EnvelopeCreatedBy", fields: [createdById], references: [id])
