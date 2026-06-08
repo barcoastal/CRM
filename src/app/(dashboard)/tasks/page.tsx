@@ -3,6 +3,10 @@ import Link from "next/link";
 import { ListView, type ListViewColumn } from "@/components/slds/list-view";
 import { StatusPill } from "@/components/slds/record-page";
 import { genericTone } from "@/lib/slds/status-tones";
+import { BulkActionBar } from "@/components/lists/bulk-action-bar";
+import { InlineEditCell } from "@/components/lists/inline-edit-cell";
+import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
+import { TASK_STATUSES } from "@/lib/record-types";
 
 type TaskRow = {
   id: string;
@@ -35,12 +39,43 @@ export default async function TasksPage() {
   });
   const total = await prisma.task.count();
 
+  const subjectCfg = getInlineConfig("task", "subject");
+  const statusCfg = getInlineConfig("task", "status");
+  const priorityCfg = getInlineConfig("task", "priority");
+  const dueCfg = getInlineConfig("task", "dueDate");
+
   const columns: ListViewColumn<TaskRow>[] = [
-    { key: "subject", label: "Subject", render: (t) => t.subject },
+    {
+      key: "subject", label: "Subject",
+      render: (t) => subjectCfg ? (
+        <InlineEditCell entity="task" recordId={t.id} config={subjectCfg} value={t.subject} />
+      ) : t.subject,
+    },
     { key: "type", label: "Type", render: (t) => t.type },
-    { key: "status", label: "Status", render: (t) => <StatusPill label={t.status} tone={genericTone(t.status)} /> },
-    { key: "priority", label: "Priority", render: (t) => <StatusPill label={t.priority} tone={PRIORITY_TONE[t.priority] ?? "neutral"} /> },
-    { key: "due", label: "Due Date", render: (t) => t.dueDate?.toLocaleDateString() ?? "—" },
+    {
+      key: "status", label: "Status",
+      render: (t) => statusCfg ? (
+        <InlineEditCell
+          entity="task" recordId={t.id} config={statusCfg} value={t.status}
+          display={<StatusPill label={t.status} tone={genericTone(t.status)} />}
+        />
+      ) : <StatusPill label={t.status} tone={genericTone(t.status)} />,
+    },
+    {
+      key: "priority", label: "Priority",
+      render: (t) => priorityCfg ? (
+        <InlineEditCell
+          entity="task" recordId={t.id} config={priorityCfg} value={t.priority}
+          display={<StatusPill label={t.priority} tone={PRIORITY_TONE[t.priority] ?? "neutral"} />}
+        />
+      ) : <StatusPill label={t.priority} tone={PRIORITY_TONE[t.priority] ?? "neutral"} />,
+    },
+    {
+      key: "due", label: "Due Date",
+      render: (t) => dueCfg ? (
+        <InlineEditCell entity="task" recordId={t.id} config={dueCfg} value={t.dueDate} />
+      ) : (t.dueDate?.toLocaleDateString() ?? "—"),
+    },
     {
       key: "related",
       label: "Related",
@@ -67,6 +102,16 @@ export default async function TasksPage() {
       columns={columns}
       rowHref={(t) => `/tasks/${t.id}`}
       newHref="/tasks/new"
+      selectable
+      bulkBar={(
+        <BulkActionBar
+          entity="task"
+          ownerField="ownerId"
+          statusField="status"
+          statusLabel="Status"
+          statusOptions={TASK_STATUSES.map((s) => ({ value: s, label: s }))}
+        />
+      )}
     />
   );
 }

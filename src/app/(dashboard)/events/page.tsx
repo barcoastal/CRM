@@ -15,6 +15,10 @@ import {
   startOfWeek,
   addDays,
 } from "@/components/calendar/calendar-helpers";
+import { BulkActionBar } from "@/components/lists/bulk-action-bar";
+import { InlineEditCell } from "@/components/lists/inline-edit-cell";
+import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
+import { EVENT_STATUSES } from "@/lib/record-types";
 
 type EventRow = {
   id: string;
@@ -155,12 +159,28 @@ async function EventsListView() {
   });
   const total = await prisma.event.count();
 
+  const subjectCfg = getInlineConfig("event", "subject");
+  const statusCfg = getInlineConfig("event", "status");
+
   const columns: ListViewColumn<EventRow>[] = [
-    { key: "subject", label: "Subject", render: (e) => e.subject },
+    {
+      key: "subject", label: "Subject",
+      render: (e) => subjectCfg ? (
+        <InlineEditCell entity="event" recordId={e.id} config={subjectCfg} value={e.subject} />
+      ) : e.subject,
+    },
     { key: "start", label: "Start", render: (e) => e.startAt.toLocaleString() },
     { key: "end", label: "End", render: (e) => e.endAt.toLocaleString() },
     { key: "loc", label: "Location", render: (e) => e.location ?? "-" },
-    { key: "status", label: "Status", render: (e) => <StatusPill label={e.status} tone={genericTone(e.status)} /> },
+    {
+      key: "status", label: "Status",
+      render: (e) => statusCfg ? (
+        <InlineEditCell
+          entity="event" recordId={e.id} config={statusCfg} value={e.status}
+          display={<StatusPill label={e.status} tone={genericTone(e.status)} />}
+        />
+      ) : <StatusPill label={e.status} tone={genericTone(e.status)} />,
+    },
     {
       key: "related",
       label: "Related",
@@ -185,6 +205,16 @@ async function EventsListView() {
         rows={items as EventRow[]}
         columns={columns}
         rowHref={(e) => `/events/${e.id}`}
+        selectable
+        bulkBar={(
+          <BulkActionBar
+            entity="event"
+            ownerField="ownerId"
+            statusField="status"
+            statusLabel="Status"
+            statusOptions={EVENT_STATUSES.map((s) => ({ value: s, label: s }))}
+          />
+        )}
       />
     </div>
   );

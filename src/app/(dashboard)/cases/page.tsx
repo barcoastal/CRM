@@ -3,6 +3,10 @@ import Link from "next/link";
 import { ListView, type ListViewColumn } from "@/components/slds/list-view";
 import { StatusPill } from "@/components/slds/record-page";
 import { caseStatusTone } from "@/lib/slds/status-tones";
+import { BulkActionBar } from "@/components/lists/bulk-action-bar";
+import { InlineEditCell } from "@/components/lists/inline-edit-cell";
+import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
+import { CASE_STATUSES } from "@/lib/record-types";
 
 type CaseRow = {
   id: string;
@@ -34,12 +38,37 @@ export default async function CasesPage() {
   });
   const total = await prisma.case.count();
 
+  const subjectCfg = getInlineConfig("case", "subject");
+  const statusCfg = getInlineConfig("case", "status");
+  const priorityCfg = getInlineConfig("case", "priority");
+
   const columns: ListViewColumn<CaseRow>[] = [
     { key: "number", label: "Case Number", render: (c) => c.caseNumber },
-    { key: "subject", label: "Subject", render: (c) => c.subject },
+    {
+      key: "subject", label: "Subject",
+      render: (c) => subjectCfg ? (
+        <InlineEditCell entity="case" recordId={c.id} config={subjectCfg} value={c.subject} />
+      ) : c.subject,
+    },
     { key: "type", label: "Type", render: (c) => c.recordType.replace(/_/g, " ") },
-    { key: "status", label: "Status", render: (c) => <StatusPill label={c.status} tone={caseStatusTone(c.status)} /> },
-    { key: "priority", label: "Priority", render: (c) => <StatusPill label={c.priority} tone={PRIORITY_TONE[c.priority] ?? "neutral"} /> },
+    {
+      key: "status", label: "Status",
+      render: (c) => statusCfg ? (
+        <InlineEditCell
+          entity="case" recordId={c.id} config={statusCfg} value={c.status}
+          display={<StatusPill label={c.status} tone={caseStatusTone(c.status)} />}
+        />
+      ) : <StatusPill label={c.status} tone={caseStatusTone(c.status)} />,
+    },
+    {
+      key: "priority", label: "Priority",
+      render: (c) => priorityCfg ? (
+        <InlineEditCell
+          entity="case" recordId={c.id} config={priorityCfg} value={c.priority}
+          display={<StatusPill label={c.priority} tone={PRIORITY_TONE[c.priority] ?? "neutral"} />}
+        />
+      ) : <StatusPill label={c.priority} tone={PRIORITY_TONE[c.priority] ?? "neutral"} />,
+    },
     { key: "level", label: "Level", render: (c) => c.escalationLevel },
     {
       key: "account",
@@ -63,6 +92,16 @@ export default async function CasesPage() {
       columns={columns}
       rowHref={(c) => `/cases/${c.id}`}
       newHref="/cases/new"
+      selectable
+      bulkBar={(
+        <BulkActionBar
+          entity="case"
+          ownerField="ownerId"
+          statusField="status"
+          statusLabel="Status"
+          statusOptions={CASE_STATUSES.map((s) => ({ value: s, label: s }))}
+        />
+      )}
     />
   );
 }

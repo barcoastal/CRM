@@ -9,6 +9,8 @@ import {
   ownerAlias,
 } from "@/components/slds/sf-list-page";
 import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
+import { InlineEditCell } from "@/components/lists/inline-edit-cell";
+import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
 
 // Display labels for opportunity stages — match SF screenshots which show
 // title-case ("Working Opportunity") rather than DB enum upper-snake.
@@ -155,11 +157,15 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     const accountSite = o.account?.website
       ? o.account.website.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "")
       : "";
+    const nameCfg = getInlineConfig("opportunity", "name");
+    const stageCfg = getInlineConfig("opportunity", "stage");
     return {
       id: o.id,
       href: `/opportunities/${o.id}`,
       cells: [
-        oppName,
+        nameCfg ? (
+          <InlineEditCell key="name" entity="opportunity" recordId={o.id} config={nameCfg} value={o.name} display={oppName} />
+        ) : oppName,
         o.account ? (
           <Link
             key="acct"
@@ -173,7 +179,9 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
           "—"
         ),
         accountSite || "—",
-        formatStage(o.stage),
+        stageCfg ? (
+          <InlineEditCell key="stage" entity="opportunity" recordId={o.id} config={stageCfg} value={o.stage} display={formatStage(o.stage)} />
+        ) : formatStage(o.stage),
         closeDate,
         debt,
         leadIdShort,

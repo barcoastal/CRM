@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ViewPicker, type ListViewOption } from "./view-picker";
+import { ListSelectionProvider } from "@/components/lists/list-table-wrapper";
+import { ListRowCheckbox, ListSelectAllCheckbox } from "@/components/lists/list-checkbox-cell";
 
 export interface ListViewColumn<T> {
   key: string;
@@ -24,6 +26,8 @@ export function ListView<T extends { id: string }>({
   newHref,
   iconHref,
   views,
+  selectable,
+  bulkBar,
 }: {
   entity: string;
   entityLabel?: string;
@@ -35,8 +39,13 @@ export function ListView<T extends { id: string }>({
   newHref?: string;
   iconHref?: string;  // direct SLDS sprite path override
   views?: ListViewOption[]; // when provided, renders the view picker
+  /** when true, the leftmost column is a selection checkbox + header all-toggle */
+  selectable?: boolean;
+  /** rendered above the table when selectable + the BulkActionBar is needed */
+  bulkBar?: ReactNode;
 }) {
-  return (
+  const ids = rows.map((r) => r.id);
+  const inner = (
     <article className="slds-card">
       {/* Card header — matches SF list-view header */}
       <div className="slds-card__header slds-grid slds-grid_vertical-align-center">
@@ -76,12 +85,18 @@ export function ListView<T extends { id: string }>({
 
       {/* Table */}
       <div className="slds-card__body slds-card__body_inner" style={{ padding: 0 }}>
+        {selectable && bulkBar}
         <table
           className="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped"
           role="grid"
         >
           <thead>
             <tr className="slds-line-height_reset">
+              {selectable && (
+                <th scope="col" style={{ width: 36, textAlign: "center" }}>
+                  <ListSelectAllCheckbox />
+                </th>
+              )}
               {columns.map((c) => (
                 <th key={c.key} scope="col">
                   <div className="slds-truncate slds-text-title_caps" title={c.label}>
@@ -94,7 +109,7 @@ export function ListView<T extends { id: string }>({
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={columns.length} style={{ textAlign: "center", padding: 40, color: "#706e6b" }}>
+                <td colSpan={columns.length + (selectable ? 1 : 0)} style={{ textAlign: "center", padding: 40, color: "#706e6b" }}>
                   No records match.
                 </td>
               </tr>
@@ -103,6 +118,11 @@ export function ListView<T extends { id: string }>({
               const href = rowHref?.(row);
               return (
                 <tr key={row.id} className="slds-hint-parent">
+                  {selectable && (
+                    <td role="gridcell" style={{ width: 36, textAlign: "center" }}>
+                      <ListRowCheckbox id={row.id} />
+                    </td>
+                  )}
                   {columns.map((c, ci) => (
                     <td key={c.key} role="gridcell">
                       <div className="slds-truncate" title={typeof c.render === "function" ? "" : ""}>
@@ -127,6 +147,8 @@ export function ListView<T extends { id: string }>({
       </div>
     </article>
   );
+  if (!selectable) return inner;
+  return <ListSelectionProvider ids={ids}>{inner}</ListSelectionProvider>;
 }
 
 function slugEntity(entity: string): string {

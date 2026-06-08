@@ -274,7 +274,14 @@ export interface SfStatusOption {
   label: string;
 }
 
-export type SfEntity = "lead" | "opportunity" | "account" | "contact";
+export type SfEntity =
+  | "lead"
+  | "opportunity"
+  | "account"
+  | "contact"
+  | "case"
+  | "task"
+  | "event";
 
 export interface SfMassToolbarConfig {
   entity: SfEntity;
@@ -371,6 +378,28 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
     }
   }
 
+  async function deleteSelected() {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/bulk-edit/${config.entity}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds, delete: true }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; deleted?: number; error?: string };
+      if (data.ok) {
+        toast.success(`Deleted ${data.deleted ?? selectedIds.length} record${(data.deleted ?? selectedIds.length) === 1 ? "" : "s"}`);
+        setModal(null);
+        clear();
+        router.refresh();
+      } else {
+        toast.error(data.error ?? "Delete failed");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function sendEmail() {
     if (!subject.trim()) {
       toast.error("Subject required");
@@ -444,7 +473,7 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
         )}
         <ToolbarBtn onClick={() => setModal("email")}>Send Email</ToolbarBtn>
         <ToolbarBtn onClick={() => toast("Add to Campaign coming soon")}>Add to Campaign</ToolbarBtn>
-        <ToolbarBtn onClick={() => toast("Bulk delete coming soon")} danger>Delete</ToolbarBtn>
+        <ToolbarBtn onClick={() => setModal("delete")} danger>Delete</ToolbarBtn>
         <button
           onClick={clear}
           aria-label="Clear selection"
@@ -595,6 +624,26 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
           }}
         />
       </Modal>
+
+      {/* Delete confirmation */}
+      <Modal
+        open={modal === "delete"}
+        onClose={() => setModal(null)}
+        title="Delete records"
+        size="small"
+        footer={
+          <>
+            <ModalButton onClick={() => setModal(null)} disabled={busy}>Cancel</ModalButton>
+            <ModalButton variant="destructive" onClick={deleteSelected} disabled={busy}>
+              {busy ? "Deleting..." : `Delete ${count}`}
+            </ModalButton>
+          </>
+        }
+      >
+        <div style={{ fontSize: 13, color: "#3e3e3c" }}>
+          Delete {count} row{count === 1 ? "" : "s"}? This cannot be undone.
+        </div>
+      </Modal>
     </>
   );
 }
@@ -633,6 +682,9 @@ function pluralize(entity: SfEntity): string {
     case "opportunity": return "opportunities";
     case "account": return "accounts";
     case "contact": return "contacts";
+    case "case": return "cases";
+    case "task": return "tasks";
+    case "event": return "events";
   }
 }
 

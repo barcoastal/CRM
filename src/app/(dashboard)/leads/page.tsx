@@ -8,6 +8,8 @@ import {
   ownerAlias,
 } from "@/components/slds/sf-list-page";
 import { LEAD_STATUSES } from "@/lib/validations/lead";
+import { InlineEditCell } from "@/components/lists/inline-edit-cell";
+import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
 
 interface LeadsPageProps {
   searchParams: Promise<{
@@ -138,37 +140,32 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       }
     }
     const shortLeadId = lead.sfId ?? lead.id.slice(-8).toUpperCase();
+    const nameCfg = getInlineConfig("lead", "contactName");
+    const statusCfg = getInlineConfig("lead", "status");
+    const sourceCfg = getInlineConfig("lead", "source");
+    const phoneCfg = getInlineConfig("lead", "phone");
+    const emailCfg = getInlineConfig("lead", "email");
     return {
       id: lead.id,
       href: `/leads/${lead.id}`,
       cells: [
-        lead.contactName || "—",
+        nameCfg ? (
+          <InlineEditCell key="name" entity="lead" recordId={lead.id} config={nameCfg} value={lead.contactName} />
+        ) : (lead.contactName || "—"),
         shortLeadId,
         lead.businessName || "—",
-        lead.phone ? (
-          <a
-            key="phone"
-            href={`tel:${lead.phone}`}
-            style={{ color: "#1589ee", textDecoration: "none" }}
-          >
-            {lead.phone}
-          </a>
-        ) : (
-          "—"
-        ),
-        lead.email ? (
-          <a
-            key="email"
-            href={`mailto:${lead.email}`}
-            style={{ color: "#1589ee", textDecoration: "none" }}
-          >
-            {lead.email}
-          </a>
-        ) : (
-          "—"
-        ),
-        lead.status || "—",
-        lead.source || "—",
+        phoneCfg ? (
+          <InlineEditCell key="phone" entity="lead" recordId={lead.id} config={phoneCfg} value={lead.phone} />
+        ) : (lead.phone || "—"),
+        emailCfg ? (
+          <InlineEditCell key="email" entity="lead" recordId={lead.id} config={emailCfg} value={lead.email} />
+        ) : (lead.email || "—"),
+        statusCfg ? (
+          <InlineEditCell key="status" entity="lead" recordId={lead.id} config={statusCfg} value={lead.status} />
+        ) : (lead.status || "—"),
+        sourceCfg ? (
+          <InlineEditCell key="source" entity="lead" recordId={lead.id} config={sourceCfg} value={lead.source} />
+        ) : (lead.source || "—"),
         subDisposition || "",
         ownerAlias(lead.assignedTo) || "—",
       ],

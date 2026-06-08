@@ -8,6 +8,8 @@ import {
   ownerAlias,
 } from "@/components/slds/sf-list-page";
 import { ACCOUNT_RECORD_TYPES } from "@/lib/record-types";
+import { InlineEditCell } from "@/components/lists/inline-edit-cell";
+import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
 
 interface AccountsPageProps {
   searchParams: Promise<{
@@ -148,11 +150,15 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
       leadIdVal = a.convertedFromLead[0].sfId;
     }
 
+    const nameCfg = getInlineConfig("account", "name");
+    const rtCfg = getInlineConfig("account", "recordType");
     return {
       id: a.id,
       href: `/accounts/${a.id}`,
       cells: [
-        a.name || "—",
+        nameCfg ? (
+          <InlineEditCell key="name" entity="account" recordId={a.id} config={nameCfg} value={a.name} />
+        ) : (a.name || "—"),
         site || "—",
         a.phone ? (
           <a
@@ -167,7 +173,9 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         ),
         leadIdVal ?? "—",
         ownerAlias(a.owner) || "—",
-        TYPE_LABEL[a.recordType] ?? a.recordType,
+        rtCfg ? (
+          <InlineEditCell key="rt" entity="account" recordId={a.id} config={rtCfg} value={a.recordType} display={TYPE_LABEL[a.recordType] ?? a.recordType} />
+        ) : (TYPE_LABEL[a.recordType] ?? a.recordType),
         a.industry ?? "",
         a.billingState ?? "",
       ],
