@@ -58,9 +58,13 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 const VIEWS = [
-  { value: "recent", label: "Recently Viewed" },
+  { value: "business", label: "Business Accounts" },
+  { value: "client", label: "Client Accounts" },
+  { value: "creditor", label: "Creditors" },
+  { value: "vendor", label: "Vendors" },
   { value: "all", label: "All Accounts" },
   { value: "my-open", label: "My Accounts" },
+  { value: "recent", label: "Recently Viewed" },
   { value: "this-week", label: "This Week's New" },
   { value: "today-activity", label: "Today's Activity" },
 ];
@@ -70,7 +74,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   const search = params.search?.trim() ?? "";
   const sort = params.sort ?? "";
   const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
-  const view = params.view ?? "recent";
+  const view = params.view ?? "business";
 
   const session = await auth();
   const myId = session?.user?.id ?? "";
@@ -92,7 +96,15 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   const tomorrow = new Date(todayStart);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  if (view === "my-open" && myId) {
+  if (view === "business") {
+    where.recordType = "BUSINESS_ACCOUNT";
+  } else if (view === "client") {
+    where.recordType = "CLIENT";
+  } else if (view === "creditor") {
+    where.recordType = "CREDITOR";
+  } else if (view === "vendor") {
+    where.recordType = "VENDOR";
+  } else if (view === "my-open" && myId) {
     where.ownerId = myId;
   } else if (view === "this-week") {
     where.createdAt = { gte: weekStart };
@@ -186,7 +198,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   if (params.recordType) preservedParams.recordType = params.recordType;
   if (params.view) preservedParams.view = params.view;
 
-  const subtitle = VIEWS.find((v) => v.value === view)?.label ?? "Recently Viewed";
+  const subtitle = VIEWS.find((v) => v.value === view)?.label ?? "Business Accounts";
 
   return (
     <SfListPage
