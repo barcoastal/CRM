@@ -1177,8 +1177,74 @@ async function main() {
     dashboardCount = 1;
   }
 
+  // ---------- SAMPLE REPORTS ----------
+  let reportsSeeded = 0;
+  const SAMPLE_REPORTS = [
+    {
+      name: "Leads by Disposition (Last 30 Days)",
+      description: "Count of leads grouped by last disposition over the past 30 days.",
+      objectType: "Lead",
+      columns: ["businessName", "contactName", "lastDisposition", "lastDispositionAt", "assignedTo.name"],
+      filters: [
+        { field: "createdAt", operator: "gte", value: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() },
+      ],
+      groupBy: "lastDisposition",
+      sortBy: "lastDispositionAt",
+      sortDir: "desc",
+      summarize: [{ field: "id", kind: "count" }],
+      rowLimit: 2000,
+    },
+    {
+      name: "Open Opportunities by Owner",
+      description: "Active pipeline grouped by owner with total debt summed per owner.",
+      objectType: "Opportunity",
+      columns: ["name", "account.name", "stage", "totalDebt", "assignedTo.name", "createdAt"],
+      filters: [
+        { field: "stage", operator: "notIn", value: "Closed Won,Closed Lost" },
+      ],
+      groupBy: "assignedTo.name",
+      sortBy: "totalDebt",
+      sortDir: "desc",
+      summarize: [{ field: "totalDebt", kind: "sum" }],
+      rowLimit: 2000,
+    },
+    {
+      name: "Recent Cases",
+      description: "The 100 most recent cases across all queues and owners.",
+      objectType: "Case",
+      columns: ["caseNumber", "subject", "status", "priority", "owner.name", "createdAt"],
+      filters: [],
+      groupBy: null,
+      sortBy: "createdAt",
+      sortDir: "desc",
+      summarize: [],
+      rowLimit: 100,
+    },
+  ];
+  for (const r of SAMPLE_REPORTS) {
+    const exists = await prisma.report.findFirst({ where: { name: r.name } });
+    if (exists) continue;
+    await prisma.report.create({
+      data: {
+        name: r.name,
+        description: r.description,
+        objectType: r.objectType,
+        columns: r.columns as any,
+        filters: r.filters as any,
+        groupBy: r.groupBy,
+        sortBy: r.sortBy,
+        sortDir: r.sortDir,
+        summarize: r.summarize as any,
+        rowLimit: r.rowLimit,
+        createdById: admin.id,
+      },
+    });
+    reportsSeeded++;
+  }
+
   console.log("\nSeed complete!");
   console.log(`  Dashboards:       ${dashboardCount} (Sales Overview w/ 5 tiles)`);
+  console.log(`  Reports:          ${reportsSeeded} (new sample reports)`);
   console.log(`  List Views:       ${listViewCount}`);
   console.log(`  Dispositions:     ${dispositionCount} (Lead sub-dispositions, SF parity)`);
   console.log(`  Roles:            ${ROLES.length}`);
