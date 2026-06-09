@@ -90,17 +90,27 @@ class SupervisorFeed {
     mapSize: number;
     userMapSize: number;
     stateCounts: Record<string, number>;
-    onCallAgents: Array<{ id: string; callType: string | null; customer: string | null; campaignId: string | null }>;
+    onCallAgents: Array<{ id: string; usernames: string[]; state: string; callType: string | null; customer: string | null; campaignId: string | null }>;
     sample: Array<{ id: string; state: string; callType: string | null; customer: string | null }>;
     lookup: { username: string; mappedId: string | null; foundCall: AgentCall | null } | null;
     eventCounts: Record<string, number>;
     rawLog: Array<{ at: number; eventId: string | null; reason: string | null; preview: string }>;
   } {
+    // Reverse map: five9UserId -> usernames (an id can have several aliases).
+    const idToNames = new Map<string, string[]>();
+    for (const [name, id] of this.userIdByEmail.entries()) {
+      const arr = idToNames.get(id) ?? [];
+      arr.push(name);
+      idToNames.set(id, arr);
+    }
     const stateCounts: Record<string, number> = {};
-    const onCallAgents: Array<{ id: string; callType: string | null; customer: string | null; campaignId: string | null }> = [];
+    const onCallAgents: Array<{ id: string; usernames: string[]; state: string; callType: string | null; customer: string | null; campaignId: string | null }> = [];
     for (const a of this.agentCalls.values()) {
       stateCounts[a.state] = (stateCounts[a.state] ?? 0) + 1;
-      if (a.state === "ON_CALL") onCallAgents.push({ id: a.five9UserId, callType: a.callType, customer: a.customer, campaignId: a.campaignId });
+      // surface anyone genuinely on a live interaction so we can identify them
+      if (a.state === "ON_CALL" || a.callType) {
+        onCallAgents.push({ id: a.five9UserId, usernames: idToNames.get(a.five9UserId) ?? [], state: a.state, callType: a.callType, customer: a.customer, campaignId: a.campaignId });
+      }
     }
     const sample = [...this.agentCalls.values()].slice(0, 5).map((a) => ({ id: a.five9UserId, state: a.state, callType: a.callType, customer: a.customer }));
     let lookup = null as null | { username: string; mappedId: string | null; foundCall: AgentCall | null };

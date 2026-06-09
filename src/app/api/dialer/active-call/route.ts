@@ -16,20 +16,45 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { supervisorFeed } from "@/lib/five9/supervisor-feed";
 
-/** Best-effort match of a Five9 "customer" (often "Last, First") to a CRM lead. */
-async function matchLeadByName(customer: string | null): Promise<{ id: string; phone: string | null } | null> {
+/** Last 10 digits of a phone string, for loose matching. */
+function digits10(s: string): string {
+  const d = s.replace(/\D/g, "");
+  return d.length > 10 ? d.slice(-10) : d;
+}
+
+/**
+ * Best-effort match of a Five9 "customer" to a CRM lead.
+ * For outbound calls the customer is the dialed phone number; for inbound/campaign
+ * calls it is often a contact name ("Last, First"). Try phone first when numeric.
+ */
+async function matchLead(customer: string | null): Promise<{ id: string; phone: string | null } | null> {
   if (!customer) return null;
-  const commaParts = customer.split(",").map((s) => s.trim()).filter(Boolean);
-  const terms = (commaParts.length >= 2 ? commaParts : customer.trim().split(/\s+/))
+  const trimmed = customer.trim();
+
+  // Phone match: if the customer is mostly digits, match a lead by last-10-digits.
+  const numeric = trimmed.replace(/\D/g, "");
+  if (numeric.length >= 7 && /^[\d\s+()-]+$/.test(trimmed)) {
+    const last10 = digits10(trimmed);
+    const byPhone = await prisma.lead.findFirst({
+      where: { phone: { contains: last10 } },
+      orderBy: { updatedAt: "desc" },
+      select: { id: true, phone: true },
+    });
+    if (byPhone) return byPhone;
+    return null; // numeric customer that matches no lead — don't fall through to name terms
+  }
+
+  // Name match: split "Last, First" (or whitespace) and require all terms in contactName.
+  const commaParts = trimmed.split(",").map((s) => s.trim()).filter(Boolean);
+  const terms = (commaParts.length >= 2 ? commaParts : trimmed.split(/\s+/))
     .filter((t) => t.length >= 2)
     .slice(0, 3);
   if (!terms.length) return null;
-  const lead = await prisma.lead.findFirst({
+  return prisma.lead.findFirst({
     where: { AND: terms.map((t) => ({ contactName: { contains: t, mode: "insensitive" as const } })) },
     orderBy: { updatedAt: "desc" },
     select: { id: true, phone: true },
   });
-  return lead;
 }
 
 export async function GET() {
@@ -44,13 +69,15 @@ export async function GET() {
   const username = user?.five9Username ?? user?.email ?? null;
   const call = supervisorFeed.getCallForUsername(username);
   if (call) {
-    const lead = await matchLeadByName(call.customer);
+    const lead = await matchLead(call.customer);
+    // For outbound the customer IS the dialed number — pop it even if no lead matched.
+    const customerIsPhone = !!call.customer && /^[\d\s+()-]+$/.test(call.customer) && call.customer.replace(/\D/g, "").length >= 7;
     return NextResponse.json({
       active: true,
       source: "supervisor",
       customer: call.customer,
       callType: call.callType,
-      phone: lead?.phone ?? null,
+      phone: lead?.phone ?? (customerIsPhone ? call.customer : null),
       leadId: lead?.id ?? null,
       onCallSince: call.onCallSince,
     });
