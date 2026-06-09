@@ -708,6 +708,7 @@ export function SfViewPicker({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -719,7 +720,12 @@ export function SfViewPicker({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) setQ("");
+  }, [open]);
+
   const currentLabel = views.find((v) => v.value === current)?.label ?? views[0]?.label ?? "Recently Viewed";
+  const filtered = q.trim() ? views.filter((v) => v.label.toLowerCase().includes(q.trim().toLowerCase())) : views;
 
   function selectView(value: string) {
     const sp = new URLSearchParams(searchParams.toString());
@@ -769,12 +775,31 @@ export function SfViewPicker({
             border: "1px solid #d8dde6",
             borderRadius: 4,
             boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-            minWidth: 240,
+            minWidth: 320,
             zIndex: 25,
             marginTop: 4,
             padding: "4px 0",
           }}
         >
+          {views.length > 8 && (
+            <div style={{ padding: "8px 12px 6px" }}>
+              <input
+                type="search"
+                autoFocus
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search lists..."
+                style={{
+                  width: "100%",
+                  padding: "6px 10px",
+                  border: "1px solid #d8dde6",
+                  borderRadius: 4,
+                  fontSize: 13,
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+          )}
           <div
             style={{
               padding: "8px 16px 4px",
@@ -787,35 +812,40 @@ export function SfViewPicker({
           >
             LIST VIEWS
           </div>
-          {views.map((v) => {
-            const active = v.value === current;
-            return (
-              <button
-                key={v.value}
-                onClick={() => selectView(v.value)}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "8px 16px",
-                  fontSize: 13,
-                  background: active ? "#f4f6f9" : "transparent",
-                  color: "#080707",
-                  border: "none",
-                  cursor: "pointer",
-                  fontWeight: active ? 700 : 400,
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) e.currentTarget.style.background = "#f3f2f2";
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) e.currentTarget.style.background = "transparent";
-                }}
-              >
-                {v.label}
-              </button>
-            );
-          })}
+          <div style={{ maxHeight: 360, overflowY: "auto" }}>
+            {filtered.map((v) => {
+              const active = v.value === current;
+              return (
+                <button
+                  key={v.value}
+                  onClick={() => selectView(v.value)}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "8px 16px",
+                    fontSize: 13,
+                    background: active ? "#f4f6f9" : "transparent",
+                    color: "#080707",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: active ? 700 : 400,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) e.currentTarget.style.background = "#f3f2f2";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  {v.label}
+                </button>
+              );
+            })}
+            {filtered.length === 0 && (
+              <div style={{ padding: "8px 16px", fontSize: 13, color: "#706e6b" }}>No lists match.</div>
+            )}
+          </div>
         </div>
       )}
     </div>

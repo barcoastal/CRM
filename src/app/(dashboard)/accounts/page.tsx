@@ -58,14 +58,27 @@ const TYPE_LABEL: Record<string, string> = {
   OTHER: "Other",
 };
 
-const VIEWS = [
+// Mirrors the Salesforce Accounts list views Bar shared (2026-06-09). The
+// filter criteria are best-effort maps from the SF view names onto our Account
+// fields (Bar to correct any that are off); the per-rep owner lists (Angie
+// Kelly, David Medina, ...) are generated dynamically from account owners.
+const STATIC_VIEWS = [
   { value: "business", label: "Business Accounts" },
   { value: "client", label: "Client Accounts" },
-  { value: "creditor", label: "Creditors" },
-  { value: "vendor", label: "Vendors" },
   { value: "all", label: "All Accounts" },
+  { value: "program-completion", label: "Accounts in Program Completion Stage" },
+  { value: "active-nsf", label: "Active 1st/2nd NSF" },
+  { value: "buyout-affiliate", label: "Buyout Affiliate" },
+  { value: "cancelled-transfers", label: "Cancelled - Transfers" },
+  { value: "cs-graduated", label: "CS Team's Accounts- Graduated" },
+  { value: "high-ucc-risk", label: "HIGH UCC RISK" },
+  { value: "my-account-teams", label: "My Accounts Teams" },
+  { value: "my-active", label: "My Active Accounts" },
+  { value: "my-cancelled", label: "My Cancelled Accounts" },
   { value: "my-open", label: "My Accounts" },
   { value: "recent", label: "Recently Viewed" },
+  { value: "creditor", label: "Creditors" },
+  { value: "vendor", label: "Vendors" },
   { value: "this-week", label: "This Week's New" },
   { value: "today-activity", label: "Today's Activity" },
 ];
@@ -134,6 +147,34 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     where.createdAt = { gte: weekStart };
   } else if (view === "today-activity") {
     where.updatedAt = { gte: todayStart, lt: tomorrow };
+  } else if (view === "program-completion") {
+    // SF "Accounts in Program Completion Stage" → graduated/completed program.
+    where.stage = "Graduated";
+  } else if (view === "active-nsf") {
+    // SF "Active 1st/2nd NSF" → active accounts currently in NSF.
+    where.stage = "Active";
+    where.paymentStatus = "NSF";
+  } else if (view === "buyout-affiliate") {
+    where.recordType = "BUYOUT";
+  } else if (view === "cancelled-transfers") {
+    where.stage = "Cancelled";
+    where.cancellationReason = { contains: "Transfer", mode: "insensitive" };
+  } else if (view === "cs-graduated") {
+    // SF "CS Team's Accounts- Graduated". We don't have account-team membership
+    // yet, so this currently filters by graduated stage only (Bar to refine).
+    where.stage = "Graduated";
+  } else if (view === "high-ucc-risk") {
+    where.highUccRisk = true;
+  } else if (view === "my-account-teams" && myId) {
+    where.ownerId = myId;
+  } else if (view === "my-active" && myId) {
+    where.ownerId = myId;
+    where.clientStatus = "Active";
+  } else if (view === "my-cancelled" && myId) {
+    where.ownerId = myId;
+    where.clientStatus = "Cancelled";
+  } else if (view.startsWith("owner:")) {
+    where.ownerId = view.slice("owner:".length);
   }
 
   let orderBy: Prisma.AccountOrderByWithRelationInput = { updatedAt: "desc" };
@@ -142,7 +183,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     orderBy = { [key]: dir } as Prisma.AccountOrderByWithRelationInput;
   }
 
-  const [items, total] = await Promise.all([
+  const [items, total, ownerRows] = await Promise.all([
     prisma.account.findMany({
       where,
       select: {
@@ -166,7 +207,20 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
       take: LIMIT,
     }),
     prisma.account.count({ where }),
+    // One entry per account owner → per-rep "owner" views (mirrors the SF
+    // per-person list views like "Angie Kelly", "David Medina", ...).
+    prisma.account.findMany({
+      where: { isActive: true, ownerId: { not: null } },
+      select: { ownerId: true, owner: { select: { name: true, email: true } } },
+      distinct: ["ownerId"],
+    }),
   ]);
+
+  const ownerViews = ownerRows
+    .filter((r) => r.ownerId)
+    .map((r) => ({ value: `owner:${r.ownerId}`, label: r.owner?.name || r.owner?.email || "Unknown owner" }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  const allViews = [...STATIC_VIEWS, ...ownerViews];
 
   const rows: SfRow[] = items.map((a) => {
     let sfData: Record<string, unknown> = {};
@@ -249,7 +303,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   if (params.recordType) preservedParams.recordType = params.recordType;
   if (params.view) preservedParams.view = params.view;
 
-  const subtitle = VIEWS.find((v) => v.value === view)?.label ?? "Business Accounts";
+  const subtitle = allViews.find((v) => v.value === view)?.label ?? "Business Accounts";
 
   return (
     <SfListPage
@@ -272,7 +326,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
       sortDir={dir}
       searchQuery={search}
       preservedParams={preservedParams}
-      views={VIEWS}
+      views={allViews}
       currentView={view}
       massConfig={{
         entity: "account",
