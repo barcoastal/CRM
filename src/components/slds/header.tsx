@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { ObjectIcon } from "./icon";
 import { AppLauncher } from "./app-launcher";
 import { GlobalSearch } from "./global-search";
+import { EditNavModal, applyNavPrefs, type NavItem } from "./edit-nav-modal";
 import { avatarFor } from "@/lib/avatars";
 import { NotificationsPanel, useNotificationsCount } from "@/components/notifications/notifications-panel";
 
@@ -85,7 +86,13 @@ export function SldsHeader({
   const [launcherOpen, setLauncherOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [editNavOpen, setEditNavOpen] = useState(false);
+  const [visibleTabs, setVisibleTabs] = useState<NavItem[]>(TABS);
   const pathname = usePathname();
+
+  useEffect(() => {
+    setVisibleTabs(applyNavPrefs(TABS));
+  }, []);
 
   return (
     <>
@@ -188,7 +195,7 @@ export function SldsHeader({
         </button>
         <Link href="/dashboard" className="sf-app-name">{appName}</Link>
         <nav className="sf-tab-nav">
-          {TABS.map((t) => {
+          {visibleTabs.map((t) => {
             const active =
               pathname === t.href || (t.href !== "/dashboard" && pathname.startsWith(t.href));
             return (
@@ -205,7 +212,11 @@ export function SldsHeader({
             );
           })}
         </nav>
-        <button className="sf-tab-edit" title="Edit tabs">
+        <button
+          className="sf-tab-edit"
+          title="Edit tabs"
+          onClick={() => setEditNavOpen(true)}
+        >
           <svg className="sf-util-icon" aria-hidden="true">
             <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#edit" />
           </svg>
@@ -214,6 +225,13 @@ export function SldsHeader({
 
       {/* Row 3 — decorative blue diagonal banner */}
       <div className="sf-decor-band" aria-hidden="true" />
+
+      <EditNavModal
+        open={editNavOpen}
+        onClose={() => setEditNavOpen(false)}
+        allTabs={TABS}
+        onSaved={() => setVisibleTabs(applyNavPrefs(TABS))}
+      />
     </>
   );
 }
