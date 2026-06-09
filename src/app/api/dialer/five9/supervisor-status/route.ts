@@ -21,6 +21,11 @@ export async function GET(req: NextRequest) {
     error: s.error ?? null,
   };
 
+  // ?probe=features → query what the org has licensed (transcription/AI add-ons?).
+  if (req.nextUrl.searchParams.get("probe") === "features") {
+    return NextResponse.json({ ...base, features: await supervisorFeed.probeFeatures() });
+  }
+
   // ?debug=1 → dump what the feed actually holds, plus the current user's Five9 mapping.
   if (req.nextUrl.searchParams.get("debug")) {
     const user = await prisma.user.findUnique({

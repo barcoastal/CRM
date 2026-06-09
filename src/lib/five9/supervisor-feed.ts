@@ -85,6 +85,35 @@ class SupervisorFeed {
     return call;
   }
 
+  /**
+   * Probe what the org has licensed (to decide whether Five9 already provides
+   * transcription/AI we can read, vs needing VoiceStream + Deepgram). Reads the
+   * application seats and the supervisor's permission list via the live session.
+   */
+  async probeFeatures(): Promise<{ applicationSeats: unknown; permissions: unknown; errors: string[] }> {
+    const errors: string[] = [];
+    let permissions: unknown = null;
+    let applicationSeats: unknown = null;
+    if (!this.orgId || !this.userId) {
+      return { applicationSeats: null, permissions: null, errors: ["feed session not ready"] };
+    }
+    try {
+      const r = await this.svc(`/users/${this.userId}/permissions`, "GET", undefined, false);
+      if (r.ok) permissions = await r.json().catch(() => null);
+      else errors.push(`permissions ${r.status}: ${(await r.text()).slice(0, 120)}`);
+    } catch (e) {
+      errors.push("permissions: " + (e instanceof Error ? e.message : String(e)));
+    }
+    try {
+      const r = await this.svc(`/orgs/${this.orgId}/application_seats`, "GET", undefined, false);
+      if (r.ok) applicationSeats = await r.json().catch(() => null);
+      else errors.push(`application_seats ${r.status}: ${(await r.text()).slice(0, 120)}`);
+    } catch (e) {
+      errors.push("application_seats: " + (e instanceof Error ? e.message : String(e)));
+    }
+    return { applicationSeats, permissions, errors };
+  }
+
   /** Reverse map five9UserId -> a display username (prefer an @-email alias). */
   private displayNames(): Map<string, string> {
     const idToName = new Map<string, string>();
