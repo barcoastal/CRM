@@ -83,6 +83,30 @@ class SupervisorFeed {
     return call;
   }
 
+  /** Diagnostics: see what the feed actually holds (state distribution, on-call rows, mapping). */
+  debugSnapshot(username?: string | null): {
+    mapSize: number;
+    userMapSize: number;
+    stateCounts: Record<string, number>;
+    onCallAgents: Array<{ id: string; callType: string | null; customer: string | null; campaignId: string | null }>;
+    sample: Array<{ id: string; state: string; callType: string | null; customer: string | null }>;
+    lookup: { username: string; mappedId: string | null; foundCall: AgentCall | null } | null;
+  } {
+    const stateCounts: Record<string, number> = {};
+    const onCallAgents: Array<{ id: string; callType: string | null; customer: string | null; campaignId: string | null }> = [];
+    for (const a of this.agentCalls.values()) {
+      stateCounts[a.state] = (stateCounts[a.state] ?? 0) + 1;
+      if (a.state === "ON_CALL") onCallAgents.push({ id: a.five9UserId, callType: a.callType, customer: a.customer, campaignId: a.campaignId });
+    }
+    const sample = [...this.agentCalls.values()].slice(0, 5).map((a) => ({ id: a.five9UserId, state: a.state, callType: a.callType, customer: a.customer }));
+    let lookup = null as null | { username: string; mappedId: string | null; foundCall: AgentCall | null };
+    if (username) {
+      const id = this.userIdByEmail.get(username.toLowerCase()) ?? null;
+      lookup = { username, mappedId: id, foundCall: id ? this.agentCalls.get(id) ?? null : null };
+    }
+    return { mapSize: this.agentCalls.size, userMapSize: this.userIdByEmail.size, stateCounts, onCallAgents, sample, lookup };
+  }
+
   private async runForever(): Promise<void> {
     let delay = 2000;
     while (!this.stopping) {
