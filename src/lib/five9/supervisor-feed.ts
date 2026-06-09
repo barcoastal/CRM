@@ -85,6 +85,44 @@ class SupervisorFeed {
     return call;
   }
 
+  /** Reverse map five9UserId -> a display username (prefer an @-email alias). */
+  private displayNames(): Map<string, string> {
+    const idToName = new Map<string, string>();
+    for (const [name, id] of this.userIdByEmail.entries()) {
+      const cur = idToName.get(id);
+      if (!cur || (name.includes("@") && !cur.includes("@"))) idToName.set(id, name);
+    }
+    return idToName;
+  }
+
+  /** Every agent currently ON_CALL, for the live supervisor floor board. */
+  liveCalls(now = Date.now()): Array<{
+    five9UserId: string;
+    username: string | null;
+    callType: string | null;
+    customer: string | null;
+    campaignId: string | null;
+    onCallSince: number | null;
+    durationSec: number;
+  }> {
+    const names = this.displayNames();
+    const out = [];
+    for (const a of this.agentCalls.values()) {
+      if (a.state !== "ON_CALL") continue;
+      out.push({
+        five9UserId: a.five9UserId,
+        username: names.get(a.five9UserId) ?? null,
+        callType: a.callType,
+        customer: a.customer,
+        campaignId: a.campaignId,
+        onCallSince: a.onCallSince,
+        durationSec: a.onCallSince ? Math.max(0, Math.floor((now - a.onCallSince) / 1000)) : 0,
+      });
+    }
+    out.sort((x, y) => (y.onCallSince ?? 0) - (x.onCallSince ?? 0));
+    return out;
+  }
+
   /** Diagnostics: see what the feed actually holds (state distribution, on-call rows, mapping). */
   debugSnapshot(username?: string | null): {
     mapSize: number;

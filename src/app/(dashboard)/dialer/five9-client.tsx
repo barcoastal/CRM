@@ -129,9 +129,12 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
       {/* Lead context — slim left sidebar */}
       <div>
         <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 16, minHeight: 600 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: "#3e3e3c", marginBottom: 12 }}>
-            Lead Context
-          </h2>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: "#3e3e3c", margin: 0 }}>Lead Context</h2>
+            <Link href="/dialer/floor" style={{ color: "#0070d2", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
+              Live floor ↗
+            </Link>
+          </div>
           {loadingLead && <div style={{ color: "#706e6b" }}>Loading lead…</div>}
           {!loadingLead && !lead && !currentPhone && wrapped && (
             <div style={{ color: "#2e844a", padding: 24, textAlign: "center" }}>
