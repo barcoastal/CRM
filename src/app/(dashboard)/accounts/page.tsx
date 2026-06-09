@@ -5,7 +5,6 @@ import {
   SfListPage,
   type SfColumn,
   type SfRow,
-  ownerAlias,
 } from "@/components/slds/sf-list-page";
 import { ACCOUNT_RECORD_TYPES } from "@/lib/record-types";
 import { InlineEditCell } from "@/components/lists/inline-edit-cell";
@@ -23,28 +22,30 @@ interface AccountsPageProps {
 
 const LIMIT = 50;
 
-// SF Account list columns (match docs/sf-screenshots/sf-account-list.png):
-// # | checkbox | Account Name | Account Site | Phone | Lead Id |
-// Account Owner Alias
-// (We keep Type/Industry/Billing State after the SF set so internal users
-// still get those columns when scrolled right.)
+// SF Business Accounts list columns (matches the SF screenshot Bar shared
+// 2026-06-09): client status pill, first contact dates, primary contact,
+// debt/payment/bank rollup fields, and the SF Lead Id custom column.
 const COLUMNS: SfColumn[] = [
-  { key: "name", label: "Account Name", width: 260, sortable: true },
-  { key: "site", label: "Account Site", width: 130, sortable: true },
+  { key: "clientStatus", label: "Client Status", width: 110, sortable: true },
+  { key: "firstContact", label: "First Contact", width: 110, sortable: false },
+  { key: "firstCommDate", label: "First Comm Date", width: 120, sortable: false },
+  { key: "primaryContact", label: "Primary Contact", width: 170, sortable: false },
+  { key: "name", label: "Account Name", width: 240, sortable: true },
+  { key: "lastModified", label: "Last Modified", width: 110, sortable: false },
+  { key: "lastContacted", label: "Last Contacted", width: 110, sortable: false },
+  { key: "subDisposition", label: "Sub Disposition", width: 180, sortable: false },
+  { key: "totalDebt", label: "Total Debt", width: 110, sortable: false },
+  { key: "paymentStatus", label: "Payment Status", width: 130, sortable: true },
   { key: "phone", label: "Phone", width: 150, sortable: true },
+  { key: "bankStatus", label: "Bank Status", width: 130, sortable: false },
   { key: "leadId", label: "Lead Id", width: 100, sortable: false },
-  { key: "ownerAlias", label: "Account Owner Alias", width: 160, sortable: true },
-  { key: "type", label: "Type", width: 120, sortable: true },
-  { key: "industry", label: "Industry", width: 160, sortable: true },
-  { key: "billingState", label: "Billing State", width: 110, sortable: true },
 ];
 
 const SORT_MAP: Record<string, Prisma.AccountOrderByWithRelationInput> = {
   name: { name: "asc" },
+  clientStatus: { clientStatus: "asc" },
   phone: { phone: "asc" },
-  type: { recordType: "asc" },
-  industry: { industry: "asc" },
-  billingState: { billingState: "asc" },
+  paymentStatus: { paymentStatus: "asc" },
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -68,6 +69,29 @@ const VIEWS = [
   { value: "this-week", label: "This Week's New" },
   { value: "today-activity", label: "Today's Activity" },
 ];
+
+const STATUS_PILL: Record<string, { bg: string; fg: string }> = {
+  Active: { bg: "#defbe6", fg: "#176d2c" },
+  Inactive: { bg: "#f2f2f2", fg: "#444656" },
+  Hardship: { bg: "#fff4d6", fg: "#8a6d00" },
+  Cancelled: { bg: "#feded2", fg: "#8e1f0b" },
+};
+
+function fmtDateShort(input: unknown): string {
+  if (!input) return "";
+  const s = String(input).trim();
+  if (!s) return "";
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "2-digit" });
+}
+
+function fmtMoney(input: unknown): string {
+  if (input === null || input === undefined || input === "") return "";
+  const n = typeof input === "number" ? input : Number(String(input).replace(/[,$]/g, ""));
+  if (!Number.isFinite(n)) return "";
+  return n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
 
 export default async function AccountsPage({ searchParams }: AccountsPageProps) {
   const params = await searchParams;
@@ -126,10 +150,15 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         name: true,
         recordType: true,
         phone: true,
-        industry: true,
-        billingState: true,
-        website: true,
+        clientStatus: true,
+        paymentStatus: true,
+        bankAccountStatus: true,
+        currentTotalDebt: true,
+        updatedAt: true,
+        createdAt: true,
+        firstContractSignedDate: true,
         sfDataJson: true,
+        primaryContact: { select: { id: true, firstName: true, lastName: true } },
         owner: { select: { id: true, name: true, email: true } },
         convertedFromLead: { select: { sfId: true } },
       },
@@ -140,38 +169,65 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   ]);
 
   const rows: SfRow[] = items.map((a) => {
-    // SF "Account Site" — we use website as a proxy when present
-    const site = a.website
-      ? a.website.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "")
-      : "";
-
-    // Lead Id — pull the SF custom Lead_Id__c first, then fall back to the
-    // converted lead's sfId. Same approach used on the contacts list.
-    let leadIdVal: string | null = null;
+    let sfData: Record<string, unknown> = {};
     if (a.sfDataJson) {
-      try {
-        const sfData = JSON.parse(a.sfDataJson) as Record<string, unknown>;
-        const raw =
-          sfData.Lead_Id__c ?? sfData.LeadId__c ?? sfData.LeadId ?? sfData.Lead_Id;
-        if (raw != null && raw !== "") leadIdVal = String(raw);
-      } catch {
-        /* ignore */
-      }
+      try { sfData = JSON.parse(a.sfDataJson) as Record<string, unknown>; } catch { /* ignore */ }
     }
-    if (!leadIdVal && a.convertedFromLead?.[0]?.sfId) {
-      leadIdVal = a.convertedFromLead[0].sfId;
-    }
+
+    let leadIdVal: string | null = null;
+    const rawLead = sfData.Lead_Id__c ?? sfData.LeadId__c ?? sfData.LeadId ?? sfData.Lead_Id;
+    if (rawLead != null && rawLead !== "") leadIdVal = String(rawLead);
+    if (!leadIdVal && a.convertedFromLead?.[0]?.sfId) leadIdVal = a.convertedFromLead[0].sfId;
+
+    const primaryContactName =
+      a.primaryContact
+        ? `${a.primaryContact.firstName ?? ""} ${a.primaryContact.lastName ?? ""}`.trim() || (sfData.Primary_Contact_Name__c as string | undefined) || ""
+        : (sfData.Primary_Contact_Name__c as string | undefined) ?? "";
+
+    const clientStatus = a.clientStatus || (sfData.Client_Status__c as string) || "";
+    const paymentStatus = a.paymentStatus || (sfData.Payment_Status__c as string) || "";
+    const bankStatus = a.bankAccountStatus || (sfData.Bank_Account_Status__c as string) || "";
+    const subDisp = (sfData.Sub_Disposition__c as string) || "";
+    const totalDebt = a.currentTotalDebt ?? Number(sfData.Total_Debt__c);
+    const firstContact = fmtDateShort(sfData.First_Payment_Completed_Date__c ?? sfData.First_Draft_Date__c ?? a.createdAt);
+    const firstCommDate = fmtDateShort(a.firstContractSignedDate ?? sfData.First_Contract_Signed_Date__c);
+    const lastContacted = fmtDateShort(sfData.Last_Contacted_DateTime__c);
+
+    const pill = STATUS_PILL[clientStatus];
+    const clientStatusCell = clientStatus ? (
+      <span
+        style={{
+          display: "inline-flex",
+          padding: "2px 8px",
+          borderRadius: 10,
+          fontSize: 11,
+          fontWeight: 600,
+          background: pill?.bg ?? "#e9ecf3",
+          color: pill?.fg ?? "#444656",
+        }}
+      >
+        {clientStatus}
+      </span>
+    ) : "";
 
     const nameCfg = getInlineConfig("account", "name");
-    const rtCfg = getInlineConfig("account", "recordType");
+
     return {
       id: a.id,
       href: `/accounts/${a.id}`,
       cells: [
+        clientStatusCell,
+        firstContact || "—",
+        firstCommDate || "—",
+        primaryContactName || "—",
         nameCfg ? (
           <InlineEditCell key="name" entity="account" recordId={a.id} config={nameCfg} value={a.name} />
         ) : (a.name || "—"),
-        site || "—",
+        fmtDateShort(a.updatedAt) || "—",
+        lastContacted || "—",
+        subDisp || "—",
+        fmtMoney(totalDebt) || "—",
+        paymentStatus || "—",
         a.phone ? (
           <a
             key="phone"
@@ -183,13 +239,8 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         ) : (
           "—"
         ),
+        bankStatus || "—",
         leadIdVal ?? "—",
-        ownerAlias(a.owner) || "—",
-        rtCfg ? (
-          <InlineEditCell key="rt" entity="account" recordId={a.id} config={rtCfg} value={a.recordType} display={TYPE_LABEL[a.recordType] ?? a.recordType} />
-        ) : (TYPE_LABEL[a.recordType] ?? a.recordType),
-        a.industry ?? "",
-        a.billingState ?? "",
       ],
     };
   });
