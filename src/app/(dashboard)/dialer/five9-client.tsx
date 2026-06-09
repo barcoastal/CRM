@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { DispositionModal } from "@/components/leads/disposition-modal";
+import { LEAD_STATUSES, STAGE_TO_SUB_DISPOSITIONS, type LeadStatusV2 } from "@/lib/sf-canonical";
 
 interface LeadContext {
   id: string;
@@ -268,6 +270,13 @@ function LeadCard({ lead, onSaved }: { lead: LeadContext; onSaved: (l: LeadConte
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dispOpen, setDispOpen] = useState(false);
+
+  // On an active call the opener is "Working Lead"; fall back to it if the raw
+  // status isn't one of the canonical V2 stages.
+  const currentStage: LeadStatusV2 = (LEAD_STATUSES as readonly string[]).includes(lead.status)
+    ? (lead.status as LeadStatusV2)
+    : "Working Lead";
 
   const dirty =
     contactName !== lead.contactName ||
@@ -375,12 +384,37 @@ function LeadCard({ lead, onSaved }: { lead: LeadContext; onSaved: (l: LeadConte
           >
             {saving ? "Saving…" : "Save changes"}
           </button>
+          <button
+            type="button"
+            onClick={() => setDispOpen(true)}
+            style={{
+              background: "#fff",
+              color: "#0070d2",
+              padding: "8px 16px",
+              borderRadius: 4,
+              fontSize: 13,
+              fontWeight: 600,
+              border: "1px solid #0070d2",
+              cursor: "pointer",
+            }}
+          >
+            Disposition
+          </button>
           {saved && !dirty && <span style={{ color: "#2e844a", fontSize: 12, fontWeight: 600 }}>Saved ✓</span>}
           <Link href={`/leads/${lead.id}`} target="_blank" style={{ marginLeft: "auto", color: "#0070d2", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
             Open full lead ↗
           </Link>
         </div>
       </div>
+
+      <DispositionModal
+        endpoint={`/api/leads/${lead.id}/disposition`}
+        stages={LEAD_STATUSES}
+        subDispositionsByStage={STAGE_TO_SUB_DISPOSITIONS}
+        currentStage={currentStage}
+        open={dispOpen}
+        onClose={() => setDispOpen(false)}
+      />
 
       {(lead.industry || lead.lastContactedAt) && (
         <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #ecebea" }}>
