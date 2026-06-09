@@ -213,7 +213,7 @@ export function EditNavModal({
                   aria-label={`Show ${t.label}`}
                 />
                 {t.entity ? (
-                  <ObjectIcon slug={t.entity.toLowerCase()} size="x-small" />
+                  <ObjectIcon entity={t.entity} size="x-small" />
                 ) : (
                   <span style={{ width: 20, height: 20, background: "#dddbda", borderRadius: 2, display: "inline-block" }} />
                 )}
