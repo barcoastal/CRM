@@ -105,9 +105,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
             </div>
           )}
           {!loadingLead && !lead && currentPhone && (
-            <div style={{ color: "#c23934", padding: 16 }}>
-              No matching lead found for <strong>{currentPhone}</strong>.
-            </div>
+            <QuickCreateLead phone={currentPhone} onCreated={() => void handlePhoneChange(currentPhone)} />
           )}
           {lead && <LeadCard lead={lead} />}
         </article>
@@ -125,6 +123,121 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
           style={{ width: "100%", height: "calc(100vh - 130px)", minHeight: 600, border: "1px solid #d8dde6", borderRadius: 4, background: "#fff" }}
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Inline quick-create for a closer on a live call: the dialed number matched no
+ * lead, so capture a new one (phone pre-filled) without leaving the call. On
+ * save it reloads via by-phone so the LeadCard pops immediately.
+ */
+function QuickCreateLead({ phone, onCreated }: { phone: string; onCreated: () => void }) {
+  const [contactName, setContactName] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [phoneVal, setPhoneVal] = useState(phone);
+  const [email, setEmail] = useState("");
+  const [totalDebtEst, setTotalDebtEst] = useState("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Re-seed the phone if the active call changes while the form is open.
+  useEffect(() => setPhoneVal(phone), [phone]);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!contactName.trim() || !phoneVal.trim()) {
+      setError("Contact name and phone are required.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const debtNum = Number(totalDebtEst.replace(/[^0-9.]/g, ""));
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contactName: contactName.trim(),
+          businessName: businessName.trim() || contactName.trim(),
+          phone: phoneVal.trim(),
+          email: email.trim(),
+          totalDebtEst: debtNum > 0 ? debtNum : "",
+          notes: notes.trim(),
+          source: "COLD_CALL",
+        }),
+      });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(b?.error ?? "Failed to create lead");
+        return;
+      }
+      onCreated();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "6px 8px",
+    border: "1px solid #d8dde6",
+    borderRadius: 4,
+    fontSize: 13,
+    marginTop: 2,
+  };
+  const labelStyle: React.CSSProperties = { fontSize: 11, color: "#706e6b", fontWeight: 600 };
+
+  return (
+    <div>
+      <div style={{ color: "#c23934", fontSize: 13, marginBottom: 12 }}>
+        No lead found for <strong>{phone}</strong> — create one:
+      </div>
+      <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <label style={labelStyle}>
+          Contact name *
+          <input style={inputStyle} value={contactName} onChange={(e) => setContactName(e.target.value)} autoFocus placeholder="First Last" />
+        </label>
+        <label style={labelStyle}>
+          Business name
+          <input style={inputStyle} value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="(defaults to contact name)" />
+        </label>
+        <label style={labelStyle}>
+          Phone *
+          <input style={inputStyle} value={phoneVal} onChange={(e) => setPhoneVal(e.target.value)} />
+        </label>
+        <label style={labelStyle}>
+          Email
+          <input style={inputStyle} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
+        </label>
+        <label style={labelStyle}>
+          Est. debt
+          <input style={inputStyle} value={totalDebtEst} onChange={(e) => setTotalDebtEst(e.target.value)} placeholder="$" inputMode="numeric" />
+        </label>
+        <label style={labelStyle}>
+          Notes
+          <textarea style={{ ...inputStyle, minHeight: 56, resize: "vertical" }} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What did they say?" />
+        </label>
+        {error && <div style={{ color: "#c23934", fontSize: 12 }}>{error}</div>}
+        <button
+          type="submit"
+          disabled={saving}
+          style={{
+            background: saving ? "#9bb8e0" : "#0070d2",
+            color: "#fff",
+            padding: "8px 16px",
+            borderRadius: 4,
+            fontSize: 13,
+            fontWeight: 600,
+            border: "none",
+            cursor: saving ? "default" : "pointer",
+            marginTop: 4,
+          }}
+        >
+          {saving ? "Creating…" : "Create lead"}
+        </button>
+      </form>
     </div>
   );
 }
