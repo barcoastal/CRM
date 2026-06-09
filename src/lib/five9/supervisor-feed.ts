@@ -114,38 +114,6 @@ class SupervisorFeed {
     return { applicationSeats, permissions, errors };
   }
 
-  /** Session identifiers for building supervisor REST paths (probe/recordings). */
-  get sessionInfo(): { userId: string; orgId: string; apiHost: string; connected: boolean } {
-    return { userId: this.userId, orgId: this.orgId, apiHost: this.apiHost, connected: this.status.connected };
-  }
-
-  /**
-   * Authenticated passthrough to a supervisor REST path on the live session.
-   * TEMPORARY: used to reverse-engineer the recording API; remove once the
-   * transcription pipeline is built. `path` is relative to /supsvcs/rs/svc.
-   */
-  async rawRequest(path: string, method = "GET", body?: unknown): Promise<{
-    status: number;
-    contentType: string | null;
-    contentLength: string | null;
-    body: string;
-  }> {
-    if (!this.userId) return { status: 0, contentType: null, contentLength: null, body: "feed session not ready" };
-    const res = await this.svc(path, method, body, false);
-    let text = "";
-    try {
-      text = (await res.text()).slice(0, 6000);
-    } catch {
-      /* binary / no body */
-    }
-    return {
-      status: res.status,
-      contentType: res.headers.get("content-type"),
-      contentLength: res.headers.get("content-length"),
-      body: text,
-    };
-  }
-
   /** Reverse map five9UserId -> a display username (prefer an @-email alias). */
   private displayNames(): Map<string, string> {
     const idToName = new Map<string, string>();

@@ -803,6 +803,30 @@ model Lead {
   @@index([convertedAccountId])
 }
 
+// Browser-captured call audio transcribed by Deepgram (post-call). Recorded in
+// the CRM dialer tab and uploaded on hang-up; not tied to Five9 recordings.
+model CallTranscript {
+  id            String   @id @default(cuid())
+  leadId        String?
+  agentUserId   String? // CRM User.id of the agent on the call
+  five9Username String?
+  phone         String?
+  customer      String? // dialed number or contact name from the feed
+  direction     String? // INBOUND | OUTBOUND | MANUAL
+  durationSec   Int?
+  status        String   @default("DONE") // PENDING | DONE | FAILED
+  provider      String   @default("deepgram")
+  transcript    String? // full plain-text transcript
+  summary       String?
+  raw           Json? // provider response (utterances/words/confidence)
+  error         String?
+  createdAt     DateTime @default(now())
+
+  @@index([leadId])
+  @@index([agentUserId])
+  @@index([createdAt])
+}
+
 // ============ CAMPAIGNS ============
 
 model Campaign {

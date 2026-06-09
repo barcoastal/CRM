@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { DispositionModal } from "@/components/leads/disposition-modal";
 import { LEAD_STATUSES, STAGE_TO_SUB_DISPOSITIONS, type LeadStatusV2 } from "@/lib/sf-canonical";
+import { CallTranscriber } from "./call-transcriber";
 
 interface LeadContext {
   id: string;
@@ -159,6 +160,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
             />
           )}
         </article>
+        <CallTranscriber />
       </div>
 
       {/* Five9 dialer — right: embedded Five9 Agent Desktop (its real browser
