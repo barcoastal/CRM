@@ -42,6 +42,8 @@ function hostOf(url: string): string {
 class SupervisorFeed {
   private agentCalls = new Map<string, AgentCall>(); // five9UserId -> state/call
   private userIdByEmail = new Map<string, string>(); // lowercased email -> five9UserId
+  private eventCounts: Record<string, number> = {}; // eventId -> count (diagnostics)
+  private rawLog: Array<{ at: number; eventId: string | null; reason: string | null; preview: string }> = []; // last interesting messages
   private jar: Cookie[] = [];
   private apiHost = ""; // https://app-atl.five9.com:443/supsvcs/rs/svc
   private dcHost = ""; // app-atl.five9.com
@@ -91,6 +93,8 @@ class SupervisorFeed {
     onCallAgents: Array<{ id: string; callType: string | null; customer: string | null; campaignId: string | null }>;
     sample: Array<{ id: string; state: string; callType: string | null; customer: string | null }>;
     lookup: { username: string; mappedId: string | null; foundCall: AgentCall | null } | null;
+    eventCounts: Record<string, number>;
+    rawLog: Array<{ at: number; eventId: string | null; reason: string | null; preview: string }>;
   } {
     const stateCounts: Record<string, number> = {};
     const onCallAgents: Array<{ id: string; callType: string | null; customer: string | null; campaignId: string | null }> = [];
@@ -104,7 +108,49 @@ class SupervisorFeed {
       const id = this.userIdByEmail.get(username.toLowerCase()) ?? null;
       lookup = { username, mappedId: id, foundCall: id ? this.agentCalls.get(id) ?? null : null };
     }
-    return { mapSize: this.agentCalls.size, userMapSize: this.userIdByEmail.size, stateCounts, onCallAgents, sample, lookup };
+    return { mapSize: this.agentCalls.size, userMapSize: this.userIdByEmail.size, stateCounts, onCallAgents, sample, lookup, eventCounts: this.eventCounts, rawLog: this.rawLog.slice(-12) };
+  }
+
+  /**
+   * Merge AGENT_STATE rows from a stats message into the map. Handles both the
+   * full-snapshot (event 5000) and incremental (event 5012) shapes, and whether
+   * payLoad is an array of {dataSource, data/added/updated/removed} blocks or an
+   * object keyed by dataSource.
+   */
+  private ingestAgentStateRows(payload: unknown): void {
+    const blocks: Array<{ dataSource?: string; [k: string]: unknown }> = [];
+    if (Array.isArray(payload)) {
+      for (const b of payload) if (b && typeof b === "object") blocks.push(b as Record<string, unknown>);
+    } else if (payload && typeof payload === "object") {
+      for (const [k, v] of Object.entries(payload as Record<string, unknown>)) {
+        if (v && typeof v === "object") blocks.push({ dataSource: k, ...(v as Record<string, unknown>) });
+        else blocks.push({ dataSource: k, data: v as unknown });
+      }
+    }
+    for (const block of blocks) {
+      if (block.dataSource !== "AGENT_STATE") continue;
+      const rows: unknown[] = [];
+      for (const key of ["data", "added", "updated", "values", "objects", "rows"]) {
+        const v = block[key];
+        if (Array.isArray(v)) rows.push(...v);
+      }
+      for (const raw of rows) {
+        if (!raw || typeof raw !== "object") continue;
+        const r = raw as { id?: string; userId?: string; agentId?: string; state?: string; agentState?: string; callType?: string | null; customer?: string | null; campaignId?: string | null; onCallStateSince?: number };
+        const id = r.id ?? r.userId ?? r.agentId;
+        if (!id) continue;
+        const prev = this.agentCalls.get(id);
+        this.agentCalls.set(id, {
+          five9UserId: id,
+          state: r.state ?? r.agentState ?? prev?.state ?? "UNKNOWN",
+          callType: r.callType ?? prev?.callType ?? null,
+          customer: r.customer ?? prev?.customer ?? null,
+          campaignId: r.campaignId ?? prev?.campaignId ?? null,
+          onCallSince: r.onCallStateSince || prev?.onCallSince || null,
+          updatedAt: Date.now(),
+        });
+      }
+    }
   }
 
   private async runForever(): Promise<void> {
@@ -257,37 +303,22 @@ class SupervisorFeed {
 
       ws.on("message", (data) => {
         this.status.lastEvent = Date.now();
-        let event: { payLoad?: unknown };
+        const text = data.toString();
+        let event: { context?: { eventId?: string; eventReason?: string }; payLoad?: unknown };
         try {
-          event = JSON.parse(data.toString());
+          event = JSON.parse(text);
         } catch {
           return; // "ping"/non-json
         }
-        const payload = event.payLoad;
-        if (!Array.isArray(payload)) return;
-        for (const block of payload as Array<{ dataSource?: string; data?: unknown[]; added?: unknown[]; updated?: unknown[] }>) {
-          if (block.dataSource !== "AGENT_STATE") continue;
-          const rows = [...(block.data ?? []), ...(block.added ?? []), ...(block.updated ?? [])] as Array<{
-            id?: string;
-            state?: string;
-            callType?: string | null;
-            customer?: string | null;
-            campaignId?: string | null;
-            onCallStateSince?: number;
-          }>;
-          for (const r of rows) {
-            if (!r.id) continue;
-            this.agentCalls.set(r.id, {
-              five9UserId: r.id,
-              state: r.state ?? "UNKNOWN",
-              callType: r.callType ?? null,
-              customer: r.customer ?? null,
-              campaignId: r.campaignId ?? null,
-              onCallSince: r.onCallStateSince || null,
-              updatedAt: Date.now(),
-            });
-          }
+        const eventId = event.context?.eventId ?? null;
+        const reason = event.context?.eventReason ?? null;
+        this.eventCounts[eventId ?? "none"] = (this.eventCounts[eventId ?? "none"] ?? 0) + 1;
+        // Keep a small ring buffer of non-pong messages for diagnosing the live shape.
+        if (eventId !== "1202") {
+          this.rawLog.push({ at: Date.now(), eventId, reason, preview: text.slice(0, 1200) });
+          if (this.rawLog.length > 30) this.rawLog.shift();
         }
+        this.ingestAgentStateRows(event.payLoad);
         this.status.agents = this.agentCalls.size;
         this.status.onCall = [...this.agentCalls.values()].filter((a) => a.state === "ON_CALL").length;
       });
