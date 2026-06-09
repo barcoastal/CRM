@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     email: lead.email,
     status: lead.status,
     totalDebtEst: lead.totalDebtEst,
+    numberOfLenders: lead.numberOfLenders,
     industry: lead.industry,
     lastContactedAt: lead.lastContactedAt?.toISOString() ?? null,
     recentCalls: lead.calls.map((c) => ({

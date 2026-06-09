@@ -734,6 +734,7 @@ model Lead {
   industry      String?
   annualRevenue Float?
   totalDebtEst  Float?
+  numberOfLenders Int? // # of lenders/creditors, verified by the opener on the call
   source        String  @default("OTHER") // WEBSITE, REFERRAL, MAILER, PURCHASED_LIST, COLD_CALL, SOCIAL, OTHER
   status        String  @default("NEW") // NEW, CONTACTED, QUALIFIED, UNQUALIFIED, CALLBACK, ENROLLED, CONVERTED, LOST, DNC
   score         Int?

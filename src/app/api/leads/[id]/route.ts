@@ -194,6 +194,9 @@ export async function PATCH(
   if (data.totalDebtEst !== undefined) {
     updateData.totalDebtEst = typeof data.totalDebtEst === "number" ? data.totalDebtEst : null;
   }
+  if (data.numberOfLenders !== undefined) {
+    updateData.numberOfLenders = typeof data.numberOfLenders === "number" ? data.numberOfLenders : null;
+  }
   if (data.source !== undefined) updateData.source = data.source;
   if (data.status !== undefined) updateData.status = data.status;
   if (data.notes !== undefined) updateData.notes = data.notes || null;

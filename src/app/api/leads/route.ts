@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
       industry: data.industry || null,
       annualRevenue: typeof data.annualRevenue === "number" ? data.annualRevenue : null,
       totalDebtEst: typeof data.totalDebtEst === "number" ? data.totalDebtEst : null,
+      numberOfLenders: typeof data.numberOfLenders === "number" ? data.numberOfLenders : null,
       source: data.source,
       notes: data.notes || null,
       assignedToId: data.assignedToId || null,

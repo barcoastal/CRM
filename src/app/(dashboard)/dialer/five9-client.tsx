@@ -11,6 +11,7 @@ interface LeadContext {
   email: string | null;
   status: string;
   totalDebtEst: number | null;
+  numberOfLenders: number | null;
   industry: string | null;
   lastContactedAt: string | null;
   recentCalls: Array<{ id: string; startedAt: string; disposition: string | null; duration: number | null }>;
@@ -107,7 +108,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
           {!loadingLead && !lead && currentPhone && (
             <QuickCreateLead phone={currentPhone} onCreated={() => void handlePhoneChange(currentPhone)} />
           )}
-          {lead && <LeadCard lead={lead} />}
+          {lead && <LeadCard key={lead.id} lead={lead} onSaved={(updated) => setLead(updated)} />}
         </article>
       </div>
 
@@ -138,6 +139,7 @@ function QuickCreateLead({ phone, onCreated }: { phone: string; onCreated: () =>
   const [phoneVal, setPhoneVal] = useState(phone);
   const [email, setEmail] = useState("");
   const [totalDebtEst, setTotalDebtEst] = useState("");
+  const [numberOfLenders, setNumberOfLenders] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -155,6 +157,7 @@ function QuickCreateLead({ phone, onCreated }: { phone: string; onCreated: () =>
     setSaving(true);
     try {
       const debtNum = Number(totalDebtEst.replace(/[^0-9.]/g, ""));
+      const lendersNum = Number(numberOfLenders.replace(/[^0-9]/g, ""));
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -164,6 +167,7 @@ function QuickCreateLead({ phone, onCreated }: { phone: string; onCreated: () =>
           phone: phoneVal.trim(),
           email: email.trim(),
           totalDebtEst: debtNum > 0 ? debtNum : "",
+          numberOfLenders: numberOfLenders.trim() === "" || Number.isNaN(lendersNum) ? "" : lendersNum,
           notes: notes.trim(),
           source: "COLD_CALL",
         }),
@@ -211,10 +215,16 @@ function QuickCreateLead({ phone, onCreated }: { phone: string; onCreated: () =>
           Email
           <input style={inputStyle} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
         </label>
-        <label style={labelStyle}>
-          Est. debt
-          <input style={inputStyle} value={totalDebtEst} onChange={(e) => setTotalDebtEst(e.target.value)} placeholder="$" inputMode="numeric" />
-        </label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <label style={labelStyle}>
+            Real debt amount
+            <input style={inputStyle} value={totalDebtEst} onChange={(e) => setTotalDebtEst(e.target.value)} placeholder="$" inputMode="numeric" />
+          </label>
+          <label style={labelStyle}>
+            # of lenders
+            <input style={inputStyle} value={numberOfLenders} onChange={(e) => setNumberOfLenders(e.target.value)} placeholder="0" inputMode="numeric" />
+          </label>
+        </div>
         <label style={labelStyle}>
           Notes
           <textarea style={{ ...inputStyle, minHeight: 56, resize: "vertical" }} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What did they say?" />
@@ -242,40 +252,146 @@ function QuickCreateLead({ phone, onCreated }: { phone: string; onCreated: () =>
   );
 }
 
-function LeadCard({ lead }: { lead: LeadContext }) {
+/**
+ * Live lead card — editable so the opener can verify/correct the lead on the
+ * call: contact name, business name, email, the real debt amount, and the
+ * number of lenders. Saves via PATCH /api/leads/[id]. Keyed by lead.id in the
+ * parent so it reseeds for each new call.
+ */
+function LeadCard({ lead, onSaved }: { lead: LeadContext; onSaved: (l: LeadContext) => void }) {
+  const debtStr = (v: number | null) => (v != null ? String(v) : "");
+  const [contactName, setContactName] = useState(lead.contactName);
+  const [businessName, setBusinessName] = useState(lead.businessName);
+  const [email, setEmail] = useState(lead.email ?? "");
+  const [totalDebtEst, setTotalDebtEst] = useState(debtStr(lead.totalDebtEst));
+  const [numberOfLenders, setNumberOfLenders] = useState(debtStr(lead.numberOfLenders));
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const dirty =
+    contactName !== lead.contactName ||
+    businessName !== lead.businessName ||
+    email !== (lead.email ?? "") ||
+    totalDebtEst !== debtStr(lead.totalDebtEst) ||
+    numberOfLenders !== debtStr(lead.numberOfLenders);
+
+  async function save() {
+    setError(null);
+    if (!contactName.trim()) {
+      setError("Contact name is required.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const debtNum = Number(totalDebtEst.replace(/[^0-9.]/g, ""));
+      const lendersNum = Number(numberOfLenders.replace(/[^0-9]/g, ""));
+      const newDebt = debtNum > 0 ? debtNum : null;
+      const newLenders = numberOfLenders.trim() === "" || Number.isNaN(lendersNum) ? null : lendersNum;
+      const res = await fetch(`/api/leads/${lead.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contactName: contactName.trim(),
+          businessName: businessName.trim() || contactName.trim(),
+          email: email.trim(),
+          totalDebtEst: newDebt ?? "",
+          numberOfLenders: newLenders ?? "",
+        }),
+      });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(b?.error ?? "Failed to save");
+        return;
+      }
+      onSaved({
+        ...lead,
+        contactName: contactName.trim(),
+        businessName: businessName.trim() || contactName.trim(),
+        email: email.trim() || null,
+        totalDebtEst: newDebt,
+        numberOfLenders: newLenders,
+      });
+      setSaved(true);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputStyle: React.CSSProperties = { width: "100%", padding: "6px 8px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, marginTop: 2 };
+  const labelStyle: React.CSSProperties = { fontSize: 11, color: "#706e6b", fontWeight: 600 };
+
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
-        <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{lead.contactName}</h3>
-        <div style={{ color: "#706e6b", fontSize: 13 }}>{lead.businessName}</div>
+      <div style={{ marginBottom: 8 }}>
+        <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{lead.contactName || "New lead"}</h3>
+        <div style={{ color: "#706e6b", fontSize: 12 }}>
+          {lead.phone} · {lead.status}
+        </div>
       </div>
-      <Grid
-        cells={[
-          ["Phone", lead.phone],
-          ["Email", lead.email ?? "—"],
-          ["Status", lead.status],
-          ["Industry", lead.industry ?? "—"],
-          ["Est. Debt", lead.totalDebtEst ? `$${lead.totalDebtEst.toLocaleString()}` : "—"],
-          ["Last contact", lead.lastContactedAt ? new Date(lead.lastContactedAt).toLocaleString() : "—"],
-        ]}
-      />
-      <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-        <Link
-          href={`/leads/${lead.id}`}
-          target="_blank"
-          style={{
-            background: "#0070d2",
-            color: "#fff",
-            padding: "8px 16px",
-            borderRadius: 4,
-            fontSize: 13,
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
-        >
-          Open in Leads ↗
-        </Link>
+
+      <div style={{ fontSize: 11, color: "#0070d2", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, margin: "8px 0 6px" }}>
+        Verify with caller
       </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <label style={labelStyle}>
+          Contact name *
+          <input style={inputStyle} value={contactName} onChange={(e) => { setContactName(e.target.value); setSaved(false); }} />
+        </label>
+        <label style={labelStyle}>
+          Business name
+          <input style={inputStyle} value={businessName} onChange={(e) => { setBusinessName(e.target.value); setSaved(false); }} />
+        </label>
+        <label style={labelStyle}>
+          Email
+          <input style={inputStyle} value={email} onChange={(e) => { setEmail(e.target.value); setSaved(false); }} placeholder="name@company.com" />
+        </label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <label style={labelStyle}>
+            Real debt amount
+            <input style={inputStyle} value={totalDebtEst} onChange={(e) => { setTotalDebtEst(e.target.value); setSaved(false); }} placeholder="$" inputMode="numeric" />
+          </label>
+          <label style={labelStyle}>
+            # of lenders
+            <input style={inputStyle} value={numberOfLenders} onChange={(e) => { setNumberOfLenders(e.target.value); setSaved(false); }} placeholder="0" inputMode="numeric" />
+          </label>
+        </div>
+        {error && <div style={{ color: "#c23934", fontSize: 12 }}>{error}</div>}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}>
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving || !dirty}
+            style={{
+              background: saving || !dirty ? "#9bb8e0" : "#0070d2",
+              color: "#fff",
+              padding: "8px 16px",
+              borderRadius: 4,
+              fontSize: 13,
+              fontWeight: 600,
+              border: "none",
+              cursor: saving || !dirty ? "default" : "pointer",
+            }}
+          >
+            {saving ? "Saving…" : "Save changes"}
+          </button>
+          {saved && !dirty && <span style={{ color: "#2e844a", fontSize: 12, fontWeight: 600 }}>Saved ✓</span>}
+          <Link href={`/leads/${lead.id}`} target="_blank" style={{ marginLeft: "auto", color: "#0070d2", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
+            Open full lead ↗
+          </Link>
+        </div>
+      </div>
+
+      {(lead.industry || lead.lastContactedAt) && (
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #ecebea" }}>
+          <Grid
+            cells={[
+              ["Industry", lead.industry ?? "—"],
+              ["Last contact", lead.lastContactedAt ? new Date(lead.lastContactedAt).toLocaleString() : "—"],
+            ]}
+          />
+        </div>
+      )}
 
       {lead.recentCalls.length > 0 && (
         <div style={{ marginTop: 24 }}>
