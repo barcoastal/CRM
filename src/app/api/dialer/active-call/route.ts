@@ -32,16 +32,17 @@ async function matchLead(customer: string | null): Promise<{ id: string; phone: 
   const trimmed = customer.trim();
 
   // Phone match: if the customer is mostly digits, match a lead by last-10-digits.
+  // Normalize the STORED phone too (strip formatting) so "1(800)-864-8331" matches.
   const numeric = trimmed.replace(/\D/g, "");
   if (numeric.length >= 7 && /^[\d\s+()-]+$/.test(trimmed)) {
     const last10 = digits10(trimmed);
-    const byPhone = await prisma.lead.findFirst({
-      where: { phone: { contains: last10 } },
-      orderBy: { updatedAt: "desc" },
-      select: { id: true, phone: true },
-    });
-    if (byPhone) return byPhone;
-    return null; // numeric customer that matches no lead — don't fall through to name terms
+    const rows = await prisma.$queryRaw<Array<{ id: string; phone: string }>>`
+      SELECT id, phone FROM "Lead"
+      WHERE regexp_replace(phone, '[^0-9]', '', 'g') LIKE ${"%" + last10}
+      ORDER BY "updatedAt" DESC
+      LIMIT 1
+    `;
+    return rows[0] ?? null; // numeric customer that matches no lead — don't fall through to name terms
   }
 
   // Name match: split "Last, First" (or whitespace) and require all terms in contactName.

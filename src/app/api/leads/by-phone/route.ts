@@ -22,17 +22,31 @@ export async function GET(request: NextRequest) {
   if (!phone) return NextResponse.json({ error: "phone required" }, { status: 400 });
 
   const key = last10(phone);
-  const lead = await prisma.lead.findFirst({
-    where: { phone: { contains: key } },
-    orderBy: { updatedAt: "desc" },
-    include: {
-      calls: {
-        orderBy: { startedAt: "desc" },
-        take: 5,
-        select: { id: true, startedAt: true, disposition: true, duration: true },
-      },
-    },
-  });
+  if (!key) return NextResponse.json(null);
+
+  // Match on DIGITS, not the raw stored string: strip all non-digits from the
+  // stored phone and test that it ends with the incoming digits. This handles
+  // any stored formatting ("1(800)-864-8331", "(800) 864 8331", etc.) and a
+  // leading country-code "1". `key` is digits-only, so it is LIKE-wildcard safe.
+  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+    SELECT id FROM "Lead"
+    WHERE regexp_replace(phone, '[^0-9]', '', 'g') LIKE ${"%" + key}
+    ORDER BY "updatedAt" DESC
+    LIMIT 1
+  `;
+  const match = rows[0];
+  const lead = match
+    ? await prisma.lead.findUnique({
+        where: { id: match.id },
+        include: {
+          calls: {
+            orderBy: { startedAt: "desc" },
+            take: 5,
+            select: { id: true, startedAt: true, disposition: true, duration: true },
+          },
+        },
+      })
+    : null;
 
   if (!lead) return NextResponse.json(null);
 
