@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { DispositionModal } from "@/components/leads/disposition-modal";
 import { LEAD_STATUSES, STAGE_TO_SUB_DISPOSITIONS, type LeadStatusV2 } from "@/lib/sf-canonical";
@@ -32,10 +32,48 @@ interface Props {
  * Five9 publishes a postMessage API for the iframed Agent Desktop —
  * events arrive as { type: "five9.callConnected", payload: { ani, dnis, ... } }.
  */
+const last10 = (p: string | null | undefined) => (p ?? "").replace(/[^0-9]/g, "").slice(-10);
+
 export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Props) {
   const [lead, setLead] = useState<LeadContext | null>(null);
   const [loadingLead, setLoadingLead] = useState(false);
   const [currentPhone, setCurrentPhone] = useState<string | null>(null);
+  const [wrapped, setWrapped] = useState(false); // disposition saved → waiting for next call
+
+  // Refs so the polling interval always sees the latest call identity without
+  // re-subscribing. A call is identified by onCallSince (its start timestamp).
+  const currentPhoneRef = useRef<string | null>(null);
+  const callSinceRef = useRef<number | null>(null);
+  const dispositionedSinceRef = useRef<number | null>(null); // call we already closed
+
+  async function popLead(phone: string, since: number | null) {
+    currentPhoneRef.current = phone;
+    callSinceRef.current = since;
+    setCurrentPhone(phone);
+    setWrapped(false);
+    setLoadingLead(true);
+    try {
+      const res = await fetch(`/api/leads/by-phone?phone=${encodeURIComponent(last10(phone))}`);
+      if (res.ok) setLead((await res.json()) ?? null);
+    } finally {
+      setLoadingLead(false);
+    }
+  }
+
+  function clearPane(opts?: { wrapped?: boolean }) {
+    currentPhoneRef.current = null;
+    callSinceRef.current = null;
+    setCurrentPhone(null);
+    setLead(null);
+    if (opts?.wrapped) setWrapped(true);
+  }
+
+  // Called when a disposition is saved: close the current call and wait for the
+  // next one. Remember this call's id so the still-connected call won't re-pop.
+  function handleDispositioned() {
+    dispositionedSinceRef.current = callSinceRef.current;
+    clearPane({ wrapped: true });
+  }
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -50,48 +88,41 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
           (payload.dnis as string) ??
           (payload.phoneNumber as string) ??
           null;
-        if (phone) void handlePhoneChange(phone);
+        if (phone) void popLead(phone, null);
       }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [five9Domain]);
 
-  // Screen-pop from THIS CRM: the embedded Five9 desktop uses its own (Salesforce)
-  // connector and doesn't postMessage us, so poll our backend for the agent's
-  // current active call (written by the Five9 webhook) and load the lead here.
+  // Screen-pop: poll the agent's current active call from the supervisor feed.
   useEffect(() => {
     const id = setInterval(async () => {
       try {
         const res = await fetch("/api/dialer/active-call");
         if (!res.ok) return;
-        const data = (await res.json()) as { active?: boolean; phone?: string };
-        if (!data.active || !data.phone) return;
-        const last10 = data.phone.replace(/[^0-9]/g, "").slice(-10);
-        const cur = (currentPhone ?? "").replace(/[^0-9]/g, "").slice(-10);
-        if (last10 && last10 !== cur) void handlePhoneChange(data.phone);
+        const data = (await res.json()) as { active?: boolean; phone?: string; onCallSince?: number };
+        if (!data.active || !data.phone) {
+          // Call ended → reset to the waiting state; a new call may pop again.
+          if (currentPhoneRef.current) clearPane();
+          dispositionedSinceRef.current = null;
+          return;
+        }
+        const since = typeof data.onCallSince === "number" ? data.onCallSince : null;
+        // Suppress the call we already dispositioned (it stays "active" until hangup).
+        if (since !== null && since === dispositionedSinceRef.current) return;
+        const isNewCall =
+          last10(data.phone) !== last10(currentPhoneRef.current) ||
+          (since !== null && since !== callSinceRef.current);
+        if (isNewCall) void popLead(data.phone, since);
       } catch {
         /* ignore */
       }
     }, 4000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPhone]);
-
-  async function handlePhoneChange(phone: string) {
-    setCurrentPhone(phone);
-    setLoadingLead(true);
-    try {
-      const last10 = phone.replace(/[^0-9]/g, "").slice(-10);
-      const res = await fetch(`/api/leads/by-phone?phone=${encodeURIComponent(last10)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setLead(data ?? null);
-      }
-    } finally {
-      setLoadingLead(false);
-    }
-  }
+  }, []);
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "320px minmax(0, 1fr)", gap: 12, padding: 12 }}>
@@ -102,15 +133,28 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
             Lead Context
           </h2>
           {loadingLead && <div style={{ color: "#706e6b" }}>Loading lead…</div>}
-          {!loadingLead && !lead && !currentPhone && (
+          {!loadingLead && !lead && !currentPhone && wrapped && (
+            <div style={{ color: "#2e844a", padding: 24, textAlign: "center" }}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Disposition saved ✓</div>
+              <div style={{ color: "#706e6b" }}>Waiting for the next call…</div>
+            </div>
+          )}
+          {!loadingLead && !lead && !currentPhone && !wrapped && (
             <div style={{ color: "#706e6b", padding: 24, textAlign: "center" }}>
               No active call. When Five9 connects a call, the matching lead loads here automatically.
             </div>
           )}
           {!loadingLead && !lead && currentPhone && (
-            <QuickCreateLead phone={currentPhone} onCreated={() => void handlePhoneChange(currentPhone)} />
+            <QuickCreateLead phone={currentPhone} onCreated={() => void popLead(currentPhone, callSinceRef.current)} />
           )}
-          {lead && <LeadCard key={lead.id} lead={lead} onSaved={(updated) => setLead(updated)} />}
+          {lead && (
+            <LeadCard
+              key={lead.id}
+              lead={lead}
+              onSaved={(updated) => setLead(updated)}
+              onDispositioned={handleDispositioned}
+            />
+          )}
         </article>
       </div>
 
@@ -260,7 +304,7 @@ function QuickCreateLead({ phone, onCreated }: { phone: string; onCreated: () =>
  * number of lenders. Saves via PATCH /api/leads/[id]. Keyed by lead.id in the
  * parent so it reseeds for each new call.
  */
-function LeadCard({ lead, onSaved }: { lead: LeadContext; onSaved: (l: LeadContext) => void }) {
+function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSaved: (l: LeadContext) => void; onDispositioned: () => void }) {
   const debtStr = (v: number | null) => (v != null ? String(v) : "");
   const [contactName, setContactName] = useState(lead.contactName);
   const [businessName, setBusinessName] = useState(lead.businessName);
@@ -414,6 +458,7 @@ function LeadCard({ lead, onSaved }: { lead: LeadContext; onSaved: (l: LeadConte
         currentStage={currentStage}
         open={dispOpen}
         onClose={() => setDispOpen(false)}
+        onSaved={onDispositioned}
       />
 
       {(lead.industry || lead.lastContactedAt) && (

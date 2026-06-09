@@ -37,6 +37,15 @@ export type DispositionModalProps = {
   currentStage: string;
   open: boolean;
   onClose: () => void;
+  /**
+   * Optional. When provided, called after a successful save INSTEAD of the
+   * default router refresh/redirect — the caller decides what happens next
+   * (e.g. the dialer clears the call pane and waits for the next call).
+   */
+  onSaved?: (out: {
+    conversion?: { opportunityId: string | null; accountId: string };
+    conversionError?: string;
+  }) => void;
 };
 
 export function DispositionModal({
@@ -46,6 +55,7 @@ export function DispositionModal({
   currentStage,
   open,
   onClose,
+  onSaved,
 }: DispositionModalProps) {
   const router = useRouter();
   const [stage, setStage] = useState<string>(currentStage);
@@ -95,6 +105,10 @@ export function DispositionModal({
         conversionError?: string;
       };
       onClose();
+      if (onSaved) {
+        onSaved(out);
+        return;
+      }
       if (out.redirectTo) {
         router.push(out.redirectTo);
       } else if (out.conversion?.opportunityId) {
