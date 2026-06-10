@@ -60,6 +60,7 @@ model User {
   emailsOwned               EmailMessage[]                  @relation("EmailOwner")
   smsOwned                  SmsMessage[]                    @relation("SmsOwner")
   emailTemplates            EmailTemplate[]                 @relation("EmailTemplateAuthor")
+  emailAttachmentsUploaded  EmailTemplateAttachment[]       @relation("EmailAttachmentUploader")
   integrationCredentials    IntegrationCredential[]         @relation("IntegrationCredentialAuthor")
   paymentCalcsSaved         LeadPaymentCalculation[]        @relation("PaymentCalcSavedBy")
   leadHistoryChanges        LeadHistory[]                   @relation("LeadHistoryChangedBy")
@@ -1759,8 +1760,24 @@ model EmailTemplate {
   updatedAt DateTime @updatedAt
 
   emails       EmailMessage[]
-  cadenceSteps CadenceStep[]  @relation("CadenceStepEmailTemplate")
-  massEmails   MassEmail[]    @relation("MassEmailTemplate")
+  cadenceSteps CadenceStep[]             @relation("CadenceStepEmailTemplate")
+  massEmails   MassEmail[]               @relation("MassEmailTemplate")
+  attachments  EmailTemplateAttachment[]
+}
+
+model EmailTemplateAttachment {
+  id           String        @id @default(cuid())
+  templateId   String
+  template     EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  filename     String
+  contentType  String
+  byteSize     Int
+  storagePath  String // relative path under /data/email-attachments
+  uploadedById String?
+  uploadedBy   User?         @relation("EmailAttachmentUploader", fields: [uploadedById], references: [id])
+  createdAt    DateTime      @default(now())
+
+  @@index([templateId])
 }
 
 model IntegrationCredential {
