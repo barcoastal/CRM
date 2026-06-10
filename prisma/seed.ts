@@ -1406,6 +1406,54 @@ async function main() {
   }
   console.log(`  Path Guidance:    ${PATH_GUIDANCE_SEEDS.length} (Lead/Opp/Account stages)`);
 
+  // ---- Validation Rules ---------------------------------------------------
+  // Only seed when the table is empty so existing customer rules are never
+  // overwritten. Both rules illustrate the AND/OR pattern.
+  const existingValidationRules = await prisma.validationRule.count();
+  if (existingValidationRules === 0) {
+    await prisma.validationRule.create({
+      data: {
+        name: "Lead requires phone or email",
+        description: "Every new or updated lead must be reachable by at least one channel.",
+        entityType: "Lead",
+        errorMessage: "A lead must have either a phone number or an email address.",
+        condition: {
+          kind: "and",
+          conditions: [
+            { field: "phone", operator: "isNull" },
+            { field: "email", operator: "isNull" },
+          ],
+        } as object,
+        fireOn: "both",
+        errorFieldName: "phone",
+        isActive: true,
+        sortOrder: 10,
+      },
+    });
+    await prisma.validationRule.create({
+      data: {
+        name: "Opp amount must be positive",
+        description: "Block opportunities saved with a zero or negative amount.",
+        entityType: "Opportunity",
+        errorMessage: "Opportunity amount must be greater than zero.",
+        condition: {
+          kind: "or",
+          conditions: [
+            { field: "amount", operator: "isNull" },
+            { field: "amount", operator: "lt", value: "0" },
+          ],
+        } as object,
+        fireOn: "both",
+        errorFieldName: "amount",
+        isActive: true,
+        sortOrder: 20,
+      },
+    });
+    console.log(`  Validation Rules: 2 (Lead, Opportunity)`);
+  } else {
+    console.log(`  Validation Rules: ${existingValidationRules} (skipped seed, already present)`);
+  }
+
   console.log(`  Leads:            ${leads.length}`);
   console.log(`  Campaign:         ${campaign.name}`);
   console.log(`\n  Logins (all password123):`);
