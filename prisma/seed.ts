@@ -1352,6 +1352,60 @@ async function main() {
   console.log(`  SMS:              2 (1 outbound + 1 inbound reply on Acme)`);
   console.log(`  Integrations:     2 (Twilio placeholder + DocuSign placeholder)`);
   console.log(`  Webhook events:   1 (PAYMENT_PROCESSOR test)`);
+  // ---------- PATH GUIDANCE (SF-style Key Fields + Guidance for Success) ----------
+  const PATH_GUIDANCE_SEEDS: {
+    entityType: string;
+    stage: string;
+    keyFields: string[];
+    guidance: string;
+    sortOrder: number;
+  }[] = [
+    {
+      entityType: "Lead",
+      stage: "Working Lead",
+      keyFields: ["contactName", "businessName", "phone", "email"],
+      guidance:
+        "## What to do at this stage.\n\nConfirm contact info on the next call. Ask about the debt amount, the lender, and the reason they reached out.\n\n- Verify the **phone number** and email on file are correct.\n- Capture the **business name** if missing.\n- Log a disposition before ending the call.",
+      sortOrder: 1,
+    },
+    {
+      entityType: "Opportunity",
+      stage: "Working Opportunity",
+      keyFields: ["amount", "totalDebt", "monthlyPayment"],
+      guidance:
+        "## Working Opportunity.\n\nWalk the client through the proposal. Make sure they understand the program structure, the estimated savings, and the payment schedule.\n\n- Confirm the **amount** is realistic vs. their cash flow.\n- Set expectations on settlement timing.",
+      sortOrder: 2,
+    },
+    {
+      entityType: "Account",
+      stage: "Active",
+      keyFields: ["primaryContactId", "bankAccountStatus"],
+      guidance:
+        "## Active Client.\n\nMake the welcome call within 48 hours of activation. Confirm draft date, bank routing, and primary contact.\n\n> A strong welcome call cuts cancellations in the first 30 days dramatically.",
+      sortOrder: 3,
+    },
+  ];
+  for (const g of PATH_GUIDANCE_SEEDS) {
+    await prisma.pathGuidance.upsert({
+      where: { entityType_stage: { entityType: g.entityType, stage: g.stage } },
+      create: {
+        entityType: g.entityType,
+        stage: g.stage,
+        keyFields: g.keyFields as object,
+        guidance: g.guidance,
+        sortOrder: g.sortOrder,
+        isActive: true,
+      },
+      update: {
+        keyFields: g.keyFields as object,
+        guidance: g.guidance,
+        sortOrder: g.sortOrder,
+        isActive: true,
+      },
+    });
+  }
+  console.log(`  Path Guidance:    ${PATH_GUIDANCE_SEEDS.length} (Lead/Opp/Account stages)`);
+
   console.log(`  Leads:            ${leads.length}`);
   console.log(`  Campaign:         ${campaign.name}`);
   console.log(`\n  Logins (all password123):`);

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { RecordPage, StatusPill } from "@/components/slds/record-page";
+import { PathSidePanelServer } from "@/components/path/path-side-panel-server";
 import { Section, FieldGrid } from "@/components/slds/section";
 import { E } from "@/components/slds/field-helpers";
 import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activity-chatter-rail";
@@ -35,6 +36,16 @@ function currentStageOrDefault(status: string): LeadStatusV2 {
   return (LEAD_STATUSES as readonly string[]).includes(status)
     ? (status as LeadStatusV2)
     : "New";
+}
+
+/** Map a Lead.status value to the canonical PathGuidance stage label. */
+function leadStageLabel(status: string): LeadStatusV2 {
+  if ((LEAD_STATUSES as readonly string[]).includes(status)) return status as LeadStatusV2;
+  const s = (status ?? "").toUpperCase().replace(/[_ ]+/g, "_");
+  if (s === "CONVERTED" || s === "ENROLLED") return "Converted";
+  if (s === "ARCHIVE_DISPOSITION" || s === "DNC" || s === "LOST" || s === "UNQUALIFIED") return "Archive Disposition";
+  if (s === "WORKING_LEAD" || s === "CONTACTED" || s === "QUALIFIED" || s === "CALLBACK") return "Working Lead";
+  return "New";
 }
 
 /** A real human owner name — never a numeric junk value like "1.0". */
@@ -786,17 +797,24 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       pathCurrentIndex={Math.max(0, leadPathIndex(lead.status))}
       pathActionLabel={converted ? "Converted" : "Mark Status as Complete"}
       details={
-        <LeadTabs
-          panels={{
-            Details: details,
-            "Debt Information": debtInformationPanel,
-            "Payment Calculator": calc,
-            Documents: documents,
-            Related: related,
-            Marketing: marketing,
-            "All SF Fields": sfFields,
-          }}
-        />
+        <>
+          <PathSidePanelServer
+            entityType="Lead"
+            stage={leadStageLabel(lead.status)}
+            record={lead as unknown as Record<string, unknown>}
+          />
+          <LeadTabs
+            panels={{
+              Details: details,
+              "Debt Information": debtInformationPanel,
+              "Payment Calculator": calc,
+              Documents: documents,
+              Related: related,
+              Marketing: marketing,
+              "All SF Fields": sfFields,
+            }}
+          />
+        </>
       }
       rail={
         // SF Lead detail rail order:

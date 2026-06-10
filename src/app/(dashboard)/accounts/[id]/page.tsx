@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { RecordPage, StatusPill } from "@/components/slds/record-page";
+import { PathSidePanelServer } from "@/components/path/path-side-panel-server";
 import { Section, FieldGrid } from "@/components/slds/section";
 import { E } from "@/components/slds/field-helpers";
 import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activity-chatter-rail";
@@ -750,6 +751,12 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       pathCurrentIndex={accountPathIndex(account.stage)}
       pathActionLabel="Mark Stage as Complete"
       details={
+        <>
+        <PathSidePanelServer
+          entityType="Account"
+          stage={account.stage}
+          record={account as unknown as Record<string, unknown>}
+        />
         <AccountTabs
           panels={{
             Details: detailsPanel,
@@ -766,6 +773,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             "All SF Fields": sfFieldsPanel,
           }}
         />
+        </>
       }
       rail={
         <>

@@ -98,6 +98,9 @@ model User {
   contentRecordLinks      ContentRecordLink[]    @relation("ContentRecordLinkedBy")
   contentShareLinks       ContentShareLink[]     @relation("ContentShareCreatedBy")
 
+  // SF-style Path Guidance authoring
+  pathGuidances PathGuidance[] @relation("PathGuidanceCreatedBy")
+
   // Five9 AgentREST credentials per user — used to log the agent into Five9
   // and trigger click-to-dial on their behalf. Password is encrypted at rest
   // with the FIVE9_AGENT_KEY env var.
@@ -723,24 +726,24 @@ model Creditor {
 // ============ LEADS ============
 
 model Lead {
-  id            String  @id @default(cuid())
-  sfId          String? @unique // Salesforce 18-char ID, populated on migration
-  sfDataJson    String? // Lossless SF row snapshot
-  recordType    String  @default("WEB") // WEB | DIRECT_MAIL | LIST | BUSINESS | ARCHIVED_WEB | ARCHIVED_DIRECT_MAIL | ARCHIVED_LIST
-  businessName  String
-  contactName   String
-  phone         String
-  email         String?
-  ein           String? @unique
-  industry      String?
-  annualRevenue Float?
-  totalDebtEst  Float?
+  id              String  @id @default(cuid())
+  sfId            String? @unique // Salesforce 18-char ID, populated on migration
+  sfDataJson      String? // Lossless SF row snapshot
+  recordType      String  @default("WEB") // WEB | DIRECT_MAIL | LIST | BUSINESS | ARCHIVED_WEB | ARCHIVED_DIRECT_MAIL | ARCHIVED_LIST
+  businessName    String
+  contactName     String
+  phone           String
+  email           String?
+  ein             String? @unique
+  industry        String?
+  annualRevenue   Float?
+  totalDebtEst    Float?
   numberOfLenders Int? // # of lenders/creditors, verified by the opener on the call
-  source        String  @default("OTHER") // WEBSITE, REFERRAL, MAILER, PURCHASED_LIST, COLD_CALL, SOCIAL, OTHER
-  status        String  @default("NEW") // NEW, CONTACTED, QUALIFIED, UNQUALIFIED, CALLBACK, ENROLLED, CONVERTED, LOST, DNC
-  score         Int?
-  scoreReason   String?
-  notes         String?
+  source          String  @default("OTHER") // WEBSITE, REFERRAL, MAILER, PURCHASED_LIST, COLD_CALL, SOCIAL, OTHER
+  status          String  @default("NEW") // NEW, CONTACTED, QUALIFIED, UNQUALIFIED, CALLBACK, ENROLLED, CONVERTED, LOST, DNC
+  score           Int?
+  scoreReason     String?
+  notes           String?
 
   // Marketing Attribution
   utmSource   String?
@@ -2366,4 +2369,29 @@ model ContentShareLink {
 
   @@index([documentId])
   @@index([token])
+}
+
+// ============ PATH GUIDANCE ============
+// SF-style Path Guidance for Success + Key Fields panel. Each row binds an
+// entity+stage pair to a key-field checklist and a markdown guidance block
+// that appears next to the Path tracker on the record detail page.
+model PathGuidance {
+  id          String   @id @default(cuid())
+  entityType  String // "Lead" | "Opportunity" | "Account" | "Case"
+  stage       String // The exact stage label (matches sf-canonical values)
+  // Array of field paths surfaced as key fields. Paths reference the entity:
+  // ["leadName", "businessName", "amount", "owner.name"]
+  keyFields   Json     @default("[]")
+  // Markdown guidance text shown to the rep at this stage
+  guidance    String?
+  // Order in the editor list (e.g. sort by stage progression)
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdById String?
+  createdBy   User?    @relation("PathGuidanceCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([entityType, stage])
+  @@index([entityType, stage])
 }

@@ -14,7 +14,7 @@ export default async function SettingsPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [users, profiles, roles, queues, permSets, integrations, templates, dispositions, listViews] = await Promise.all([
+  const [users, profiles, roles, queues, permSets, integrations, templates, dispositions, listViews, pathGuidance] = await Promise.all([
     prisma.user.count({ where: { isActive: true } }),
     prisma.profile.count({ where: { isActive: true } }),
     prisma.role.count(),
@@ -24,6 +24,7 @@ export default async function SettingsPage() {
     prisma.emailTemplate.count({ where: { isActive: true } }),
     prisma.disposition.count({ where: { isActive: true } }),
     prisma.listView.count(),
+    prisma.pathGuidance.count({ where: { isActive: true } }),
   ]);
 
   const cards: { section: string; items: SettingsCard[] }[] = [
@@ -42,6 +43,7 @@ export default async function SettingsPage() {
       items: [
         { href: "/settings/dispositions", title: "Dispositions", description: "Per-entity picklist values (47 SF Lead sub-dispositions seeded)", count: dispositions },
         { href: "/settings/list-views", title: "List Views", description: "Saved filter sets for object list pages", count: listViews },
+        { href: "/settings/path-guidance", title: "Path Guidance", description: "Key Fields + Guidance for Success per Lead, Opp, Account, Case stage", count: pathGuidance },
       ],
     },
     {

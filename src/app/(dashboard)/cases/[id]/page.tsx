@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { RecordPage, HeaderActions, StatusPill } from "@/components/slds/record-page";
 import { Section, FieldGrid } from "@/components/slds/section";
 import { caseStatusTone } from "@/lib/slds/status-tones";
+import { PathSidePanelServer } from "@/components/path/path-side-panel-server";
 
 const CASE_PATH = [
   { label: "New" },
@@ -16,6 +17,14 @@ function casePathIndex(status: string): number {
   if (status === "ESCALATED") return 2;
   if (status === "IN_PROGRESS" || status === "WAITING_ON_CUSTOMER" || status === "OPEN") return 1;
   return 0;
+}
+
+/** Map a Case status enum to the matching path stage label used by PathGuidance. */
+function caseStageLabel(status: string): string {
+  if (status === "RESOLVED" || status === "CLOSED") return "Resolved";
+  if (status === "ESCALATED") return "Escalated";
+  if (status === "IN_PROGRESS" || status === "WAITING_ON_CUSTOMER" || status === "OPEN") return "In Progress";
+  return "New";
 }
 
 const PRIORITY_TONE: Record<string, "danger" | "warning" | "info" | "neutral"> = {
@@ -73,6 +82,11 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
       pathActionLabel="Mark Status as Complete"
       details={
         <>
+          <PathSidePanelServer
+            entityType="Case"
+            stage={caseStageLabel(c.status)}
+            record={c as unknown as Record<string, unknown>}
+          />
           <Section title="Case Information">
             <FieldGrid
               fields={[

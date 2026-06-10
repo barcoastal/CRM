@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { RecordPage, StatusPill } from "@/components/slds/record-page";
+import { PathSidePanelServer } from "@/components/path/path-side-panel-server";
 import { Section, FieldGrid } from "@/components/slds/section";
 import { E } from "@/components/slds/field-helpers";
 import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activity-chatter-rail";
@@ -882,19 +883,26 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           return `Mark ${short} Complete`;
         })()}
         details={
-          <OppTabs
-            panels={{
-              Details: detailsPanel,
-              Activities: activitiesPanel,
-              "Debt Information": debtPanel,
-              "Payment Calculator": calcPanel,
-              Settlements: settlementsPanel,
-              Documents: documentsPanel,
-              Related: relatedPanel,
-              Marketing: marketingPanel,
-              "All SF Fields": sfFieldsPanel,
-            }}
-          />
+          <>
+            <PathSidePanelServer
+              entityType="Opportunity"
+              stage={opp.stage}
+              record={opp as unknown as Record<string, unknown>}
+            />
+            <OppTabs
+              panels={{
+                Details: detailsPanel,
+                Activities: activitiesPanel,
+                "Debt Information": debtPanel,
+                "Payment Calculator": calcPanel,
+                Settlements: settlementsPanel,
+                Documents: documentsPanel,
+                Related: relatedPanel,
+                Marketing: marketingPanel,
+                "All SF Fields": sfFieldsPanel,
+              }}
+            />
+          </>
         }
         rail={
           <>
