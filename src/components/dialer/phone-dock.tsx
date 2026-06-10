@@ -26,6 +26,7 @@ export function PhoneDock() {
   const [hydrated, setHydrated] = useState(false);
   const [open, setOpen] = useState(false); // iframe mounted (= logged-in / available)
   const [expanded, setExpanded] = useState(true);
+  const [maximized, setMaximized] = useState(false);
   const [call, setCall] = useState<ActiveCall | null>(null);
   const [now, setNow] = useState(0);
   const lastSinceRef = useRef<number | null>(null);
@@ -38,6 +39,7 @@ export function PhoneDock() {
       if (localStorage.getItem("phoneDockOpen") === "1") setOpen(true);
       const ex = localStorage.getItem("phoneDockExpanded");
       if (ex !== null) setExpanded(ex === "1");
+      if (localStorage.getItem("phoneDockMax") === "1") setMaximized(true);
     } catch {
       /* ignore */
     }
@@ -49,6 +51,9 @@ export function PhoneDock() {
   useEffect(() => {
     if (hydrated) try { localStorage.setItem("phoneDockExpanded", expanded ? "1" : "0"); } catch {}
   }, [expanded, hydrated]);
+  useEffect(() => {
+    if (hydrated) try { localStorage.setItem("phoneDockMax", maximized ? "1" : "0"); } catch {}
+  }, [maximized, hydrated]);
 
   // Poll the agent's active call (screen-pop source) while the dock is open.
   useEffect(() => {
@@ -112,20 +117,22 @@ export function PhoneDock() {
     );
   }
 
+  const dockWidth = maximized ? "min(1100px, 96vw)" : 760;
+  const bodyHeight = expanded ? (maximized ? "82vh" : 640) : 0;
+
   return (
     <div
       style={{
-        position: "fixed", bottom: 0, right: 16, zIndex: 5000, width: 460,
+        position: "fixed", bottom: 0, right: 16, zIndex: 5000, width: dockWidth,
         background: "#fff", border: "1px solid #d8dde6", borderBottom: "none",
         borderRadius: "8px 8px 0 0", overflow: "hidden",
         boxShadow: "0 -2px 18px rgba(0,0,0,0.18)",
       }}
     >
       <div
-        onClick={() => setExpanded((e) => !e)}
         style={{
           display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
-          background: onCall ? "#b3261e" : "#04254a", color: "#fff", cursor: "pointer", userSelect: "none",
+          background: onCall ? "#b3261e" : "#04254a", color: "#fff", userSelect: "none",
         }}
       >
         <span style={{ width: 9, height: 9, borderRadius: "50%", background: onCall ? "#fff" : "#4bca81", display: "inline-block", flexShrink: 0 }} />
@@ -135,8 +142,15 @@ export function PhoneDock() {
             {call.customer}
           </span>
         )}
-        <span style={{ marginLeft: "auto", display: "inline-flex", gap: 10, alignItems: "center" }}>
-          <span style={{ fontSize: 12 }}>{expanded ? "▾ Hide" : "▴ Show"}</span>
+        <span style={{ marginLeft: "auto", display: "inline-flex", gap: 14, alignItems: "center" }}>
+          <button onClick={() => setMaximized((m) => !m)} title={maximized ? "Restore" : "Maximize"}
+            style={{ background: "transparent", border: "none", color: "#fff", cursor: "pointer", fontSize: 13, padding: 0 }}>
+            {maximized ? "🗗 Restore" : "🗖 Bigger"}
+          </button>
+          <button onClick={() => setExpanded((e) => !e)} title={expanded ? "Hide" : "Show"}
+            style={{ background: "transparent", border: "none", color: "#fff", cursor: "pointer", fontSize: 12, padding: 0 }}>
+            {expanded ? "▾ Hide" : "▴ Show"}
+          </button>
         </span>
       </div>
 
@@ -158,12 +172,12 @@ export function PhoneDock() {
       )}
 
       {/* Iframe stays mounted; collapsing only clips it so the call never drops. */}
-      <div style={{ height: expanded ? 620 : 0, overflow: "hidden", transition: "height 0.15s ease" }}>
+      <div style={{ height: bodyHeight, overflow: "hidden", transition: "height 0.15s ease" }}>
         <iframe
           src={FIVE9_SRC}
           title="Five9 Phone"
           allow="microphone; autoplay; clipboard-read; clipboard-write"
-          style={{ width: "100%", height: 620, border: "none", display: "block", background: "#fff" }}
+          style={{ width: "100%", height: maximized ? "82vh" : 640, border: "none", display: "block", background: "#fff" }}
         />
       </div>
     </div>
