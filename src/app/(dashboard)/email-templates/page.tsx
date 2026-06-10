@@ -23,7 +23,7 @@ export default async function EmailTemplatesPage() {
     { key: "dev", label: "Developer Name", render: (t) => t.developerName },
     { key: "subject", label: "Subject", render: (t) => t.subject },
     { key: "folder", label: "Folder", render: (t) => t.folder ?? "General" },
-    { key: "by", label: "Created By", render: (t) => t.createdBy?.name ?? "—" },
+    { key: "by", label: "Created By", render: (t) => t.createdBy?.name ?? "" },
   ];
   return (
     <ListView
@@ -33,6 +33,8 @@ export default async function EmailTemplatesPage() {
       totalCount={total}
       rows={items as TemplateRow[]}
       columns={columns}
+      rowHref={(t) => `/email-templates/${t.id}`}
+      newHref="/email-templates/new"
     />
   );
 }

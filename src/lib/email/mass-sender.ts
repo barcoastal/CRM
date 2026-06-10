@@ -18,6 +18,10 @@ import {
   rewriteLinksForTracking,
   getTrackingBaseUrl,
 } from "@/lib/email/tracking-rewrite";
+import {
+  loadResendAttachmentsForTemplate,
+  type ResendAttachment,
+} from "@/lib/email/template-attachments";
 import { notify } from "@/lib/notifications/notify";
 
 const DEFAULT_CONCURRENCY = 5;
@@ -43,6 +47,7 @@ async function sendViaResend(args: {
   html?: string;
   text?: string;
   replyTo?: string | null;
+  attachments?: ResendAttachment[] | null;
 }): Promise<{ ok: boolean; providerMessageId?: string; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return { ok: false, error: "RESEND_API_KEY not set" };
@@ -55,6 +60,7 @@ async function sendViaResend(args: {
   if (args.html) body.html = args.html;
   if (args.text) body.text = args.text;
   if (args.replyTo) body.reply_to = args.replyTo;
+  if (args.attachments && args.attachments.length > 0) body.attachments = args.attachments;
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -307,6 +313,9 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
     const audienceFilter = (mass.audienceFilter ?? {}) as AudienceFilter;
     const recipients = await resolveAudience(mass.audienceType, audienceFilter, mass.audienceIds);
 
+    // Load template attachments once; each send reuses the encoded buffer.
+    const templateAttachments = await loadResendAttachmentsForTemplate(mass.templateId);
+
     await prisma.massEmail.update({
       where: { id: massEmailId },
       data: { status: "SENDING", totalCount: recipients.length },
@@ -334,6 +343,7 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
           html: rendered.html,
           text: rendered.text,
           replyTo,
+          attachments: templateAttachments,
         });
 
         await prisma.emailMessage.create({

@@ -17,6 +17,10 @@
 
 import { prisma } from "@/lib/prisma";
 import type { EmailMessage } from "@/generated/prisma/client";
+import {
+  loadResendAttachmentsForTemplate,
+  type ResendAttachment,
+} from "@/lib/email/template-attachments";
 
 interface SendResult {
   ok: boolean;
@@ -33,6 +37,7 @@ async function sendViaResend(args: {
   html?: string | null;
   text?: string | null;
   replyTo?: string | null;
+  attachments?: ResendAttachment[] | null;
 }): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return { ok: false, error: "RESEND_API_KEY not set" };
@@ -47,6 +52,7 @@ async function sendViaResend(args: {
   if (args.cc && args.cc.length > 0) body.cc = args.cc;
   if (args.bcc && args.bcc.length > 0) body.bcc = args.bcc;
   if (args.replyTo) body.reply_to = args.replyTo;
+  if (args.attachments && args.attachments.length > 0) body.attachments = args.attachments;
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -174,6 +180,9 @@ export async function sendQueuedEmail(msgId: string): Promise<SendResult> {
   const defaultFrom = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
   const replyTo = process.env.EMAIL_REPLY_TO ?? null;
 
+  // Pull template attachments (if any) so they ride along with this send.
+  const attachments = await loadResendAttachmentsForTemplate(msg.templateId);
+
   const result = await sendViaResend({
     from: msg.fromAddress || defaultFrom,
     to: splitCsv(msg.toAddresses),
@@ -183,6 +192,7 @@ export async function sendQueuedEmail(msgId: string): Promise<SendResult> {
     html: rendered.html ?? null,
     text: rendered.text ?? null,
     replyTo,
+    attachments,
   });
 
   await prisma.emailMessage.update({
