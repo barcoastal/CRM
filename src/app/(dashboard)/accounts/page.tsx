@@ -22,23 +22,23 @@ interface AccountsPageProps {
 
 const LIMIT = 50;
 
-// SF Business Accounts list columns (matches the SF screenshot Bar shared
-// 2026-06-09): client status pill, first contact dates, primary contact,
-// debt/payment/bank rollup fields, and the SF Lead Id custom column.
+// SF Account list columns — pulled verbatim from the SF Angie Kelly list view
+// describe (2026-06-10). DO NOT add or remove columns without checking SF
+// first — these match the SOQL columns SF returns for that view.
 const COLUMNS: SfColumn[] = [
+  { key: "ownerFullName", label: "Owner Full Name", width: 140, sortable: true },
   { key: "clientStatus", label: "Client Status", width: 110, sortable: true },
-  { key: "firstContact", label: "First Contact", width: 110, sortable: false },
-  { key: "firstCommDate", label: "First Comm Date", width: 120, sortable: false },
+  { key: "firstContractSigned", label: "First Contract Signed Date", width: 150, sortable: false },
   { key: "primaryContact", label: "Primary Contact", width: 170, sortable: false },
   { key: "name", label: "Account Name", width: 240, sortable: true },
-  { key: "lastModified", label: "Last Modified", width: 110, sortable: false },
-  { key: "lastContacted", label: "Last Contacted", width: 110, sortable: false },
+  { key: "lastModified", label: "Last Modified Date", width: 130, sortable: false },
+  { key: "lastContacted", label: "Last Contacted DateTime", width: 150, sortable: false },
   { key: "subDisposition", label: "Sub Disposition", width: 180, sortable: false },
   { key: "totalDebt", label: "Total Debt", width: 110, sortable: false },
   { key: "paymentStatus", label: "Payment Status", width: 130, sortable: true },
   { key: "phone", label: "Phone", width: 150, sortable: true },
-  { key: "bankStatus", label: "Bank Status", width: 130, sortable: false },
-  { key: "leadId", label: "Lead Id", width: 100, sortable: false },
+  { key: "billingState", label: "Billing State/Province", width: 130, sortable: false },
+  { key: "leadNumber", label: "Lead Id", width: 100, sortable: false },
 ];
 
 const SORT_MAP: Record<string, Prisma.AccountOrderByWithRelationInput> = {
@@ -198,6 +198,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         updatedAt: true,
         createdAt: true,
         firstContractSignedDate: true,
+        billingState: true,
         sfDataJson: true,
         primaryContact: { select: { id: true, firstName: true, lastName: true } },
         owner: { select: { id: true, name: true, email: true } },
@@ -229,9 +230,16 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     }
 
     let leadIdVal: string | null = null;
-    const rawLead = sfData.Lead_Id__c ?? sfData.LeadId__c ?? sfData.LeadId ?? sfData.Lead_Id;
+    // SF's "Angie Kelly" view uses Lead_Number__c. Fall back to legacy field
+    // names + the converted Lead's sfId for older records.
+    const rawLead =
+      sfData.Lead_Number__c ?? sfData.Lead_Id__c ?? sfData.LeadId__c ?? sfData.LeadId ?? sfData.Lead_Id;
     if (rawLead != null && rawLead !== "") leadIdVal = String(rawLead);
     if (!leadIdVal && a.convertedFromLead?.[0]?.sfId) leadIdVal = a.convertedFromLead[0].sfId;
+
+    const ownerFullName =
+      a.owner?.name || (sfData.Owner_Full_Name__c as string | undefined) || a.owner?.email || "";
+    const billingStateVal = a.billingState || (sfData.BillingStateCode as string | undefined) || "";
 
     const primaryContactName =
       a.primaryContact
@@ -240,11 +248,11 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
 
     const clientStatus = a.clientStatus || (sfData.Client_Status__c as string) || "";
     const paymentStatus = a.paymentStatus || (sfData.Payment_Status__c as string) || "";
-    const bankStatus = a.bankAccountStatus || (sfData.Bank_Account_Status__c as string) || "";
     const subDisp = (sfData.Sub_Disposition__c as string) || "";
     const totalDebt = a.currentTotalDebt ?? Number(sfData.Total_Debt__c);
-    const firstContact = fmtDateShort(sfData.First_Payment_Completed_Date__c ?? sfData.First_Draft_Date__c ?? a.createdAt);
-    const firstCommDate = fmtDateShort(a.firstContractSignedDate ?? sfData.First_Contract_Signed_Date__c);
+    const firstContractSigned = fmtDateShort(
+      a.firstContractSignedDate ?? sfData.First_Contract_Signed_Date__c
+    );
     const lastContacted = fmtDateShort(sfData.Last_Contacted_DateTime__c);
 
     const pill = STATUS_PILL[clientStatus];
@@ -270,9 +278,9 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
       id: a.id,
       href: `/accounts/${a.id}`,
       cells: [
+        ownerFullName || "—",
         clientStatusCell,
-        firstContact || "—",
-        firstCommDate || "—",
+        firstContractSigned || "—",
         primaryContactName || "—",
         nameCfg ? (
           <InlineEditCell key="name" entity="account" recordId={a.id} config={nameCfg} value={a.name} />
@@ -293,7 +301,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         ) : (
           "—"
         ),
-        bankStatus || "—",
+        billingStateVal || "—",
         leadIdVal ?? "—",
       ],
     };
