@@ -1,113 +1,135 @@
 /**
- * SAS (Smart Account Servicing) provider.
+ * SAS (sasdashboard.com) provider.
  *
- * Port of SF SASApi.cls — REST API with bearer-token auth.
+ * Port of SF SASApi.cls. The endpoint is a single ASP.NET handler that
+ * dispatches on the ?Method= query string. APIKey + CompanyKey live in the
+ * query string too. Response shape is always:
+ *
+ *   { Success, Records, Message, ProcessData (stringified JSON array) }
  *
  * Env:
- *   SAS_API_BASE_URL=https://api.smartaccountservicing.com
- *   SAS_API_KEY=<bearer token from SAS portal>
- *   SAS_AFFILIATE_ID=<your affiliate id>     (some SAS endpoints require this)
+ *   SAS_API_ENDPOINT=https://sasdashboard.com/modules/Pd4tnbgk/process.aspx
+ *   SAS_API_KEY=<APIKey from SAS dashboard>
+ *   SAS_COMPANY_KEY=<CompanyKey from SAS dashboard>
+ *   SAS_SECURITY_KEY=<X-SecurityKey header, if set on the account>  (optional)
  *
- * Endpoints used:
- *   GET  /customers/{externalId}            → returns { balance, status, ... }
- *   GET  /customers/updated?since=ISO       → list of customer summaries
- *   GET  /drafts/updated?since=ISO          → list of recent draft status changes
+ * Methods called:
+ *   GetBalances           -> customer escrow balance snapshot
+ *   GetCustomerRecords    -> customer profile + status
+ *   GetUpdatedDebits      -> debit (draft) status changes since a date
  */
 
 import type { BalanceUpdate, DraftUpdate, PaymentProcessor } from "./types";
 
-interface SASCustomerSummary {
-  customer_id: string;
-  balance: number;
-  status?: string;
-  updated_at?: string;
+interface SasResponse {
+  RequestID?: number;
+  Success: boolean;
+  Records?: number;
+  Message?: string | null;
+  ProcessData?: string | null;
+  ResponseData?: unknown;
 }
 
-interface SASDraftSummary {
-  draft_id: string;
-  customer_id: string;
-  status: string;
+interface SasBalanceRow {
+  id: number;
+  remoteid: string;
+  current_balance: number;
+  balance_earmark?: number;
+  balance_in?: number;
+  balance_out?: number;
+}
+
+interface SasDebitRow {
+  id?: number | string;
+  remoteid?: string;
+  customers_id?: number | string;
+  customer_remoteid?: string;
+  status?: string;
   amount?: number;
   scheduled_date?: string;
-  processed_at?: string;
-  settled_at?: string;
+  processed_date?: string;
+  settled_date?: string;
   return_code?: string;
   return_reason?: string;
 }
 
-function getEnv(): { base: string; key: string } {
-  const base = process.env.SAS_API_BASE_URL;
-  const key = process.env.SAS_API_KEY;
-  if (!base) throw new Error("SAS_API_BASE_URL not set");
-  if (!key) throw new Error("SAS_API_KEY not set");
-  return { base, key };
+function getEnv(): { endpoint: string; apiKey: string; companyKey: string; securityKey?: string } {
+  const endpoint = process.env.SAS_API_ENDPOINT;
+  const apiKey = process.env.SAS_API_KEY;
+  const companyKey = process.env.SAS_COMPANY_KEY;
+  if (!endpoint) throw new Error("SAS_API_ENDPOINT not set");
+  if (!apiKey) throw new Error("SAS_API_KEY not set");
+  if (!companyKey) throw new Error("SAS_COMPANY_KEY not set");
+  return { endpoint, apiKey, companyKey, securityKey: process.env.SAS_SECURITY_KEY };
 }
 
-async function sasFetch<T>(path: string, params?: Record<string, string>): Promise<T> {
-  const { base, key } = getEnv();
-  const url = new URL(path, base);
-  if (params) for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const res = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${key}`,
-      Accept: "application/json",
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`SAS ${res.status}: ${text.slice(0, 200)}`);
+async function sasCall<T = unknown>(method: string, body: Record<string, unknown> = {}): Promise<T[]> {
+  const { endpoint, apiKey, companyKey, securityKey } = getEnv();
+  const url = `${endpoint}${endpoint.includes("?") ? "&" : "?"}APIKey=${encodeURIComponent(apiKey)}&CompanyKey=${encodeURIComponent(companyKey)}&Method=${encodeURIComponent(method)}`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (securityKey) headers["X-SecurityKey"] = securityKey;
+  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`SAS ${method} HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const data = (await res.json()) as SasResponse;
+  if (!data.Success) throw new Error(`SAS ${method} returned Success=false: ${data.Message ?? "no message"}`);
+  if (!data.ProcessData) return [];
+  try {
+    return JSON.parse(data.ProcessData) as T[];
+  } catch (e) {
+    throw new Error(`SAS ${method} ProcessData parse failed: ${(e as Error).message}`);
   }
-  return (await res.json()) as T;
 }
 
 function normalizeDraftStatus(s: string): string {
-  const lower = s.toLowerCase();
+  const lower = (s ?? "").toLowerCase();
   if (lower.includes("schedul")) return "SCHEDULED";
-  if (lower.includes("process")) return "PROCESSING";
-  if (lower.includes("success") || lower.includes("complete")) return "SUCCESS";
-  if (lower.includes("fail") || lower.includes("nsf") || lower.includes("return")) return "FAILED";
-  if (lower.includes("cancel") || lower.includes("skip")) return "CANCELLED";
-  return s.toUpperCase();
+  if (lower.includes("process") || lower.includes("pending")) return "PROCESSING";
+  if (lower.includes("success") || lower.includes("complete") || lower.includes("settled") || lower.includes("posted")) return "SUCCESS";
+  if (lower.includes("fail") || lower.includes("nsf") || lower.includes("return") || lower.includes("reject")) return "FAILED";
+  if (lower.includes("cancel") || lower.includes("skip") || lower.includes("void")) return "CANCELLED";
+  return s ? s.toUpperCase() : "SCHEDULED";
 }
 
 export const sasProvider: PaymentProcessor = {
   name: "SAS",
 
   async getEscrowBalance(externalId: string): Promise<number | null> {
-    try {
-      const data = await sasFetch<SASCustomerSummary>(`/customers/${encodeURIComponent(externalId)}`);
-      return typeof data.balance === "number" ? data.balance : null;
-    } catch {
-      return null;
-    }
+    const rows = await sasCall<SasBalanceRow>("GetBalances", {});
+    const match = rows.find((r) => String(r.id) === externalId || r.remoteid === externalId);
+    return match ? Number(match.current_balance ?? 0) : null;
   },
 
-  async listUpdatedBalances(sinceISO: string): Promise<BalanceUpdate[]> {
-    const data = await sasFetch<{ customers: SASCustomerSummary[] }>("/customers/updated", {
-      since: sinceISO,
-    });
+  async listUpdatedBalances(_sinceISO: string): Promise<BalanceUpdate[]> {
+    // GetBalances returns the FULL set on each call. We accept that cost: the
+    // SF batch job did the same. The caller passes sinceISO for parity with
+    // the RAM provider but SAS doesn't filter by date for balance reads.
+    void _sinceISO;
+    const rows = await sasCall<SasBalanceRow>("GetBalances", {});
     const now = new Date();
-    return (data.customers ?? [])
-      .filter((c) => c.customer_id && typeof c.balance === "number")
-      .map((c) => ({
-        externalAccountId: c.customer_id,
-        balance: c.balance,
-        pulledAt: c.updated_at ? new Date(c.updated_at) : now,
+    return rows
+      .filter((r) => r.remoteid && typeof r.current_balance === "number")
+      .map((r) => ({
+        // We key on the SF Account ID since that's what our Account.externalSasId
+        // historically stored (SF's External_SAS_Id__c). The numeric SAS id
+        // also matches because our backfill populated externalSasId from the
+        // SF mirror, which was the numeric id. Try both during lookup.
+        externalAccountId: r.remoteid,
+        balance: Number(r.current_balance),
+        pulledAt: now,
       }));
   },
 
   async getDraftUpdates(sinceISO: string): Promise<DraftUpdate[]> {
-    const data = await sasFetch<{ drafts: SASDraftSummary[] }>("/drafts/updated", {
-      since: sinceISO,
-    });
-    return (data.drafts ?? []).map((d) => ({
-      externalDraftId: d.draft_id,
-      externalAccountId: d.customer_id,
-      status: normalizeDraftStatus(d.status ?? ""),
-      amount: d.amount ?? null,
+    const date = sinceISO.slice(0, 10);
+    const rows = await sasCall<SasDebitRow>("GetUpdatedDebits", { SinceDate: date });
+    return rows.map((d) => ({
+      externalDraftId: String(d.id ?? d.remoteid ?? ""),
+      externalAccountId: String(d.customer_remoteid ?? d.customers_id ?? ""),
+      status: normalizeDraftStatus(String(d.status ?? "")),
+      amount: d.amount != null ? Number(d.amount) : null,
       scheduledDate: d.scheduled_date ?? null,
-      processedAt: d.processed_at ?? null,
-      settledAt: d.settled_at ?? null,
+      processedAt: d.processed_date ?? null,
+      settledAt: d.settled_date ?? null,
       returnCode: d.return_code ?? null,
       returnReason: d.return_reason ?? null,
     }));
