@@ -8,7 +8,7 @@ import {
   getFieldOption,
   type EntityKey,
 } from "@/lib/path/field-labels";
-import { resolveFieldValue, isFieldFilled } from "@/lib/path/guidance";
+import { resolveFieldValue, isFieldFilled } from "@/lib/path/field-values";
 import { MiniMarkdown } from "@/lib/path/markdown";
 
 /**

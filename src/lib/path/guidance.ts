@@ -1,6 +1,10 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
+// Pure field helpers now live in a prisma-free module so client components can
+// use them without bundling prisma; re-exported here for server-side callers.
+export { resolveFieldValue, isFieldFilled } from "./field-values";
+
 /**
  * Server-side helper for SF-style Path Guidance + Key Fields.
  *
@@ -40,39 +44,3 @@ export const getGuidance = cache(
   },
 );
 
-/**
- * Resolve a dotted field path against a record. Supports nested objects
- * (e.g. "owner.name") and arrays by index (e.g. "debts.0.amount"). Returns
- * `undefined` when any segment is missing.
- *
- * Designed for the Key Fields panel which surfaces a small set of fields
- * the rep should fill before progressing the stage.
- */
-export function resolveFieldValue(
-  record: Record<string, unknown> | null | undefined,
-  fieldPath: string,
-): unknown {
-  if (!record || !fieldPath) return undefined;
-  const segments = fieldPath.split(".");
-  let cur: unknown = record;
-  for (const seg of segments) {
-    if (cur == null) return undefined;
-    if (typeof cur !== "object") return undefined;
-    cur = (cur as Record<string, unknown>)[seg];
-  }
-  return cur;
-}
-
-/**
- * "Filled" means the field has a meaningful value. Empty strings, null,
- * undefined, empty arrays, and zero-amount-looking values count as empty.
- * We accept 0 and false as filled because they are intentional values for
- * numeric and boolean fields.
- */
-export function isFieldFilled(value: unknown): boolean {
-  if (value === null || value === undefined) return false;
-  if (typeof value === "string") return value.trim().length > 0;
-  if (Array.isArray(value)) return value.length > 0;
-  if (value instanceof Date) return !isNaN(value.getTime());
-  return true;
-}
