@@ -14,7 +14,7 @@ export default async function SettingsPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [users, profiles, roles, queues, permSets, integrations, templates, dispositions, listViews, pathGuidance] = await Promise.all([
+  const [users, profiles, roles, queues, permSets, integrations, templates, dispositions, listViews, pathGuidance, pageLayouts, fieldLabels, validationRules] = await Promise.all([
     prisma.user.count({ where: { isActive: true } }),
     prisma.profile.count({ where: { isActive: true } }),
     prisma.role.count(),
@@ -25,6 +25,9 @@ export default async function SettingsPage() {
     prisma.disposition.count({ where: { isActive: true } }),
     prisma.listView.count(),
     prisma.pathGuidance.count({ where: { isActive: true } }),
+    prisma.pageLayout.count(),
+    prisma.objectFieldLabel.count(),
+    prisma.validationRule.count({ where: { isActive: true } }),
   ]);
 
   const cards: { section: string; items: SettingsCard[] }[] = [
@@ -44,6 +47,18 @@ export default async function SettingsPage() {
         { href: "/settings/dispositions", title: "Dispositions", description: "Per-entity picklist values (47 SF Lead sub-dispositions seeded)", count: dispositions },
         { href: "/settings/list-views", title: "List Views", description: "Saved filter sets for object list pages", count: listViews },
         { href: "/settings/path-guidance", title: "Path Guidance", description: "Key Fields + Guidance for Success per Lead, Opp, Account, Case stage", count: pathGuidance },
+      ],
+    },
+    {
+      section: "Schema & Layouts",
+      items: [
+        { href: "/settings/object-manager", title: "Object Manager", description: "Browse every object, edit field labels, picklist values, and page layouts", count: fieldLabels + pageLayouts },
+      ],
+    },
+    {
+      section: "Automation",
+      items: [
+        { href: "/settings/validation-rules", title: "Validation Rules", description: "Block writes that violate business rules. Author conditions per entity with a custom error message.", count: validationRules },
       ],
     },
     {
