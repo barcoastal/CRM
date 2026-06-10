@@ -1,6 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import type { Trigger, TriggerCtx } from "./types";
 import { getTrigger } from "./registry";
+import { evaluateAndStartFlows } from "@/lib/flow/executor";
+
+/** Maps lowercase Prisma model name to canonical entity label used by Flow.entityType. */
+const FLOW_ENTITY_LABEL: Record<string, string> = {
+  lead: "Lead",
+  opportunity: "Opportunity",
+  account: "Account",
+  case: "Case",
+  task: "Task",
+  event: "Event",
+  contact: "Contact",
+};
 
 /**
  * Service wrapper that fires the SF-style triggers around a Prisma operation.
@@ -46,6 +58,12 @@ export async function triggerCreate<TRow>(
   if (trigger?.afterInsert) {
     await trigger.afterInsert({ row, ctx });
   }
+  // SF-style Flow Builder: fire matching INSERT / INSERT_OR_UPDATE flows.
+  // Fire-and-forget so flow runtime failures never block the create path.
+  const entityLabel = FLOW_ENTITY_LABEL[model.toLowerCase()];
+  if (entityLabel) {
+    void evaluateAndStartFlows(entityLabel, "INSERT", row as unknown as Record<string, unknown>).catch(() => null);
+  }
   return row;
 }
 
@@ -66,6 +84,16 @@ export async function triggerUpdate<TRow>(
   const row = (await delegate.update({ where: { id }, data })) as TRow;
   if (trigger?.afterUpdate) {
     await trigger.afterUpdate({ row, prev, ctx });
+  }
+  // SF-style Flow Builder: fire matching UPDATE / INSERT_OR_UPDATE flows.
+  const entityLabel = FLOW_ENTITY_LABEL[model.toLowerCase()];
+  if (entityLabel) {
+    void evaluateAndStartFlows(
+      entityLabel,
+      "UPDATE",
+      row as unknown as Record<string, unknown>,
+      prev as unknown as Record<string, unknown>,
+    ).catch(() => null);
   }
   return row;
 }
