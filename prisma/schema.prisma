@@ -101,6 +101,9 @@ model User {
   // SF-style Path Guidance authoring
   pathGuidances PathGuidance[] @relation("PathGuidanceCreatedBy")
 
+  // SF-style Validation Rules authoring
+  validationRulesCreated ValidationRule[] @relation("ValidationRuleCreatedBy")
+
   // Five9 AgentREST credentials per user — used to log the agent into Five9
   // and trigger click-to-dial on their behalf. Password is encrypted at rest
   // with the FIVE9_AGENT_KEY env var.
@@ -2394,4 +2397,34 @@ model PathGuidance {
 
   @@unique([entityType, stage])
   @@index([entityType, stage])
+}
+
+// ============ VALIDATION RULES ============
+// SF-style declarative validation. Admins author rules per entity. Runtime
+// evaluator runs them in the trigger middleware before insert/update. A rule
+// whose condition evaluates TRUE means "validation failed" (SF convention),
+// and the configured errorMessage is thrown.
+model ValidationRule {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  entityType     String // "Lead" | "Opportunity" | "Account" | "Case" | "Task" | "Event"
+  errorMessage   String
+  // JSON AST representing the condition. Shape:
+  // { kind: "and"|"or", conditions: [{ field, operator, value }] }
+  // operators: equals, notEquals, contains, startsWith, endsWith, gt, gte,
+  //   lt, lte, isNull, isNotNull, in, notIn
+  condition      Json     @default("{\"kind\":\"and\",\"conditions\":[]}")
+  // Apply on insert, update, or both
+  fireOn         String   @default("both") // insert | update | both
+  // Optional error display field (UI hint for which field the error attaches to)
+  errorFieldName String?
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdById    String?
+  createdBy      User?    @relation("ValidationRuleCreatedBy", fields: [createdById], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([entityType, isActive])
 }
