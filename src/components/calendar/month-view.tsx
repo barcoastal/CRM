@@ -1,11 +1,11 @@
 import Link from "next/link";
 import {
   type CalendarEventRow,
-  chipColors,
   isSameDay,
   isSameMonth,
   monthGridDays,
 } from "./calendar-helpers";
+import { chipColorsForUser, initialFor } from "@/lib/calendar/owner-colors";
 
 interface Props {
   anchorISO: string;
@@ -58,7 +58,7 @@ export function MonthView({ anchorISO, events }: Props) {
               </div>
               <div style={chipStack}>
                 {dayEvents.slice(0, 3).map((ev) => {
-                  const c = chipColors(ev.related.kind);
+                  const c = chipColorsForUser(ev.ownerId);
                   const time = new Date(ev.startAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
                   return (
                     <Link
@@ -70,9 +70,13 @@ export function MonthView({ anchorISO, events }: Props) {
                         color: c.text,
                         borderLeft: `3px solid ${c.border}`,
                       }}
-                      title={`${time} ${ev.subject}`}
+                      title={`${time} ${ev.subject}${ev.ownerName ? ` (${ev.ownerName})` : ""}`}
                     >
-                      <span style={{ fontWeight: 600 }}>{time}</span> {ev.subject}
+                      <span style={{ ...ownerDot, background: c.dot }}>
+                        {initialFor(ev.ownerName)}
+                      </span>
+                      <span style={{ fontWeight: 600 }}>{time}</span>{" "}
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{ev.subject}</span>
                     </Link>
                   );
                 })}
@@ -132,13 +136,26 @@ const dateNum: React.CSSProperties = {
 };
 const chipStack: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 2 };
 const chip: React.CSSProperties = {
-  display: "block",
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
   fontSize: 11,
   padding: "2px 6px",
   borderRadius: 3,
   textDecoration: "none",
   whiteSpace: "nowrap",
   overflow: "hidden",
-  textOverflow: "ellipsis",
+};
+const ownerDot: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: 14,
+  height: 14,
+  borderRadius: "50%",
+  color: "#fff",
+  fontSize: 9,
+  fontWeight: 700,
+  flexShrink: 0,
 };
 const moreNote: React.CSSProperties = { fontSize: 11, color: "#706e6b", padding: "0 6px" };

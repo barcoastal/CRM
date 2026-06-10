@@ -3,13 +3,13 @@ import {
   type CalendarEventRow,
   DAY_HOURS,
   HOUR_HEIGHT,
-  chipColors,
   formatHour,
   formatTime,
   isSameDay,
   layoutColumns,
   weekDays,
 } from "./calendar-helpers";
+import { chipColorsForUser, initialFor } from "@/lib/calendar/owner-colors";
 
 interface Props {
   anchorISO: string;
@@ -76,7 +76,7 @@ function DayColumn({ day, events, isToday }: { day: Date; events: CalendarEventR
         }} />
       ))}
       {placed.map(({ ev, startMin, endMin, col: colIdx, cols }) => {
-        const c = chipColors(ev.related.kind);
+        const c = chipColorsForUser(ev.ownerId);
         const top = (startMin / 60) * HOUR_HEIGHT;
         const height = Math.max(((endMin - startMin) / 60) * HOUR_HEIGHT - 2, 18);
         const widthPct = 100 / cols;
@@ -100,10 +100,11 @@ function DayColumn({ day, events, isToday }: { day: Date; events: CalendarEventR
               overflow: "hidden",
               boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
             }}
-            title={`${formatTime(new Date(ev.startAt))} ${ev.subject}`}
+            title={`${formatTime(new Date(ev.startAt))} ${ev.subject}${ev.ownerName ? ` (${ev.ownerName})` : ""}`}
           >
-            <div style={{ fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {ev.subject}
+            <div style={{ display: "flex", alignItems: "center", gap: 4, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <span style={{ ...ownerDot, background: c.dot }}>{initialFor(ev.ownerName)}</span>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{ev.subject}</span>
             </div>
             <div style={{ opacity: 0.85 }}>
               {formatTime(new Date(ev.startAt))} – {formatTime(new Date(ev.endAt))}
@@ -149,4 +150,16 @@ const hourLabel: React.CSSProperties = {
 const col: React.CSSProperties = {
   borderRight: "1px solid #ecebea",
   position: "relative",
+};
+const ownerDot: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: 14,
+  height: 14,
+  borderRadius: "50%",
+  color: "#fff",
+  fontSize: 9,
+  fontWeight: 700,
+  flexShrink: 0,
 };

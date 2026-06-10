@@ -8,6 +8,8 @@ import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
 import { MonthView } from "@/components/calendar/month-view";
 import { WeekView } from "@/components/calendar/week-view";
 import { DayView } from "@/components/calendar/day-view";
+import { CalendarLegend } from "@/components/calendar/calendar-legend";
+import { CalendarEmptyState } from "@/components/calendar/calendar-empty-state";
 import {
   type CalendarEventRow,
   type CalendarView,
@@ -40,8 +42,15 @@ interface PageProps {
     date?: string;
     filter?: string;
     ownerId?: string;
+    ownerIds?: string;
   }>;
 }
+
+/**
+ * Hard cap to keep "Everyone" / large team queries from returning
+ * thousands of events and crashing the page.
+ */
+const MAX_USERS_PER_VIEW = 50;
 
 export default async function EventsPage({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -54,61 +63,86 @@ export default async function EventsPage({ searchParams }: PageProps) {
   return <EventsCalendarView params={params} />;
 }
 
-async function EventsCalendarView({ params }: { params: { view?: string; date?: string; filter?: string; ownerId?: string } }) {
+async function EventsCalendarView({
+  params,
+}: {
+  params: {
+    view?: string;
+    date?: string;
+    filter?: string;
+    ownerId?: string;
+    ownerIds?: string;
+  };
+}) {
   const session = await auth();
   const sessionUserId = session?.user?.id ?? null;
 
   const view: CalendarView =
     params.view === "week" ? "week" : params.view === "day" ? "day" : "month";
   const anchor = params.date ? new Date(params.date) : new Date();
-  // Guard against bad date input.
   const safeAnchor = isNaN(anchor.getTime()) ? new Date() : anchor;
-
-  const filter = params.filter === "mine" || params.filter === "week" ? params.filter : "all";
-  const ownerIdFilter = params.ownerId ?? null;
 
   const { from, to } = rangeFor(view, safeAnchor);
 
-  // Filter widens the where clause; "week" overrides range to current week.
+  // Load the active user directory once. Used both for the picker and to
+  // expand "team" / "everyone" presets.
+  const users = await prisma.user.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, email: true, managerId: true },
+    orderBy: { name: "asc" },
+  });
+
+  // Resolve which user IDs the calendar should overlay.
+  const { ownerIds, presetUsed } = await resolveOwnerIds({
+    rawOwnerIds: params.ownerIds,
+    legacyOwnerId: params.ownerId,
+    legacyFilter: params.filter,
+    sessionUserId,
+    allUsers: users,
+  });
+
+  // Backwards compat with the existing `filter=week` shortcut.
+  const useWeekRange = params.filter === "week";
+
   const where: Record<string, unknown> = {
-    startAt: { gte: from, lte: to },
+    startAt: useWeekRange
+      ? { gte: startOfWeek(new Date()), lte: addDays(startOfWeek(new Date()), 7) }
+      : { gte: from, lte: to },
   };
-  if (filter === "mine" && sessionUserId) {
-    where.ownerId = sessionUserId;
-  } else if (ownerIdFilter) {
-    where.ownerId = ownerIdFilter;
-  }
-  if (filter === "week") {
-    const ws = startOfWeek(new Date());
-    where.startAt = { gte: ws, lte: addDays(ws, 7) };
+
+  if (ownerIds.length > 0) {
+    where.ownerId = { in: ownerIds };
+  } else {
+    // Nothing selected. Return zero events so the empty state renders.
+    where.ownerId = "__none__";
   }
 
-  const [items, users] = await Promise.all([
-    prisma.event.findMany({
-      where,
-      include: {
-        owner: { select: { id: true, name: true } },
-        account: { select: { id: true, name: true } },
-        opportunity: { select: { id: true, recordType: true } },
-        lead: { select: { id: true, contactName: true } },
-        contact: { select: { id: true, fullName: true } },
-      },
-      orderBy: { startAt: "asc" },
-      take: 1000,
-    }),
-    prisma.user.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const items =
+    ownerIds.length > 0
+      ? await prisma.event.findMany({
+          where,
+          include: {
+            owner: { select: { id: true, name: true } },
+            account: { select: { id: true, name: true } },
+            opportunity: { select: { id: true, recordType: true } },
+            lead: { select: { id: true, contactName: true } },
+            contact: { select: { id: true, fullName: true } },
+          },
+          orderBy: { startAt: "asc" },
+          take: 2000,
+        })
+      : [];
 
   const events: CalendarEventRow[] = items.map((e) => {
     let related: CalendarEventRow["related"] = { href: null, label: null, kind: null };
     if (e.account) {
       related = { href: `/accounts/${e.account.id}`, label: e.account.name, kind: "account" };
     } else if (e.opportunity) {
-      related = { href: `/opportunities/${e.opportunity.id}`, label: e.opportunity.recordType ?? "Opportunity", kind: "opportunity" };
+      related = {
+        href: `/opportunities/${e.opportunity.id}`,
+        label: e.opportunity.recordType ?? "Opportunity",
+        kind: "opportunity",
+      };
     } else if (e.lead) {
       related = { href: `/leads/${e.lead.id}`, label: e.lead.contactName, kind: "lead" };
     } else if (e.contact) {
@@ -130,20 +164,124 @@ async function EventsCalendarView({ params }: { params: { view?: string; date?: 
 
   const anchorISO = safeAnchor.toISOString();
 
+  // Resolve picked-user names for the legend / pills.
+  const usersById = new Map(users.map((u) => [u.id, u]));
+  const selectedUsers = ownerIds
+    .map((id) => usersById.get(id))
+    .filter((u): u is (typeof users)[number] => Boolean(u))
+    .map((u) => ({ id: u.id, name: u.name }));
+
+  // Count distinct owners actually represented in the loaded events.
+  const ownerSet = new Set(events.map((e) => e.ownerId).filter(Boolean) as string[]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", background: "#fafaf9", minHeight: "100%" }}>
       <CalendarToolbar
         view={view}
         anchorISO={anchorISO}
-        filter={filter}
-        ownerId={ownerIdFilter}
-        users={users}
+        ownerIds={ownerIds}
+        preset={presetUsed}
+        users={users.map((u) => ({ id: u.id, name: u.name }))}
+        sessionUserId={sessionUserId}
+        maxUsers={MAX_USERS_PER_VIEW}
       />
-      {view === "month" && <MonthView anchorISO={anchorISO} events={events} />}
-      {view === "week" && <WeekView anchorISO={anchorISO} events={events} />}
-      {view === "day" && <DayView anchorISO={anchorISO} events={events} />}
+      <CalendarLegend
+        users={selectedUsers}
+        ownerIds={ownerIds}
+        eventCount={events.length}
+        uniqueOwnerCount={ownerSet.size}
+      />
+      {ownerIds.length === 0 ? (
+        <CalendarEmptyState />
+      ) : (
+        <>
+          {view === "month" && <MonthView anchorISO={anchorISO} events={events} />}
+          {view === "week" && <WeekView anchorISO={anchorISO} events={events} />}
+          {view === "day" && <DayView anchorISO={anchorISO} events={events} />}
+        </>
+      )}
     </div>
   );
+}
+
+/**
+ * Resolve the `ownerIds` URL param into a concrete list of user ids.
+ *
+ * Supports:
+ *   - `ownerIds=mine`   -> [sessionUserId]
+ *   - `ownerIds=team`   -> [sessionUserId, ...direct reports]
+ *   - `ownerIds=all`    -> every active user (capped at MAX_USERS_PER_VIEW)
+ *   - `ownerIds=u1,u2`  -> the listed users (filtered to active)
+ *   - empty             -> defaults to `mine`
+ *
+ * Also honors the legacy `ownerId=<single>` and `filter=mine` params so
+ * existing bookmarks keep working.
+ */
+async function resolveOwnerIds({
+  rawOwnerIds,
+  legacyOwnerId,
+  legacyFilter,
+  sessionUserId,
+  allUsers,
+}: {
+  rawOwnerIds: string | undefined;
+  legacyOwnerId: string | undefined;
+  legacyFilter: string | undefined;
+  sessionUserId: string | null;
+  allUsers: Array<{ id: string; managerId: string | null }>;
+}): Promise<{ ownerIds: string[]; presetUsed: "mine" | "team" | "all" | "custom" | "none" }> {
+  // 1. Legacy single-owner param wins if present and no new param.
+  if (!rawOwnerIds && legacyOwnerId) {
+    return { ownerIds: [legacyOwnerId], presetUsed: "custom" };
+  }
+
+  // 2. Legacy filter param.
+  if (!rawOwnerIds && legacyFilter === "mine" && sessionUserId) {
+    return { ownerIds: [sessionUserId], presetUsed: "mine" };
+  }
+  if (!rawOwnerIds && legacyFilter === "all") {
+    const ids = allUsers.map((u) => u.id).slice(0, MAX_USERS_PER_VIEW);
+    return { ownerIds: ids, presetUsed: "all" };
+  }
+
+  // 3. No param at all -> default to "mine" (when logged in).
+  if (!rawOwnerIds) {
+    if (sessionUserId) return { ownerIds: [sessionUserId], presetUsed: "mine" };
+    return { ownerIds: [], presetUsed: "none" };
+  }
+
+  // 4. Named presets in the new param.
+  if (rawOwnerIds === "mine") {
+    if (sessionUserId) return { ownerIds: [sessionUserId], presetUsed: "mine" };
+    return { ownerIds: [], presetUsed: "none" };
+  }
+
+  if (rawOwnerIds === "team") {
+    if (!sessionUserId) return { ownerIds: [], presetUsed: "none" };
+    const reportIds = allUsers
+      .filter((u) => u.managerId === sessionUserId)
+      .map((u) => u.id);
+    const ids = Array.from(new Set([sessionUserId, ...reportIds]));
+    return { ownerIds: ids, presetUsed: "team" };
+  }
+
+  if (rawOwnerIds === "all" || rawOwnerIds === "everyone") {
+    const ids = allUsers.map((u) => u.id).slice(0, MAX_USERS_PER_VIEW);
+    return { ownerIds: ids, presetUsed: "all" };
+  }
+
+  // 5. Comma-separated explicit list.
+  const validIds = new Set(allUsers.map((u) => u.id));
+  const requested = rawOwnerIds
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const ids = Array.from(new Set(requested.filter((id) => validIds.has(id))));
+
+  if (ids.length === 0) {
+    return { ownerIds: [], presetUsed: "none" };
+  }
+  return { ownerIds: ids, presetUsed: "custom" };
 }
 
 async function EventsListView() {
