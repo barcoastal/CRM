@@ -49,6 +49,7 @@ import type { Account } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
 import { onAccountStageChange } from "./email-automation";
 import { notify } from "@/lib/notifications/notify";
+import { runRulesFor } from "@/lib/validation-rules/evaluator";
 
 type AccountWrite = Partial<Account> & Record<string, unknown>;
 
@@ -56,13 +57,22 @@ const BANK_FIELDS = ["bankName", "bankRoutingNumber", "bankAccountNumber", "bank
 const REACTIVATION_RESTRICTED_DAYS = 60; // SF label Account_Restricted_Days
 
 export const accountTrigger: Trigger<Account, AccountWrite> = {
-  beforeInsert({ next }) {
+  async beforeInsert({ next }) {
+    // Run admin-authored validation rules first.
+    const vr = await runRulesFor("Account", next as Record<string, unknown>, "insert");
+    if (!vr.ok) throw new Error(vr.message);
+
     // Mirror SF populateSyncPending on insert
     if (next.bankAccountSyncStatus == null) next.bankAccountSyncStatus = "Sync Pending";
     if (next.processorStatus == null) next.processorStatus = "Sync Pending";
   },
 
-  beforeUpdate({ next, prev }) {
+  async beforeUpdate({ next, prev }) {
+    // Run admin-authored validation rules against the merged proposed row.
+    const proposed = { ...(prev as Record<string, unknown>), ...(next as Record<string, unknown>) };
+    const vr = await runRulesFor("Account", proposed, "update");
+    if (!vr.ok) throw new Error(vr.message);
+
     // Bank info changed → mark sync pending
     const bankChanged = BANK_FIELDS.some(
       (f) => next[f] !== undefined && next[f] !== prev[f]

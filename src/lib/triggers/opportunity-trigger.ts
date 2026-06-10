@@ -47,6 +47,7 @@ import type { Opportunity } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
 import { firePostbackEvent } from "@/lib/marketing/postback";
 import { notify } from "@/lib/notifications/notify";
+import { runRulesFor } from "@/lib/validation-rules/evaluator";
 
 type OppWrite = Partial<Opportunity> & Record<string, unknown>;
 
@@ -56,7 +57,22 @@ const STAGE_ARCHIVED_FINALIZED = "Archived - Finalized";
 const CLIENT_STATUS_WAITING_FIRST_PAYMENT = "Waiting First Payment";
 
 export const opportunityTrigger: Trigger<Opportunity, OppWrite> = {
-  beforeUpdate({ next, prev, ctx }) {
+  async beforeInsert({ next }) {
+    // Run admin-authored validation rules before any other insert logic.
+    const vr = await runRulesFor(
+      "Opportunity",
+      next as Record<string, unknown>,
+      "insert",
+    );
+    if (!vr.ok) throw new Error(vr.message);
+  },
+
+  async beforeUpdate({ next, prev, ctx }) {
+    // Run admin-authored validation rules against the merged proposed row.
+    const proposed = { ...(prev as Record<string, unknown>), ...(next as Record<string, unknown>) };
+    const vr = await runRulesFor("Opportunity", proposed, "update");
+    if (!vr.ok) throw new Error(vr.message);
+
     // Stage change → snapshot prev stage + timestamp
     if (next.stage !== undefined && next.stage !== prev.stage) {
       next.lastDisposition = prev.stage;

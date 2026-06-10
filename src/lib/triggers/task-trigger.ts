@@ -23,11 +23,16 @@
 import type { Task } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
 import { notify } from "@/lib/notifications/notify";
+import { runRulesFor } from "@/lib/validation-rules/evaluator";
 
 type TaskWrite = Partial<Task> & Record<string, unknown>;
 
 export const taskTrigger: Trigger<Task, TaskWrite> = {
-  beforeInsert({ next }) {
+  async beforeInsert({ next }) {
+    // Run admin-authored validation rules first.
+    const vr = await runRulesFor("Task", next as Record<string, unknown>, "insert");
+    if (!vr.ok) throw new Error(vr.message);
+
     if (
       next.recordType === "DISPOSITION" &&
       typeof next.disposition === "string" &&
@@ -35,6 +40,12 @@ export const taskTrigger: Trigger<Task, TaskWrite> = {
     ) {
       next.subject = next.disposition;
     }
+  },
+
+  async beforeUpdate({ next, prev }) {
+    const proposed = { ...(prev as Record<string, unknown>), ...(next as Record<string, unknown>) };
+    const vr = await runRulesFor("Task", proposed, "update");
+    if (!vr.ok) throw new Error(vr.message);
   },
 
   async afterUpdate({ row, prev, ctx }) {

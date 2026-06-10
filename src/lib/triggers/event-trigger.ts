@@ -14,10 +14,22 @@
 import type { Event } from "@/generated/prisma/client";
 import type { Trigger } from "./types";
 import { notify } from "@/lib/notifications/notify";
+import { runRulesFor } from "@/lib/validation-rules/evaluator";
 
 type EventWrite = Partial<Event> & Record<string, unknown>;
 
 export const eventTrigger: Trigger<Event, EventWrite> = {
+  async beforeInsert({ next }) {
+    const vr = await runRulesFor("Event", next as Record<string, unknown>, "insert");
+    if (!vr.ok) throw new Error(vr.message);
+  },
+
+  async beforeUpdate({ next, prev }) {
+    const proposed = { ...(prev as Record<string, unknown>), ...(next as Record<string, unknown>) };
+    const vr = await runRulesFor("Event", proposed, "update");
+    if (!vr.ok) throw new Error(vr.message);
+  },
+
   async afterInsert({ row, ctx }) {
     const now = new Date();
     if (row.leadId) {

@@ -46,6 +46,7 @@ import { addSuppression } from "@/lib/dnc";
 import { onLeadStatusChange } from "./email-automation";
 import { firePostbackEvent } from "@/lib/marketing/postback";
 import { notify } from "@/lib/notifications/notify";
+import { runRulesFor } from "@/lib/validation-rules/evaluator";
 
 // Use a permissive shape so trigger writers can set FK columns directly.
 type LeadWrite = Partial<Lead> & Record<string, unknown>;
@@ -114,7 +115,12 @@ function recalcCreditorWeeklyTotal(sf: Record<string, unknown>): number {
 }
 
 export const leadTrigger: Trigger<Lead, LeadWrite> = {
-  beforeInsert({ next }) {
+  async beforeInsert({ next }) {
+    // Run admin-authored validation rules first so a failed rule blocks the
+    // write before any side-effecting state mutation below runs.
+    const vr = await runRulesFor("Lead", next as Record<string, unknown>, "insert");
+    if (!vr.ok) throw new Error(vr.message);
+
     // Carry over any sf snapshot the caller passed; we may write into it.
     const sf = parseSfData((next.sfDataJson as string | null | undefined) ?? null);
 
@@ -137,7 +143,13 @@ export const leadTrigger: Trigger<Lead, LeadWrite> = {
     next.sfDataJson = stringifySfData(sf);
   },
 
-  beforeUpdate({ next, prev }) {
+  async beforeUpdate({ next, prev }) {
+    // Run admin-authored validation rules against the merged proposed row so
+    // a failed rule throws before any state mutation below.
+    const proposed = { ...(prev as Record<string, unknown>), ...(next as Record<string, unknown>) };
+    const vr = await runRulesFor("Lead", proposed, "update");
+    if (!vr.ok) throw new Error(vr.message);
+
     // Status change -> roll previous status into lastDisposition
     if (next.status !== undefined && next.status !== prev.status) {
       next.lastDisposition = prev.status;
