@@ -1,107 +1,189 @@
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
-import { ListView, type ListViewColumn } from "@/components/slds/list-view";
+import { Prisma } from "@/generated/prisma/client";
+import {
+  SfListPage,
+  type SfColumn,
+  type SfRow,
+  ownerAlias,
+} from "@/components/slds/sf-list-page";
 import { StatusPill } from "@/components/slds/record-page";
 import { caseStatusTone } from "@/lib/slds/status-tones";
-import { BulkActionBar } from "@/components/lists/bulk-action-bar";
 import { InlineEditCell } from "@/components/lists/inline-edit-cell";
 import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
 import { CASE_STATUSES } from "@/lib/record-types";
 
-type CaseRow = {
-  id: string;
-  caseNumber: string;
-  subject: string;
-  recordType: string;
-  status: string;
-  priority: string;
-  escalationLevel: string;
-  account: { id: string; name: string } | null;
-  owner: { id: string; name: string } | null;
-  ownerGroup: { developerName: string; name: string } | null;
-  createdAt: Date;
+interface CasesPageProps {
+  searchParams: Promise<{
+    search?: string;
+    sort?: string;
+    dir?: string;
+    view?: string;
+  }>;
+}
+
+const LIMIT = 100;
+
+// SF "All Open Cases" list view describe (2026-06-10). Match columns + order
+// verbatim.
+const COLUMNS: SfColumn[] = [
+  { key: "caseNumber", label: "Case Number", width: 130, sortable: true },
+  { key: "subject", label: "Subject", width: 320, sortable: true },
+  { key: "status", label: "Status", width: 130, sortable: true },
+  { key: "priority", label: "Priority", width: 110, sortable: true },
+  { key: "createdDate", label: "Date/Time Opened", width: 150, sortable: false },
+  { key: "ownerAlias", label: "Case Owner Alias", width: 150, sortable: true },
+];
+
+const SORT_MAP: Record<string, Prisma.CaseOrderByWithRelationInput> = {
+  caseNumber: { caseNumber: "asc" },
+  subject: { subject: "asc" },
+  status: { status: "asc" },
+  priority: { priority: "asc" },
+  ownerAlias: { owner: { name: "asc" } },
 };
 
 const PRIORITY_TONE: Record<string, "danger" | "warning" | "info" | "neutral"> = {
   URGENT: "danger", HIGH: "warning", NORMAL: "info", LOW: "neutral",
 };
 
-export default async function CasesPage() {
-  const items = await prisma.case.findMany({
-    include: {
-      account: { select: { id: true, name: true } },
-      owner: { select: { id: true, name: true } },
-      ownerGroup: { select: { developerName: true, name: true } },
-    },
-    orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
-    take: 100,
+const VIEWS = [
+  { value: "all-open", label: "All Open Cases" },
+  { value: "all", label: "All Cases" },
+];
+
+function fmtDateTime(input: unknown): string {
+  if (!input) return "";
+  const d = input instanceof Date ? input : new Date(String(input));
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleString("en-US", {
+    month: "numeric",
+    day: "numeric",
+    year: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
   });
-  const total = await prisma.case.count();
+}
+
+export default async function CasesPage({ searchParams }: CasesPageProps) {
+  const params = await searchParams;
+  const search = params.search?.trim() ?? "";
+  const sort = params.sort ?? "";
+  const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
+  const view = params.view ?? "all-open";
+
+  const where: Prisma.CaseWhereInput = {};
+  if (view === "all-open") {
+    where.status = { notIn: ["RESOLVED", "CLOSED"] };
+  }
+  if (search) {
+    where.OR = [
+      { caseNumber: { contains: search } },
+      { subject: { contains: search } },
+    ];
+  }
+
+  let orderBy: Prisma.CaseOrderByWithRelationInput = { createdAt: "desc" };
+  if (sort && SORT_MAP[sort]) {
+    if (sort === "ownerAlias") {
+      orderBy = { owner: { name: dir } };
+    } else {
+      const key = Object.keys(SORT_MAP[sort])[0] as keyof Prisma.CaseOrderByWithRelationInput;
+      orderBy = { [key]: dir } as Prisma.CaseOrderByWithRelationInput;
+    }
+  } else {
+    orderBy = { createdAt: "desc" };
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.case.findMany({
+      where,
+      select: {
+        id: true,
+        caseNumber: true,
+        subject: true,
+        status: true,
+        priority: true,
+        createdAt: true,
+        owner: { select: { id: true, name: true, email: true } },
+      },
+      orderBy,
+      take: LIMIT,
+    }),
+    prisma.case.count({ where }),
+  ]);
 
   const subjectCfg = getInlineConfig("case", "subject");
   const statusCfg = getInlineConfig("case", "status");
   const priorityCfg = getInlineConfig("case", "priority");
 
-  const columns: ListViewColumn<CaseRow>[] = [
-    { key: "number", label: "Case Number", render: (c) => c.caseNumber },
-    {
-      key: "subject", label: "Subject",
-      render: (c) => subjectCfg ? (
-        <InlineEditCell entity="case" recordId={c.id} config={subjectCfg} value={c.subject} />
-      ) : c.subject,
-    },
-    { key: "type", label: "Type", render: (c) => c.recordType.replace(/_/g, " ") },
-    {
-      key: "status", label: "Status",
-      render: (c) => statusCfg ? (
-        <InlineEditCell
-          entity="case" recordId={c.id} config={statusCfg} value={c.status}
-          display={<StatusPill label={c.status} tone={caseStatusTone(c.status)} />}
-        />
-      ) : <StatusPill label={c.status} tone={caseStatusTone(c.status)} />,
-    },
-    {
-      key: "priority", label: "Priority",
-      render: (c) => priorityCfg ? (
-        <InlineEditCell
-          entity="case" recordId={c.id} config={priorityCfg} value={c.priority}
-          display={<StatusPill label={c.priority} tone={PRIORITY_TONE[c.priority] ?? "neutral"} />}
-        />
-      ) : <StatusPill label={c.priority} tone={PRIORITY_TONE[c.priority] ?? "neutral"} />,
-    },
-    { key: "level", label: "Level", render: (c) => c.escalationLevel },
-    {
-      key: "account",
-      label: "Account",
-      render: (c) => c.account ? <Link href={`/accounts/${c.account.id}`} style={{ color: "#1589ee" }}>{c.account.name}</Link> : "—",
-    },
-    {
-      key: "owner",
-      label: "Owner",
-      render: (c) => c.owner?.name ?? c.ownerGroup?.name ?? "(unassigned)",
-    },
-  ];
+  const rows: SfRow[] = items.map((c) => {
+    return {
+      id: c.id,
+      href: `/cases/${c.id}`,
+      cells: [
+        c.caseNumber || "—",
+        subjectCfg ? (
+          <InlineEditCell key="subject" entity="case" recordId={c.id} config={subjectCfg} value={c.subject} />
+        ) : (c.subject || "—"),
+        statusCfg ? (
+          <InlineEditCell
+            key="status"
+            entity="case"
+            recordId={c.id}
+            config={statusCfg}
+            value={c.status}
+            display={<StatusPill label={c.status} tone={caseStatusTone(c.status)} />}
+          />
+        ) : <StatusPill label={c.status} tone={caseStatusTone(c.status)} />,
+        priorityCfg ? (
+          <InlineEditCell
+            key="priority"
+            entity="case"
+            recordId={c.id}
+            config={priorityCfg}
+            value={c.priority}
+            display={<StatusPill label={c.priority} tone={PRIORITY_TONE[c.priority] ?? "neutral"} />}
+          />
+        ) : <StatusPill label={c.priority} tone={PRIORITY_TONE[c.priority] ?? "neutral"} />,
+        fmtDateTime(c.createdAt) || "—",
+        ownerAlias(c.owner) || "—",
+      ],
+    };
+  });
+
+  const preservedParams: Record<string, string> = {};
+  if (params.view) preservedParams.view = params.view;
+
+  const subtitle = VIEWS.find((v) => v.value === view)?.label ?? "All Open Cases";
 
   return (
-    <ListView
-      entity="Case"
-      entityLabel="Cases"
-      viewName="All Open Cases"
-      totalCount={total}
-      rows={items as CaseRow[]}
-      columns={columns}
-      rowHref={(c) => `/cases/${c.id}`}
-      newHref="/cases/new"
-      selectable
-      bulkBar={(
-        <BulkActionBar
-          entity="case"
-          ownerField="ownerId"
-          statusField="status"
-          statusLabel="Status"
-          statusOptions={CASE_STATUSES.map((s) => ({ value: s, label: s }))}
-        />
-      )}
+    <SfListPage
+      entity="case"
+      title="Cases"
+      subtitle={subtitle}
+      count={total}
+      iconColor="#f2cf5b"
+      iconSlug="case"
+      actions={[
+        { label: "New", href: "/cases/new" },
+        { label: "Change Owner" },
+        { label: "Change Status" },
+      ]}
+      columns={COLUMNS}
+      rows={rows}
+      pathname="/cases"
+      sortKey={sort || undefined}
+      sortDir={dir}
+      searchQuery={search}
+      preservedParams={preservedParams}
+      views={VIEWS}
+      currentView={view}
+      massConfig={{
+        entity: "case",
+        statusField: "status",
+        statusLabel: "Status",
+        statusOptions: CASE_STATUSES.map((s) => ({ value: s, label: s })),
+      }}
     />
   );
 }
