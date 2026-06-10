@@ -6,7 +6,6 @@ import {
   SfListPage,
   type SfColumn,
   type SfRow,
-  ownerAlias,
 } from "@/components/slds/sf-list-page";
 import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
 import { InlineEditCell } from "@/components/lists/inline-edit-cell";
@@ -40,30 +39,25 @@ interface OpportunitiesPageProps {
 
 const LIMIT = 50;
 
-// SF Opportunity list columns (match docs/sf-screenshots/sf-opp-list.png):
-// # | checkbox | Opportunity Name | Account Name | Stage | Close Date |
-// Total Debt Including Fees | Lead Id | Opp ID | Owner Alias
-// SF Opportunity list columns (docs/sf-screenshots/sf-opp-list.png):
-// # | checkbox | Opportunity Name | Account Name | A...(Account Site) |
-// Stage | Close Date | Total Debt Includ... | Lead Id | Opp... |
-// Opportunity Owner Alias
+// SF "All Opportunities" list view describe (2026-06-10). Match columns + order
+// verbatim.
 const COLUMNS: SfColumn[] = [
-  { key: "name", label: "Opportunity Name", width: 240, sortable: true },
-  { key: "account", label: "Account Name", width: 220, sortable: true },
-  { key: "accountSite", label: "Account Site", width: 110, sortable: false },
-  { key: "stage", label: "Stage", width: 200, sortable: true },
-  { key: "close", label: "Close Date", width: 110, sortable: true },
-  { key: "debt", label: "Total Debt Including Fees", width: 170, sortable: true, align: "right" },
-  { key: "leadId", label: "Lead Id", width: 110, sortable: true },
-  { key: "oppId", label: "Opp ID", width: 110, sortable: true },
-  { key: "ownerAlias", label: "Opportunity Owner Alias", width: 160, sortable: true },
+  { key: "name", label: "Opportunity Name", width: 220, sortable: true },
+  { key: "accountName", label: "Account Name", width: 220, sortable: true },
+  { key: "lastModified", label: "Last Modified Date", width: 130, sortable: false },
+  { key: "phone", label: "Phone", width: 140, sortable: false },
+  { key: "stage", label: "Stage", width: 180, sortable: true },
+  { key: "leadSource", label: "Lead Source", width: 140, sortable: false },
+  { key: "probability", label: "Probability (%)", width: 110, sortable: false, align: "right" },
+  { key: "uccRisk", label: "HIGH UCC RISK", width: 130, sortable: false },
+  { key: "ownerFullName", label: "Owner Full Name", width: 150, sortable: true },
 ];
 
 const SORT_MAP: Record<string, Prisma.OpportunityOrderByWithRelationInput> = {
   name: { name: "asc" },
+  accountName: { account: { name: "asc" } },
   stage: { stage: "asc" },
-  close: { expectedCloseDate: "asc" },
-  debt: { totalDebt: "asc" },
+  ownerFullName: { assignedTo: { name: "asc" } },
 };
 
 const VIEWS = [
@@ -73,6 +67,15 @@ const VIEWS = [
   { value: "this-week", label: "This Week's New" },
   { value: "today-activity", label: "Today's Activity" },
 ];
+
+function fmtDateShort(input: unknown): string {
+  if (!input) return "";
+  const s = String(input).trim();
+  if (!s) return "";
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "2-digit" });
+}
 
 export default async function OpportunitiesPage({ searchParams }: OpportunitiesPageProps) {
   const params = await searchParams;
@@ -112,8 +115,14 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
 
   let orderBy: Prisma.OpportunityOrderByWithRelationInput = { updatedAt: "desc" };
   if (sort && SORT_MAP[sort]) {
-    const key = Object.keys(SORT_MAP[sort])[0] as keyof Prisma.OpportunityOrderByWithRelationInput;
-    orderBy = { [key]: dir } as Prisma.OpportunityOrderByWithRelationInput;
+    if (sort === "accountName") {
+      orderBy = { account: { name: dir } };
+    } else if (sort === "ownerFullName") {
+      orderBy = { assignedTo: { name: dir } };
+    } else {
+      const key = Object.keys(SORT_MAP[sort])[0] as keyof Prisma.OpportunityOrderByWithRelationInput;
+      orderBy = { [key]: dir } as Prisma.OpportunityOrderByWithRelationInput;
+    }
   }
 
   const [items, total] = await Promise.all([
@@ -121,14 +130,15 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
       where,
       select: {
         id: true,
-        sfId: true,
         name: true,
         stage: true,
-        totalDebt: true,
-        expectedCloseDate: true,
-        account: { select: { id: true, name: true, website: true } },
+        leadSource: true,
+        probability: true,
+        highUccRisk: true,
+        sfDataJson: true,
+        updatedAt: true,
+        account: { select: { id: true, name: true, highUccRisk: true } },
         assignedTo: { select: { id: true, name: true, email: true } },
-        lead: { select: { id: true, sfId: true } },
       },
       orderBy,
       take: LIMIT,
@@ -137,28 +147,47 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   ]);
 
   const rows: SfRow[] = items.map((o) => {
+    let sfData: Record<string, unknown> = {};
+    if (o.sfDataJson) {
+      try { sfData = JSON.parse(o.sfDataJson) as Record<string, unknown>; } catch { /* ignore */ }
+    }
+
     const oppName = o.name ?? o.account?.name ?? "(no name)";
     const accountName = o.account?.name ?? "—";
-    const closeDate = o.expectedCloseDate
-      ? new Date(o.expectedCloseDate).toLocaleDateString("en-US", {
-          month: "numeric",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "—";
-    const debt =
-      typeof o.totalDebt === "number"
-        ? `$${o.totalDebt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-        : "—";
-    const leadIdShort = o.lead
-      ? (o.lead.sfId ?? o.lead.id.slice(-8).toUpperCase())
-      : "—";
-    const oppIdShort = o.sfId ?? o.id.slice(-8).toUpperCase();
-    const accountSite = o.account?.website
-      ? o.account.website.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "")
-      : "";
+
+    // SF Phone__c is a custom phone field on Opportunity (denormalized from
+    // primary contact / lead). Live entirely in sfDataJson.
+    const phone = (typeof sfData.Phone__c === "string" ? sfData.Phone__c : "") || "";
+
+    const leadSource =
+      (typeof sfData.LeadSource === "string" ? sfData.LeadSource : "") ||
+      o.leadSource ||
+      "";
+
+    const probabilityNum =
+      typeof sfData.Probability === "number"
+        ? sfData.Probability
+        : typeof o.probability === "number"
+          ? o.probability
+          : null;
+    const probability = probabilityNum != null ? `${probabilityNum}%` : "";
+
+    // SF puts HIGH UCC RISK on Opportunity, but the instructions ask us to read
+    // the Account flag (we display either; Account first, Opp as fallback).
+    const isHighUcc = o.account?.highUccRisk === true || o.highUccRisk === true;
+    const uccCell = isHighUcc ? (
+      <span key="ucc" style={{ color: "#c23934", fontWeight: 600 }}>Yes</span>
+    ) : "—";
+
+    const ownerFullName =
+      o.assignedTo?.name ||
+      (typeof sfData.Owner_Full_Name__c === "string" ? sfData.Owner_Full_Name__c : "") ||
+      o.assignedTo?.email ||
+      "";
+
     const nameCfg = getInlineConfig("opportunity", "name");
     const stageCfg = getInlineConfig("opportunity", "stage");
+
     return {
       id: o.id,
       href: `/opportunities/${o.id}`,
@@ -178,15 +207,19 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         ) : (
           "—"
         ),
-        accountSite || "—",
+        fmtDateShort(o.updatedAt) || "—",
+        phone ? (
+          <a key="phone" href={`tel:${phone}`} style={{ color: "#1589ee", textDecoration: "none" }}>
+            {phone}
+          </a>
+        ) : "—",
         stageCfg ? (
           <InlineEditCell key="stage" entity="opportunity" recordId={o.id} config={stageCfg} value={o.stage} display={formatStage(o.stage)} />
         ) : formatStage(o.stage),
-        closeDate,
-        debt,
-        leadIdShort,
-        oppIdShort,
-        ownerAlias(o.assignedTo) || "—",
+        leadSource || "—",
+        probability || "—",
+        uccCell,
+        ownerFullName || "—",
       ],
     };
   });
