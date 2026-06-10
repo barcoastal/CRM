@@ -104,6 +104,13 @@ model User {
   // SF-style Validation Rules authoring
   validationRulesCreated ValidationRule[] @relation("ValidationRuleCreatedBy")
 
+  // SF-style Object Manager authoring (field labels + page layouts)
+  objectFieldLabelsCreated ObjectFieldLabel[] @relation("ObjectFieldLabelCreatedBy")
+  pageLayoutsCreated       PageLayout[]       @relation("PageLayoutCreatedBy")
+
+  // SF-style Flow Builder authoring
+  flowsCreated Flow[] @relation("FlowCreatedBy")
+
   // Five9 AgentREST credentials per user — used to log the agent into Five9
   // and trigger click-to-dial on their behalf. Password is encrypted at rest
   // with the FIVE9_AGENT_KEY env var.
@@ -2427,4 +2434,89 @@ model ValidationRule {
   updatedAt      DateTime @updatedAt
 
   @@index([entityType, isActive])
+}
+
+// ============ FLOWS ============
+// SF-style declarative automation. Admins compose flows visually (triggers +
+// decision + action + wait nodes). The runtime executor walks the graph when
+// matching trigger events fire and persists run state for waits/resumes.
+model Flow {
+  id                    String    @id @default(cuid())
+  name                  String
+  description           String?
+  entityType            String // "Lead" | "Opportunity" | "Account" | "Case" | "Task" | "Event"
+  triggerEvent          String // INSERT | UPDATE | INSERT_OR_UPDATE
+  // Run only when these field values change (for UPDATE flows). Empty = any change.
+  triggerOnFieldChanges Json      @default("[]")
+  // Entry criteria, same condition AST shape as ValidationRule
+  entryCriteria         Json      @default("{\"kind\":\"and\",\"conditions\":[]}")
+  isActive              Boolean   @default(true)
+  // JSON graph: { nodes, edges }
+  graph                 Json      @default("{\"nodes\":[],\"edges\":[]}")
+  createdById           String?
+  createdBy             User?     @relation("FlowCreatedBy", fields: [createdById], references: [id])
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  runs                  FlowRun[]
+
+  @@index([entityType, isActive])
+}
+
+model FlowRun {
+  id                String    @id @default(cuid())
+  flowId            String
+  flow              Flow      @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  entityType        String
+  entityId          String
+  status            String    @default("RUNNING") // RUNNING | COMPLETED | FAILED | WAITING | CANCELLED
+  currentNodeId     String?
+  // JSON trace: array of { nodeId, kind, at, status, output?, error? }
+  trace             Json      @default("[]")
+  scheduledResumeAt DateTime?
+  startedAt         DateTime  @default(now())
+  finishedAt        DateTime?
+  errorMessage      String?
+
+  @@index([flowId, startedAt])
+  @@index([status])
+  @@index([status, scheduledResumeAt])
+}
+
+// ============ OBJECT MANAGER (SF-style schema browser, per-object field metadata) ============
+// Field metadata itself is read-only from Prisma DMMF at runtime. These two
+// tables only hold user-editable overrides: display labels/help text per
+// field, and saved Page Layouts for record detail pages.
+
+model ObjectFieldLabel {
+  id          String   @id @default(cuid())
+  entityType  String
+  fieldName   String
+  label       String // display label override
+  helpText    String?
+  isRequired  Boolean  @default(false)
+  isReadOnly  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdById String?
+  createdBy   User?    @relation("ObjectFieldLabelCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([entityType, fieldName])
+  @@index([entityType])
+}
+
+model PageLayout {
+  id          String   @id @default(cuid())
+  entityType  String
+  name        String // e.g. "Default Lead Layout"
+  recordType  String? // optional filter, matches recordType on record
+  isDefault   Boolean  @default(false)
+  // JSON layout: { sections: [{ name, columns: 1|2, fields: [{ fieldName, span }] }] }
+  layout      Json     @default("{\"sections\":[]}")
+  createdById String?
+  createdBy   User?    @relation("PageLayoutCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entityType, isDefault])
 }
