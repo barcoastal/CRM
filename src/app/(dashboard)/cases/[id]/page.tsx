@@ -37,7 +37,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
     where: { id },
     include: {
       account: { select: { id: true, name: true } },
-      contact: { select: { id: true, fullName: true } },
+      contact: { select: { id: true, fullName: true, email: true } },
       programPlan: { select: { id: true, recordType: true, status: true } },
       draft: { select: { id: true, scheduledDate: true, amount: true, status: true } },
       owner: { select: { id: true, name: true, email: true } },
@@ -48,6 +48,12 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
     },
   });
   if (!c) notFound();
+
+  const ownerDisplay = c.owner?.name ?? c.ownerGroup?.name ?? null;
+  const escalatedDisplay = c.status === "ESCALATED" ? "Yes" : "No";
+  const contactNode = c.contact?.fullName ? (
+    <Link key="ct" href={`/contacts/${c.contact.id}`} style={{ color: "#1589ee" }}>{c.contact.fullName}</Link>
+  ) : null;
 
   return (
     <RecordPage
@@ -64,7 +70,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
       highlights={[
         { label: "Account", value: c.account?.name && <Link href={`/accounts/${c.account.id}`} style={{ color: "#1589ee" }}>{c.account.name}</Link> },
         { label: "Contact", value: c.contact?.fullName },
-        { label: "Owner", value: c.owner?.name ?? c.ownerGroup?.name ?? "(unassigned)" },
+        { label: "Owner", value: ownerDisplay ?? "(unassigned)" },
         { label: "Level", value: c.escalationLevel },
         { label: "SLA Due", value: c.slaDueAt?.toLocaleDateString() },
       ]}
@@ -87,29 +93,90 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             stage={caseStageLabel(c.status)}
             record={c as unknown as Record<string, unknown>}
           />
+
+          {/* SF Case Layout - Description Information (single column) */}
+          <Section title="Description Information">
+            <FieldGrid
+              columns={1}
+              fields={[
+                ["Subject", c.subject],
+                ["Description", c.description ? (
+                  <div key="desc" style={{ whiteSpace: "pre-wrap" }}>{c.description}</div>
+                ) : null],
+              ]}
+            />
+          </Section>
+
+          {/* SF Case Layout - Case Information (two-column top-to-bottom).
+              Left col fields, then right col fields, interleaved row by row. */}
           <Section title="Case Information">
             <FieldGrid
               fields={[
-                ["Case Number", c.caseNumber],
-                ["Subject", c.subject],
-                ["Type", c.recordType.replace(/_/g, " ")],
+                // Row 1: Owner | Status
+                ["Owner", ownerDisplay],
                 ["Status", <StatusPill key="s" label={c.status} tone={caseStatusTone(c.status)} />],
+                // Row 2: Case Reason | Case Origin
+                ["Case Reason", null],
+                ["Case Origin", c.origin],
+                // Row 3: Component | Priority
+                ["Component", null],
                 ["Priority", <StatusPill key="p" label={c.priority} tone={PRIORITY_TONE[c.priority] ?? "neutral"} />],
-                ["Origin", c.origin],
-                ["Escalation Level", c.escalationLevel],
-                ["Created", c.createdAt.toLocaleString()],
-                ["First Response", c.firstResponseAt?.toLocaleString()],
-                ["SLA Due", c.slaDueAt?.toLocaleString()],
-                ["Resolved", c.resolvedAt?.toLocaleString()],
-                ["Closed", c.closedAt?.toLocaleString()],
+                // Row 4: Escalated | Assigned To
+                ["Escalated", escalatedDisplay],
+                ["Assigned To", null],
+                // Row 5: Resolution | (empty)
+                ["Resolution", null],
+                ["", null],
+                // Row 6: Resolution Summary | (empty)
+                ["Resolution Summary", null],
+                ["", null],
               ]}
             />
-            {c.description && (
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 11, color: "#706e6b", fontWeight: 400, marginBottom: 4 }}>Description</div>
-                <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>{c.description}</div>
-              </div>
-            )}
+          </Section>
+
+          {/* SF Case Layout - Additional Information */}
+          <Section title="Additional Information">
+            <FieldGrid
+              fields={[
+                ["Internal Comments", c.comments.length > 0 ? `${c.comments.length} comment${c.comments.length === 1 ? "" : "s"}` : null],
+                ["", null],
+              ]}
+            />
+          </Section>
+
+          {/* SF Case Layout - Web Information */}
+          <Section title="Web Information">
+            <FieldGrid
+              fields={[
+                ["Web Email", c.contact?.email ?? null],
+                ["Contact Name", contactNode],
+              ]}
+            />
+          </Section>
+
+          {/* SF Case Layout - System Information */}
+          <Section title="System Information">
+            <FieldGrid
+              fields={[
+                ["Created By", c.createdBy?.name ? `${c.createdBy.name}, ${c.createdAt.toLocaleString()}` : c.createdAt.toLocaleString()],
+                ["Last Modified By", c.updatedAt.toLocaleString()],
+              ]}
+            />
+          </Section>
+
+          {/* CRM-native: SLA + lifecycle timestamps not in SF layout but useful */}
+          <Section title="SLA & Lifecycle" defaultOpen={false}>
+            <FieldGrid
+              fields={[
+                ["Case Number", c.caseNumber],
+                ["Type", c.recordType.replace(/_/g, " ")],
+                ["Escalation Level", c.escalationLevel],
+                ["First Response", c.firstResponseAt?.toLocaleString() ?? null],
+                ["SLA Due", c.slaDueAt?.toLocaleString() ?? null],
+                ["Resolved", c.resolvedAt?.toLocaleString() ?? null],
+                ["Closed", c.closedAt?.toLocaleString() ?? null],
+              ]}
+            />
           </Section>
 
           {c.requiresApproval && (
@@ -117,8 +184,8 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
               <FieldGrid
                 fields={[
                   ["Requires Approval", "Yes"],
-                  ["Approved By", c.approvedBy?.name],
-                  ["Approved At", c.approvedAt?.toLocaleString()],
+                  ["Approved By", c.approvedBy?.name ?? null],
+                  ["Approved At", c.approvedAt?.toLocaleString() ?? null],
                   ["Notes", c.approvalNotes],
                 ]}
               />
@@ -152,11 +219,11 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           <Section title="Related">
             <FieldGrid
               fields={[
-                ["Account", c.account?.name && <Link key="a" href={`/accounts/${c.account.id}`} style={{ color: "#1589ee" }}>{c.account.name}</Link>],
-                ["Contact", c.contact?.fullName],
-                ["Program Plan", c.programPlan && <Link key="pp" href={`/program-plans/${c.programPlan.id}`} style={{ color: "#1589ee" }}>{c.programPlan.recordType.replace(/_/g, " ")}</Link>],
-                ["Draft", c.draft && <Link key="d" href={`/drafts/${c.draft.id}`} style={{ color: "#1589ee" }}>${c.draft.amount.toLocaleString()} {c.draft.scheduledDate.toLocaleDateString()}</Link>],
-                ["Created By", c.createdBy?.name],
+                ["Account", c.account?.name ? <Link key="a" href={`/accounts/${c.account.id}`} style={{ color: "#1589ee" }}>{c.account.name}</Link> : null],
+                ["Contact", c.contact?.fullName ?? null],
+                ["Program Plan", c.programPlan ? <Link key="pp" href={`/program-plans/${c.programPlan.id}`} style={{ color: "#1589ee" }}>{c.programPlan.recordType.replace(/_/g, " ")}</Link> : null],
+                ["Draft", c.draft ? <Link key="d" href={`/drafts/${c.draft.id}`} style={{ color: "#1589ee" }}>${c.draft.amount.toLocaleString()} {c.draft.scheduledDate.toLocaleDateString()}</Link> : null],
+                ["Created By", c.createdBy?.name ?? null],
               ]}
             />
           </Section>
