@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ArrowDownToLine, ArrowUpFromLine, Activity } from "@/components/icons/lucide";
+import { ArrowDownToLine, ArrowUpFromLine, Activity, Megaphone, Users } from "@/components/icons/lucide";
 
 const STATUS_BADGE: Record<string, { bg: string; text: string }> = {
   created: { bg: "bg-[rgba(26,125,55,0.1)]", text: "text-[#1a7d37]" },
@@ -28,7 +28,7 @@ function formatRelative(dt: Date | string): string {
 export default async function MarketingIndexPage() {
   await auth();
 
-  const [sourceCount, endpointCount, recentInbound, recentOutbound, activeSources, activeEndpoints] = await Promise.all([
+  const [sourceCount, endpointCount, recentInbound, recentOutbound, activeSources, activeEndpoints, sequenceCount, listCount, activeSequences] = await Promise.all([
     prisma.marketingSource.count(),
     prisma.marketingPostbackEndpoint.count(),
     prisma.marketingInboundLog.findMany({
@@ -43,6 +43,9 @@ export default async function MarketingIndexPage() {
     }),
     prisma.marketingSource.count({ where: { isActive: true } }),
     prisma.marketingPostbackEndpoint.count({ where: { isActive: true } }),
+    prisma.engagementSequence.count(),
+    prisma.leadList.count(),
+    prisma.engagementSequence.count({ where: { isActive: true } }),
   ]);
 
   type FeedItem = {
@@ -100,7 +103,7 @@ export default async function MarketingIndexPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <Link
           href="/marketing/sources"
           className="bg-white rounded-xl p-6 hover:shadow-lg transition-shadow"
@@ -146,6 +149,54 @@ export default async function MarketingIndexPage() {
           <div className="text-[16px] font-bold text-[#131b2e]">Postback Endpoints</div>
           <p className="text-[13px] text-[#444656] mt-1">
             URLs the CRM POSTs to when leads are created, dispositioned, or converted.
+          </p>
+        </Link>
+
+        <Link
+          href="/marketing/engagement"
+          className="bg-white rounded-xl p-6 hover:shadow-lg transition-shadow"
+          style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+        >
+          <div className="flex items-start justify-between mb-5">
+            <div className="size-12 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #6020e4, #9352ff)" }}>
+              <Megaphone className="size-6 text-white" />
+            </div>
+            <div className="text-right">
+              <div className="text-[28px] font-bold text-[#131b2e]" style={{ fontFamily: "Manrope, sans-serif" }}>
+                {sequenceCount}
+              </div>
+              <div className="text-[11px] uppercase tracking-[0.5px] text-[#444656] font-semibold">
+                {activeSequences} Active
+              </div>
+            </div>
+          </div>
+          <div className="text-[16px] font-bold text-[#131b2e]">Engagement Sequences</div>
+          <p className="text-[13px] text-[#444656] mt-1">
+            Pardot-style drip programs. Send, wait, branch on open/click, score, task.
+          </p>
+        </Link>
+
+        <Link
+          href="/marketing/engagement/lists"
+          className="bg-white rounded-xl p-6 hover:shadow-lg transition-shadow"
+          style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+        >
+          <div className="flex items-start justify-between mb-5">
+            <div className="size-12 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #b04a00, #e8801f)" }}>
+              <Users className="size-6 text-white" />
+            </div>
+            <div className="text-right">
+              <div className="text-[28px] font-bold text-[#131b2e]" style={{ fontFamily: "Manrope, sans-serif" }}>
+                {listCount}
+              </div>
+              <div className="text-[11px] uppercase tracking-[0.5px] text-[#444656] font-semibold">
+                Total Lists
+              </div>
+            </div>
+          </div>
+          <div className="text-[16px] font-bold text-[#131b2e]">Lead Lists</div>
+          <p className="text-[13px] text-[#444656] mt-1">
+            Static or rule-driven audience groups. Targetable by Mass Email and sequences.
           </p>
         </Link>
       </div>

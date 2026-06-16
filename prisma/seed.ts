@@ -1454,6 +1454,84 @@ async function main() {
     console.log(`  Validation Rules: ${existingValidationRules} (skipped seed, already present)`);
   }
 
+  // ---- Engagement Sequences + Lead Lists ----------------------------------
+  // Only seed when no sequences exist so we never overwrite customer programs.
+  const existingSequences = await prisma.engagementSequence.count();
+  if (existingSequences === 0) {
+    // "Hot Leads" list — used as the example list members can be added to.
+    const hotList = await prisma.leadList.upsert({
+      where: { name: "Hot Leads" },
+      create: {
+        name: "Hot Leads",
+        description: "Leads ready for immediate outreach.",
+      },
+      update: {},
+    });
+
+    // Pick the welcome enrollment template if it's been seeded.
+    const welcomeTpl = await prisma.emailTemplate.findFirst({
+      where: { developerName: "welcome_enrollment" },
+      select: { id: true },
+    });
+
+    const seq = await prisma.engagementSequence.create({
+      data: {
+        name: "Welcome Drip",
+        description: "Illustrative sequence: send welcome email, wait 3 days, branch on open.",
+        entityType: "Lead",
+        isActive: false,
+        allowReEnroll: false,
+        entryCriteria: { kind: "and", conditions: [] } as object,
+      },
+    });
+    const steps: Array<{ order: number; kind: string; label: string; config: object }> = [
+      {
+        order: 0,
+        kind: "send_email",
+        label: "Send welcome email",
+        config: welcomeTpl ? { templateId: welcomeTpl.id } : {},
+      },
+      {
+        order: 1,
+        kind: "wait",
+        label: "Wait 3 days",
+        config: { days: 3 },
+      },
+      {
+        order: 2,
+        kind: "branch_on_open",
+        label: "Did they open it?",
+        // Step indices are 1-based in branch config (see steps.ts). 0 = end.
+        config: { yesGoToStepOrder: 4, noGoToStepOrder: 5, waitHours: 24 },
+      },
+      {
+        order: 3,
+        kind: "exit",
+        label: "Placeholder filler",
+        config: {},
+      },
+      {
+        order: 4,
+        kind: "add_to_list",
+        label: "Add openers to Hot Leads",
+        config: { listId: hotList.id },
+      },
+      {
+        order: 5,
+        kind: "update_score",
+        label: "Decrement score for non-openers",
+        config: { delta: -5 },
+      },
+    ];
+    for (const s of steps) {
+      await prisma.engagementStep.create({ data: { sequenceId: seq.id, ...s } });
+    }
+    console.log(`  Engagement Seq:   1 ("Welcome Drip", 6 steps)`);
+    console.log(`  Lead Lists:       1 ("Hot Leads")`);
+  } else {
+    console.log(`  Engagement Seq:   ${existingSequences} (skipped seed, already present)`);
+  }
+
   console.log(`  Leads:            ${leads.length}`);
   console.log(`  Campaign:         ${campaign.name}`);
   console.log(`\n  Logins (all password123):`);
