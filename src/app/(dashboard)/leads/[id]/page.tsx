@@ -218,10 +218,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const emailVal = lead.email ?? sf("Email");
   const mobileVal = sf("MobilePhone");
 
+  // Section 1: Lead Information (TwoColumnsTopToBottom)
+  // Source: docs/sf-export/sfdx-raw/layouts/Lead-Lead Layout.layout-meta.xml
+  // Column 1 has 34 fields; column 2 has 17 fields. We interleave row-by-row
+  // until col2 is exhausted, then list the remaining col1 fields.
+  // Skipped per "dev/internal" rule:
+  //   Append_Leads_Counter__c (counter), Call_counter__c (counter),
+  //   Sync_To_Account_Engagement__c (sync flag).
   const leadInformation = (
-    // Field set + pair order verified against the live SF Roberto Suarez Lead
-    // screenshot Bar provided 2026-06-07. SF Lightning interleaves left/right
-    // column rows top-to-bottom — even index = left column, odd = right.
     <Section title="Lead Information">
       <FieldGrid
         entityType="lead"
@@ -247,17 +251,17 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             { fieldKey: "phone", type: "phone", rawValue: lead.phone ?? phoneVal },
           ],
           E("Title", sf("Title"), "Title"),
-          // Row 5: Mobile | Address
+          // Row 5: Mobile | Address (compound)
           E("Mobile", mobileVal, "MobilePhone", "phone"),
           ["Address", [sf("Street"), sf("City"), sf("State"), sf("PostalCode"), sf("Country")].filter(Boolean).join(", ") || null],
           // Row 6: Work Phone | Timezone
           E("Work Phone", sf("Work_Phone__c"), "Work_Phone__c", "phone"),
-          E("Timezone", sf("Timezone__c"), "Timezone__c"),
+          ["Timezone", sf("Timezone__c")],
           // Row 7: Fax | IP Address
-          E("Fax", sf("Fax__c"), "Fax__c"),
+          E("Fax", sf("Fax"), "Fax"),
           ["IP Address", sf("IP_Address__c")],
           // Row 8: Preferred method of Contact | Keyword
-          E("Preferred method of Contact", sf("Preferred_Method_of_Contact__c"), "Preferred_Method_of_Contact__c"),
+          E("Preferred method of Contact", sf("Preferred_method_of_Contact__c"), "Preferred_method_of_Contact__c"),
           E("Keyword", sf("Keyword__c"), "Keyword__c"),
           // Row 9: Legal Plan Required | Secured Party
           E("Legal Plan Required", yesNo(sf("Legal_Plan_Required__c")), "Legal_Plan_Required__c", "checkbox"),
@@ -271,61 +275,50 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           // Row 12: Outbound ANI Identifier | Outbound ANI From
           ["Outbound ANI Identifier", sf("Outbound_ANI_Identifier__c")],
           ["Outbound ANI From", sf("Outbound_ANI_From__c")],
-          // Row 13: Preferred Language | Lead Source
+          // Row 13: Hubspot Id | Preferred Language
+          ["Hubspot Id", sf("Hubspot_Id__c")],
           E("Preferred Language", sf("Preferred_Language__c"), "Preferred_Language__c"),
-          E("Lead Source", lead.source ?? sf("LeadSource"), "source", "text", { rawValue: lead.source }),
-          // Row 14: Status | Sub-Disposition
-          [
-            "Status",
-            <StatusPill key="st" label={lead.status} tone={leadStatusTone(lead.status)} />,
-            { fieldKey: "status", type: "select", rawValue: lead.status, options: LEAD_STATUSES.map((s) => ({ label: s, value: s })) },
-          ],
-          E("Sub Disposition", sf("Sub_Disposition__c"), "Sub_Disposition__c"),
-          // Row 15: Last Disposition | Last Sub Disposition
-          E("Last Disposition", lead.lastDisposition ?? sf("Last_Disposition__c"), "lastDisposition", "text", { rawValue: lead.lastDisposition }),
-          E("Last Sub Disposition", lead.lastSubDisposition ?? sf("Last_Sub_Disposition__c"), "lastSubDisposition", "text", { rawValue: lead.lastSubDisposition }),
-          // Row 16: Lead Source Category | Lead Vendor ID
-          E("Lead Source Category", sf("Lead_Source_Category__c"), "Lead_Source_Category__c"),
-          E("Lead Vendor ID", sf("Lead_Vendor_ID__c"), "Lead_Vendor_ID__c"),
-          // Row 17: Campaign Name | Lead Vendor Id Text
-          E("Campaign Name", sf("Campaign_Name__c"), "Campaign_Name__c"),
-          E("Lead Vendor Id Text", sf("Lead_Vendor_Id_Text__c"), "Lead_Vendor_Id_Text__c"),
-          // Row 18: Owner | Agent
-          ["Owner", ownerName],
-          E("Agent", sf("Agent__c"), "Agent__c"),
-          // Row 19: Fronter | Agent Location
-          E("Fronter", sf("Fronter__c"), "Fronter__c"),
-          E("Agent Location", sf("Agent_Location__c"), "Agent_Location__c"),
-          // Row 20: Transfer Qualification | Lead Assignment Date
-          E("Transfer Qualification", sf("Transfer_Qualification__c"), "Transfer_Qualification__c"),
+          // Row 14: Has Calendly Event | Lead Assignment Date
+          ["Has Calendly Event", yesNo(sf("Has_Calendly_Event__c"))],
           ["Lead Assignment Date", lead.leadAssignmentDate?.toLocaleDateString() ?? sfDate("Lead_Assignment_Date__c")],
-          // Row 21: Last Contacted DateTime | Last Disposition DateTime
-          E("Last Contacted DateTime", lead.lastContactedAt?.toLocaleString() ?? sfDate("Last_Contacted_DateTime__c"), "lastContactedAt", "datetime", { rawValue: lead.lastContactedAt ?? null }),
-          ["Last Disposition DateTime", lead.lastDispositionAt?.toLocaleString() ?? sfDate("Last_Disposition_DateTime__c")],
-          // Row 22: Next Follow-up | Week Days Between Last Contacted Date
-          E("Next Follow-up", lead.nextFollowUpAt?.toLocaleDateString(), "nextFollowUpAt", "date", { rawValue: lead.nextFollowUpAt ?? null }),
-          ["Week Days Between Last Contacted Date", sf("Week_Days_Between_Last_Contacted_Date__c")],
-          // Row 23: Call counter | Hopper
-          ["Call counter", sf("Call_counter__c")],
-          E("Hopper", yesNo(sf("Hopper__c")), "Hopper__c", "checkbox"),
-          // Row 24: DNC | Check DNC
-          ["DNC", yesNo(sf("DNC__c"))],
-          ["Check DNC", yesNo(sf("Check_DNC__c"))],
-          // Row 25: Lead ID | Lead Id (SF custom)
-          ["Lead ID", displayLeadId],
-          ["Lead Id", sf("Lead_Id__c")],
-          // Row 26: External 18 Digit ID | Lead Score
-          ["External 18 Digit ID", sf("External_18_Digit_ID__c")],
-          ["Lead Score", sf("Lead_Score__c")],
-          // Row 27: Lead Appended Timestamp | Reason for Disqualification
-          ["Lead Appended Timestamp", sfDate("Lead_Appended_Timestamp__c")],
-          ["Reason for Disqualification", sf("Reason_for_Disqualification__c")],
-          // Row 28: Is Archived | Archived Duplicate Leads
+          // Row 15: Is Archived | Verified Phone Number
           ["Is Archived", yesNo(sf("Is_Archived__c"))],
-          ["Archived Duplicate Leads", yesNo(sf("Archived_Duplicate_Leads__c"))],
-          // Row 29: Check Duplicate Archive | Re-shuffle Lead
-          ["Check Duplicate Archive", yesNo(sf("Check_Duplicate_Archive__c"))],
-          ["Re-shuffle Lead", yesNo(sf("Re_shuffle_Lead__c"))],
+          ["Verified Phone Number", yesNo(sf("Verified_Phone_Number__c"))],
+          // Row 16: Archived Date | MCA Lender External Id
+          ["Archived Date", sfDate("Archived_Date__c")],
+          ["MCA Lender External Id", sf("MCA_Lender_External_Id__c")],
+          // Row 17: IPQS IsActive | Five9 Final Stage
+          ["IPQS IsActive", yesNo(sf("IPQS_IsActive__c"))],
+          ["Five9 Final Stage", yesNo(sf("Five9_Final_Stage__c"))],
+          // Col2 exhausted; remaining col1 fields (one per row, left column).
+          ["IPQS Active Status", sf("IPQS_Active_Status__c")],
+          ["", null],
+          ["IPQS Carrier", sf("IPQS_Carrier__c")],
+          ["", null],
+          ["IPQS Email", sf("IPQS_Email__c")],
+          ["", null],
+          ["IPQS Fraud Score", sf("IPQS_Fraud_Score__c")],
+          ["", null],
+          ["IPQS Is Prepaid", yesNo(sf("IPQS_Is_Prepaid__c"))],
+          ["", null],
+          ["IPQS Line Type", sf("IPQS_Line_Type__c")],
+          ["", null],
+          ["IPQS Is Risky", yesNo(sf("IPQS_Is_Risky__c"))],
+          ["", null],
+          ["IPQS Is VOIP", yesNo(sf("IPQS_Is_VOIP__c"))],
+          ["", null],
+          ["IPQS Is Valid", yesNo(sf("IPQS_Is_Valid__c"))],
+          ["", null],
+          ["Lead Score", sf("Lead_Score__c")],
+          ["", null],
+          ["Ad Click Id", sf("Ad_Click_Id__c")],
+          ["", null],
+          ["Facebook Lead Id", sf("Facebook_Lead_Id__c")],
+          ["", null],
+          ["Total Dial Attempts", sf("Total_Dial_Attempts__c")],
+          ["", null],
+          ["Eli Ad click", sf("Eli_Ad_click__c")],
+          ["", null],
         ]}
       />
       {lead.scoreReason && (
@@ -336,216 +329,302 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     </Section>
   );
 
+  // Section 2: Company Information (TwoColumnsLeftToRight)
+  // SF interleaves [col1[0], col2[0], col1[1], col2[1], ...].
   const companyInformation = (
     <Section title="Company Information">
       <FieldGrid
         entityType="lead"
         entityId={lead.id}
         fields={[
+          // Row 1: Company | EIN Number / Tax Id
           E("Company", lead.businessName ?? sf("Company"), "businessName", "text", { rawValue: lead.businessName }),
           E("EIN Number / Tax Id", lead.ein ?? sf("EIN_Number_Tax_Id__c"), "ein", "text", { rawValue: lead.ein }),
-          E("Industry", lead.industry ?? sf("Industry"), "industry", "text", { rawValue: lead.industry }),
-          E("Other Industry", sf("Other_Industry__c"), "Other_Industry__c"),
+          // Row 2: Annual Revenue | Monthly Revenue
           E("Annual Revenue", lead.annualRevenue ? `$${lead.annualRevenue.toLocaleString()}` : sfDollar("AnnualRevenue"), "annualRevenue", "number", { rawValue: lead.annualRevenue ?? null }),
           E("Monthly Revenue", sfDollar("Monthly_Revenue__c"), "Monthly_Revenue__c", "number"),
-          E("Has Multiple MCA’s", yesNo(sf("Has_Multiple_MCA_s__c")), "Has_Multiple_MCA_s__c", "checkbox"),
+          // Row 3: Business Start Date | UCC filing Date
           E("Business Start Date", sfDate("Business_Start_Date__c"), "Business_Start_Date__c", "date"),
+          ["UCC filing Date", sfDate("UCC_filing_Date__c")],
+          // Row 4: Industry | (empty)
+          E("Industry", lead.industry ?? sf("Industry"), "industry", "text", { rawValue: lead.industry }),
+          ["", null],
         ]}
       />
     </Section>
   );
 
+  // Section 3: Current Debt Information (TwoColumnsLeftToRight)
   const currentDebtInformation = (
     <Section title="Current Debt Information">
       <FieldGrid
         entityType="lead"
         entityId={lead.id}
         fields={[
+          // Row 1: MCA Amount | Estimated Total Debt
           E("MCA Amount", sfDollar("MCA_Amount__c"), "MCA_Amount__c", "number"),
-          E("MCA Amount Requested", sfDollar("MCA_Amount_Requested__c"), "MCA_Amount_Requested__c", "number"),
           E("Estimated Total Debt", lead.totalDebtEst ? `$${lead.totalDebtEst.toLocaleString()}` : sf("Estimated_Total_Debt__c"), "totalDebtEst", "number", { rawValue: lead.totalDebtEst ?? null }),
-          E("Current Total Debt Amount", sfDollar("Current_Total_Debt_Amount__c"), "Current_Total_Debt_Amount__c", "number"),
-          ["Current Total Monthly Payment", sfDollar("Current_Total_Monthly_Payment__c") ?? sfDollar("Current_Total_Monthly_Payment_Formula__c")],
-          ["Current Total Weekly Payment", lead.currentTotalWeeklyPayment ? `$${lead.currentTotalWeeklyPayment.toLocaleString()}` : sfDollar("Current_Total_Weekly_Payment__c")],
+          // Row 2: Current Total Monthly Payment Formula | Current Total Daily Payment
+          ["Current Total Monthly Payment", sfDollar("Current_Total_Monthly_Payment_Formula__c") ?? sfDollar("Current_Total_Monthly_Payment__c")],
           ["Current Total Daily Payment", sfDollar("Current_Total_Daily_Payment__c")],
-          ["RT Debt Amount Lead Creation", sfDollar("RT_Debt_Amount_Lead_Creation__c")],
-          ["RT Debt Amount Lead Qualification", sfDollar("RT_Debt_Amount_Lead_Qualification__c")],
+          // Row 3: (empty) | Current Total Weekly Payment
+          ["", null],
+          ["Current Total Weekly Payment", lead.currentTotalWeeklyPayment ? `$${lead.currentTotalWeeklyPayment.toLocaleString()}` : sfDollar("Current_Total_Weekly_Payment__c")],
         ]}
       />
     </Section>
   );
 
+  // Section 4: Debt Calculation (TwoColumnsLeftToRight)
   const debtCalculation = (
     <Section title="Debt Calculation" defaultOpen={false}>
       <FieldGrid
         fields={[
+          // Row 1: Total Debt Amount | Frequency
           ["Total Debt Amount", sfDollar("Total_Debt_Amount__c")],
           ["Frequency", sf("Frequency__c")],
+          // Row 2: Payment Amount | Monthly Bank Fee
           ["Payment Amount", sfDollar("Payment_Amount__c")],
           ["Monthly Bank Fee", sfDollar("Monthly_Bank_Fee__c")],
+          // Row 3: Setup Fee | Program Fee Percentage
+          ["Setup Fee", sfDollar("Setup_Fee__c")],
           ["Program Fee Percentage", sf("Program_Fee_Percentage__c")],
+          // Row 4: Retainer Percentage | Settlement Percentage
           ["Retainer Percentage", sf("Retainer_Percentage__c")],
           ["Settlement Percentage", sf("Settlement_Percentage__c")],
-          ["Setup Fee", sfDollar("Setup_Fee__c")],
-          ["Down Payment", sfDollar("Down_Payment__c")],
+          // Row 5: Payment Term | Down Payment
           ["Payment Term", sf("Payment_Term__c")],
+          ["Down Payment", sfDollar("Down_Payment__c")],
         ]}
       />
     </Section>
   );
 
+  // Section 5: Call Disposition (TwoColumnsLeftToRight)
   const callDisposition = (
     <Section title="Call Disposition" defaultOpen={false}>
       <FieldGrid
         fields={[
-          ["Closer", sf("Closer__c")],
-          ["Closer Reference", sf("CloserLookup__c")],
-          ["Call Transfer Status", sf("Call_Transfer_Status__c")],
+          // Row 1: Fronter | Closer
+          ["Fronter", sf("FronterLookup__c")],
+          ["Closer", sf("CloserLookup__c")],
+          // Row 2: Call Transferred By | Call Received By
+          ["Call Transferred By", sf("Call_Transferred_By_Lookup__c")],
           ["Call Received By", sf("Call_Received_By_Lookup__c")],
-          ["Call Received Date", sfDate("Call_Received_Date__c")],
+          // Row 3: Call Tranferred DateTime | Call Received Date
           ["Call Tranferred DateTime", sfDate("Call_Tranferred_DateTime__c")],
-          ["Call Transferred By", sf("Call_Transferred_By__c")],
-          ["Outbound ANI", sf("Outbound_ANI__c")],
-          ["Outbound ANI From", sf("Outbound_ANI_From__c")],
-          ["Outbound ANI Date", sfDate("Outbound_ANI_Date__c")],
-          ["Outbound ANI Identifier", sf("Outbound_ANI_Identifier__c")],
+          ["Call Received Date", sfDate("Call_Received_Date__c")],
+          // Row 4: Call Transfer Status | Transfer Qualification
+          ["Call Transfer Status", sf("Call_Transfer_Status__c")],
+          ["Transfer Qualification", sf("Transfer_Qualification__c")],
+          // Row 5: Outbound Call Priority | Reason for Disqualification
+          ["Outbound Call Priority", sf("Outbound_Call_Priority__c")],
+          ["Reason for Disqualification", sf("Reason_for_Disqualification__c")],
+          // Row 6: Agent Location | (empty)
+          ["Agent Location", sf("Agent_Location__c")],
+          ["", null],
         ]}
       />
     </Section>
   );
 
-  const trustFunds = (
-    <Section title="Trust Funds" defaultOpen={false}>
+  // Section 6: Five9 Fields (TwoColumnsLeftToRight)
+  const five9Fields = (
+    <Section title="Five9 Fields" defaultOpen={false}>
       <FieldGrid
         fields={[
-          ["Bank Type", sf("Bank_Type__c")],
-          ["Trust Account", sf("Trust_Account__c")],
-          ["Trust Account Number", sf("Trust_Account_Number__c")],
-          ["Routing Number", sf("Routing_Number__c")],
-          ["Account Type", sf("Account_Type__c")],
-          ["Account Holder Name", sf("Account_Holder_Name__c")],
+          // Row 1: Dialer Group | Add to f9list Id
+          ["Dialer Group", sf("Dialer_Group__c")],
+          ["Add to f9list Id", sf("Add_to_f9list_Id__c")],
+          // Row 2: five9 Disposition | Delete from f9list id
+          ["five9 Disposition", sf("five9_Disposition__c")],
+          ["Delete from f9list id", sf("Delete_from_f9list_id__c")],
+          // Row 3: five9 Last Disposition | Five9 List Id
+          ["five9 Last Disposition", sf("five9_Last_Disposition__c")],
+          ["Five9 List Id", sf("Five9_List_Id__c")],
+          // Row 4: Five9 Time To Call | Five9 List Updated by Convoso Batch
+          ["Five9 Time To Call", sf("Five9_Time_To_Call__c")],
+          ["Five9 List Updated by Convoso Batch", yesNo(sf("Five9_List_Updated_by_Convoso_Batch__c"))],
         ]}
       />
     </Section>
   );
 
+  // Section 7: Lead Information (2nd) — TwoColumnsLeftToRight
+  // SF has two sections labeled "Lead Information"; this second one carries
+  // status / disposition / vendor metadata. Skipped per "dev/internal" rule:
+  //   RecordTypeId (we already show recordType on the header subtitle).
+  const leadInformationSecondary = (
+    <Section title="Lead Information">
+      <FieldGrid
+        entityType="lead"
+        entityId={lead.id}
+        fields={[
+          // Row 1: Lead Vendor ID | Lead Vendor Id Text
+          E("Lead Vendor ID", sf("Lead_Vendor_ID__c"), "Lead_Vendor_ID__c"),
+          E("Lead Vendor Id Text", sf("Lead_Vendor_Id_Text__c"), "Lead_Vendor_Id_Text__c"),
+          // Row 2: Owner | Lead Id
+          ["Owner", ownerName],
+          ["Lead Id", sf("Lead_Id__c")],
+          // Row 3: Record Type | List Id
+          ["Record Type", lead.recordType.replace(/_/g, " ")],
+          ["List Id", sf("List_Id__c")],
+          // Row 4: Lead Source Category | Lead Source
+          E("Lead Source Category", sf("Lead_Source_Category__c"), "Lead_Source_Category__c"),
+          E("Lead Source", lead.source ?? sf("LeadSource"), "source", "text", { rawValue: lead.source }),
+          // Row 5: Status | Last Disposition
+          [
+            "Status",
+            <StatusPill key="st" label={lead.status} tone={leadStatusTone(lead.status)} />,
+            { fieldKey: "status", type: "select", rawValue: lead.status, options: LEAD_STATUSES.map((s) => ({ label: s, value: s })) },
+          ],
+          E("Last Disposition", lead.lastDisposition ?? sf("Last_Disposition__c"), "lastDisposition", "text", { rawValue: lead.lastDisposition }),
+          // Row 6: Check Duplicate | Last Disposition DateTime
+          ["Check Duplicate", yesNo(sf("Check_Duplicate__c"))],
+          ["Last Disposition DateTime", lead.lastDispositionAt?.toLocaleString() ?? sfDate("Last_Disposition_DateTime__c")],
+          // Row 7: Check Duplicate Archive | Sub Disposition
+          ["Check Duplicate Archive", yesNo(sf("Check_Duplicate_Archive__c"))],
+          E("Sub Disposition", sf("Sub_Disposition__c"), "Sub_Disposition__c"),
+          // Row 8: Check DNC | Last Sub Disposition
+          ["Check DNC", yesNo(sf("Check_DNC__c"))],
+          E("Last Sub Disposition", lead.lastSubDisposition ?? sf("Last_Sub_Disposition__c"), "lastSubDisposition", "text", { rawValue: lead.lastSubDisposition }),
+          // Row 9: Check Wireless | Last Contacted DateTime
+          ["Check Wireless", yesNo(sf("Check_Wireless__c"))],
+          E("Last Contacted DateTime", lead.lastContactedAt?.toLocaleString() ?? sfDate("Last_Contacted_DateTime__c"), "lastContactedAt", "datetime", { rawValue: lead.lastContactedAt ?? null }),
+          // Row 10: UTM Term | Week Days Between Last Contacted Date
+          ["UTM Term", lead.utmTerm ?? sf("UTM_Term__c")],
+          ["Week Days Between Last Contacted Date", sf("Week_Days_Between_Last_Contacted_Date__c")],
+          // Row 11: (empty) | Vendor Code
+          ["", null],
+          ["Vendor Code", sf("Vendor_Code__c")],
+        ]}
+      />
+    </Section>
+  );
+
+  // Section 8: Creditor Information (TwoColumnsLeftToRight)
+  // Col1: creditors 1-5 (Name, Total Debt, Payment, Payment Frequency each).
+  // Col2: creditors 6-10 (same fields each).
+  // Interleaved row-by-row pairs creditor N with creditor N+5.
   const creditorInformation = (
     <Section title="Creditor Information" defaultOpen={false}>
       <FieldGrid
         fields={[
+          // Creditor 1 / 6
           ["Creditor 1 Name", sf("Creditor_1_Name__c")],
-          ["Creditor 1 Total Debt", sfDollar("Creditor_1_Total_Debt__c")],
-          ["Creditor 1 Payment", sfDollar("Creditor_1_Payment__c")],
-          ["Creditor 1 Payment Frequency", sf("Creditor_1_Payment_Frequency__c")],
-          ["Creditor 1 Debt Status", sf("Creditor_1_Debt_Status__c")],
-          ["Creditor 2 Name", sf("Creditor_2_Name__c")],
-          ["Creditor 2 Total Debt", sfDollar("Creditor_2_Total_Debt__c")],
-          ["Creditor 2 Payment", sfDollar("Creditor_2_Payment__c")],
-          ["Creditor 2 Payment Frequency", sf("Creditor_2_Payment_Frequency__c")],
-          ["Creditor 2 Debt Status", sf("Creditor_2_Debt_Status__c")],
-          ["Creditor 3 Name", sf("Creditor_3_Name__c")],
-          ["Creditor 3 Total Debt", sfDollar("Creditor_3_Total_Debt__c")],
-          ["Creditor 3 Payment", sfDollar("Creditor_3_Payment__c")],
-          ["Creditor 3 Payment Frequency", sf("Creditor_3_Payment_Frequency__c")],
-          ["Creditor 3 Debt Status", sf("Creditor_3_Debt_Status__c")],
-          ["Creditor 4 Name", sf("Creditor_4_Name__c")],
-          ["Creditor 4 Total Debt", sfDollar("Creditor_4_Total_Debt__c")],
-          ["Creditor 4 Payment", sfDollar("Creditor_4_Payment__c")],
-          ["Creditor 4 Payment Frequency", sf("Creditor_4_Payment_Frequency__c")],
-          ["Creditor 4 Debt Status", sf("Creditor_4_Debt_Status__c")],
-          ["Creditor 5 Name", sf("Creditor_5_Name__c")],
-          ["Creditor 5 Total Debt", sfDollar("Creditor_5_Total_Debt__c")],
-          ["Creditor 5 Payment", sfDollar("Creditor_5_Payment__c")],
-          ["Creditor 5 Payment Frequency", sf("Creditor_5_Payment_Frequency__c")],
-          ["Creditor 5 Debt Status", sf("Creditor_5_Debt_Status__c")],
           ["Creditor 6 Name", sf("Creditor_6_Name__c")],
+          ["Creditor 1 Total Debt", sfDollar("Creditor_1_Total_Debt__c")],
           ["Creditor 6 Total Debt", sfDollar("Creditor_6_Total_Debt__c")],
+          ["Creditor 1 Payment", sfDollar("Creditor_1_Payment__c")],
           ["Creditor 6 Payment", sfDollar("Creditor_6_Payment__c")],
+          ["Creditor 1 Payment Frequency", sf("Creditor_1_Payment_Frequency__c")],
           ["Creditor 6 Payment Frequency", sf("Creditor_6_Payment_Frequency__c")],
-          ["Creditor 6 Debt Status", sf("Creditor_6_Debt_Status__c")],
+          // Creditor 2 / 7
+          ["Creditor 2 Name", sf("Creditor_2_Name__c")],
           ["Creditor 7 Name", sf("Creditor_7_Name__c")],
+          ["Creditor 2 Total Debt", sfDollar("Creditor_2_Total_Debt__c")],
           ["Creditor 7 Total Debt", sfDollar("Creditor_7_Total_Debt__c")],
+          ["Creditor 2 Payment", sfDollar("Creditor_2_Payment__c")],
           ["Creditor 7 Payment", sfDollar("Creditor_7_Payment__c")],
+          ["Creditor 2 Payment Frequency", sf("Creditor_2_Payment_Frequency__c")],
           ["Creditor 7 Payment Frequency", sf("Creditor_7_Payment_Frequency__c")],
-          ["Creditor 7 Debt Status", sf("Creditor_7_Debt_Status__c")],
+          // Creditor 3 / 8
+          ["Creditor 3 Name", sf("Creditor_3_Name__c")],
           ["Creditor 8 Name", sf("Creditor_8_Name__c")],
+          ["Creditor 3 Total Debt", sfDollar("Creditor_3_Total_Debt__c")],
           ["Creditor 8 Total Debt", sfDollar("Creditor_8_Total_Debt__c")],
+          ["Creditor 3 Payment", sfDollar("Creditor_3_Payment__c")],
           ["Creditor 8 Payment", sfDollar("Creditor_8_Payment__c")],
+          ["Creditor 3 Payment Frequency", sf("Creditor_3_Payment_Frequency__c")],
           ["Creditor 8 Payment Frequency", sf("Creditor_8_Payment_Frequency__c")],
-          ["Creditor 8 Debt Status", sf("Creditor_8_Debt_Status__c")],
+          // Creditor 4 / 9
+          ["Creditor 4 Name", sf("Creditor_4_Name__c")],
           ["Creditor 9 Name", sf("Creditor_9_Name__c")],
+          ["Creditor 4 Total Debt", sfDollar("Creditor_4_Total_Debt__c")],
           ["Creditor 9 Total Debt", sfDollar("Creditor_9_Total_Debt__c")],
-          ["Creditor 9  Payment", sfDollar("Creditor_9_Payment__c")],
+          ["Creditor 4 Payment", sfDollar("Creditor_4_Payment__c")],
+          ["Creditor 9 Payment", sfDollar("Creditor_9_Payment__c")],
+          ["Creditor 4 Payment Frequency", sf("Creditor_4_Payment_Frequency__c")],
           ["Creditor 9 Payment Frequency", sf("Creditor_9_Payment_Frequency__c")],
-          ["Creditor 9 Debt Status", sf("Creditor_9_Debt_Status__c")],
+          // Creditor 5 / 10
+          ["Creditor 5 Name", sf("Creditor_5_Name__c")],
           ["Creditor 10 Name", sf("Creditor_10_Name__c")],
+          ["Creditor 5 Total Debt", sfDollar("Creditor_5_Total_Debt__c")],
           ["Creditor 10 Total Debt", sfDollar("Creditor_10_Total_Debt__c")],
+          ["Creditor 5 Payment", sfDollar("Creditor_5_Payment__c")],
           ["Creditor 10 Payment", sfDollar("Creditor_10_Payment__c")],
+          ["Creditor 5 Payment Frequency", sf("Creditor_5_Payment_Frequency__c")],
           ["Creditor 10 Payment Frequency", sf("Creditor_10_Payment_Frequency__c")],
-          ["Creditor 10 Debt Status", sf("Creditor_10_Debt_Status__c")],
         ]}
       />
     </Section>
   );
 
+  // Section 9: Account Engagement (TwoColumnsLeftToRight)
+  // SF layout col1 mixes HasOptedOutOfEmail + pi__* + Form_* fields.
+  // Per instructions we skip pi__* (Pardot internals); we keep a small number of
+  // pi__ fields that surface meaningful user-facing data (grade, score,
+  // hard_bounced, last_activity) since the SF page header relies on them.
   const accountEngagement = (
     <Section title="Account Engagement" defaultOpen={false}>
       <FieldGrid
         fields={[
-          ["First Form Submission", sfDate("Account_Engagement_First_Activity__c")],
-          ["Last Form Submission", sfDate("Account_Engagement_Last_Activity__c")],
-          ["Last Activity", sfDate("LastActivityDate")],
-          ["Conversion Score", sf("Account_Engagement_Score__c")],
-          ["Grade", sf("Account_Engagement_Grade__c")],
-          ["Account Engagement Hard Bounced", yesNo(sf("pi__pardot_hard_bounced__c"))],
-          ["Needs Score Synced", yesNo(sf("pi__Needs_Score_Synced__c"))],
-          ["Sync To Account Engagement", yesNo(sf("Sync_To_Account_Engagement__c"))],
+          // Row 1: Email Opt Out | Account Engagement Grade
+          ["Email Opt Out", yesNo(sf("HasOptedOutOfEmail"))],
+          ["Grade", sf("pi__grade__c")],
+          // Row 2: First Activity | Account Engagement Score
+          ["First Activity", sfDate("pi__first_activity__c")],
+          ["Account Engagement Score", sf("pi__score__c")],
+          // Row 3: Last Activity | Hard Bounced
+          ["Last Activity", sfDate("pi__last_activity__c")],
+          ["Hard Bounced", yesNo(sf("pi__pardot_hard_bounced__c"))],
+          // Row 4: Conversion Date | Last Scored At
+          ["Conversion Date", sfDate("pi__conversion_date__c")],
+          ["Last Scored At", sfDate("pi__Pardot_Last_Scored_At__c")],
+          // Row 5: Form Name | First Touch URL
+          ["Form Name", sf("Form_Name__c")],
+          ["First Touch URL", sf("pi__first_touch_url__c")],
+          // Row 6: Form Position | First Search Term
+          ["Form Position", sf("Form_Position__c")],
+          ["First Search Term", sf("pi__first_search_term__c")],
+          // Row 7: Form Type | First Search Type
+          ["Form Type", sf("Form_Type__c")],
+          ["First Search Type", sf("pi__first_search_type__c")],
+          // Row 8: Form Page | Form SubPage
+          ["Form Page", sf("Form_Page__c")],
+          ["Form SubPage", sf("Form_SubPage__c")],
         ]}
       />
     </Section>
   );
 
-  const dialerIntegration = (
-    <Section title="Dialer Integration" defaultOpen={false}>
+  // Section 10: Additional Information (TwoColumnsLeftToRight)
+  const additionalInformation = (
+    <Section title="Additional Information" defaultOpen={false}>
       <FieldGrid
         fields={[
-          ["Dialer Group", sf("Dialer_Group__c")],
-          ["Five9 Final Stage", yesNo(sf("Five9_Final_Stage__c"))],
-          ["Five9 List Id", sf("Five9_List_Id__c")],
-          ["Five9 List Updated by Convoso Batch", yesNo(sf("Five9_List_Updated_by_Convoso_Batch__c"))],
-          ["Synced to Five9 List", yesNo(sf("Synced_to_Five9_List__c"))],
-          ["Removed From Five9", yesNo(sf("Removed_From_Five9__c"))],
-          ["Pulled From Convoso", yesNo(sf("Pulled_From_Convoso__c"))],
+          // Row 1: Product Interest | Current Generators
+          ["Product Interest", sf("ProductInterest__c")],
+          ["Current Generators", sf("CurrentGenerators__c")],
+          // Row 2: SIC Code | Number of Locations
+          ["SIC Code", sf("SICCode__c")],
+          ["Number of Locations", sf("NumberofLocations__c")],
+          // Row 3: Created By | Last Modified By
+          ["Created By", sf("CreatedById")],
+          ["Last Modified By", sf("LastModifiedById")],
         ]}
       />
     </Section>
   );
 
-  const phoneVerification = (
-    <Section title="Phone Verification" defaultOpen={false}>
+  // Section 11: Description Information (OneColumn)
+  const descriptionInformation = (
+    <Section title="Description Information" defaultOpen={false}>
       <FieldGrid
+        columns={1}
         fields={[
-          ["Verified Phone Number", yesNo(sf("Verified_Phone_Number__c"))],
-          ["Check Wireless", yesNo(sf("Check_Wireless__c"))],
-          ["IP Address", sf("IP_Address__c")],
-          ["IPQS Fraud Score", sf("IPQS_Fraud_Score__c")],
-          ["IPQS Is Valid", yesNo(sf("IPQS_Is_Valid__c"))],
-          ["IPQS Is Risky", yesNo(sf("IPQS_Is_Risky__c"))],
-          ["IPQS Is Prepaid", yesNo(sf("IPQS_Is_Prepaid__c"))],
-          ["IPQS Is VOIP", yesNo(sf("IPQS_Is_VOIP__c"))],
-          ["IPQS_IsActive", yesNo(sf("IPQS_IsActive__c"))],
-          ["SMS Opt Out", yesNo(sf("smagicinteract__SMSOptOut__c"))],
-        ]}
-      />
-    </Section>
-  );
-
-  const calendlyAndScheduling = (
-    <Section title="Calendly & Scheduling" defaultOpen={false}>
-      <FieldGrid
-        fields={[
-          ["CalendlyCreated", yesNo(sf("Calendly__CalendlyCreated__c"))],
-          ["Has Calendly Event", yesNo(sf("Has_Calendly_Event__c"))],
+          ["Description", sf("Description")],
+          ["Lenders", sf("Lenders__c")],
         ]}
       />
     </Section>
@@ -580,17 +659,30 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           )}
         </div>
       )}
+      {/* SF Lead Layout XML section order (Lead-Lead Layout.layout-meta.xml):
+         1. Lead Information (TwoColumnsTopToBottom)
+         2. Company Information
+         3. Current Debt Information
+         4. Debt Calculation
+         5. Call Disposition
+         6. Five9 Fields
+         7. Lead Information (status + vendor metadata; same label as section 1)
+         8. Creditor Information
+         9. Account Engagement
+        10. Additional Information
+        11. Description Information
+       Skipped — empty in XML: Address Information, System Information, Custom Links. */}
       {leadInformation}
       {companyInformation}
       {currentDebtInformation}
       {debtCalculation}
       {callDisposition}
-      {trustFunds}
+      {five9Fields}
+      {leadInformationSecondary}
       {creditorInformation}
       {accountEngagement}
-      {dialerIntegration}
-      {phoneVerification}
-      {calendlyAndScheduling}
+      {additionalInformation}
+      {descriptionInformation}
       {lead.notes && (
         <Section title="Notes" defaultOpen={false}>
           <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>{lead.notes}</div>
@@ -851,23 +943,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     />
   );
 }
-
-const th: React.CSSProperties = {
-  textAlign: "left",
-  fontSize: 11,
-  fontWeight: 700,
-  color: "#3e3e3c",
-  padding: "8px 12px",
-  textTransform: "uppercase",
-  letterSpacing: 0.5,
-};
-
-const td: React.CSSProperties = {
-  fontSize: 13,
-  color: "#080707",
-  padding: "8px 12px",
-  verticalAlign: "top",
-};
 
 // LeadScoreCard + RelatedRecordsCard removed: SF Lead detail rail doesn't
 // surface either. Lead Score is shown as a tone next to the status pill on
