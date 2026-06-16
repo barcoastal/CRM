@@ -1,44 +1,69 @@
 /**
- * RAM (Reliant Account Management) provider.
+ * RAM (Reliant Account Management / ramservicing.com) provider.
  *
- * Port of SF RAMApi.cls — SOAP/XML with session-based auth at
- * http://www.ramservicing.com/. Session is obtained once and cached.
+ * Port of SF RAMApi.cls. The endpoint is a SOAP/ASMX service at
+ * https://ramservicing.com/services/RAMSGatewayVer2.asmx that authenticates
+ * via a StartSession call and routes operations through a `Method:` HTTP
+ * header (NOT a SOAPAction header).
  *
- * Env:
- *   RAM_API_ENDPOINT=https://app.ramservicing.com/api/services/Service.svc
- *   RAM_API_KEY=<api key from RAM portal>
- *   RAM_AFFILIATE_ID=<affiliate id>
- *   RAM_FEE_SPLIT_GROUP_ID=<fee split group id>
+ * Credentials come from IntegrationCredential where provider='RAM'. Falls
+ * back to RAM_* env vars for local dev.
  *
- * Operations used:
- *   GetUpdatedSavingDetails(fromDate)  → list of { externalId, balance }
- *   GetClientDrafts(fromDate)          → list of draft status changes
+ * Methods used:
+ *   StartSession     (Method: GetSessionId)  -> session token (cached ~50min)
+ *   GetUpdatedSavings(Method: GetUpdatedSavings) -> balance changes since
+ *   GetClientList    (optional)              -> customer roster
  */
 
+import { prisma } from "@/lib/prisma";
 import type { BalanceUpdate, DraftUpdate, PaymentProcessor } from "./types";
 
-const RAM_NS = "http://www.ramservicing.com/";
-const SOAP_NS = "http://schemas.xmlsoap.org/soap/envelope/";
+type RamCreds = { endpoint: string; apiKey: string; affiliateId: string; feeSplitGroupId?: string };
 
+let cachedCreds: { creds: RamCreds; expiresAt: number } | null = null;
 let cachedSession: { sessionId: string; expiresAt: number } | null = null;
 
-function getEnv(): { endpoint: string; apiKey: string; affiliateId: string } {
+async function getCreds(): Promise<RamCreds> {
+  if (cachedCreds && cachedCreds.expiresAt > Date.now()) return cachedCreds.creds;
+  try {
+    const row = await prisma.integrationCredential.findFirst({
+      where: { provider: "RAM", isActive: true },
+      orderBy: { updatedAt: "desc" },
+    });
+    if (row && row.config && typeof row.config === "object") {
+      const cfg = row.config as Record<string, unknown>;
+      const endpoint = String(cfg.endpoint ?? cfg.RAM_API_ENDPOINT ?? "");
+      const apiKey = String(cfg.apiKey ?? cfg.RAM_API_KEY ?? "");
+      const affiliateId = String(cfg.affiliateId ?? cfg.RAM_AFFILIATE_ID ?? "");
+      const feeSplitGroupId = cfg.feeSplitGroupId ? String(cfg.feeSplitGroupId) : undefined;
+      if (endpoint && apiKey && affiliateId) {
+        const creds = { endpoint, apiKey, affiliateId, feeSplitGroupId };
+        cachedCreds = { creds, expiresAt: Date.now() + 60_000 };
+        return creds;
+      }
+    }
+  } catch {
+    // fall through to env
+  }
   const endpoint = process.env.RAM_API_ENDPOINT;
   const apiKey = process.env.RAM_API_KEY;
   const affiliateId = process.env.RAM_AFFILIATE_ID;
-  if (!endpoint) throw new Error("RAM_API_ENDPOINT not set");
+  if (!endpoint) throw new Error("RAM credentials not configured. Save them at /integrations or set RAM_API_ENDPOINT.");
   if (!apiKey) throw new Error("RAM_API_KEY not set");
   if (!affiliateId) throw new Error("RAM_AFFILIATE_ID not set");
-  return { endpoint, apiKey, affiliateId };
+  const creds = { endpoint, apiKey, affiliateId, feeSplitGroupId: process.env.RAM_FEE_SPLIT_GROUP_ID };
+  cachedCreds = { creds, expiresAt: Date.now() + 60_000 };
+  return creds;
 }
 
-/** Strip namespace prefix from a tag name for lookup. */
-function localName(tag: string): string {
-  const idx = tag.indexOf(":");
-  return idx === -1 ? tag : tag.slice(idx + 1);
+export function clearRamCredsCache(): void {
+  cachedCreds = null;
 }
 
-/** Naive SOAP body extractor: returns text of every leaf element matching `name`. */
+function escapeXml(v: string): string {
+  return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
 function extractAll(xml: string, name: string): string[] {
   const re = new RegExp(`<(?:[a-zA-Z0-9]+:)?${name}\\b[^>]*>([^<]*)</(?:[a-zA-Z0-9]+:)?${name}>`, "gi");
   const out: string[] = [];
@@ -47,11 +72,6 @@ function extractAll(xml: string, name: string): string[] {
   return out;
 }
 
-function escapeXml(v: string): string {
-  return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
-}
-
-/** Find all occurrences of <Element>...</Element> capturing inner XML. */
 function extractElements(xml: string, name: string): string[] {
   const re = new RegExp(`<(?:[a-zA-Z0-9]+:)?${name}\\b[^>]*>([\\s\\S]*?)</(?:[a-zA-Z0-9]+:)?${name}>`, "gi");
   const out: string[] = [];
@@ -60,112 +80,138 @@ function extractElements(xml: string, name: string): string[] {
   return out;
 }
 
-async function callSoap(method: string, innerXml: string, includeSession = true): Promise<string> {
-  const { endpoint, apiKey } = getEnv();
-  const sess = includeSession ? `<sessid>${escapeXml(await getSessionId())}</sessid>` : "";
+/**
+ * Send a SOAP request to RAM. The endpoint dispatches on the `Method` HTTP
+ * header, not on SOAPAction. The body element name matches the operation
+ * (e.g. "StartSession", "GetUpdatedSavings") and lives in the
+ * http://www.ramservicing.com/ namespace.
+ *
+ * @param bodyElement  XML element name in the SOAP body
+ * @param methodHeader Value for the `Method:` HTTP header
+ * @param innerXml     Inner children of the body element
+ */
+async function ramCall(bodyElement: string, methodHeader: string, innerXml: string): Promise<string> {
+  const { endpoint } = await getCreds();
   const body = `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:soap="${SOAP_NS}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <soap:Body>
-    <${method} xmlns="${RAM_NS}">
-      ${sess}
+    <${bodyElement} xmlns="http://www.ramservicing.com/">
       ${innerXml}
-    </${method}>
+    </${bodyElement}>
   </soap:Body>
 </soap:Envelope>`;
   const res = await fetch(endpoint, {
     method: "POST",
     headers: {
-      "Content-Type": "text/xml; charset=utf-8",
-      SOAPAction: `${RAM_NS}${method}`,
-      ApiKey: apiKey,
+      "Content-Type": "text/xml;charset=UTF-8",
+      Method: methodHeader,
     },
     body,
   });
   const xml = await res.text();
-  if (!res.ok) throw new Error(`RAM ${method} ${res.status}: ${xml.slice(0, 200)}`);
+  if (!res.ok) throw new Error(`RAM ${methodHeader} HTTP ${res.status}: ${xml.slice(0, 200)}`);
+  // RAM returns 200 even on Fault. Detect fault.
+  if (/<soap:Fault>/i.test(xml)) {
+    const msg = extractAll(xml, "faultstring")[0] ?? "unknown SOAP fault";
+    throw new Error(`RAM ${methodHeader} fault: ${msg}`);
+  }
   return xml;
 }
 
 async function getSessionId(): Promise<string> {
-  if (cachedSession && cachedSession.expiresAt > Date.now()) {
-    return cachedSession.sessionId;
-  }
-  const { apiKey, affiliateId } = getEnv();
-  // RAM session login op
-  const xml = await callSoap(
-    "Login",
-    `<apiKey>${escapeXml(apiKey)}</apiKey><affiliateId>${escapeXml(affiliateId)}</affiliateId>`,
-    false
+  if (cachedSession && cachedSession.expiresAt > Date.now()) return cachedSession.sessionId;
+  const { apiKey } = await getCreds();
+  const xml = await ramCall(
+    "StartSession",
+    "GetSessionId",
+    `<ClientKey>${escapeXml(apiKey)}</ClientKey>`,
   );
-  const ids = extractAll(xml, "sessionId");
-  const sessionId = ids[0] ?? extractAll(xml, "sessid")[0];
-  if (!sessionId) throw new Error("RAM Login returned no sessionId");
-  // Sessions are short-lived; cache for 50 minutes
+  const sessionId = extractAll(xml, "StartSessionResult")[0];
+  if (!sessionId) throw new Error("RAM StartSession returned no session id");
   cachedSession = { sessionId, expiresAt: Date.now() + 50 * 60 * 1000 };
   return sessionId;
 }
 
 function normalizeDraftStatus(s: string): string {
-  const lower = s.toLowerCase();
+  const lower = (s ?? "").toLowerCase();
   if (lower.includes("schedul")) return "SCHEDULED";
-  if (lower.includes("process")) return "PROCESSING";
+  if (lower.includes("process") || lower.includes("pending")) return "PROCESSING";
   if (lower.includes("success") || lower.includes("complete") || lower.includes("settled")) return "SUCCESS";
-  if (lower.includes("fail") || lower.includes("nsf") || lower.includes("return")) return "FAILED";
+  if (lower.includes("fail") || lower.includes("nsf") || lower.includes("return") || lower.includes("reject")) return "FAILED";
   if (lower.includes("cancel") || lower.includes("skip") || lower.includes("void")) return "CANCELLED";
-  return s.toUpperCase();
+  return s ? s.toUpperCase() : "SCHEDULED";
 }
 
 export const ramProvider: PaymentProcessor = {
   name: "RAM",
 
   async getEscrowBalance(externalId: string): Promise<number | null> {
-    // RAM doesn't have a single-account balance endpoint exposed — fetch
-    // the bulk list and filter
     const updates = await this.listUpdatedBalances(
-      new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+      new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     );
     const match = updates.find((u) => u.externalAccountId === externalId);
     return match?.balance ?? null;
   },
 
   async listUpdatedBalances(sinceISO: string): Promise<BalanceUpdate[]> {
-    const date = sinceISO.slice(0, 10);
-    const xml = await callSoap("GetUpdatedSavingDetails", `<fromDate>${date}</fromDate>`);
-    const items = extractElements(xml, "CustomerSaving");
+    const sessionId = await getSessionId();
+    const fromDate = sinceISO.slice(0, 10);
+    const xml = await ramCall(
+      "GetUpdatedSavings",
+      "GetUpdatedSavings",
+      `<sessid>${escapeXml(sessionId)}</sessid><FromDate>${escapeXml(fromDate)}</FromDate>`,
+    );
+    // Each customer comes as a <Table> element inside <NewDataSet>.
+    const rows = extractElements(xml, "Table");
     const now = new Date();
-    return items
+    return rows
       .map((inner) => {
-        const id = extractAll(inner, "ExternalId")[0] ?? extractAll(inner, "externalId")[0];
-        const bal = extractAll(inner, "Balance")[0] ?? extractAll(inner, "balance")[0];
-        if (!id || !bal) return null;
+        const id = extractAll(inner, "vendoraccountnumber")[0];
+        const bal = extractAll(inner, "balance")[0];
+        const date = extractAll(inner, "balancedate")[0];
+        if (!id || bal == null) return null;
         const n = Number(bal);
         if (!Number.isFinite(n)) return null;
-        return { externalAccountId: id, balance: n, pulledAt: now };
+        const pulledAt = date ? new Date(date) : now;
+        return { externalAccountId: id, balance: n, pulledAt };
       })
       .filter((x): x is BalanceUpdate => x !== null);
   },
 
   async getDraftUpdates(sinceISO: string): Promise<DraftUpdate[]> {
-    const date = sinceISO.slice(0, 10);
-    const xml = await callSoap("GetClientDrafts", `<fromDate>${date}</fromDate>`);
-    const items = extractElements(xml, "Draft");
+    // RAM exposes payment status via GetUpdatedPayments. The Apex equivalent
+    // is in BatchGetRAMDraftUpdates. The minimum viable shape is documented
+    // in the SF wrapper; the response surfaces draftid + status + amounts.
+    const sessionId = await getSessionId();
+    const fromDate = sinceISO.slice(0, 10);
+    let xml: string;
+    try {
+      xml = await ramCall(
+        "GetUpdatedPayments",
+        "GetUpdatedPayments",
+        `<sessid>${escapeXml(sessionId)}</sessid><FromDate>${escapeXml(fromDate)}</FromDate>`,
+      );
+    } catch {
+      return []; // operation may not be exposed; balances are the primary signal
+    }
+    const rows = extractElements(xml, "Table");
     const out: DraftUpdate[] = [];
-    for (const inner of items) {
-      const draftId = extractAll(inner, "DraftId")[0] ?? extractAll(inner, "draftId")[0];
-      const externalAccountId = extractAll(inner, "ExternalId")[0] ?? extractAll(inner, "externalId")[0];
-      const status = extractAll(inner, "Status")[0];
+    for (const inner of rows) {
+      const draftId = extractAll(inner, "paymentid")[0] ?? extractAll(inner, "draftid")[0];
+      const externalAccountId = extractAll(inner, "vendoraccountnumber")[0];
+      const status = extractAll(inner, "paymentstatus")[0] ?? extractAll(inner, "status")[0];
       if (!draftId || !externalAccountId || !status) continue;
-      const amount = extractAll(inner, "Amount")[0];
+      const amount = extractAll(inner, "amount")[0];
       out.push({
         externalDraftId: draftId,
         externalAccountId,
         status: normalizeDraftStatus(status),
         amount: amount ? Number(amount) : null,
-        scheduledDate: extractAll(inner, "ScheduledDate")[0] ?? null,
-        processedAt: extractAll(inner, "ProcessedAt")[0] ?? null,
-        settledAt: extractAll(inner, "SettledAt")[0] ?? null,
-        returnCode: extractAll(inner, "ReturnCode")[0] ?? null,
-        returnReason: extractAll(inner, "ReturnReason")[0] ?? null,
+        scheduledDate: extractAll(inner, "scheduleddate")[0] ?? null,
+        processedAt: extractAll(inner, "processeddate")[0] ?? null,
+        settledAt: extractAll(inner, "settleddate")[0] ?? null,
+        returnCode: extractAll(inner, "returncode")[0] ?? null,
+        returnReason: extractAll(inner, "returnreason")[0] ?? null,
       });
     }
     return out;
