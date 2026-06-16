@@ -343,15 +343,16 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
   const detailsPanel = (
     <>
-      {/* SF Kenya Palmer Opportunity — pair-by-pair parity with SF Lightning.
-          Rows alternate left/right top-to-bottom; even index = left col,
-          odd index = right col. E(...) rows are inline-editable. */}
+      {/* SF Opportunity Layout — exact pair-by-pair parity with the exported
+          docs/sf-export/sfdx-raw/layouts/Opportunity-Opportunity Layout.layout-meta.xml.
+          Even index = left col, odd = right col (TwoColumns interleave).
+          E(...) rows are inline-editable. */}
       <Section title="Opportunity Information">
         <FieldGrid
           entityType="opportunity"
           entityId={opp.id}
           fields={[
-            // Row 1: Opportunity Owner | Expected Revenue
+            // Row 1: Owner | Expected Revenue
             ["Opportunity Owner", ownerDisplay],
             ["Expected Revenue", expectedRevenueDisplay],
             // Row 2: Private | Close Date
@@ -386,15 +387,15 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
               { fieldKey: "oppPhone", type: "phone", rawValue: opp.oppPhone ?? phoneDisplay ?? null },
             ],
             E("Timezone", timezoneDisplay, "timezone"),
-            // Row 10: Email | Total Debt Included
+            // Row 10: Email | Total Debt
             [
               "Email",
               emailDisplay ? <a key="em" href={`mailto:${emailDisplay}`} style={{ color: "#1589ee" }}>{emailDisplay}</a> : null,
               { fieldKey: "oppEmail", type: "email", rawValue: opp.oppEmail ?? emailDisplay ?? null },
             ],
-            ["Total Debt Included", totalDebtIncludedDisplay],
+            ["Total Debt", oppSfDollar("Total_Debt__c") ?? totalDebtDisplay],
             // Row 11: Preferred method of Contact | Current Total Debt
-            E("Preferred method of Contact", oppSf("Preferred_Method_Of_Contact__c"), "preferredMethodOfContact"),
+            E("Preferred method of Contact", oppSf("Preferred_Method_Of_Contact__c") ?? oppSf("Preferred_method_of_Contact__c"), "preferredMethodOfContact"),
             E("Current Total Debt", currentTotalDebtDisplay, "currentTotalDebt", "number", { rawValue: opp.currentTotalDebt ?? null }),
             // Row 12: Legal Plan Required | Secured Party
             E("Legal Plan Required", oppSfBool("Legal_Plan_Required__c"), "legalPlanRequired", "checkbox", { rawValue: opp.legalPlanRequired ?? null }),
@@ -407,59 +408,62 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             E("Business Start Date", oppSfDate("Business_Start_Date__c"), "businessStartDate", "date", { rawValue: opp.businessStartDate ?? null }),
             // Row 15: Current Monthly Payment | Hopper Priority
             E("Current Monthly Payment", oppSfDollar("Current_Monthly_Payment__c"), "currentMonthlyPayment", "number", { rawValue: opp.currentMonthlyPayment ?? null }),
-            ["Hopper Priority", oppSf("Hopper_Priority__c")],
-            // Row 16: Weekly Payment to Debt Ratio | Outbound ANI Date
+            ["Hopper Priority", oppSf("Hopper_priority_c__c") ?? oppSf("Hopper_Priority__c")],
+            // Row 16: Weekly Payment to Debt Ratio | Outbound ANI Identifier
             E("Weekly Payment to Debt Ratio", oppSf("Weekly_Payment_To_Debt_Ratio__c"), "weeklyPaymentToDebtRatio", "number", { rawValue: opp.weeklyPaymentToDebtRatio ?? null }),
-            ["Outbound ANI Date", oppSfDate("Outbound_ANI_Date__c")],
-            // Row 17: Preferred Language | Outbound ANI Identifier
-            E("Preferred Language", oppSf("Preferred_Language__c"), "preferredLanguage"),
             ["Outbound ANI Identifier", oppSf("Outbound_ANI_Identifier__c")],
-            // Row 18: Add to Five9 List | First Draft Date
-            ["Add to Five9 List", oppSfBool("Add_to_Five9_List__c")],
+            // Row 17: Preferred Language | Outbound ANI Date
+            E("Preferred Language", oppSf("Preferred_Language__c"), "preferredLanguage"),
+            ["Outbound ANI Date", oppSfDate("Outbound_ANI_Date__c")],
+            // Row 18: Dialer Group | Outbound ANI From
+            E("Dialer Group", oppSf("Dialer_Group__c"), "dialerGroup"),
+            ["Outbound ANI From", oppSf("Outbound_ANI_From__c")],
+            // Row 19: Add to Five9 List Id | First Draft Date
+            ["Add to Five9 List Id", oppSf("Add_to_f9list_Id__c")],
             E("First Draft Date", oppSfDate("First_Draft_Date__c"), "firstDraftDate", "date", { rawValue: opp.firstDraftDate ?? null }),
-            // Row 19: Delete from Five9 List | First Contract Signed Date
-            ["Delete from Five9 List", oppSfBool("Delete_from_Five9_List__c")],
+            // Row 20: Delete from Five9 List Id | First Contract Signed Date
+            ["Delete from Five9 List Id", oppSf("Delete_from_f9list_id__c")],
             E("First Contract Signed Date", oppSfDateTime("First_Contract_Signed_Date__c"), "firstContractSignedDateOpp", "datetime", { rawValue: opp.firstContractSignedDateOpp ?? null }),
-            // Row 20: First Payment Completed Date | Number Of Days From First ContractSigned
+            // Row 21: First Payment Completed Date | Number Of Days From First ContractSigned
             ["First Payment Completed Date", oppSfDate("First_Payment_Completed_Date__c")],
             ["Number Of Days From First ContractSigned", oppSf("Number_Of_Days_From_First_ContractSigned__c")],
-            // Row 21: Opportunity Assignment Date | Qualified Financial
+            // Row 22: Opportunity Assignment Date | Qualified Financial Formula
             ["Opportunity Assignment Date", oppSfDate("Opportunity_Assignment_Date__c")],
-            ["Qualified Financial", oppSfBool("Qualified_Financial_Formula__c") ?? oppSfBool("Qualified_Financial__c")],
-            // Row 22: Verified Phone Number | First Payment Completed
+            ["Qualified Financial Formula", oppSfBool("Qualified_Financial_Formula__c") ?? oppSfBool("Qualified_Financial__c")],
+            // Row 23: Verified Phone Number | First Payment Completed
             E("Verified Phone Number", oppSfBool("Verified_Phone_Number__c"), "Verified_Phone_Number__c", "checkbox"),
             ["First Payment Completed", oppSfBool("First_Payment_Completed__c")],
-            // Row 23: HIGH UCC RISK | Processor
+            // Row 24: HIGH UCC RISK | Processor
             E("HIGH UCC RISK", oppSfBool("HIGH_UCC_RISK__c") ?? oppSfBool("High_UCC_Risk__c"), "highUccRisk", "checkbox", { rawValue: opp.highUccRisk ?? null }),
             E("Processor", oppSf("Processor__c"), "Processor__c"),
-            // Row 24: Account Status | Re-shuffle Opportunity
+            // Row 25: Account Status | Re-shuffle Opportunity
             E("Account Status", oppSf("Account_Status__c"), "Account_Status__c"),
             ["Re-shuffle Opportunity", oppSfBool("Re_shuffle_Opportunity__c")],
-            // Row 25: Ad Click Id | Re-shuffle count
+            // Row 26: Ad Click Id | Re-shuffle count
             ["Ad Click Id", oppSf("Ad_Click_Id__c")],
             ["Re-shuffle count", oppSf("Re_shuffle_count__c")],
-            // Row 26: Active Opportunity | Opportunity Record Type
+            // Row 27: Active Opportunity | Opportunity Record Type
             ["Active Opportunity", oppSfBool("Active_Opportunity__c")],
             ["Opportunity Record Type", opp.recordType.replace(/_/g, " ")],
-            // Row 27: Opportunity Reinstated DateTime | Opportunity Amended DateTime
+            // Row 28: Opportunity Reinstated DateTime | Opportunity Amended DateTime
             ["Opportunity Reinstated DateTime", oppSfDateTime("Opportunity_Reinstated_DateTime__c")],
             ["Opportunity Amended DateTime", oppSfDateTime("Opportunity_Amended_DateTime__c")],
-            // Row 28: Opportunity Reactivated DateTime | Reactivate Reason
+            // Row 29: Opportunity Reactivated DateTime | Reactivate Reason
             ["Opportunity Reactivated DateTime", oppSfDateTime("Opportunity_Reactivated_DateTime__c")],
             ["Reactivate Reason", oppSf("Reactivate_Reason__c")],
-            // Row 29: Opportunity Reshuffled DateTime | Legal Network
+            // Row 30: Opportunity Reshuffled DateTime | Legal Network
             ["Opportunity Reshuffled DateTime", oppSfDateTime("Opportunity_Reshuffled_DateTime__c")],
             E("Legal Network", oppSf("Legal_Network__c"), "Legal_Network__c"),
-            // Row 30: Affiliate | (empty right)
+            // Row 31: Affiliate | (empty right — SF left col continues alone)
             ["Affiliate", oppSf("Affiliate__c")],
             ["", null],
-            // Row 31: Eli Ad click | (empty right)
+            // Row 32: Eli Ad click | (empty right)
             ["Eli Ad click", oppSf("Eli_Ad_click__c") ?? oppSf("Eli_Ad_Click__c")],
             ["", null],
-            // Row 32: Has Closer Notes | (empty right)
+            // Row 33: Has Closer Notes | (empty right)
             ["Has Closer Notes", oppSfBool("Has_Closer_Notes__c")],
             ["", null],
-            // Row 33: Latest Closer Notes | (empty right)
+            // Row 34: Latest Closer Notes | (empty right)
             ["Latest Closer Notes", oppSf("Latest_Closer_Notes__c")],
             ["", null],
           ]}
@@ -467,7 +471,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       </Section>
 
       <Section title="Call Disposition">
-        {/* SF Call Disposition section — pair-by-pair from SF Kenya Palmer. */}
+        {/* SF Call Disposition — TwoColumnsLeftToRight. */}
         <FieldGrid
           entityType="opportunity"
           entityId={opp.id}
@@ -475,15 +479,15 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             // Row 1: Fronter | Closer
             E("Fronter", oppSf("Fronter__c"), "fronter"),
             E("Closer", oppSf("Closer__c"), "closer"),
-            // Row 2: Fronter Reference | Closer Reference
-            ["Fronter Reference", oppSf("FronterLookup__c")],
-            ["Closer Reference", oppSf("CloserLookup__c")],
+            // Row 2: Fronter Lookup | Closer Lookup
+            ["Fronter Lookup", oppSf("FronterLookup__c")],
+            ["Closer Lookup", oppSf("CloserLookup__c")],
             // Row 3: Call Transferred By | Call Received By
             ["Call Transferred By", oppSf("Call_Transferred_By__c")],
             ["Call Received By", oppSf("Call_Received_By__c")],
-            // Row 4: Call Transferred By Reference | Call Received By Reference
-            ["Call Transferred By Reference", oppSf("Call_Transferred_By_Lookup__c")],
-            ["Call Received By Reference", oppSf("Call_Received_By_Lookup__c")],
+            // Row 4: Call Transferred By Lookup | Call Received By Lookup
+            ["Call Transferred By Lookup", oppSf("Call_Transferred_By_Lookup__c")],
+            ["Call Received By Lookup", oppSf("Call_Received_By_Lookup__c")],
             // Row 5: Call Tranferred DateTime | Call Received Date
             ["Call Tranferred DateTime", oppSfDateTime("Call_Tranferred_DateTime__c") ?? oppSfDateTime("Call_Transferred_DateTime__c")],
             ["Call Received Date", oppSfDateTime("Call_Received_Date__c")],
@@ -496,21 +500,21 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             // Row 8: Last Sub Disposition | Week Days Between Last Contacted Date
             ["Last Sub Disposition", oppSf("Last_Sub_Disposition__c")],
             ["Week Days Between Last Contacted Date", oppSf("Week_Days_Between_Last_Contacted_Date__c")],
-            // Row 9: Last Called Time | (empty right)
-            ["Last Called Time", oppSfDateTime("Last_Call__c") ?? oppSfDateTime("Last_Call_DateTime__c")],
+            // Row 9: Last Call | (right col exhausted)
+            ["Last Call", oppSfDateTime("Last_Call__c") ?? oppSfDateTime("Last_Call_DateTime__c")],
             ["", null],
-            // Row 10: Last Emailed Time | (empty right)
-            ["Last Emailed Time", oppSfDateTime("Last_Email__c") ?? oppSfDateTime("Last_Email_DateTime__c")],
+            // Row 10: Last Email | (empty)
+            ["Last Email", oppSfDateTime("Last_Email__c") ?? oppSfDateTime("Last_Email_DateTime__c")],
             ["", null],
-            // Row 11: Last SMS Time | (empty right)
-            ["Last SMS Time", oppSfDateTime("Last_SMS__c") ?? oppSfDateTime("Last_SMS_DateTime__c")],
+            // Row 11: Last SMS | (empty)
+            ["Last SMS", oppSfDateTime("Last_SMS__c") ?? oppSfDateTime("Last_SMS_DateTime__c")],
             ["", null],
           ]}
         />
       </Section>
 
       <Section title="Client Questionnaire">
-        {/* SF Client Questionnaire section — pair-by-pair from SF Kenya Palmer. */}
+        {/* SF Client Questionnaire — TwoColumnsLeftToRight. */}
         <FieldGrid
           entityType="opportunity"
           entityId={opp.id}
@@ -533,32 +537,63 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             // Row 6: Summons or Judgment | Welcome Call Scheduled
             E("Summons or Judgment", oppSf("Summons_or_Judgment__c"), "summonsOrJudgment"),
             E("Welcome Call Scheduled", oppSfDateTime("Welcome_Call_Scheduled__c"), "welcomeCallScheduled", "datetime", { rawValue: opp.welcomeCallScheduled ?? null }),
-            // Row 7: Order Number | Main Competitor/s
-            E("Order Number", oppSf("Order_Number__c"), "orderNumber"),
-            E("Main Competitor/s", oppSf("Main_Competitors__c") ?? oppSf("Main_Competitor_s__c"), "mainCompetitors"),
-            // Row 8: Current Generator(s) | Delivery/Installation Status
-            E("Current Generator(s)", oppSf("Current_Generators__c") ?? oppSf("Current_Generator_s__c"), "currentGenerators"),
-            E("Delivery/Installation Status", oppSf("Delivery_Installation_Status__c"), "deliveryInstallationStatus"),
-            // Row 9: Tracking Number | (empty right)
-            E("Tracking Number", oppSf("Tracking_Number__c"), "trackingNumber"),
+          ]}
+        />
+      </Section>
+
+      {/* SF "Other Information" section is intentionally empty in the layout XML
+          (no fields). Rendered as a placeholder for layout parity. */}
+      <Section title="Other Information" defaultOpen={false}>
+        <div style={{ padding: 12, fontSize: 12, color: "#706e6b" }}>
+          No fields in this section.
+        </div>
+      </Section>
+
+      <Section title="Additional Information">
+        {/* SF Additional Information — TwoColumnsLeftToRight. */}
+        <FieldGrid
+          entityType="opportunity"
+          entityId={opp.id}
+          fields={[
+            // Row 1: Order Number | Main Competitor/s
+            E("Order Number", oppSf("OrderNumber__c") ?? oppSf("Order_Number__c"), "orderNumber"),
+            E("Main Competitor/s", oppSf("MainCompetitors__c") ?? oppSf("Main_Competitors__c"), "mainCompetitors"),
+            // Row 2: Current Generator(s) | Delivery/Installation Status
+            E("Current Generator(s)", oppSf("CurrentGenerators__c") ?? oppSf("Current_Generators__c"), "currentGenerators"),
+            E("Delivery/Installation Status", oppSf("DeliveryInstallationStatus__c") ?? oppSf("Delivery_Installation_Status__c"), "deliveryInstallationStatus"),
+            // Row 3: Tracking Number | (empty)
+            E("Tracking Number", oppSf("TrackingNumber__c") ?? oppSf("Tracking_Number__c"), "trackingNumber"),
             ["", null],
-            // Row 10: Created By | Last Modified By
+          ]}
+        />
+      </Section>
+
+      <Section title="System Information">
+        {/* SF System Information — TwoColumnsTopToBottom: Created By | Last Modified By. */}
+        <FieldGrid
+          fields={[
             ["Created By", createdByDisplay || opp.createdAt.toLocaleString()],
             ["Last Modified By", oppSf("LastModifiedBy_Full_Name__c") ?? opp.updatedAt.toLocaleString()],
           ]}
         />
-        {/* Description (full width) */}
-        <div style={{ padding: "8px 0", borderBottom: "1px solid #dddbda", display: "grid", gridTemplateColumns: "16.5% 1fr 28px", gap: 8, alignItems: "start" }}>
+      </Section>
+
+      <Section title="Description Information">
+        {/* SF Description Information — OneColumn, single Description field. */}
+        <div style={{ padding: "8px 0", display: "grid", gridTemplateColumns: "16.5% 1fr 28px", gap: 8, alignItems: "start" }}>
           <div style={{ fontSize: 12, color: "#3e3e3c", paddingTop: 1 }}>Description</div>
           <div style={{ fontSize: 13, color: "#080707", whiteSpace: "pre-wrap" }}>
             {opp.notes ?? oppSf("Description") ?? ""}
           </div>
           <div />
         </div>
-        {/* Delivery Status (full width) */}
+      </Section>
+
+      {/* SF "Custom Links" section renders the DeliveryStatus custom link. */}
+      <Section title="Custom Links" defaultOpen={false}>
         <div style={{ padding: "8px 0", display: "grid", gridTemplateColumns: "16.5% 1fr 28px", gap: 8, alignItems: "start" }}>
-          <div style={{ fontSize: 12, color: "#1589ee", paddingTop: 1 }}>Delivery Status</div>
-          <div style={{ fontSize: 13, color: "#080707" }}>{oppSf("Delivery_Status__c") ?? ""}</div>
+          <div style={{ fontSize: 12, color: "#3e3e3c", paddingTop: 1 }}>Delivery Status</div>
+          <div style={{ fontSize: 13, color: "#1589ee" }}>{oppSf("Delivery_Status__c") ?? ""}</div>
           <div />
         </div>
       </Section>
