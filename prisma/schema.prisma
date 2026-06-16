@@ -111,6 +111,10 @@ model User {
   // SF-style Flow Builder authoring
   flowsCreated Flow[] @relation("FlowCreatedBy")
 
+  // Pardot-style Engagement Sequences + Lead Lists authoring
+  engagementSequencesCreated EngagementSequence[] @relation("EngagementSequenceCreatedBy")
+  leadListsCreated           LeadList[]           @relation("LeadListCreatedBy")
+
   // Five9 AgentREST credentials per user — used to log the agent into Five9
   // and trigger click-to-dial on their behalf. Password is encrypted at rest
   // with the FIVE9_AGENT_KEY env var.
@@ -812,6 +816,7 @@ model Lead {
   envelopes           Envelope[]               @relation("LeadEnvelopes")
   suppressionEntries  SuppressionEntry[]       @relation("LeadSuppressionEntries")
   cadenceEnrollments  CadenceEnrollment[]      @relation("LeadCadenceEnrollments")
+  leadLists           LeadListMember[]         @relation("LeadListsForLead")
 
   @@index([recordType])
   @@index([convertedAccountId])
@@ -2519,4 +2524,111 @@ model PageLayout {
   updatedAt   DateTime @updatedAt
 
   @@index([entityType, isDefault])
+}
+
+// ============ ENGAGEMENT SEQUENCES (Pardot-style drip with branching) ============
+// A focused layer on top of EmailMessage + Flow. Sequences auto-enroll leads
+// matching entryCriteria and walk them through ordered steps (send_email,
+// wait, branch_on_open, etc). The cron at /api/engagement/process drives
+// evaluateAndEnroll() + processEnrollments() every few minutes.
+model EngagementSequence {
+  id                String   @id @default(cuid())
+  name              String
+  description       String?
+  // Entity type the sequence runs on. v1 only wires "Lead".
+  entityType        String   @default("Lead")
+  isActive          Boolean  @default(true)
+  // Same AST shape as ValidationRule.condition and Flow.entryCriteria.
+  entryCriteria     Json     @default("{\"kind\":\"and\",\"conditions\":[]}")
+  // When false, a lead that has previously been enrolled (any status) is
+  // skipped during auto-enroll. Manual enroll always bypasses this.
+  allowReEnroll     Boolean  @default(false)
+  // Cap how many enrollments to create per evaluateAndEnroll tick.
+  maxEnrollsPerTick Int      @default(500)
+  // Aggregate counters refreshed on each enroll / completion.
+  totalEnrolled     Int      @default(0)
+  totalCompleted    Int      @default(0)
+  totalExited       Int      @default(0)
+  createdById       String?
+  createdBy         User?    @relation("EngagementSequenceCreatedBy", fields: [createdById], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  steps       EngagementStep[]
+  enrollments EngagementEnrollment[]
+
+  @@index([entityType, isActive])
+}
+
+model EngagementStep {
+  id         String             @id @default(cuid())
+  sequenceId String
+  sequence   EngagementSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  order      Int
+  // send_email | wait | branch_on_open | branch_on_click |
+  // update_score | add_to_list | remove_from_list | task | exit
+  kind       String
+  label      String
+  // Per-kind config JSON. See src/lib/engagement/steps.ts for the schema.
+  config     Json               @default("{}")
+  createdAt  DateTime           @default(now())
+
+  @@index([sequenceId, order])
+}
+
+model EngagementEnrollment {
+  id                 String             @id @default(cuid())
+  sequenceId         String
+  sequence           EngagementSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  entityType         String
+  entityId           String
+  status             String             @default("ACTIVE") // ACTIVE | COMPLETED | EXITED | PAUSED
+  currentStepOrder   Int                @default(0)
+  // ACTIVE rows whose nextActionAt is in the past get processed by the cron.
+  nextActionAt       DateTime?
+  // Append-only audit of every step fired. Array of
+  // { at, stepOrder, kind, label, result, error? }
+  history            Json               @default("[]")
+  enteredAt          DateTime           @default(now())
+  finishedAt         DateTime?
+  // Last EmailMessage id sent — branch_on_open / branch_on_click check this
+  // message's openedAt / firstClickedAt to pick which path to follow.
+  lastEmailMessageId String?
+
+  @@unique([sequenceId, entityType, entityId, enteredAt])
+  @@index([status, nextActionAt])
+  @@index([entityType, entityId])
+}
+
+// ============ LEAD LISTS (Pardot-style audience lists) ============
+// Static or rules-driven sets of leads. Used as the audience for Mass Email
+// and as the target of add_to_list / remove_from_list sequence steps.
+model LeadList {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  // Optional auto-refresh criteria, same AST shape as ValidationRule. When
+  // non-empty the cron rebuilds membership periodically.
+  criteria    Json?
+  isActive    Boolean  @default(true)
+  createdById String?
+  createdBy   User?    @relation("LeadListCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members LeadListMember[]
+}
+
+model LeadListMember {
+  id      String   @id @default(cuid())
+  listId  String
+  list    LeadList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  leadId  String
+  lead    Lead     @relation("LeadListsForLead", fields: [leadId], references: [id], onDelete: Cascade)
+  addedAt DateTime @default(now())
+  // manual | criteria | sequence
+  source  String   @default("manual")
+
+  @@unique([listId, leadId])
+  @@index([listId])
 }
