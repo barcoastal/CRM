@@ -11,6 +11,7 @@ import {
 } from "../src/lib/sf-canonical";
 import { SYSTEM_VIEWS } from "../src/lib/list-views";
 import { ensureDirs as ensureESignDirs } from "../src/lib/esign/storage";
+import { getReportSeeds, getDashboardSeeds } from "../src/lib/seed/reports-dashboards";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter } as any);
@@ -1241,6 +1242,80 @@ async function main() {
     });
     reportsSeeded++;
   }
+
+  // ---------- BUNDLED REPORTS + DASHBOARDS (idempotent by name) ----------
+  // Backs the report builder and dashboard builder with sensible defaults so
+  // first-time users see real content. Lives in src/lib/seed/reports-dashboards.ts
+  // and is also seeded by scripts/seed-reports-dashboards.mjs against prod.
+  const reportSeeds = getReportSeeds();
+  const reportIdByName = new Map<string, string>();
+  let bundledReportsAdded = 0;
+  for (const r of reportSeeds) {
+    const exists = await prisma.report.findFirst({ where: { name: r.name }, select: { id: true } });
+    if (exists) {
+      reportIdByName.set(r.name, exists.id);
+      continue;
+    }
+    const created = await prisma.report.create({
+      data: {
+        name: r.name,
+        description: r.description,
+        objectType: r.objectType,
+        columns: r.columns as any,
+        filters: r.filters as any,
+        groupBy: r.groupBy,
+        sortBy: r.sortBy,
+        sortDir: r.sortDir,
+        summarize: r.summarize as any,
+        rowLimit: r.rowLimit,
+        createdById: admin.id,
+      },
+    });
+    reportIdByName.set(r.name, created.id);
+    bundledReportsAdded++;
+  }
+
+  const dashboardSeeds = getDashboardSeeds();
+  let bundledDashboardsAdded = 0;
+  let bundledTilesAdded = 0;
+  for (const d of dashboardSeeds) {
+    const existing = await prisma.dashboard.findFirst({ where: { name: d.name }, select: { id: true } });
+    if (existing) continue;
+    const created = await prisma.dashboard.create({
+      data: {
+        name: d.name,
+        description: d.description,
+        isShared: true,
+        createdById: admin.id,
+      },
+    });
+    for (const t of d.tiles) {
+      let reportId: string | null = null;
+      if (t.reportName) {
+        reportId = reportIdByName.get(t.reportName) ?? null;
+        if (!reportId) {
+          const r = await prisma.report.findFirst({ where: { name: t.reportName }, select: { id: true } });
+          reportId = r?.id ?? null;
+        }
+        if (!reportId) continue;
+      }
+      await prisma.dashboardTile.create({
+        data: {
+          dashboardId: created.id,
+          kind: t.kind,
+          title: t.title,
+          queryKey: t.queryKey ?? null,
+          reportId,
+          config: (t.config ?? {}) as any,
+          position: t.position as any,
+        },
+      });
+      bundledTilesAdded++;
+    }
+    bundledDashboardsAdded++;
+  }
+  console.log(`  Bundled reports:  ${bundledReportsAdded} added (${reportSeeds.length - bundledReportsAdded} already existed)`);
+  console.log(`  Bundled dashbds:  ${bundledDashboardsAdded} added with ${bundledTilesAdded} tiles`);
 
   console.log("\nSeed complete!");
   console.log(`  Dashboards:       ${dashboardCount} (Sales Overview w/ 5 tiles)`);

@@ -153,6 +153,16 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
       return { value, format: "number" };
     },
   },
+  "accounts.in_nsf": {
+    kind: "scalar",
+    label: "Accounts in NSF",
+    run: async (): Promise<ScalarResult> => {
+      const value = await prisma.account.count({
+        where: { paymentStatus: { contains: "NSF", mode: "insensitive" } },
+      });
+      return { value, format: "number" };
+    },
+  },
 
   // ---------------- ENVELOPES ----------------
   "envelopes.pending_signatures": {
@@ -188,6 +198,22 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
         where: {
           status: { not: "COMPLETED" },
           dueDate: { lt: new Date() },
+        },
+      });
+      return { value, format: "number" };
+    },
+  },
+  "tasks.due_today": {
+    kind: "scalar",
+    label: "Tasks Due Today",
+    run: async (): Promise<ScalarResult> => {
+      const d = new Date();
+      const start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+      const value = await prisma.task.count({
+        where: {
+          status: { notIn: ["COMPLETED", "DEFERRED"] },
+          dueDate: { gte: start, lt: end },
         },
       });
       return { value, format: "number" };
