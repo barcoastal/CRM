@@ -19,7 +19,58 @@
  *   GetUpdatedDebits      -> debit (draft) status changes since a date
  */
 
+import { prisma } from "@/lib/prisma";
 import type { BalanceUpdate, DraftUpdate, PaymentProcessor } from "./types";
+
+type SasCreds = { endpoint: string; apiKey: string; companyKey: string; securityKey?: string };
+
+let cachedCreds: { creds: SasCreds; expiresAt: number } | null = null;
+
+/**
+ * Resolve SAS credentials. Reads the active IntegrationCredential row first
+ * (so the UI can manage them without redeploying); falls back to env vars for
+ * local dev. Cached for 60 seconds.
+ */
+async function getCreds(): Promise<SasCreds> {
+  if (cachedCreds && cachedCreds.expiresAt > Date.now()) return cachedCreds.creds;
+
+  // DB-first
+  try {
+    const row = await prisma.integrationCredential.findFirst({
+      where: { provider: "SAS", isActive: true },
+      orderBy: { updatedAt: "desc" },
+    });
+    if (row && row.config && typeof row.config === "object") {
+      const cfg = row.config as Record<string, unknown>;
+      const endpoint = String(cfg.endpoint ?? cfg.SAS_API_ENDPOINT ?? "");
+      const apiKey = String(cfg.apiKey ?? cfg.SAS_API_KEY ?? "");
+      const companyKey = String(cfg.companyKey ?? cfg.SAS_COMPANY_KEY ?? "");
+      const securityKey = cfg.securityKey ? String(cfg.securityKey) : undefined;
+      if (endpoint && apiKey && companyKey) {
+        const creds = { endpoint, apiKey, companyKey, securityKey };
+        cachedCreds = { creds, expiresAt: Date.now() + 60_000 };
+        return creds;
+      }
+    }
+  } catch {
+    // fall through to env
+  }
+
+  const endpoint = process.env.SAS_API_ENDPOINT;
+  const apiKey = process.env.SAS_API_KEY;
+  const companyKey = process.env.SAS_COMPANY_KEY;
+  if (!endpoint) throw new Error("SAS credentials not configured. Save them at /integrations or set SAS_API_ENDPOINT.");
+  if (!apiKey) throw new Error("SAS_API_KEY not set");
+  if (!companyKey) throw new Error("SAS_COMPANY_KEY not set");
+  const creds = { endpoint, apiKey, companyKey, securityKey: process.env.SAS_SECURITY_KEY };
+  cachedCreds = { creds, expiresAt: Date.now() + 60_000 };
+  return creds;
+}
+
+/** Invalidate the cache after writing new creds via the UI. */
+export function clearSasCredsCache(): void {
+  cachedCreds = null;
+}
 
 interface SasResponse {
   RequestID?: number;
@@ -53,18 +104,8 @@ interface SasDebitRow {
   return_reason?: string;
 }
 
-function getEnv(): { endpoint: string; apiKey: string; companyKey: string; securityKey?: string } {
-  const endpoint = process.env.SAS_API_ENDPOINT;
-  const apiKey = process.env.SAS_API_KEY;
-  const companyKey = process.env.SAS_COMPANY_KEY;
-  if (!endpoint) throw new Error("SAS_API_ENDPOINT not set");
-  if (!apiKey) throw new Error("SAS_API_KEY not set");
-  if (!companyKey) throw new Error("SAS_COMPANY_KEY not set");
-  return { endpoint, apiKey, companyKey, securityKey: process.env.SAS_SECURITY_KEY };
-}
-
 async function sasCall<T = unknown>(method: string, body: Record<string, unknown> = {}): Promise<T[]> {
-  const { endpoint, apiKey, companyKey, securityKey } = getEnv();
+  const { endpoint, apiKey, companyKey, securityKey } = await getCreds();
   const url = `${endpoint}${endpoint.includes("?") ? "&" : "?"}APIKey=${encodeURIComponent(apiKey)}&CompanyKey=${encodeURIComponent(companyKey)}&Method=${encodeURIComponent(method)}`;
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (securityKey) headers["X-SecurityKey"] = securityKey;
