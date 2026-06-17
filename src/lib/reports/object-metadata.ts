@@ -155,6 +155,11 @@ const ACCOUNT_FIELDS: ObjectField[] = [
   { key: "paymentProcessor", label: "Payment Processor", type: "string", source: "column" },
   { key: "currentTotalDebt", label: "Current Total Debt", type: "number", source: "column" },
   { key: "escrowBalance", label: "Escrow Balance", type: "number", source: "column" },
+  { key: "netProfit", label: "Net Profit", type: "number", source: "column" },
+  { key: "legalStatus", label: "Legal Status", type: "string", source: "column" },
+  { key: "externalSasId", label: "External SAS Id", type: "string", source: "column" },
+  { key: "externalRamId", label: "External RAM Id", type: "string", source: "column" },
+  { key: "firstContractSignedDate", label: "First Contract Signed Date", type: "date", source: "column" },
   { key: "feePaidInFull", label: "Fee Paid in Full", type: "boolean", source: "column" },
   { key: "welcomeCallCompleted", label: "Welcome Call Completed", type: "boolean", source: "column" },
   { key: "firstPaymentReceived", label: "First Payment Received", type: "boolean", source: "column" },
@@ -164,6 +169,7 @@ const ACCOUNT_FIELDS: ObjectField[] = [
   { key: "updatedAt", label: "Updated At", type: "date", source: "column" },
   { key: "owner.name", label: "Owner Name", type: "string", source: "relation", relation: "owner" },
   { key: "owner.email", label: "Owner Email", type: "string", source: "relation", relation: "owner" },
+  { key: "primaryContact.name", label: "Primary Contact", type: "string", source: "relation", relation: "primaryContact" },
 ];
 
 // ============ CASE ============

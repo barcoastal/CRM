@@ -1,0 +1,225 @@
+{
+  "_meta": "Salesforce Account list views extracted from cdcrm.lightning.force.com via Playwright on 2026-06-17. For recreation in the new CRM ListView model.",
+  "lists": [
+    {
+      "label": "Angie Kelly",
+      "developerName": "Angie_kelly",
+      "scope": "All accounts",
+      "filters": [
+        {"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"},
+        {"raw": "Owner Full Name contains Angie Kelly"}
+      ],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "All Accounts",
+      "developerName": "All_Accounts",
+      "scope": null,
+      "filters": [],
+      "columns": ["Account Name", "Primary Contact", "Account Site", "Billing State/Province", "Phone", "Type", "Account Owner Alias", "Sub Disposition"]
+    },
+    {
+      "label": "Accounts in Program Completion Stage",
+      "developerName": "Accounts_in_Program_Completion_Stage",
+      "scope": null,
+      "filters": [
+        {"raw": "Program Completion Stage equals True"},
+        {"raw": "Client Status not equal to Cancelled"}
+      ],
+      "columns": ["Lead Id", "Account Name", "Primary Contact", "Last Modified Date", "Last Contacted DateTime", "Client Status", "Phone", "Total Debt", "Sub Disposition", "Billing State/Province", "First Payment Completed Date", "Industry", "Owner Full Name", "Program Start Date", "Program End Date"]
+    },
+    {
+      "label": "Active 1st/2nd NSF",
+      "developerName": "Active_1st_2nd_NSF",
+      "scope": null,
+      "filters": [
+        {"raw": "Client Status equals Active - 1st NSF, Active - 2nd NSF, Pending Cancellation"},
+        {"raw": "Owner Full Name contains Simone Simpson, Laura Rowe, Angie Kelly, Ann K Pierre, Brad Moss, Edward Lindsey, Yeislee Flores, Neida Hernandez"}
+      ],
+      "columns": ["Lead Id", "Account Name", "Primary Contact", "Last Modified Date", "Last Contacted DateTime", "Client Status", "Phone", "Total Debt", "Sub Disposition", "Billing State/Province", "First Payment Completed Date", "Industry", "Owner Full Name", "Program Start Date", "Program End Date"]
+    },
+    {
+      "label": "Alecha Edwards", "developerName": "Alecha_Edwards", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Alecha Edwards"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Ann K Pierre", "developerName": "Ann_K_Pierre", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Kristel Pierre"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Briana Harrington", "developerName": "Titus_Coe", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Briana Harrington"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Buyout Affiliate", "developerName": "Buyout_Affiliate", "scope": null,
+      "filters": [{"raw": "Qualified Financial equals True"}, {"raw": "HIGH UCC RISK equals True"}],
+      "columns": ["Account Name", "Account Site", "Billing State/Province", "Phone", "Type", "Account Owner Alias"]
+    },
+    {
+      "label": "Cancelled - Transfers", "developerName": "Copy_of_CS_Team_s_Accounts_Cancelled", "scope": null,
+      "filters": [{"raw": "Client Status equals Cancelled"}, {"raw": "Owner Full Name contains Natasha Snowden, Simone Simpson, Angie Kelly, Ann K Pierre, Yeislee Flores, Shanae Roberts, Marco Glave, Renee Clayton, Marquez Burnside, Titus Coe, Carlos Sanchez, Julio Alfonso, Alecha Edwards"}, {"raw": "Last Modified Date greater than", "_note": "value truncated in UI - verify date/relative value manually"}],
+      "columns": ["Lead Id", "Account Name", "Primary Contact", "Last Modified Date", "Last Contacted DateTime", "Client Status", "Phone", "Total Debt", "Sub Disposition", "Billing State/Province", "First Payment Completed Date", "Industry", "Owner Full Name", "Program Start Date", "Program End Date"]
+    },
+    {
+      "label": "Carlos Sanchez", "developerName": "Carlos_Sanchez", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Carlos Sanchez"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Christian Alvarez", "developerName": "Copy_of_Copy_of_christian", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Christian Alvarez"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Creditor Database", "developerName": "Creditor_Database", "scope": null,
+      "filters": [{"raw": "External Creditor Id not equal to", "_note": "blank value = field is not empty"}, {"raw": "Account Record Type equals Creditor"}],
+      "columns": ["Account Name", "Account Site", "Billing State/Province", "Phone", "Type", "Account Owner Alias"]
+    },
+    {
+      "label": "CS Team's Accounts", "developerName": "My_Team_s_Accounts", "scope": null,
+      "filters": [{"raw": "Processor Status equals Active, Suspended, Hold, Graduated, Cancelled"}, {"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "CS Team's Accounts- Cancelled", "developerName": "Copy_of_CS_Team_s_Accounts", "scope": null,
+      "filters": [{"raw": "Client Status equals Cancelled"}, {"raw": "Owner Full Name contains Natasha Snowden, Simone Simpson, Angie Kelly, Ann K Pierre, Yeislee Flores, Shanae Roberts, Marco Glave, Renee Clayton, Marquez Burnside, Titus Coe, Carlos Sanchez, Julio Alfonso, Alecha Edwards"}],
+      "columns": ["Lead Id", "Account Name", "Primary Contact", "Last Modified Date", "Last Contacted DateTime", "Client Status", "Phone", "Total Debt", "Sub Disposition", "Billing State/Province", "First Payment Completed Date", "Industry", "Owner Full Name", "Program Start Date", "Program End Date"]
+    },
+    {
+      "label": "CS Team's Accounts- Graduated", "developerName": "Copy_of_CS_Team_s_Accounts_Graduated", "scope": null,
+      "filters": [{"raw": "Client Status equals Graduated"}, {"raw": "Owner Full Name contains Natasha Snowden, Simone Simpson, Angie Kelly, Ann K Pierre, Yeislee Flores, Shanae Roberts, Marco Glave, Renee Clayton, Marquez Burnside, Titus Coe, Carlos Sanchez, Julio Alfonso, Alecha Edwards"}],
+      "columns": ["Lead Id", "Account Name", "Primary Contact", "Last Modified Date", "Last Contacted DateTime", "Client Status", "Phone", "Total Debt", "Sub Disposition", "Billing State/Province", "First Payment Completed Date", "Industry", "Owner Full Name", "Program Start Date", "Program End Date"]
+    },
+    {
+      "label": "David Medina", "developerName": "David_Medina1", "scope": null,
+      "filters": [{"raw": "Client Status equals First Payment pending, On Hold, Pending Cancellation, Active, Suspended"}, {"raw": "Owner Full Name contains David Medina"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id", "Account Owner Alias"]
+    },
+    {
+      "label": "Francine Villar", "developerName": "Edwin_Soto", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Francine Villar"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Free List For CSR", "developerName": "Edward_Lindsey", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains", "_note": "owner value blank in UI - verify"}],
+      "columns": ["Lead Id", "Account Name", "Primary Contact", "Last Modified Date", "Last Contacted DateTime", "Client Status", "Phone", "Total Debt", "Sub Disposition", "Billing State/Province", "First Payment Completed Date", "Industry", "Program Start Date", "Program End Date"]
+    },
+    {
+      "label": "Free List For CSR (2)", "developerName": "Copy_of_Copy_of_Copy_of_Edgar", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Edgar Gonzalez"}],
+      "columns": [], "_note": "datatable did not render (list empty/errored in SF); columns likely match the other Free List For CSR"
+    },
+    {
+      "label": "HIGH UCC RISK", "developerName": "HIGH_UCC_RISK", "scope": null,
+      "filters": [{"raw": "HIGH UCC RISK equals True"}, {"raw": "Net Profit greater than 0"}],
+      "columns": ["Account Name", "Account Site", "Billing State/Province", "Phone", "Type", "Account Owner Alias"]
+    },
+    {
+      "label": "Juan Limongi", "developerName": "Shanae_Roberts", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Juan Limongi"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Julio Alfonso", "developerName": "Julio_Alfonso", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Julio Alfonso"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Marco Glave", "developerName": "Marco_Glave", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Marco Glave"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Marquez Burnside", "developerName": "Marquez_Burnside", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Marquez Burnside"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Meagan Robinson", "developerName": "Copy_of_Julio_Alfonso", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Meagan Robinson"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "My Accounts Teams", "developerName": "My_Accounts", "scope": "My account teams",
+      "filters": [], "columns": [], "_note": "scope-based (account team membership), no field filters; rendered empty for current user"
+    },
+    {
+      "label": "My Active Accounts", "developerName": "MyAccounts", "scope": "My accounts",
+      "filters": [{"raw": "Client Status equals Active, Suspended, On Hold, Pending Cancellation"}, {"raw": "Owner Full Name equals timothy rivadeneira"}],
+      "columns": [], "_note": "columns rendered empty (no rows for current user); owner filter hardcodes timothy rivadeneira despite 'My' name"
+    },
+    {
+      "label": "My Cancelled Accounts", "developerName": "My_Cancelled_Accounts", "scope": "My accounts",
+      "filters": [{"raw": "Client Status equals Cancelled"}], "columns": [], "_note": "columns rendered empty for current user"
+    },
+    {
+      "label": "My Graduated Accounts", "developerName": "My_Graduated_Accounts", "scope": "My accounts",
+      "filters": [{"raw": "Client Status equals Graduated"}], "columns": [], "_note": "columns rendered empty for current user"
+    },
+    {
+      "label": "Natasha Snowden", "developerName": "Natasha_Holder", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Graduated, Closed Duplicate, Cancelled"}, {"raw": "Owner Full Name contains David Medina", "_note": "filters on David Medina despite list name (copied-not-renamed)"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Negotiation- Janice", "developerName": "Negotiation_Janice", "scope": null,
+      "filters": [{"raw": "Debt Negotiator contains Janice"}, {"raw": "Client Status not equal to Cancelled, Graduated"}, {"raw": "Debt Negotiator equals Janice Bessent"}],
+      "columns": [], "_note": "3 filters incl two on Debt Negotiator - likely custom filter logic (OR); verify logic string in SF; columns rendered empty"
+    },
+    {
+      "label": "Negotiations Main", "developerName": "Negotiations_Main", "scope": null,
+      "filters": [{"raw": "Owner Full Name equals , Ann K Pierre, Brad Moss, Edward Lindsey, Edwin Soto, Frantz Cerant, Laura Rowe, Maria Montoya, Natasha Holder, Sadeasia Whyte, Shanae Roberts, Simone Simpson, Yeislee Flores, Kristel Pierre, Titus Coe, Krystal Ellis, Julio Alfonso, Marquez Burnside"}, {"raw": "Owner Full Name equals , Alecha Edwards, Angie Kelly, Ann K Pierre, Carlos Sanchez"}, {"raw": "Client Status equals First Payment pending, Active, On Hold, Pending Cancellation, Suspended"}, {"raw": "Fee Paid In Full equals True"}, {"raw": "Legal Status equals Active Negotiation, Active Negotiation / Legal"}],
+      "columns": ["Owner Full Name", "Primary Contact Name", "Account Name", "Total Debt", "Fee Paid In Full", "Client Status", "Legal Status", "External SAS Id", "External RAM Id", "Creditor Type"],
+      "_note": "two separate Owner Full Name filters strongly imply custom filter logic (e.g. (1 OR 2) AND 3..); verify logic string in SF"
+    },
+    {
+      "label": "Paid In Full Assigned", "developerName": "Paid_In_Full_Assiggned", "scope": null,
+      "filters": [{"raw": "Fee Paid In Full equals True"}, {"raw": "Client Status equals First Payment pending, Active, On Hold, Pending Cancellation, Suspended"}, {"raw": "External SAS Id not equal to", "_note": "blank value = is not empty"}, {"raw": "External RAM Id not equal to", "_note": "blank value = is not empty"}, {"raw": "Debt Negotiator not equal to", "_note": "blank value = has a negotiator assigned"}],
+      "columns": ["Account Name", "Account Site", "Billing State/Province", "Phone", "Type", "Debt Negotiator", "Account Owner Alias", "Last Modified Date"]
+    },
+    {
+      "label": "Paid In Full To Be Assigned", "developerName": "Paid_In_Full", "scope": null,
+      "filters": [{"raw": "Fee Paid In Full equals True"}, {"raw": "Client Status equals First Payment pending, Active, On Hold, Pending Cancellation, Suspended"}, {"raw": "External SAS Id not equal to", "_note": "blank value = is not empty"}, {"raw": "External RAM Id not equal to", "_note": "blank value = is not empty"}, {"raw": "Debt Negotiator equals", "_note": "blank value = no negotiator assigned (unassigned)"}],
+      "columns": [], "_note": "columns rendered empty; likely same as Paid In Full Assigned"
+    },
+    {
+      "label": "Renee Clayton", "developerName": "Renee_Clayton", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Renee Clayton"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Ruben Galindo", "developerName": "Copy_of_Ruben", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Ruben Galindo"}],
+      "columns": [], "_note": "columns rendered empty; likely the standard 13-col personal layout"
+    },
+    {
+      "label": "Sarah Medina", "developerName": "Sarah_Medina", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Sarah Medina"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Simone Simpson", "developerName": "Simone_Simpson", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Simone Simpson"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Timothy Rivandeneira", "developerName": "Timothy_Rivandeneira", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name contains Timothy Rivadeneira"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    },
+    {
+      "label": "Vendors", "developerName": "Vendors_New", "scope": null,
+      "filters": [{"raw": "Account Record Type equals Vendor"}],
+      "columns": ["Account Name", "Account Site", "Billing State/Province", "Phone", "Type", "Account Owner Alias"]
+    },
+    {
+      "label": "Yeislee Flores", "developerName": "Yeislee_Flores", "scope": null,
+      "filters": [{"raw": "Client Status not equal to Cancelled, Graduated, Closed Duplicate"}, {"raw": "Owner Full Name equals Yeislee Flores"}],
+      "columns": ["Owner Full Name", "Client Status", "First Contract Signed Date", "Primary Contact", "Account Name", "Last Modified Date", "Last Contacted DateTime", "Sub Disposition", "Total Debt", "Payment Status", "Phone", "Billing State/Province", "Lead Id"]
+    }
+  ]
+}
