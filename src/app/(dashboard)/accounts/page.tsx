@@ -9,6 +9,7 @@ import {
 import { ACCOUNT_RECORD_TYPES } from "@/lib/record-types";
 import { InlineEditCell } from "@/components/lists/inline-edit-cell";
 import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
+import { buildWhere, type ListFilter } from "@/lib/list-views";
 
 interface AccountsPageProps {
   searchParams: Promise<{
@@ -58,27 +59,14 @@ const TYPE_LABEL: Record<string, string> = {
   OTHER: "Other",
 };
 
-// Mirrors the Salesforce Accounts list views Bar shared (2026-06-09). The
-// filter criteria are best-effort maps from the SF view names onto our Account
-// fields (Bar to correct any that are off); the per-rep owner lists (Angie
-// Kelly, David Medina, ...) are generated dynamically from account owners.
-const STATIC_VIEWS = [
+// The faithful Salesforce Account list views (incl. per-rep personal lists like
+// Angie Kelly) live in the ListView table — seeded from the live SF export by
+// prisma/seed-account-listviews.ts and applied below via buildWhere(). These
+// COMPUTED_VIEWS are the few genuinely-dynamic views that can't be expressed as
+// stored filters (they depend on the current user / current date).
+const COMPUTED_VIEWS = [
   { value: "business", label: "Business Accounts" },
-  { value: "client", label: "Client Accounts" },
-  { value: "all", label: "All Accounts" },
-  { value: "program-completion", label: "Accounts in Program Completion Stage" },
-  { value: "active-nsf", label: "Active 1st/2nd NSF" },
-  { value: "buyout-affiliate", label: "Buyout Affiliate" },
-  { value: "cancelled-transfers", label: "Cancelled - Transfers" },
-  { value: "cs-graduated", label: "CS Team's Accounts- Graduated" },
-  { value: "high-ucc-risk", label: "HIGH UCC RISK" },
-  { value: "my-account-teams", label: "My Accounts Teams" },
-  { value: "my-active", label: "My Active Accounts" },
-  { value: "my-cancelled", label: "My Cancelled Accounts" },
   { value: "my-open", label: "My Accounts" },
-  { value: "recent", label: "Recently Viewed" },
-  { value: "creditor", label: "Creditors" },
-  { value: "vendor", label: "Vendors" },
   { value: "this-week", label: "This Week's New" },
   { value: "today-activity", label: "Today's Activity" },
 ];
@@ -116,6 +104,13 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   const session = await auth();
   const myId = session?.user?.id ?? "";
 
+  // Stored list views (system + the faithful SF recreations, incl. per-rep lists)
+  const listViews = await prisma.listView.findMany({
+    where: { entity: "Account" },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { name: true, developerName: true, filters: true },
+  });
+
   const where: Prisma.AccountWhereInput = { isActive: true };
   if (params.recordType) where.recordType = params.recordType;
   if (search) {
@@ -133,7 +128,11 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   const tomorrow = new Date(todayStart);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  if (view === "business") {
+  if (view.startsWith("view:")) {
+    // Stored list view — apply its saved filter criteria.
+    const lv = listViews.find((v) => v.developerName === view.slice("view:".length));
+    if (lv) Object.assign(where, buildWhere((lv.filters as unknown as ListFilter[]) ?? []));
+  } else if (view === "business") {
     where.recordType = "BUSINESS_ACCOUNT";
   } else if (view === "client") {
     where.recordType = "CLIENT";
@@ -141,38 +140,12 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     where.recordType = "CREDITOR";
   } else if (view === "vendor") {
     where.recordType = "VENDOR";
-  } else if (view === "my-open" && myId) {
+  } else if ((view === "my-open" || view === "my-account-teams") && myId) {
     where.ownerId = myId;
   } else if (view === "this-week") {
     where.createdAt = { gte: weekStart };
   } else if (view === "today-activity") {
     where.updatedAt = { gte: todayStart, lt: tomorrow };
-  } else if (view === "program-completion") {
-    // SF "Accounts in Program Completion Stage" → graduated/completed program.
-    where.stage = "Graduated";
-  } else if (view === "active-nsf") {
-    // SF "Active 1st/2nd NSF" → active accounts currently in NSF.
-    where.stage = "Active";
-    where.paymentStatus = "NSF";
-  } else if (view === "buyout-affiliate") {
-    where.recordType = "BUYOUT";
-  } else if (view === "cancelled-transfers") {
-    where.stage = "Cancelled";
-    where.cancellationReason = { contains: "Transfer", mode: "insensitive" };
-  } else if (view === "cs-graduated") {
-    // SF "CS Team's Accounts- Graduated". We don't have account-team membership
-    // yet, so this currently filters by graduated stage only (Bar to refine).
-    where.stage = "Graduated";
-  } else if (view === "high-ucc-risk") {
-    where.highUccRisk = true;
-  } else if (view === "my-account-teams" && myId) {
-    where.ownerId = myId;
-  } else if (view === "my-active" && myId) {
-    where.ownerId = myId;
-    where.clientStatus = "Active";
-  } else if (view === "my-cancelled" && myId) {
-    where.ownerId = myId;
-    where.clientStatus = "Cancelled";
   } else if (view.startsWith("owner:")) {
     where.ownerId = view.slice("owner:".length);
   }
@@ -221,7 +194,12 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     .filter((r) => r.ownerId)
     .map((r) => ({ value: `owner:${r.ownerId}`, label: r.owner?.name || r.owner?.email || "Unknown owner" }))
     .sort((a, b) => a.label.localeCompare(b.label));
-  const allViews = [...STATIC_VIEWS, ...ownerViews];
+  // Stored list views (system + SF recreations) drive the picker; their filters
+  // are applied above via buildWhere(). COMPUTED_VIEWS + per-owner views follow.
+  const dbViews = listViews
+    .filter((v) => v.developerName)
+    .map((v) => ({ value: `view:${v.developerName}`, label: v.name }));
+  const allViews = [...dbViews, ...COMPUTED_VIEWS, ...ownerViews];
 
   const rows: SfRow[] = items.map((a) => {
     let sfData: Record<string, unknown> = {};
