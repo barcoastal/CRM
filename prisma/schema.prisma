@@ -389,9 +389,10 @@ model Account {
   paymentProcessor      String? // RAM | SAS | RELIANT (chosen processor for this account)
 
   // File Status
-  qualifiedStatus String?
-  highUccRisk     Boolean @default(false)
-  graduatedStatus String?
+  qualifiedStatus        String?
+  highUccRisk            Boolean @default(false)
+  programCompletionStage Boolean @default(false) // SF Program_Completion_Stage__c
+  graduatedStatus        String?
 
   // Financial Summary
   operatingExpenses           Float?

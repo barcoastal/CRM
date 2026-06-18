@@ -65,6 +65,18 @@ async function main() {
         filters.push(m);
       }
     }
+    // SF custom logic: an account uses ONE payment processor, so "External SAS Id
+    // is-set AND External RAM Id is-set" in SF means OR, not AND. Collapse the pair.
+    const sasIdx = filters.findIndex((f) => f.field === "externalSasId" && f.op === "IS_NOT_NULL");
+    const ramIdx = filters.findIndex((f) => f.field === "externalRamId" && f.op === "IS_NOT_NULL");
+    if (sasIdx >= 0 && ramIdx >= 0) {
+      const pair = [filters[sasIdx], filters[ramIdx]];
+      const rest = filters.filter((_, i) => i !== sasIdx && i !== ramIdx);
+      rest.push({ field: "OR", op: "OR", value: pair });
+      filters.length = 0;
+      filters.push(...rest);
+    }
+
     const columns = mapColumns(list.columns, list.label, warnings);
     const developerName = `SF_${list.developerName}`;
 

@@ -16,7 +16,8 @@ export type FilterOp =
   | "LT"
   | "LTE"
   | "IS_NULL"
-  | "IS_NOT_NULL";
+  | "IS_NOT_NULL"
+  | "OR"; // value is ListFilter[] — OR'd together (for SF custom filter logic)
 
 export interface ListFilter {
   field: string;
@@ -33,8 +34,19 @@ export interface ListFilter {
 export function buildWhere(filters: readonly ListFilter[]): Record<string, unknown> {
   const where: Record<string, unknown> = {};
   for (const f of filters) {
+    // OR group: { op: "OR", value: ListFilter[] } -> Prisma OR over the sub-filters.
+    if (f.op === "OR" && Array.isArray(f.value)) {
+      const ors = (f.value as ListFilter[])
+        .map((sub) => {
+          const node = filterToPrisma(sub);
+          return node === undefined ? null : { [sub.field]: node };
+        })
+        .filter(Boolean);
+      if (ors.length) where.OR = ([] as unknown[]).concat((where.OR as unknown[]) ?? [], ors);
+      continue;
+    }
     const node = filterToPrisma(f);
-    if (!node) continue;
+    if (node === undefined) continue; // IS_NULL legitimately returns null
     where[f.field] = node;
   }
   return where;

@@ -164,6 +164,7 @@ const ACCOUNT_FIELDS: ObjectField[] = [
   { key: "welcomeCallCompleted", label: "Welcome Call Completed", type: "boolean", source: "column" },
   { key: "firstPaymentReceived", label: "First Payment Received", type: "boolean", source: "column" },
   { key: "highUccRisk", label: "High UCC Risk", type: "boolean", source: "column" },
+  { key: "programCompletionStage", label: "Program Completion Stage", type: "boolean", source: "column" },
   { key: "isActive", label: "Is Active", type: "boolean", source: "column" },
   { key: "createdAt", label: "Created At", type: "date", source: "column" },
   { key: "updatedAt", label: "Updated At", type: "date", source: "column" },

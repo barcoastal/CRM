@@ -38,6 +38,7 @@ export const FIELD_MAP: Record<string, FieldDef> = {
   "External SAS Id": { key: "externalSasId", kind: "string" },
   "External RAM Id": { key: "externalRamId", kind: "string" },
   "HIGH UCC RISK": { key: "highUccRisk", kind: "boolean" },
+  "Program Completion Stage": { key: "programCompletionStage", kind: "boolean" },
   "Net Profit": { key: "netProfit", kind: "number" },
   "Fee Paid In Full": { key: "feePaidInFull", kind: "boolean" },
   "Total Debt": { key: "currentTotalDebt", kind: "number" },
@@ -48,7 +49,6 @@ export const FIELD_MAP: Record<string, FieldDef> = {
   // No Account equivalent — skipped, reported:
   "External Creditor Id": { kind: "unmappable", reason: "no external creditor id field on Account" },
   "Qualified Financial": { kind: "unmappable", reason: "no boolean 'qualified financial' field (qualifiedStatus is a string)" },
-  "Program Completion Stage": { kind: "unmappable", reason: "no Account field; closest is stage='Graduated' but semantics differ" },
   "Debt Negotiator": { kind: "unmappable", reason: "negotiator lives on Client, not Account" },
 };
 
