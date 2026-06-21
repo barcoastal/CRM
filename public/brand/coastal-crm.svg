@@ -1,0 +1,9 @@
+<svg width="380" height="80" viewBox="0 0 380 80" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(0,16) scale(0.227)">
+    <path d="M0 194.283L132.364 61.8994L167.815 97.3511V109.056L132.364 144.686L70.4472 206.583H12.3198L0 194.283Z" fill="#3052FF"/>
+    <path d="M90.9802 103.3L132.384 61.8967L70.467 0H12.3198L0 12.3198L90.9802 103.3Z" fill="#7FB2FF"/>
+  </g>
+  <text x="66" y="52" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="42" font-weight="700" letter-spacing="-1">
+    <tspan fill="#0D121C">Coastal</tspan><tspan fill="#3052FF"> CRM</tspan>
+  </text>
+</svg>

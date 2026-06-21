@@ -72,89 +72,21 @@ export default function LoginPage() {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center text-center px-8">
-          {/* Geometric rings */}
-          <div className="relative mb-12" style={{ width: 200, height: 200 }}>
-            {/* Ring 1 */}
+          {/* Brand chevron */}
+          <div className="relative mb-12 flex items-center justify-center" style={{ width: 200, height: 200 }}>
             <div
               className="absolute"
-              style={{
-                width: 200,
-                height: 200,
-                top: 0,
-                left: 0,
-                borderRadius: "50%",
-                border: "2px solid rgba(48,82,255,0.25)",
-              }}
-            />
-            {/* Ring 2 */}
-            <div
-              className="absolute"
-              style={{
-                width: 150,
-                height: 150,
-                top: 25,
-                left: 25,
-                borderRadius: "50%",
-                border: "2px solid rgba(48,82,255,0.35)",
-              }}
-            />
-            {/* Ring 3 */}
-            <div
-              className="absolute"
-              style={{
-                width: 100,
-                height: 100,
-                top: 50,
-                left: 50,
-                borderRadius: "50%",
-                border: "2px solid rgba(48,82,255,0.45)",
-              }}
-            />
-            {/* Center filled circle */}
-            <div
-              className="absolute gradient-primary"
-              style={{
-                width: 60,
-                height: 60,
-                top: 70,
-                left: 70,
-                borderRadius: "50%",
-              }}
-            />
-            {/* Dots */}
-            <div
-              className="absolute"
-              style={{
-                width: 8,
-                height: 8,
-                top: -4,
-                left: 96,
-                borderRadius: "50%",
-                background: "#3052ff",
-              }}
+              style={{ inset: 0, borderRadius: "50%", border: "2px solid rgba(48,82,255,0.25)" }}
             />
             <div
               className="absolute"
-              style={{
-                width: 8,
-                height: 8,
-                bottom: 20,
-                right: -4,
-                borderRadius: "50%",
-                background: "#3052ff",
-              }}
+              style={{ top: 25, left: 25, width: 150, height: 150, borderRadius: "50%", border: "2px solid rgba(48,82,255,0.35)" }}
             />
-            <div
-              className="absolute"
-              style={{
-                width: 8,
-                height: 8,
-                bottom: -4,
-                left: 60,
-                borderRadius: "50%",
-                background: "#3052ff",
-                opacity: 0.5,
-              }}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/chevron-white.svg"
+              alt="Coastal CRM"
+              style={{ width: 92, height: "auto", position: "relative", zIndex: 1 }}
             />
           </div>
 
