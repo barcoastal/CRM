@@ -75,7 +75,7 @@ const TABS: TabItem[] = [
  * Modeled directly from cdcrm.lightning.force.com screenshots.
  */
 export function SldsHeader({
-  appName = "Sales Operations",
+  appName = "Coastal CRM",
   userInitials = "U",
   userName,
 }: {
