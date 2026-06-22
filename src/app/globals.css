@@ -40,9 +40,10 @@
 }
 
 .sf-app-badge {
-  background: #16325c;
+  background: #3052ff;
   width: 36px;
   height: 36px;
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -50,10 +51,8 @@
 }
 
 .sf-app-badge-icon {
-  width: 18px;
-  height: 18px;
-  background: #fff;
-  clip-path: polygon(0 30%, 50% 0, 100% 30%, 100% 100%, 0 100%);
+  width: 26px;
+  height: 26px;
 }
 
 .sf-search-wrap {

@@ -100,7 +100,12 @@ export function SldsHeader({
       {/* Row 1 — minimal: small left app badge, centered search, right utility icons */}
       <div className="sf-global-bar">
         <Link href="/dashboard" className="sf-app-badge" title={appName}>
-          <span className="sf-app-badge-icon" aria-hidden="true" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/mark-white.svg"
+            alt="Coastal CRM"
+            className="sf-app-badge-icon"
+          />
         </Link>
 
         <div className="sf-search-wrap">

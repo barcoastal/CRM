@@ -1,9 +1,1 @@
-<svg width="380" height="80" viewBox="0 0 380 80" xmlns="http://www.w3.org/2000/svg">
-  <g transform="translate(0,16) scale(0.227)">
-    <path d="M0 194.283L132.364 61.8994L167.815 97.3511V109.056L132.364 144.686L70.4472 206.583H12.3198L0 194.283Z" fill="#3052FF"/>
-    <path d="M90.9802 103.3L132.384 61.8967L70.467 0H12.3198L0 12.3198L90.9802 103.3Z" fill="#7FB2FF"/>
-  </g>
-  <text x="66" y="52" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="42" font-weight="700" letter-spacing="-1">
-    <tspan fill="#0D121C">Coastal</tspan><tspan fill="#3052FF"> CRM</tspan>
-  </text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="104" viewBox="0 0 512 104"><g transform="translate(8,4) scale(0.4174)"><g transform="translate(-70,-140)"><path d="M 96 190 C 184 152 168 152 256 190 C 344 228 328 228 416 190" stroke="#7FB2FF" stroke-width="44" fill="none" stroke-linecap="round"/><path d="M 96 256 C 184 218 168 218 256 256 C 344 294 328 294 416 256" stroke="#5C8DFF" stroke-width="44" fill="none" stroke-linecap="round"/><path d="M 96 322 C 184 284 168 284 256 322 C 344 360 328 360 416 322" stroke="#3052FF" stroke-width="44" fill="none" stroke-linecap="round"/></g></g><text x="150" y="68" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="50" font-weight="800" letter-spacing="-1.5"><tspan fill="#0D121C">Coastal</tspan><tspan dx="10" fill="#3052FF">CRM</tspan></text></svg>

@@ -84,9 +84,9 @@ export default function LoginPage() {
             />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/brand/chevron-white.svg"
+              src="/brand/mark-white.svg"
               alt="Coastal CRM"
-              style={{ width: 92, height: "auto", position: "relative", zIndex: 1 }}
+              style={{ width: 120, height: "auto", position: "relative", zIndex: 1 }}
             />
           </div>
 
