@@ -44,11 +44,13 @@ export function UserForm({
   const [managerId, setManagerId] = useState<string>(initial?.managerId ?? "");
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
   const [submitting, setSubmitting] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
+    setJustSaved(false);
     setError(null);
 
     const body: Record<string, unknown> = {
@@ -76,8 +78,16 @@ export function UserForm({
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to save user");
-      router.push(`/settings/users/${data.id}`);
-      router.refresh();
+      // Unblock the button immediately — the write is done. Then do ONE
+      // navigation per path (the old code did push + refresh, two full
+      // server re-renders, which kept "Saving…" lit the whole time).
+      setSubmitting(false);
+      setJustSaved(true);
+      if (isEdit) {
+        router.refresh(); // already on this page; just re-pull fresh data in the background
+      } else {
+        router.push(`/settings/users/${data.id}`); // land on the new user's page
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save user");
       setSubmitting(false);
@@ -85,7 +95,7 @@ export function UserForm({
   }
 
   return (
-    <form onSubmit={submit}>
+    <form onSubmit={submit} onChange={() => justSaved && setJustSaved(false)}>
       <header style={{
         background: "#fff", padding: "12px 20px", border: "1px solid #d8dde6",
         borderRadius: 4, marginBottom: 12,
@@ -112,7 +122,7 @@ export function UserForm({
           className="slds-button slds-button_brand"
           disabled={submitting}
         >
-          {submitting ? "Saving…" : "Save"}
+          {submitting ? "Saving…" : justSaved ? "Saved ✓" : "Save"}
         </button>
       </header>
 
