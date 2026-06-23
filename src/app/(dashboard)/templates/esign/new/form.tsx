@@ -24,7 +24,7 @@ export function NewTemplateForm() {
     e.preventDefault();
     setError(null);
     if (!file) {
-      setError("Please choose a PDF file.");
+      setError("Please choose a PDF or Word document.");
       return;
     }
     if (!name.trim()) {
@@ -60,17 +60,17 @@ export function NewTemplateForm() {
     >
       <div>
         <label className="block text-[12px] font-semibold text-[#444656] uppercase tracking-[0.4px] mb-1.5">
-          PDF File
+          Document (PDF or Word)
         </label>
         <div className="flex items-center gap-3">
           <label
             className="inline-flex items-center gap-2 px-4 py-2 rounded border border-[#d8dde6] text-[13px] font-semibold text-[#131b2e] cursor-pointer hover:bg-[#f2f3ff]"
           >
             <Upload className="size-4" />
-            Choose PDF
+            Choose file
             <input
               type="file"
-              accept="application/pdf,.pdf"
+              accept="application/pdf,.pdf,.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
               className="hidden"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
@@ -84,6 +84,9 @@ export function NewTemplateForm() {
             <span className="text-[12px] text-[#706e6b]">No file selected.</span>
           )}
         </div>
+        <p className="text-[12px] text-[#706e6b] mt-1.5">
+          Accepts PDF or Word (.docx, .doc). Word files are converted to PDF on upload.
+        </p>
       </div>
 
       <div>

@@ -1,0 +1,5 @@
+# Install headless LibreOffice (Writer) so the e-sign upload can convert
+# Word documents (.docx/.doc) to PDF via `soffice --headless`. Fonts are
+# included so converted contracts render with sane typefaces.
+[phases.setup]
+aptPkgs = ["libreoffice-writer", "libreoffice-core", "fonts-liberation", "fonts-dejavu", "fontconfig"]
