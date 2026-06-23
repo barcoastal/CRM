@@ -14,6 +14,19 @@
   }
 }
 
+/* Brand primary buttons render an inline blue gradient
+   (linear-gradient(135deg, #0034e4, #3052ff)). Their Tailwind `text-white`
+   lives in @layer utilities and loses in the cascade to the unlayered SLDS
+   stylesheet's anchor/button color, so the text + lucide icons (currentColor)
+   render dark and unreadable. Force white here — unlayered + !important so it
+   beats both the SLDS sheet and the layered utility. */
+[style*="#0034e4"],
+[style*="rgb(0, 52, 228)"],
+[style*="rgb(0,52,228)"],
+[style*="rgb(0 52 228)"] {
+  color: #fff !important;
+}
+
 /* SLDS uses --lwc-* CSS custom properties extensively. Apply them globally. */
 :root {
   --slds-c-card-color-background: #fff;
