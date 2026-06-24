@@ -24,10 +24,10 @@ export async function convertWordToPdf(input: Buffer, originalName: string): Pro
     const inPath = path.join(work, `input${ext}`);
     await writeFile(inPath, input);
 
-    let lastErr: unknown = null;
+    const attempts: string[] = [];
     for (const bin of SOFFICE_BINS) {
       try {
-        await execFileP(
+        const { stdout, stderr } = await execFileP(
           bin,
           [
             "--headless",
@@ -40,25 +40,37 @@ export async function convertWordToPdf(input: Buffer, originalName: string): Pro
             work,
             inPath,
           ],
-          { timeout: 60_000, maxBuffer: 64 * 1024 * 1024 },
+          {
+            timeout: 60_000,
+            maxBuffer: 64 * 1024 * 1024,
+            // soffice needs a writable HOME for its profile/bootstrap.
+            env: { ...process.env, HOME: profile },
+          },
         );
 
         const files = await readdir(work);
         const pdfName = files.find((f) => f.toLowerCase().endsWith(".pdf"));
-        if (!pdfName) throw new Error("LibreOffice produced no PDF output");
+        if (!pdfName) {
+          throw new Error(
+            `no PDF produced (stdout: ${String(stdout).trim() || "—"}; stderr: ${String(stderr).trim() || "—"})`,
+          );
+        }
         const out = await readFile(path.join(work, pdfName));
         if (out.length < 4 || out.subarray(0, 4).toString("ascii") !== "%PDF") {
-          throw new Error("Converted file is not a valid PDF");
+          throw new Error("converted file is not a valid PDF");
         }
         return out;
       } catch (e) {
-        lastErr = e;
-        // try the next binary name
+        const err = e as NodeJS.ErrnoException & { stderr?: Buffer | string };
+        if (err.code === "ENOENT") {
+          attempts.push(`${bin}: not installed (ENOENT — soffice binary not on PATH)`);
+        } else {
+          const stderr = err.stderr ? String(err.stderr).trim() : "";
+          attempts.push(`${bin}: ${stderr || err.message}`);
+        }
       }
     }
-    throw new Error(
-      `Word-to-PDF conversion failed: ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
-    );
+    throw new Error(`Word-to-PDF conversion failed — ${attempts.join(" | ")}`);
   } finally {
     await rm(work, { recursive: true, force: true }).catch(() => {});
     await rm(profile, { recursive: true, force: true }).catch(() => {});

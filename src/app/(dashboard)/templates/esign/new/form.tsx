@@ -41,8 +41,9 @@ export function NewTemplateForm() {
 
       const res = await fetch("/api/esign/templates", { method: "POST", body: fd });
       if (!res.ok) {
-        const j = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(j.error ?? `Upload failed (${res.status})`);
+        const j = (await res.json().catch(() => ({}))) as { error?: string; details?: string };
+        const base = j.error ?? `Upload failed (${res.status})`;
+        throw new Error(j.details ? `${base} — ${j.details}` : base);
       }
       const tpl = (await res.json()) as { id: string };
       router.push(`/templates/esign/${tpl.id}`);
