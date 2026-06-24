@@ -53,11 +53,26 @@ export const SF_DEFAULTS = {
   frequency: "WEEKLY" as Frequency,
 } as const;
 
+/**
+ * Setup fee mirrors SF's `SetupFee__mdt` table: $850 without a legal plan,
+ * $995 when a legal plan is required (same for both Citadel and Victory Legal
+ * Plan network types — only the Legal_Plan_Required__c flag changes the fee).
+ * Source: SetupFee__mdt records in the coastal org (queried 2026-06-23).
+ */
+export const SETUP_FEE_NO_LEGAL_PLAN = 850;
+export const SETUP_FEE_WITH_LEGAL_PLAN = 995;
+
+export function resolveSetupFee(legalPlanRequired?: boolean | null): number {
+  return legalPlanRequired ? SETUP_FEE_WITH_LEGAL_PLAN : SETUP_FEE_NO_LEGAL_PLAN;
+}
+
 export interface PaymentScheduleInput {
   totalDebt: number;
   termMonths?: number;
   frequency?: Frequency;
   firstPaymentDate?: string | Date;
+  /** Drives setup fee ($995 if true, else $850) when setupFee isn't given. */
+  legalPlanRequired?: boolean;
   // overrides for defaults
   settlementPercent?: number;
   programFeePercent?: number;
@@ -134,7 +149,7 @@ export function generatePaymentSchedule(input: PaymentScheduleInput): PaymentSch
   const sp = input.settlementPercent ?? SF_DEFAULTS.settlementPercent;
   const pp = input.programFeePercent ?? SF_DEFAULTS.programFeePercent;
   const rp = input.retainerPercent ?? SF_DEFAULTS.retainerPercent;
-  const setupFee = input.setupFee ?? SF_DEFAULTS.setupFee;
+  const setupFee = input.setupFee ?? resolveSetupFee(input.legalPlanRequired);
   const servicePerPeriod = input.serviceFeePerPeriod ?? SF_DEFAULTS.serviceFeePerPeriod;
   const monthlyBankFee = input.monthlyBankFee ?? SF_DEFAULTS.monthlyBankFee;
   const bankSetupFee = input.bankSetupFee ?? SF_DEFAULTS.bankSetupFee;

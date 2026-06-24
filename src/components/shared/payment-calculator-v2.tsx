@@ -35,6 +35,7 @@ export type PaymentCalcInitial = {
   totalDebt?: number;
   termMonths?: number;
   firstPaymentDate?: string;
+  legalPlanRequired?: boolean;
 };
 
 const TERM_OPTIONS = Array.from({ length: 30 }, (_, i) => i + 1);
@@ -52,19 +53,22 @@ export function PaymentCalculatorV2({
   const [firstPaymentDate, setFirstPaymentDate] = useState(
     initial?.firstPaymentDate ?? new Date().toISOString().slice(0, 10)
   );
+  const [legalPlanRequired, setLegalPlanRequired] = useState(initial?.legalPlanRequired ?? false);
   const [recordType, setRecordType] = useState<"Business Lead">("Business Lead");
   const [computed, setComputed] = useState<PaymentScheduleResult | null>(null);
   const [saving, setSaving] = useState(false);
 
   const live: PaymentScheduleResult = useMemo(
-    () => generatePaymentSchedule({ totalDebt, termMonths, firstPaymentDate }),
-    [totalDebt, termMonths, firstPaymentDate]
+    () => generatePaymentSchedule({ totalDebt, termMonths, firstPaymentDate, legalPlanRequired }),
+    [totalDebt, termMonths, firstPaymentDate, legalPlanRequired]
   );
   const result = computed ?? live;
   const t = result.totals;
 
   function calculate() {
-    setComputed(generatePaymentSchedule({ totalDebt, termMonths, firstPaymentDate }));
+    setComputed(
+      generatePaymentSchedule({ totalDebt, termMonths, firstPaymentDate, legalPlanRequired })
+    );
   }
 
   async function save() {
@@ -81,7 +85,8 @@ export function PaymentCalculatorV2({
           settlementPercent: SF_DEFAULTS.settlementPercent,
           programFeePercent: SF_DEFAULTS.programFeePercent,
           retainerPercent: SF_DEFAULTS.retainerPercent,
-          setupFee: SF_DEFAULTS.setupFee,
+          legalPlanRequired,
+          setupFee: t.setupFee,
           serviceFeePerPeriod: SF_DEFAULTS.serviceFeePerPeriod,
           bankFeePerPeriod: SF_DEFAULTS.monthlyBankFee,
           citadelFeePerPeriod: 0,
@@ -175,12 +180,15 @@ export function PaymentCalculatorV2({
           <NumField label="Bank Setup Fee" v={t.bankSetupFee} readonly prefix="$" />
           <SelectField label="Payment Frequency" value="Weekly" onChange={() => {}} options={["Weekly"]} disabled />
           <SelectField
-            label="Setup Fee"
-            value={String(t.setupFee)}
-            onChange={() => {}}
-            options={[String(t.setupFee)]}
-            disabled
+            label="Legal Plan Required"
+            value={legalPlanRequired ? "Yes" : "No"}
+            onChange={(v) => {
+              setLegalPlanRequired(v === "Yes");
+              setComputed(null);
+            }}
+            options={["No", "Yes"]}
           />
+          <NumField label="Setup Fee" v={t.setupFee} readonly prefix="$" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 12, marginBottom: 12 }}>
           <SelectField

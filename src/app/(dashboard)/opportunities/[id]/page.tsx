@@ -749,6 +749,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           firstPaymentDate: latestCalc?.firstPaymentDate
             ? latestCalc.firstPaymentDate.toISOString().slice(0, 10)
             : new Date().toISOString().slice(0, 10),
+          legalPlanRequired: opp.legalPlanRequired ?? false,
         }}
       />
     </Section>

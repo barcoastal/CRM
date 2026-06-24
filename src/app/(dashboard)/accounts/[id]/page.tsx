@@ -451,6 +451,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           firstPaymentDate: account.programStartDate
             ? account.programStartDate.toISOString().slice(0, 10)
             : new Date().toISOString().slice(0, 10),
+          legalPlanRequired: activeOpp.legalPlanRequired ?? false,
         }}
       />
     </Section>
