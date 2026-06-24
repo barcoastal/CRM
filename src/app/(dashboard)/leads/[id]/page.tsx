@@ -12,6 +12,7 @@ import { LeadHealthCheckCard } from "@/components/leads/lead-health-check-card";
 import { PaymentCalculatorV2 } from "@/components/shared/payment-calculator-v2";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { DebtInformation } from "@/components/leads/debt-information";
+import { CreditorTable } from "@/components/leads/creditor-table";
 import { LeadRelated } from "@/components/leads/lead-related";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { CallButton } from "@/components/dialer/call-button";
@@ -502,61 +503,25 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     </Section>
   );
 
-  // Section 8: Creditor Information (TwoColumnsLeftToRight)
-  // Col1: creditors 1-5 (Name, Total Debt, Payment, Payment Frequency each).
-  // Col2: creditors 6-10 (same fields each).
-  // Interleaved row-by-row pairs creditor N with creditor N+5.
+  // Section 8: Creditor Information — rendered as an SF-style table from the
+  // flat Creditor_1..10 fields in sfDataJson (matches the Salesforce layout).
+  const sfNum = (k: string): number | null => {
+    const v = sfData[k];
+    if (v == null || v === "") return null;
+    const n = typeof v === "number" ? v : Number(String(v).replace(/[^0-9.\-]/g, ""));
+    return Number.isFinite(n) ? n : null;
+  };
+  const creditorRows = Array.from({ length: 10 }, (_, i) => i + 1)
+    .map((n) => ({
+      name: sf(`Creditor_${n}_Name__c`) ?? "",
+      debt: sfNum(`Creditor_${n}_Total_Debt__c`),
+      payment: sfNum(`Creditor_${n}_Payment__c`),
+      frequency: sf(`Creditor_${n}_Payment_Frequency__c`),
+    }))
+    .filter((r) => r.name.trim() !== "" || r.debt != null || r.payment != null);
   const creditorInformation = (
-    <Section title="Creditor Information" defaultOpen={false}>
-      <FieldGrid
-        fields={[
-          // Creditor 1 / 6
-          ["Creditor 1 Name", sf("Creditor_1_Name__c")],
-          ["Creditor 6 Name", sf("Creditor_6_Name__c")],
-          ["Creditor 1 Total Debt", sfDollar("Creditor_1_Total_Debt__c")],
-          ["Creditor 6 Total Debt", sfDollar("Creditor_6_Total_Debt__c")],
-          ["Creditor 1 Payment", sfDollar("Creditor_1_Payment__c")],
-          ["Creditor 6 Payment", sfDollar("Creditor_6_Payment__c")],
-          ["Creditor 1 Payment Frequency", sf("Creditor_1_Payment_Frequency__c")],
-          ["Creditor 6 Payment Frequency", sf("Creditor_6_Payment_Frequency__c")],
-          // Creditor 2 / 7
-          ["Creditor 2 Name", sf("Creditor_2_Name__c")],
-          ["Creditor 7 Name", sf("Creditor_7_Name__c")],
-          ["Creditor 2 Total Debt", sfDollar("Creditor_2_Total_Debt__c")],
-          ["Creditor 7 Total Debt", sfDollar("Creditor_7_Total_Debt__c")],
-          ["Creditor 2 Payment", sfDollar("Creditor_2_Payment__c")],
-          ["Creditor 7 Payment", sfDollar("Creditor_7_Payment__c")],
-          ["Creditor 2 Payment Frequency", sf("Creditor_2_Payment_Frequency__c")],
-          ["Creditor 7 Payment Frequency", sf("Creditor_7_Payment_Frequency__c")],
-          // Creditor 3 / 8
-          ["Creditor 3 Name", sf("Creditor_3_Name__c")],
-          ["Creditor 8 Name", sf("Creditor_8_Name__c")],
-          ["Creditor 3 Total Debt", sfDollar("Creditor_3_Total_Debt__c")],
-          ["Creditor 8 Total Debt", sfDollar("Creditor_8_Total_Debt__c")],
-          ["Creditor 3 Payment", sfDollar("Creditor_3_Payment__c")],
-          ["Creditor 8 Payment", sfDollar("Creditor_8_Payment__c")],
-          ["Creditor 3 Payment Frequency", sf("Creditor_3_Payment_Frequency__c")],
-          ["Creditor 8 Payment Frequency", sf("Creditor_8_Payment_Frequency__c")],
-          // Creditor 4 / 9
-          ["Creditor 4 Name", sf("Creditor_4_Name__c")],
-          ["Creditor 9 Name", sf("Creditor_9_Name__c")],
-          ["Creditor 4 Total Debt", sfDollar("Creditor_4_Total_Debt__c")],
-          ["Creditor 9 Total Debt", sfDollar("Creditor_9_Total_Debt__c")],
-          ["Creditor 4 Payment", sfDollar("Creditor_4_Payment__c")],
-          ["Creditor 9 Payment", sfDollar("Creditor_9_Payment__c")],
-          ["Creditor 4 Payment Frequency", sf("Creditor_4_Payment_Frequency__c")],
-          ["Creditor 9 Payment Frequency", sf("Creditor_9_Payment_Frequency__c")],
-          // Creditor 5 / 10
-          ["Creditor 5 Name", sf("Creditor_5_Name__c")],
-          ["Creditor 10 Name", sf("Creditor_10_Name__c")],
-          ["Creditor 5 Total Debt", sfDollar("Creditor_5_Total_Debt__c")],
-          ["Creditor 10 Total Debt", sfDollar("Creditor_10_Total_Debt__c")],
-          ["Creditor 5 Payment", sfDollar("Creditor_5_Payment__c")],
-          ["Creditor 10 Payment", sfDollar("Creditor_10_Payment__c")],
-          ["Creditor 5 Payment Frequency", sf("Creditor_5_Payment_Frequency__c")],
-          ["Creditor 10 Payment Frequency", sf("Creditor_10_Payment_Frequency__c")],
-        ]}
-      />
+    <Section title="Creditor Information">
+      <CreditorTable rows={creditorRows} />
     </Section>
   );
 
