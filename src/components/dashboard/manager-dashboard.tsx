@@ -255,12 +255,9 @@ export function ManagerDashboard({ userName }: { userName: string }) {
             </div>
           </div>
           <div style={{ display: "flex", gap: 6 }}>
-            <button style={btnStyle("ghost")}>Open</button>
             <button style={btnStyle("ghost")} onClick={() => void load()} disabled={loading}>
               {loading ? "Refreshing…" : "Refresh"}
             </button>
-            <button style={btnStyle("ghost")}>Subscribe</button>
-            <button style={btnStyle("ghost")}>Edit</button>
           </div>
         </div>
         <div style={{ fontSize: 12, color: "#706e6b", marginBottom: 12 }}>
