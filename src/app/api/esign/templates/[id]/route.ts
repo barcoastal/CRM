@@ -4,6 +4,7 @@ import { requireAuthOrRespond } from "@/lib/api-auth";
 import { auditWrite } from "@/lib/audit";
 import { deleteTemplatePdf } from "@/lib/esign/storage";
 import { MERGE_PATH_VALUES, RECORD_TYPES } from "@/lib/esign/merge-paths";
+import { COLLECT_TARGET_VALUES } from "@/lib/esign/collect-targets";
 
 interface BoxInput {
   page: number;
@@ -13,6 +14,7 @@ interface BoxInput {
   height: number;
   label?: string;
   mergeValue?: string;
+  collectTo?: string;
 }
 
 function sanitizeBoxes(input: unknown): BoxInput[] {
@@ -39,6 +41,10 @@ function sanitizeBoxes(input: unknown): BoxInput[] {
     // Data fields carry a CRM merge path; keep it only if it's a known path.
     if (typeof r.mergeValue === "string" && MERGE_PATH_VALUES.has(r.mergeValue)) {
       box.mergeValue = r.mergeValue;
+    }
+    // Signer fields may write back to a known CRM target on signing.
+    if (typeof r.collectTo === "string" && COLLECT_TARGET_VALUES.has(r.collectTo)) {
+      box.collectTo = r.collectTo;
     }
     out.push(box);
   }

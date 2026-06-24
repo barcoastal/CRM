@@ -25,8 +25,17 @@ import { prisma } from "@/lib/prisma";
 import { readEnvelopePdf, signedDir, ensureESignDirs } from "@/lib/esign/storage";
 import { renderSignedCopyHtml, renderSenderNotificationHtml, sendESignEmail } from "@/lib/esign/send-email";
 import { notify } from "@/lib/notifications/notify";
+import { collectTarget } from "@/lib/esign/collect-targets";
 
-type Box = { page: number; x: number; y: number; width: number; height: number; label?: string };
+type Box = {
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label?: string;
+  collectTo?: string;
+};
 
 function decodeDataUrl(s: string): { mime: string; buffer: Buffer } | null {
   const m = /^data:([^;]+);base64,(.+)$/i.exec(s);
@@ -239,6 +248,36 @@ export async function POST(
       data: { lastError: msg.slice(0, 500) },
     });
     return NextResponse.json({ error: "Failed to stamp PDF", details: msg }, { status: 500 });
+  }
+
+  // Collect signer-entered values back onto the linked Account (overwrite).
+  // Best-effort: a write-back failure must not block signing completion.
+  if (envelope.accountId) {
+    try {
+      const accountUpdates: Record<string, string> = {};
+      const textBoxesC = (envelope.textBoxes ?? []) as unknown as Box[];
+      const textValuesC = body.textValues ?? {};
+      textBoxesC.forEach((box, i) => {
+        const target = collectTarget(box.collectTo);
+        if (!target) return;
+        const v = (textValuesC[String(i)] ?? "").toString().trim();
+        if (v) accountUpdates[target.field] = v;
+      });
+      const checkboxBoxesC = (envelope.checkboxBoxes ?? []) as unknown as Box[];
+      const checkboxValuesC = body.checkboxValues ?? {};
+      checkboxBoxesC.forEach((box, i) => {
+        const target = collectTarget(box.collectTo);
+        if (!target || !checkboxValuesC[String(i)]) return;
+        // A ticked checkbox writes its label as the value (e.g. "Checking").
+        const v = (box.label ?? "").toString().trim();
+        if (v) accountUpdates[target.field] = v;
+      });
+      if (Object.keys(accountUpdates).length > 0) {
+        await prisma.account.update({ where: { id: envelope.accountId }, data: accountUpdates });
+      }
+    } catch {
+      // Swallow — the document is signed; collection is secondary.
+    }
   }
 
   // Mark complete + record audit events.

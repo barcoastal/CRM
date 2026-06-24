@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Plus, Save } from "@/components/icons/lucide";
 import { MERGE_PATHS, RECORD_TYPES } from "@/lib/esign/merge-paths";
+import { COLLECT_TARGETS } from "@/lib/esign/collect-targets";
 import { PdfBoxPlacer } from "@/components/esign/pdf-box-placer";
 
 interface Box {
@@ -14,6 +15,7 @@ interface Box {
   height: number;
   label?: string;
   mergeValue?: string;
+  collectTo?: string;
 }
 
 export interface EditInitial {
@@ -55,6 +57,7 @@ function normalizeBoxes(input: unknown[]): Box[] {
         height,
         label: typeof r.label === "string" ? r.label : undefined,
         mergeValue: typeof r.mergeValue === "string" ? r.mergeValue : undefined,
+        collectTo: typeof r.collectTo === "string" ? r.collectTo : undefined,
       } as Box;
     })
     .filter((b): b is Box => b !== null);
@@ -409,6 +412,7 @@ export function EditClient({ initial }: { initial: EditInitial }) {
             boxes={textBoxes}
             setBoxes={setTextBoxes}
             pageCount={initial.pageCount}
+            collectTargets
             onAdd={() => addBoxToList(setTextBoxes, { label: "Field", width: 200, height: 28 })}
           />
           <BoxList
@@ -423,6 +427,7 @@ export function EditClient({ initial }: { initial: EditInitial }) {
             boxes={checkboxBoxes}
             setBoxes={setCheckboxBoxes}
             pageCount={initial.pageCount}
+            collectTargets
             onAdd={() => addBoxToList(setCheckboxBoxes, { label: "Checkbox", width: 18, height: 18 })}
           />
           </div>
@@ -519,6 +524,7 @@ function BoxList({
   pageCount,
   onAdd,
   onDefaults,
+  collectTargets,
 }: {
   title: string;
   boxes: Box[];
@@ -526,6 +532,7 @@ function BoxList({
   pageCount: number;
   onAdd: () => void;
   onDefaults?: () => void;
+  collectTargets?: boolean;
 }) {
   function updateBox(idx: number, patch: Partial<Box>) {
     setBoxes((prev) => prev.map((b, i) => (i === idx ? { ...b, ...patch } : b)));
@@ -564,7 +571,7 @@ function BoxList({
         <table className="w-full border-collapse text-[12px]">
           <thead>
             <tr>
-              {["Page", "X", "Y", "Width", "Height", "Label", ""].map((h) => (
+              {["Page", "X", "Y", "Width", "Height", "Label", ...(collectTargets ? ["Collect to"] : []), ""].map((h) => (
                 <th
                   key={h}
                   className="text-left text-[10px] font-semibold text-[#444656] uppercase tracking-[0.4px] px-2 py-1.5 bg-[#f2f3ff]"
@@ -627,6 +634,22 @@ function BoxList({
                     className="w-full px-2 py-1 rounded border border-[#d8dde6] text-[12px] outline-none"
                   />
                 </td>
+                {collectTargets ? (
+                  <td className="px-2 py-1.5 border-b border-[#ecebea]">
+                    <select
+                      value={b.collectTo ?? ""}
+                      onChange={(e) => updateBox(idx, { collectTo: e.target.value || undefined })}
+                      className="w-full px-2 py-1 rounded border border-[#d8dde6] text-[12px] bg-white outline-none"
+                    >
+                      <option value="">— Don&apos;t save —</option>
+                      {COLLECT_TARGETS.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                ) : null}
                 <td className="px-2 py-1.5 border-b border-[#ecebea] text-right">
                   <button
                     type="button"

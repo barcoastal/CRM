@@ -22,6 +22,8 @@ export type Box = {
   label?: string;
   /** For data fields: the CRM merge path (e.g. "account.firstName"). */
   mergeValue?: string;
+  /** For signer fields: writable CRM target to save the value to on signing. */
+  collectTo?: string;
 };
 
 type Kind = "signature" | "initial" | "date" | "text" | "data" | "checkbox";
