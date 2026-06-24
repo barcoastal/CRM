@@ -27,7 +27,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { auditWrite } from "@/lib/audit";
 import { readTemplatePdf, saveEnvelopePdf } from "@/lib/esign/storage";
-import { buildMergeContextForOpportunity, fillAcroForm } from "@/lib/esign/merge";
+import { buildMergeContextForOpportunity, fillAcroForm, stampDataBoxes } from "@/lib/esign/merge";
 import { renderSignRequestHtml, sendESignEmail } from "@/lib/esign/send-email";
 import { RECORD_TYPES } from "@/lib/esign/merge-paths";
 
@@ -78,6 +78,12 @@ export async function POST(request: NextRequest) {
     const templateBuf = await readTemplatePdf(template.pdfPath);
     const mapping = (template.mergeMapping ?? {}) as Record<string, string>;
     mergedPdf = await fillAcroForm(templateBuf, mapping, ctx);
+    // Stamp positioned CRM data fields (for PDFs without AcroForm fields).
+    mergedPdf = await stampDataBoxes(
+      mergedPdf,
+      (template.dataBoxes ?? []) as unknown as Parameters<typeof stampDataBoxes>[1],
+      ctx,
+    );
   } catch (e) {
     return NextResponse.json(
       { error: "Failed to render PDF", details: e instanceof Error ? e.message : String(e) },
@@ -112,6 +118,8 @@ export async function POST(request: NextRequest) {
       initialBoxes: template.initialBoxes ?? [],
       dateBoxes: template.dateBoxes ?? [],
       textBoxes: template.textBoxes ?? [],
+      dataBoxes: template.dataBoxes ?? [],
+      checkboxBoxes: template.checkboxBoxes ?? [],
       createdById: session.userId,
     },
   });

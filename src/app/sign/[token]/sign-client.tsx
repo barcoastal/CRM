@@ -15,6 +15,7 @@ type Props = {
   initialBoxes: Box[];
   dateBoxes: Box[];
   textBoxes: Box[];
+  checkboxBoxes: Box[];
 };
 
 type AdoptStyle = "type-1" | "type-2" | "type-3" | "type-4" | "draw";
@@ -41,6 +42,7 @@ export function SignClient({
   initialBoxes,
   dateBoxes,
   textBoxes,
+  checkboxBoxes,
 }: Props) {
   const [adoptOpen, setAdoptOpen] = useState(false);
   const [adoptKind, setAdoptKind] = useState<"signature" | "initial">("signature");
@@ -55,6 +57,11 @@ export function SignClient({
   const [textValues, setTextValues] = useState<Record<string, string>>(() => {
     const d: Record<string, string> = {};
     textBoxes.forEach((_, i) => (d[String(i)] = ""));
+    return d;
+  });
+  const [checkboxValues, setCheckboxValues] = useState<Record<string, boolean>>(() => {
+    const d: Record<string, boolean> = {};
+    checkboxBoxes.forEach((_, i) => (d[String(i)] = false));
     return d;
   });
   const [declineOpen, setDeclineOpen] = useState(false);
@@ -93,6 +100,7 @@ export function SignClient({
           initial: initialDataUrl ?? signatureDataUrl,
           dateValues,
           textValues,
+          checkboxValues,
           fullName,
         }),
       });
@@ -275,6 +283,24 @@ export function SignClient({
                     style={{ width: "100%", padding: "8px 10px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, color: "#131b2e" }}
                   />
                 </div>
+              ))}
+            </Section>
+          )}
+
+          {checkboxBoxes.length > 0 && (
+            <Section label={`Check (${checkboxBoxes.length})`}>
+              {checkboxBoxes.map((b, i) => (
+                <label
+                  key={`cb-${i}`}
+                  style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, fontSize: 13, color: "#131b2e", cursor: "pointer" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checkboxValues[String(i)] ?? false}
+                    onChange={(e) => setCheckboxValues((d) => ({ ...d, [String(i)]: e.target.checked }))}
+                  />
+                  {b.label?.trim() ? b.label : `Checkbox (page ${b.page})`}
+                </label>
               ))}
             </Section>
           )}

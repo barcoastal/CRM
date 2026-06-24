@@ -10,7 +10,8 @@
  * origin BOTTOM-LEFT, with (x, y) the lower-left corner of the box.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MERGE_PATHS } from "@/lib/esign/merge-paths";
 
 export type Box = {
   page: number;
@@ -19,15 +20,19 @@ export type Box = {
   width: number;
   height: number;
   label?: string;
+  /** For data fields: the CRM merge path (e.g. "account.firstName"). */
+  mergeValue?: string;
 };
 
-type Kind = "signature" | "initial" | "date" | "text";
+type Kind = "signature" | "initial" | "date" | "text" | "data" | "checkbox";
 
 const KIND: Record<Kind, { w: number; h: number; label: string; color: string; fill: string }> = {
   signature: { w: 200, h: 40, label: "Signature", color: "#3052ff", fill: "rgba(48,82,255,0.12)" },
   initial: { w: 80, h: 32, label: "Initial", color: "#16a34a", fill: "rgba(22,163,74,0.12)" },
   date: { w: 130, h: 26, label: "Date", color: "#b45309", fill: "rgba(180,83,9,0.12)" },
   text: { w: 200, h: 28, label: "Field", color: "#7c3aed", fill: "rgba(124,58,237,0.10)" },
+  data: { w: 180, h: 24, label: "CRM field", color: "#0891b2", fill: "rgba(8,145,178,0.10)" },
+  checkbox: { w: 18, h: 18, label: "Checkbox", color: "#0d9488", fill: "rgba(13,148,136,0.12)" },
 };
 
 interface PageMeta {
@@ -55,6 +60,10 @@ export function PdfBoxPlacer({
   setDateBoxes,
   textBoxes,
   setTextBoxes,
+  dataBoxes,
+  setDataBoxes,
+  checkboxBoxes,
+  setCheckboxBoxes,
 }: {
   pdfUrl: string;
   signatureBoxes: Box[];
@@ -65,6 +74,10 @@ export function PdfBoxPlacer({
   setDateBoxes: React.Dispatch<React.SetStateAction<Box[]>>;
   textBoxes: Box[];
   setTextBoxes: React.Dispatch<React.SetStateAction<Box[]>>;
+  dataBoxes: Box[];
+  setDataBoxes: React.Dispatch<React.SetStateAction<Box[]>>;
+  checkboxBoxes: Box[];
+  setCheckboxBoxes: React.Dispatch<React.SetStateAction<Box[]>>;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [metas, setMetas] = useState<PageMeta[]>([]);
@@ -78,23 +91,35 @@ export function PdfBoxPlacer({
   const dragRef = useRef<DragState | null>(null);
 
   const listFor = useCallback(
-    (k: Kind): [Box[], React.Dispatch<React.SetStateAction<Box[]>>] =>
-      k === "signature"
-        ? [signatureBoxes, setSignatureBoxes]
-        : k === "initial"
-          ? [initialBoxes, setInitialBoxes]
-          : k === "date"
-            ? [dateBoxes, setDateBoxes]
-            : [textBoxes, setTextBoxes],
+    (k: Kind): [Box[], React.Dispatch<React.SetStateAction<Box[]>>] => {
+      switch (k) {
+        case "signature":
+          return [signatureBoxes, setSignatureBoxes];
+        case "initial":
+          return [initialBoxes, setInitialBoxes];
+        case "date":
+          return [dateBoxes, setDateBoxes];
+        case "text":
+          return [textBoxes, setTextBoxes];
+        case "data":
+          return [dataBoxes, setDataBoxes];
+        case "checkbox":
+          return [checkboxBoxes, setCheckboxBoxes];
+      }
+    },
     [
       signatureBoxes,
       initialBoxes,
       dateBoxes,
       textBoxes,
+      dataBoxes,
+      checkboxBoxes,
       setSignatureBoxes,
       setInitialBoxes,
       setDateBoxes,
       setTextBoxes,
+      setDataBoxes,
+      setCheckboxBoxes,
     ],
   );
 
@@ -102,6 +127,25 @@ export function PdfBoxPlacer({
     const [, setter] = listFor(kind);
     setter((prev) => prev.map((b, i) => (i === index ? { ...b, label } : b)));
   }
+
+  function updateMergeValue(index: number, mergeValue: string) {
+    setDataBoxes((prev) => prev.map((b, i) => (i === index ? { ...b, mergeValue } : b)));
+  }
+
+  // CRM merge fields grouped for the data-field picker.
+  const mergeGroups = useMemo(() => {
+    const out = new Map<string, typeof MERGE_PATHS>();
+    for (const p of MERGE_PATHS) {
+      const arr = out.get(p.group) ?? [];
+      arr.push(p);
+      out.set(p.group, arr);
+    }
+    return Array.from(out.entries());
+  }, []);
+  const mergeLabel = useCallback((value?: string) => {
+    if (!value) return "";
+    return MERGE_PATHS.find((p) => p.value === value)?.label ?? value;
+  }, []);
 
   // Load the PDF + page sizes.
   useEffect(() => {
@@ -247,7 +291,12 @@ export function PdfBoxPlacer({
   }
 
   const total =
-    signatureBoxes.length + initialBoxes.length + dateBoxes.length + textBoxes.length;
+    signatureBoxes.length +
+    initialBoxes.length +
+    dateBoxes.length +
+    textBoxes.length +
+    dataBoxes.length +
+    checkboxBoxes.length;
 
   return (
     <div>
@@ -323,13 +372,27 @@ export function PdfBoxPlacer({
                       const w = b.width * scale;
                       const h = b.height * scale;
                       const def = KIND[kind];
-                      const isText = kind === "text";
+                      // text + data are edited inline → drag via a grip; the
+                      // rest drag by the whole box.
+                      const gripDrag = kind === "text" || kind === "data";
+                      const grip = (
+                        <span
+                          onPointerDown={(e) => onBoxPointerDown(kind, idx, e)}
+                          onPointerMove={onBoxPointerMove}
+                          onPointerUp={onBoxPointerUp}
+                          className="text-[11px] font-bold px-1"
+                          style={{ color: def.color, cursor: "move", touchAction: "none" }}
+                          title="Drag to move"
+                        >
+                          ⠿
+                        </span>
+                      );
                       return (
                         <div
                           key={`${kind}-${idx}`}
-                          onPointerDown={isText ? undefined : (e) => onBoxPointerDown(kind, idx, e)}
-                          onPointerMove={isText ? undefined : onBoxPointerMove}
-                          onPointerUp={isText ? undefined : onBoxPointerUp}
+                          onPointerDown={gripDrag ? undefined : (e) => onBoxPointerDown(kind, idx, e)}
+                          onPointerMove={gripDrag ? undefined : onBoxPointerMove}
+                          onPointerUp={gripDrag ? undefined : onBoxPointerUp}
                           className="absolute flex items-center justify-center select-none"
                           style={{
                             left,
@@ -339,24 +402,22 @@ export function PdfBoxPlacer({
                             border: `2px solid ${def.color}`,
                             background: def.fill,
                             borderRadius: 3,
-                            cursor: isText ? "default" : "move",
+                            cursor: gripDrag ? "default" : "move",
                             touchAction: "none",
                           }}
-                          title={isText ? def.label : `${def.label} — drag to move`}
+                          title={
+                            kind === "data"
+                              ? `CRM: ${mergeLabel(b.mergeValue) || "pick a field"}`
+                              : kind === "checkbox"
+                                ? b.label || "Checkbox — drag to move"
+                                : gripDrag
+                                  ? def.label
+                                  : `${def.label} — drag to move`
+                          }
                         >
-                          {isText ? (
+                          {kind === "text" ? (
                             <>
-                              {/* drag handle */}
-                              <span
-                                onPointerDown={(e) => onBoxPointerDown(kind, idx, e)}
-                                onPointerMove={onBoxPointerMove}
-                                onPointerUp={onBoxPointerUp}
-                                className="text-[11px] font-bold px-1"
-                                style={{ color: def.color, cursor: "move", touchAction: "none" }}
-                                title="Drag to move"
-                              >
-                                ⠿
-                              </span>
+                              {grip}
                               <input
                                 value={b.label ?? ""}
                                 onChange={(e) => updateLabel(kind, idx, e.target.value)}
@@ -367,6 +428,36 @@ export function PdfBoxPlacer({
                                 style={{ color: def.color }}
                               />
                             </>
+                          ) : kind === "data" ? (
+                            <>
+                              {grip}
+                              <select
+                                value={b.mergeValue ?? ""}
+                                onChange={(e) => updateMergeValue(idx, e.target.value)}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex-1 min-w-0 bg-transparent border-none outline-none text-[11px] font-semibold"
+                                style={{ color: def.color }}
+                              >
+                                <option value="">— Pick CRM field —</option>
+                                {mergeGroups.map(([group, paths]) => (
+                                  <optgroup key={group} label={group}>
+                                    {paths.map((p) => (
+                                      <option key={p.value} value={p.value}>
+                                        {p.label}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                ))}
+                              </select>
+                            </>
+                          ) : kind === "checkbox" ? (
+                            <span
+                              className="text-[12px] font-bold pointer-events-none"
+                              style={{ color: def.color }}
+                            >
+                              ☐
+                            </span>
                           ) : (
                             <span
                               className="text-[10px] font-semibold pointer-events-none"

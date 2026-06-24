@@ -12,6 +12,7 @@ interface BoxInput {
   width: number;
   height: number;
   label?: string;
+  mergeValue?: string;
 }
 
 function sanitizeBoxes(input: unknown): BoxInput[] {
@@ -27,14 +28,19 @@ function sanitizeBoxes(input: unknown): BoxInput[] {
     const height = Number(r.height);
     if (!Number.isFinite(page) || page < 1) continue;
     if (![x, y, width, height].every((n) => Number.isFinite(n))) continue;
-    out.push({
+    const box: BoxInput = {
       page: Math.round(page),
       x,
       y,
       width,
       height,
       label: typeof r.label === "string" ? r.label : undefined,
-    });
+    };
+    // Data fields carry a CRM merge path; keep it only if it's a known path.
+    if (typeof r.mergeValue === "string" && MERGE_PATH_VALUES.has(r.mergeValue)) {
+      box.mergeValue = r.mergeValue;
+    }
+    out.push(box);
   }
   return out;
 }
@@ -97,6 +103,8 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (body.initialBoxes !== undefined) data.initialBoxes = sanitizeBoxes(body.initialBoxes);
   if (body.dateBoxes !== undefined) data.dateBoxes = sanitizeBoxes(body.dateBoxes);
   if (body.textBoxes !== undefined) data.textBoxes = sanitizeBoxes(body.textBoxes);
+  if (body.dataBoxes !== undefined) data.dataBoxes = sanitizeBoxes(body.dataBoxes);
+  if (body.checkboxBoxes !== undefined) data.checkboxBoxes = sanitizeBoxes(body.checkboxBoxes);
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });

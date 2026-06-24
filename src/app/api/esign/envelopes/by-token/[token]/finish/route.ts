@@ -64,6 +64,7 @@ export async function POST(
     initial?: string;
     dateValues?: Record<string, string>;
     textValues?: Record<string, string>;
+    checkboxValues?: Record<string, boolean>;
     fullName?: string;
   };
 
@@ -158,6 +159,21 @@ export async function POST(
         y: box.y + Math.max(2, (box.height - size) / 2),
         size,
         font: helvetica,
+        color: rgb(0.04, 0.04, 0.04),
+      });
+    });
+
+    // Checkbox fields the signer ticked → stamp an "X".
+    const checkboxBoxes = (envelope.checkboxBoxes ?? []) as unknown as Box[];
+    const checkboxValues = body.checkboxValues ?? {};
+    checkboxBoxes.forEach((box, i) => {
+      if (!checkboxValues[String(i)]) return;
+      const size = Math.min(14, Math.max(9, box.height ? box.height + 1 : 12));
+      pageAt(box.page).drawText("X", {
+        x: box.x + Math.max(1, (box.width - size * 0.55) / 2),
+        y: box.y + Math.max(1, (box.height - size) / 2),
+        size,
+        font: helveticaBold,
         color: rgb(0.04, 0.04, 0.04),
       });
     });

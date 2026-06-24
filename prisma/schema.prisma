@@ -588,6 +588,11 @@ model Envelope {
   // Free-text fields the SIGNER fills in while signing. Same box shape; the
   // `label` is the prompt shown to the signer. Values printed into the PDF.
   textBoxes      Json @default("[]")
+  // Auto-filled CRM data fields (box carries `mergeValue` = a merge path).
+  // Resolved + printed into the PDF at SEND time; the signer never edits them.
+  dataBoxes      Json @default("[]")
+  // Checkbox fields the SIGNER ticks (e.g. Checking / Savings). `label` = prompt.
+  checkboxBoxes  Json @default("[]")
 
   // Per-envelope merged PDF (template filled with merge values at send time).
   // Path is relative to envelopeDir() helper. Chunk 3 will overlay signatures
@@ -640,6 +645,10 @@ model EnvelopeTemplate {
   dateBoxes      Json @default("[]")
   // Free-text fields the SIGNER fills while signing (label = prompt).
   textBoxes      Json @default("[]")
+  // Auto-filled CRM data fields (box carries `mergeValue` = a merge path).
+  dataBoxes      Json @default("[]")
+  // Checkbox fields the SIGNER ticks (label = prompt).
+  checkboxBoxes  Json @default("[]")
 
   createdById String?
   createdBy   User?    @relation("EnvelopeTemplateCreatedBy", fields: [createdById], references: [id])

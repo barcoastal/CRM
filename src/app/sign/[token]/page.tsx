@@ -21,6 +21,7 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
       initialBoxes: true,
       dateBoxes: true,
       textBoxes: true,
+      checkboxBoxes: true,
       sentAt: true,
       signedAt: true,
       completedAt: true,
@@ -96,6 +97,7 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
       initialBoxes={(envelope.initialBoxes as unknown as Box[]) ?? []}
       dateBoxes={(envelope.dateBoxes as unknown as Box[]) ?? []}
       textBoxes={(envelope.textBoxes as unknown as Box[]) ?? []}
+      checkboxBoxes={(envelope.checkboxBoxes as unknown as Box[]) ?? []}
     />
   );
 }

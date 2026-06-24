@@ -12,7 +12,7 @@
  * Note: we do NOT flatten the form here. Chunk 3 stamps signatures, then
  * flattens at completion time.
  */
-import { PDFDocument, PDFTextField } from "pdf-lib";
+import { PDFDocument, PDFTextField, StandardFonts, rgb } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
 
 export interface MergeContext {
@@ -118,6 +118,54 @@ export async function fillAcroForm(
     // Some PDFs ship with embedded fonts that pdf-lib cannot subset; ignore.
   }
 
+  const out = await pdfDoc.save();
+  return Buffer.from(out);
+}
+
+interface DataBox {
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  mergeValue?: string;
+}
+
+/**
+ * Stamp positioned CRM "data fields" onto a PDF (used for templates that have
+ * no AcroForm fields, e.g. converted Word docs). Each box's `mergeValue` is
+ * resolved against the merge context and drawn at its coordinates. Returns a
+ * NEW PDF buffer. Coordinates are PDF points, origin bottom-left, (x,y) =
+ * lower-left of the box — same convention as signature/date stamping.
+ */
+export async function stampDataBoxes(
+  pdfBuffer: Buffer,
+  dataBoxes: DataBox[],
+  ctx: MergeContext,
+): Promise<Buffer> {
+  if (!Array.isArray(dataBoxes) || dataBoxes.length === 0) return pdfBuffer;
+  const pdfDoc = await PDFDocument.load(pdfBuffer);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const pages = pdfDoc.getPages();
+  for (const box of dataBoxes) {
+    if (!box || !box.mergeValue) continue;
+    const value = resolvePath(box.mergeValue, ctx);
+    if (!value) continue;
+    const page = pages[(Number(box.page) || 1) - 1];
+    if (!page) continue;
+    const size = Math.min(11, Math.max(8, box.height ? box.height - 6 : 10));
+    try {
+      page.drawText(String(value), {
+        x: box.x + 2,
+        y: box.y + Math.max(2, (box.height - size) / 2),
+        size,
+        font,
+        color: rgb(0.04, 0.04, 0.04),
+      });
+    } catch {
+      // Non-WinAnsi glyphs (rare in CRM data) — skip rather than abort.
+    }
+  }
   const out = await pdfDoc.save();
   return Buffer.from(out);
 }

@@ -13,6 +13,7 @@ interface Box {
   width: number;
   height: number;
   label?: string;
+  mergeValue?: string;
 }
 
 export interface EditInitial {
@@ -28,6 +29,8 @@ export interface EditInitial {
   initialBoxes: unknown[];
   dateBoxes: unknown[];
   textBoxes: unknown[];
+  dataBoxes: unknown[];
+  checkboxBoxes: unknown[];
   createdByName: string | null;
   createdAt: string;
 }
@@ -51,6 +54,7 @@ function normalizeBoxes(input: unknown[]): Box[] {
         width,
         height,
         label: typeof r.label === "string" ? r.label : undefined,
+        mergeValue: typeof r.mergeValue === "string" ? r.mergeValue : undefined,
       } as Box;
     })
     .filter((b): b is Box => b !== null);
@@ -147,6 +151,10 @@ export function EditClient({ initial }: { initial: EditInitial }) {
   const [initBoxes, setInitBoxes] = useState<Box[]>(() => normalizeBoxes(initial.initialBoxes));
   const [dateBoxes, setDateBoxes] = useState<Box[]>(() => normalizeBoxes(initial.dateBoxes));
   const [textBoxes, setTextBoxes] = useState<Box[]>(() => normalizeBoxes(initial.textBoxes));
+  const [dataBoxes, setDataBoxes] = useState<Box[]>(() => normalizeBoxes(initial.dataBoxes));
+  const [checkboxBoxes, setCheckboxBoxes] = useState<Box[]>(() =>
+    normalizeBoxes(initial.checkboxBoxes),
+  );
   const [savingBoxes, setSavingBoxes] = useState(false);
   const [boxesMsg, setBoxesMsg] = useState<string | null>(null);
 
@@ -176,6 +184,8 @@ export function EditClient({ initial }: { initial: EditInitial }) {
           initialBoxes: initBoxes,
           dateBoxes: dateBoxes,
           textBoxes: textBoxes,
+          dataBoxes: dataBoxes,
+          checkboxBoxes: checkboxBoxes,
         }),
       });
       if (!res.ok) throw new Error(`Save failed (${res.status})`);
@@ -361,6 +371,10 @@ export function EditClient({ initial }: { initial: EditInitial }) {
           setDateBoxes={setDateBoxes}
           textBoxes={textBoxes}
           setTextBoxes={setTextBoxes}
+          dataBoxes={dataBoxes}
+          setDataBoxes={setDataBoxes}
+          checkboxBoxes={checkboxBoxes}
+          setCheckboxBoxes={setCheckboxBoxes}
         />
 
         <details className="mt-5">
@@ -396,6 +410,20 @@ export function EditClient({ initial }: { initial: EditInitial }) {
             setBoxes={setTextBoxes}
             pageCount={initial.pageCount}
             onAdd={() => addBoxToList(setTextBoxes, { label: "Field", width: 200, height: 28 })}
+          />
+          <BoxList
+            title="CRM data field"
+            boxes={dataBoxes}
+            setBoxes={setDataBoxes}
+            pageCount={initial.pageCount}
+            onAdd={() => addBoxToList(setDataBoxes, { label: "CRM field", width: 180, height: 24 })}
+          />
+          <BoxList
+            title="Checkbox"
+            boxes={checkboxBoxes}
+            setBoxes={setCheckboxBoxes}
+            pageCount={initial.pageCount}
+            onAdd={() => addBoxToList(setCheckboxBoxes, { label: "Checkbox", width: 18, height: 18 })}
           />
           </div>
         </details>
