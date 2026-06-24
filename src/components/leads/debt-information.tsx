@@ -161,11 +161,22 @@ export function DebtInformation({
   }
 
   const total = items.reduce((sum, d) => sum + d.amount, 0);
+  const totalWeekly = items.reduce((sum, d) => sum + (d.paymentAmount ?? 0), 0);
   const showForm = adding || editing !== null;
 
   return (
     <div>
-      <div style={{ marginBottom: 12, display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 24 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#706e6b" }}>Total Debt</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#131b2e" }}>{fmtMoney(total)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#706e6b" }}>Total Weekly Payment</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#131b2e" }}>{fmtMoney(totalWeekly)}</div>
+          </div>
+        </div>
         <button
           onClick={() => {
             setAdding(true);
@@ -331,7 +342,7 @@ export function DebtInformation({
             <td style={td} />
             <td style={{ ...td, fontWeight: 700 }}>{fmtMoney(total)}</td>
             <td style={td} />
-            <td style={td} />
+            <td style={{ ...td, fontWeight: 700 }}>{fmtMoney(totalWeekly)}</td>
             <td style={td} />
             <td style={td} />
           </tr>

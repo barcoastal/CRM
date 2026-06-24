@@ -691,14 +691,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // detail rows. In the SF org these fields live under their own tab so the
   // Details panel stays focused on lead / company information.
   const debtInformationPanel = (
-    <>
-      {currentDebtInformation}
-      {debtCalculation}
-      {creditorInformation}
-      <Section title={`Debt Information (${lead.debts.length})`}>
-        <DebtInformation
-          leadId={lead.id}
-          items={lead.debts.map((d) => ({
+    <Section title="Debt Information">
+      <DebtInformation
+        leadId={lead.id}
+        items={lead.debts.map((d) => ({
             id: d.id,
             type: d.type,
             creditorName: d.creditorName,
@@ -710,7 +706,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           }))}
         />
       </Section>
-    </>
   );
 
   const openActivities = [
