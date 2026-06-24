@@ -1,6 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { OPP_STAGES } from "@/lib/sf-canonical";
+
+const OPP_STAGE_SET = new Set<string>(OPP_STAGES);
+
+/**
+ * Collapse opportunity stage rows to the 9 canonical stages, folding every
+ * other value (dirty migration data) into a single "Other / unmapped" bucket
+ * so the dashboard charts stay readable.
+ */
+function collapseStages(
+  rows: { label: string | null; count: number; amount?: number }[],
+): { label: string; count: number; amount: number }[] {
+  const keep = new Map<string, { label: string; count: number; amount: number }>();
+  let otherCount = 0;
+  let otherAmount = 0;
+  for (const r of rows) {
+    const label = (r.label ?? "").trim();
+    if (label && OPP_STAGE_SET.has(label)) {
+      const e = keep.get(label) ?? { label, count: 0, amount: 0 };
+      e.count += r.count;
+      e.amount += r.amount ?? 0;
+      keep.set(label, e);
+    } else {
+      otherCount += r.count;
+      otherAmount += r.amount ?? 0;
+    }
+  }
+  const out = Array.from(keep.values());
+  if (otherCount > 0) out.push({ label: "Other / unmapped", count: otherCount, amount: otherAmount });
+  return out.sort((a, b) => b.count - a.count);
+}
 
 // SF Manager Dashboard data feed.
 //
@@ -202,9 +233,9 @@ export async function GET(request: NextRequest) {
       .map((row) => ({ label: row.status, count: row._count.id }))
       .sort((a, b) => b.count - a.count);
 
-    const oppsByStage = oppsByStageRaw
-      .map((row) => ({ label: row.stage, count: row._count.id }))
-      .sort((a, b) => b.count - a.count);
+    const oppsByStage = collapseStages(
+      oppsByStageRaw.map((row) => ({ label: row.stage, count: row._count.id })),
+    ).map(({ label, count }) => ({ label, count }));
 
     // Leads bar (count + debt)
     const leadsBar = leadAmountByStatusRaw
@@ -215,13 +246,13 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => b.count - a.count);
 
-    const oppsBar = oppAmountByStageRaw
-      .map((row) => ({
+    const oppsBar = collapseStages(
+      oppAmountByStageRaw.map((row) => ({
         label: row.stage,
         count: row._count.id,
         amount: row._sum.amount ?? row._sum.currentTotalDebt ?? 0,
-      }))
-      .sort((a, b) => b.count - a.count);
+      })),
+    );
 
     // Build disposition-by-day tables. We bucket records by created date and
     // then by status/stage to match the SF "Created Date | Status | Record
