@@ -52,24 +52,20 @@ async function queueAndSend(ctx: TriggerContext): Promise<void> {
   void sendQueuedEmail(msg.id).catch(() => undefined);
 }
 
-/** Lead status changed — fire welcome email when converted. */
-export async function onLeadStatusChange(leadId: string, oldStatus: string, newStatus: string): Promise<void> {
-  if (oldStatus === newStatus) return;
-  if (newStatus !== "Converted") return;
-
-  const lead = await prisma.lead.findUnique({
-    where: { id: leadId },
-    select: { email: true, convertedOpportunityId: true, convertedAccountId: true },
-  });
-  if (!lead?.email) return;
-
-  await queueAndSend({
-    template: "welcome_enrollment",
-    to: lead.email,
-    leadId,
-    opportunityId: lead.convertedOpportunityId ?? undefined,
-    accountId: lead.convertedAccountId ?? undefined,
-  });
+/**
+ * Lead status changed.
+ *
+ * Auto welcome-on-convert email DISABLED 2026-06-24 per request — converting a
+ * lead no longer sends the "you're enrolled" email automatically; reps send the
+ * welcome manually. To re-enable, restore the queueAndSend({ template:
+ * "welcome_enrollment", ... }) for newStatus === "Converted".
+ */
+export async function onLeadStatusChange(
+  _leadId: string,
+  _oldStatus: string,
+  _newStatus: string,
+): Promise<void> {
+  return;
 }
 
 /** Account stage changed — fire status-driven emails. */
