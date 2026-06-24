@@ -454,12 +454,34 @@ export function PdfBoxPlacer({
                               </select>
                             </>
                           ) : kind === "checkbox" ? (
-                            <span
-                              className="text-[12px] font-bold pointer-events-none"
-                              style={{ color: def.color }}
-                            >
-                              ☐
-                            </span>
+                            <>
+                              <span
+                                className="text-[12px] font-bold pointer-events-none"
+                                style={{ color: def.color }}
+                              >
+                                ☐
+                              </span>
+                              {/* Editable label floats beside the box (editor-only;
+                                  the signer sees this as the checkbox prompt). */}
+                              <input
+                                value={b.label ?? ""}
+                                onChange={(e) => updateLabel(kind, idx, e.target.value)}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                placeholder="Label this…"
+                                className="absolute text-[11px] font-semibold rounded px-1 outline-none"
+                                style={{
+                                  left: "calc(100% + 4px)",
+                                  top: -2,
+                                  width: 120,
+                                  height: 20,
+                                  color: def.color,
+                                  background: "#fff",
+                                  border: `1px solid ${def.color}`,
+                                  whiteSpace: "nowrap",
+                                }}
+                              />
+                            </>
                           ) : (
                             <span
                               className="text-[10px] font-semibold pointer-events-none"
