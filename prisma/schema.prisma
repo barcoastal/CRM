@@ -594,6 +594,10 @@ model Envelope {
   // Checkbox fields the SIGNER ticks (e.g. Checking / Savings). `label` = prompt.
   checkboxBoxes  Json @default("[]")
 
+  // Provenance for imported envelopes (e.g. historical DocuSign docs).
+  externalSource String? // e.g. "DOCUSIGN"
+  externalId     String? @unique // provider envelope id — idempotency key for re-imports
+
   // Per-envelope merged PDF (template filled with merge values at send time).
   // Path is relative to envelopeDir() helper. Chunk 3 will overlay signatures
   // and write the signed result to signedDocumentUrl.
