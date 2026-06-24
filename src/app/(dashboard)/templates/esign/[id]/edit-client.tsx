@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Plus, Save } from "@/components/icons/lucide";
 import { MERGE_PATHS, RECORD_TYPES } from "@/lib/esign/merge-paths";
+import { PdfBoxPlacer } from "@/components/esign/pdf-box-placer";
 
 interface Box {
   page: number;
@@ -345,18 +346,23 @@ export function EditClient({ initial }: { initial: EditInitial }) {
       {/* Section 3: Signature boxes */}
       <Card
         title="Signature Boxes"
-        subtitle={`PDF preview below. Coordinates are PDF points (72 dpi), origin BOTTOM-LEFT. Pages 1 to ${initial.pageCount}.`}
+        subtitle="Pick a tool, then click the document to drop a box where the signer should sign, initial, or date. Drag a box to move it, click × to remove. Save when done."
       >
-        <div className="rounded border border-[#d8dde6] overflow-hidden bg-[#faf8ff]">
-          <iframe
-            src={pdfUrl}
-            title={initial.pdfFilename}
-            className="w-full"
-            style={{ height: 520 }}
-          />
-        </div>
+        <PdfBoxPlacer
+          pdfUrl={pdfUrl}
+          signatureBoxes={sigBoxes}
+          setSignatureBoxes={setSigBoxes}
+          initialBoxes={initBoxes}
+          setInitialBoxes={setInitBoxes}
+          dateBoxes={dateBoxes}
+          setDateBoxes={setDateBoxes}
+        />
 
-        <div className="mt-5 space-y-5">
+        <details className="mt-5">
+          <summary className="text-[12px] font-semibold text-[#3052ff] cursor-pointer">
+            Fine-tune coordinates (advanced)
+          </summary>
+          <div className="mt-3 space-y-5">
           <BoxList
             title="Signature"
             boxes={sigBoxes}
@@ -379,7 +385,8 @@ export function EditClient({ initial }: { initial: EditInitial }) {
             pageCount={initial.pageCount}
             onAdd={() => addBoxToList(setDateBoxes, { label: "Date", width: 120, height: 24 })}
           />
-        </div>
+          </div>
+        </details>
 
         <Footer msg={boxesMsg} onSave={saveBoxes} saving={savingBoxes} />
       </Card>
