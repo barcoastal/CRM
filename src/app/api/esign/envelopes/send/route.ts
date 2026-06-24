@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
       signatureBoxes: template.signatureBoxes ?? [],
       initialBoxes: template.initialBoxes ?? [],
       dateBoxes: template.dateBoxes ?? [],
+      textBoxes: template.textBoxes ?? [],
       createdById: session.userId,
     },
   });

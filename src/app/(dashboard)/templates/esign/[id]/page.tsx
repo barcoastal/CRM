@@ -48,6 +48,7 @@ export default async function ESignTemplateDetailPage(props: {
           signatureBoxes: (tpl.signatureBoxes ?? []) as unknown[],
           initialBoxes: (tpl.initialBoxes ?? []) as unknown[],
           dateBoxes: (tpl.dateBoxes ?? []) as unknown[],
+          textBoxes: (tpl.textBoxes ?? []) as unknown[],
           createdByName: tpl.createdBy?.name ?? null,
           createdAt: tpl.createdAt.toISOString(),
         }}

@@ -27,6 +27,7 @@ export interface EditInitial {
   signatureBoxes: unknown[];
   initialBoxes: unknown[];
   dateBoxes: unknown[];
+  textBoxes: unknown[];
   createdByName: string | null;
   createdAt: string;
 }
@@ -145,6 +146,7 @@ export function EditClient({ initial }: { initial: EditInitial }) {
   const [sigBoxes, setSigBoxes] = useState<Box[]>(() => normalizeBoxes(initial.signatureBoxes));
   const [initBoxes, setInitBoxes] = useState<Box[]>(() => normalizeBoxes(initial.initialBoxes));
   const [dateBoxes, setDateBoxes] = useState<Box[]>(() => normalizeBoxes(initial.dateBoxes));
+  const [textBoxes, setTextBoxes] = useState<Box[]>(() => normalizeBoxes(initial.textBoxes));
   const [savingBoxes, setSavingBoxes] = useState(false);
   const [boxesMsg, setBoxesMsg] = useState<string | null>(null);
 
@@ -173,6 +175,7 @@ export function EditClient({ initial }: { initial: EditInitial }) {
           signatureBoxes: sigBoxes,
           initialBoxes: initBoxes,
           dateBoxes: dateBoxes,
+          textBoxes: textBoxes,
         }),
       });
       if (!res.ok) throw new Error(`Save failed (${res.status})`);
@@ -356,6 +359,8 @@ export function EditClient({ initial }: { initial: EditInitial }) {
           setInitialBoxes={setInitBoxes}
           dateBoxes={dateBoxes}
           setDateBoxes={setDateBoxes}
+          textBoxes={textBoxes}
+          setTextBoxes={setTextBoxes}
         />
 
         <details className="mt-5">
@@ -384,6 +389,13 @@ export function EditClient({ initial }: { initial: EditInitial }) {
             setBoxes={setDateBoxes}
             pageCount={initial.pageCount}
             onAdd={() => addBoxToList(setDateBoxes, { label: "Date", width: 120, height: 24 })}
+          />
+          <BoxList
+            title="Text field"
+            boxes={textBoxes}
+            setBoxes={setTextBoxes}
+            pageCount={initial.pageCount}
+            onAdd={() => addBoxToList(setTextBoxes, { label: "Field", width: 200, height: 28 })}
           />
           </div>
         </details>

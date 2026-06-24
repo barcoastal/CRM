@@ -96,6 +96,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (body.signatureBoxes !== undefined) data.signatureBoxes = sanitizeBoxes(body.signatureBoxes);
   if (body.initialBoxes !== undefined) data.initialBoxes = sanitizeBoxes(body.initialBoxes);
   if (body.dateBoxes !== undefined) data.dateBoxes = sanitizeBoxes(body.dateBoxes);
+  if (body.textBoxes !== undefined) data.textBoxes = sanitizeBoxes(body.textBoxes);
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });

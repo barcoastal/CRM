@@ -63,6 +63,7 @@ export async function POST(
     signature?: string;
     initial?: string;
     dateValues?: Record<string, string>;
+    textValues?: Record<string, string>;
     fullName?: string;
   };
 
@@ -138,6 +139,24 @@ export async function POST(
         x: box.x,
         y: box.y,
         size: 11,
+        font: helvetica,
+        color: rgb(0.04, 0.04, 0.04),
+      });
+    });
+
+    // Free-text fields the signer filled in.
+    const textBoxes = (envelope.textBoxes ?? []) as unknown as Box[];
+    const textValues = body.textValues ?? {};
+    textBoxes.forEach((box, i) => {
+      const txt = (textValues[String(i)] ?? "").toString();
+      if (!txt.trim()) return;
+      // Size text to fit the box height; baseline sits a couple points up from
+      // the box bottom so it reads on the line.
+      const size = Math.min(12, Math.max(8, box.height ? box.height - 8 : 11));
+      pageAt(box.page).drawText(txt, {
+        x: box.x + 2,
+        y: box.y + Math.max(2, (box.height - size) / 2),
+        size,
         font: helvetica,
         color: rgb(0.04, 0.04, 0.04),
       });

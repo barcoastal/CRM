@@ -21,12 +21,13 @@ export type Box = {
   label?: string;
 };
 
-type Kind = "signature" | "initial" | "date";
+type Kind = "signature" | "initial" | "date" | "text";
 
 const KIND: Record<Kind, { w: number; h: number; label: string; color: string; fill: string }> = {
   signature: { w: 200, h: 40, label: "Signature", color: "#3052ff", fill: "rgba(48,82,255,0.12)" },
   initial: { w: 80, h: 32, label: "Initial", color: "#16a34a", fill: "rgba(22,163,74,0.12)" },
   date: { w: 130, h: 26, label: "Date", color: "#b45309", fill: "rgba(180,83,9,0.12)" },
+  text: { w: 200, h: 28, label: "Field", color: "#7c3aed", fill: "rgba(124,58,237,0.10)" },
 };
 
 interface PageMeta {
@@ -52,6 +53,8 @@ export function PdfBoxPlacer({
   setInitialBoxes,
   dateBoxes,
   setDateBoxes,
+  textBoxes,
+  setTextBoxes,
 }: {
   pdfUrl: string;
   signatureBoxes: Box[];
@@ -60,6 +63,8 @@ export function PdfBoxPlacer({
   setInitialBoxes: React.Dispatch<React.SetStateAction<Box[]>>;
   dateBoxes: Box[];
   setDateBoxes: React.Dispatch<React.SetStateAction<Box[]>>;
+  textBoxes: Box[];
+  setTextBoxes: React.Dispatch<React.SetStateAction<Box[]>>;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [metas, setMetas] = useState<PageMeta[]>([]);
@@ -78,9 +83,25 @@ export function PdfBoxPlacer({
         ? [signatureBoxes, setSignatureBoxes]
         : k === "initial"
           ? [initialBoxes, setInitialBoxes]
-          : [dateBoxes, setDateBoxes],
-    [signatureBoxes, initialBoxes, dateBoxes, setSignatureBoxes, setInitialBoxes, setDateBoxes],
+          : k === "date"
+            ? [dateBoxes, setDateBoxes]
+            : [textBoxes, setTextBoxes],
+    [
+      signatureBoxes,
+      initialBoxes,
+      dateBoxes,
+      textBoxes,
+      setSignatureBoxes,
+      setInitialBoxes,
+      setDateBoxes,
+      setTextBoxes,
+    ],
   );
+
+  function updateLabel(kind: Kind, index: number, label: string) {
+    const [, setter] = listFor(kind);
+    setter((prev) => prev.map((b, i) => (i === index ? { ...b, label } : b)));
+  }
 
   // Load the PDF + page sizes.
   useEffect(() => {
@@ -225,7 +246,8 @@ export function PdfBoxPlacer({
     setter((prev) => prev.filter((_, i) => i !== index));
   }
 
-  const total = signatureBoxes.length + initialBoxes.length + dateBoxes.length;
+  const total =
+    signatureBoxes.length + initialBoxes.length + dateBoxes.length + textBoxes.length;
 
   return (
     <div>
@@ -301,12 +323,13 @@ export function PdfBoxPlacer({
                       const w = b.width * scale;
                       const h = b.height * scale;
                       const def = KIND[kind];
+                      const isText = kind === "text";
                       return (
                         <div
                           key={`${kind}-${idx}`}
-                          onPointerDown={(e) => onBoxPointerDown(kind, idx, e)}
-                          onPointerMove={onBoxPointerMove}
-                          onPointerUp={onBoxPointerUp}
+                          onPointerDown={isText ? undefined : (e) => onBoxPointerDown(kind, idx, e)}
+                          onPointerMove={isText ? undefined : onBoxPointerMove}
+                          onPointerUp={isText ? undefined : onBoxPointerUp}
                           className="absolute flex items-center justify-center select-none"
                           style={{
                             left,
@@ -316,17 +339,42 @@ export function PdfBoxPlacer({
                             border: `2px solid ${def.color}`,
                             background: def.fill,
                             borderRadius: 3,
-                            cursor: "move",
+                            cursor: isText ? "default" : "move",
                             touchAction: "none",
                           }}
-                          title={`${def.label} — drag to move`}
+                          title={isText ? def.label : `${def.label} — drag to move`}
                         >
-                          <span
-                            className="text-[10px] font-semibold pointer-events-none"
-                            style={{ color: def.color }}
-                          >
-                            {b.label ?? def.label}
-                          </span>
+                          {isText ? (
+                            <>
+                              {/* drag handle */}
+                              <span
+                                onPointerDown={(e) => onBoxPointerDown(kind, idx, e)}
+                                onPointerMove={onBoxPointerMove}
+                                onPointerUp={onBoxPointerUp}
+                                className="text-[11px] font-bold px-1"
+                                style={{ color: def.color, cursor: "move", touchAction: "none" }}
+                                title="Drag to move"
+                              >
+                                ⠿
+                              </span>
+                              <input
+                                value={b.label ?? ""}
+                                onChange={(e) => updateLabel(kind, idx, e.target.value)}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                placeholder="Field label"
+                                className="flex-1 min-w-0 bg-transparent border-none outline-none text-[11px] font-semibold"
+                                style={{ color: def.color }}
+                              />
+                            </>
+                          ) : (
+                            <span
+                              className="text-[10px] font-semibold pointer-events-none"
+                              style={{ color: def.color }}
+                            >
+                              {b.label ?? def.label}
+                            </span>
+                          )}
                           <button
                             type="button"
                             onPointerDown={(e) => e.stopPropagation()}

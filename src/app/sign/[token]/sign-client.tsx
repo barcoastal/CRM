@@ -14,6 +14,7 @@ type Props = {
   signatureBoxes: Box[];
   initialBoxes: Box[];
   dateBoxes: Box[];
+  textBoxes: Box[];
 };
 
 type AdoptStyle = "type-1" | "type-2" | "type-3" | "type-4" | "draw";
@@ -39,6 +40,7 @@ export function SignClient({
   signatureBoxes,
   initialBoxes,
   dateBoxes,
+  textBoxes,
 }: Props) {
   const [adoptOpen, setAdoptOpen] = useState(false);
   const [adoptKind, setAdoptKind] = useState<"signature" | "initial">("signature");
@@ -50,6 +52,11 @@ export function SignClient({
     dateBoxes.forEach((_, i) => (d[String(i)] = todayStr()));
     return d;
   });
+  const [textValues, setTextValues] = useState<Record<string, string>>(() => {
+    const d: Record<string, string> = {};
+    textBoxes.forEach((_, i) => (d[String(i)] = ""));
+    return d;
+  });
   const [declineOpen, setDeclineOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -57,7 +64,9 @@ export function SignClient({
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  const allBoxesReady = signatureBoxes.length === 0 || signatureDataUrl !== null;
+  const allTextFilled = textBoxes.every((_, i) => (textValues[String(i)] ?? "").trim() !== "");
+  const allBoxesReady =
+    (signatureBoxes.length === 0 || signatureDataUrl !== null) && allTextFilled;
 
   function openAdopt(kind: "signature" | "initial") {
     setAdoptKind(kind);
@@ -67,6 +76,10 @@ export function SignClient({
   async function finish() {
     if (!signatureDataUrl) {
       setError("Please adopt a signature first.");
+      return;
+    }
+    if (!allTextFilled) {
+      setError("Please fill in all required fields on the document.");
       return;
     }
     setSubmitting(true);
@@ -79,6 +92,7 @@ export function SignClient({
           signature: signatureDataUrl,
           initial: initialDataUrl ?? signatureDataUrl,
           dateValues,
+          textValues,
           fullName,
         }),
       });
@@ -242,6 +256,25 @@ export function SignClient({
                   previewSrc={initialDataUrl ?? signatureDataUrl}
                   onClick={() => openAdopt("initial")}
                 />
+              ))}
+            </Section>
+          )}
+
+          {textBoxes.length > 0 && (
+            <Section label={`Fill in (${textBoxes.length})`}>
+              {textBoxes.map((b, i) => (
+                <div key={`text-${i}`} style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: "#706e6b", marginBottom: 4 }}>
+                    {b.label?.trim() ? b.label : `Field (page ${b.page})`}
+                  </div>
+                  <input
+                    type="text"
+                    value={textValues[String(i)] ?? ""}
+                    onChange={(e) => setTextValues((d) => ({ ...d, [String(i)]: e.target.value }))}
+                    placeholder={b.label?.trim() ? b.label : "Type here"}
+                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, color: "#131b2e" }}
+                  />
+                </div>
               ))}
             </Section>
           )}

@@ -585,6 +585,9 @@ model Envelope {
   signatureBoxes Json @default("[]")
   initialBoxes   Json @default("[]")
   dateBoxes      Json @default("[]")
+  // Free-text fields the SIGNER fills in while signing. Same box shape; the
+  // `label` is the prompt shown to the signer. Values printed into the PDF.
+  textBoxes      Json @default("[]")
 
   // Per-envelope merged PDF (template filled with merge values at send time).
   // Path is relative to envelopeDir() helper. Chunk 3 will overlay signatures
@@ -635,6 +638,8 @@ model EnvelopeTemplate {
   signatureBoxes Json @default("[]")
   initialBoxes   Json @default("[]")
   dateBoxes      Json @default("[]")
+  // Free-text fields the SIGNER fills while signing (label = prompt).
+  textBoxes      Json @default("[]")
 
   createdById String?
   createdBy   User?    @relation("EnvelopeTemplateCreatedBy", fields: [createdById], references: [id])
