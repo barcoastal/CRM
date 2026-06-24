@@ -161,6 +161,38 @@ export function EditClient({ initial }: { initial: EditInitial }) {
   const [savingBoxes, setSavingBoxes] = useState(false);
   const [boxesMsg, setBoxesMsg] = useState<string | null>(null);
 
+  // -------- Send a test envelope to myself --------
+  const [sendingTest, setSendingTest] = useState(false);
+  const [testResult, setTestResult] = useState<{ msg: string; url?: string } | null>(null);
+
+  async function sendTest() {
+    setSendingTest(true);
+    setTestResult(null);
+    try {
+      const res = await fetch(`/api/esign/templates/${initial.id}/test-send`, { method: "POST" });
+      const j = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        signingUrl?: string;
+        emailSent?: boolean;
+        sentTo?: string;
+      };
+      if (!res.ok) {
+        setTestResult({ msg: j.error ?? `Failed to send test (${res.status})` });
+        return;
+      }
+      setTestResult({
+        msg: j.emailSent
+          ? `Test sent to ${j.sentTo}. Check your email, or open it now:`
+          : `Test created (email may not have sent). Open it now:`,
+        url: j.signingUrl,
+      });
+    } catch (e) {
+      setTestResult({ msg: e instanceof Error ? e.message : "Failed to send test" });
+    } finally {
+      setSendingTest(false);
+    }
+  }
+
   function addBoxToList(setter: React.Dispatch<React.SetStateAction<Box[]>>, defaults: Partial<Box>) {
     setter((prev) => [
       ...prev,
@@ -232,6 +264,41 @@ export function EditClient({ initial }: { initial: EditInitial }) {
 
   return (
     <div className="space-y-6">
+      {/* Send a test envelope to myself */}
+      <div
+        className="bg-white rounded-xl p-4 flex items-center gap-3 flex-wrap"
+        style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+      >
+        <button
+          type="button"
+          onClick={sendTest}
+          disabled={sendingTest}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-white text-[13px] font-semibold disabled:opacity-50"
+          style={{ background: "linear-gradient(135deg, #0034e4, #3052ff)" }}
+        >
+          {sendingTest ? "Sending…" : "Send test to me"}
+        </button>
+        <span className="text-[12px] text-[#706e6b]">
+          Sends this template to your own email so you can try the signing flow. (CRM data fields are
+          blank in a test.)
+        </span>
+        {testResult ? (
+          <div className="basis-full text-[12px] text-[#131b2e]">
+            {testResult.msg}{" "}
+            {testResult.url ? (
+              <a
+                href={testResult.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#3052ff] font-semibold underline"
+              >
+                Open signing page →
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
       {/* Section 1: Details */}
       <Card title="Details">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
