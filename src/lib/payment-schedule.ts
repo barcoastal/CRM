@@ -7,7 +7,7 @@
  * Canonical Apex formula:
  *   totalPaymentAmount = settlementAmount
  *                      + programFeeAmount
- *                      + (serviceFee × ((paymentTerm × 4) − 1))
+ *                      + (serviceFee × (paymentTerm × 4))
  *                      + (monthlyBankFee × paymentTerm)
  *                      + (citadelFee × paymentTerm)
  *                      + (citadelFee × additionalMonthForCitadelFee)
@@ -169,7 +169,10 @@ export function generatePaymentSchedule(input: PaymentScheduleInput): PaymentSch
   const totalPaymentAmount = round2(
     settlementAmount +
       programFeeAmount +
-      servicePerPeriod * noOfActualPayments +
+      // Service fee is charged for every week of the program (term × 4), even
+      // though there are term×4−1 weekly payment rows. Matches the SF calculator
+      // (verified live: $50k/6mo → $1,430.22, $100k/6mo → $2,799.78).
+      servicePerPeriod * (term * 4) +
       monthlyBankFee * term +
       citadelFee * term +
       citadelFee * additionalMonthForCitadelFee +
