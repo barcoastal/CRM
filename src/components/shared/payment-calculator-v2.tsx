@@ -54,6 +54,7 @@ export function PaymentCalculatorV2({
     initial?.firstPaymentDate ?? new Date().toISOString().slice(0, 10)
   );
   const [legalPlanRequired, setLegalPlanRequired] = useState(initial?.legalPlanRequired ?? false);
+  const [paymentProcessor, setPaymentProcessor] = useState("SAS Processor");
   const [recordType, setRecordType] = useState<"Business Lead">("Business Lead");
   const [computed, setComputed] = useState<PaymentScheduleResult | null>(null);
   const [saving, setSaving] = useState(false);
@@ -86,6 +87,7 @@ export function PaymentCalculatorV2({
           programFeePercent: SF_DEFAULTS.programFeePercent,
           retainerPercent: SF_DEFAULTS.retainerPercent,
           legalPlanRequired,
+          paymentProcessor,
           setupFee: t.setupFee,
           serviceFeePerPeriod: SF_DEFAULTS.serviceFeePerPeriod,
           bankFeePerPeriod: SF_DEFAULTS.monthlyBankFee,
@@ -179,6 +181,15 @@ export function PaymentCalculatorV2({
           <NumField label="Monthly Bank Fee" v={t.monthlyBankFee} readonly prefix="$" />
           <NumField label="Bank Setup Fee" v={t.bankSetupFee} readonly prefix="$" />
           <SelectField label="Payment Frequency" value="Weekly" onChange={() => {}} options={["Weekly"]} disabled />
+          <SelectField
+            label="Payment Processor"
+            value={paymentProcessor}
+            onChange={(v) => {
+              setPaymentProcessor(v);
+              setComputed(null);
+            }}
+            options={["SAS Processor", "RAM Processor", "LAPP Processor"]}
+          />
           <SelectField
             label="Legal Plan Required"
             value={legalPlanRequired ? "Yes" : "No"}
