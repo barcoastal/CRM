@@ -16,6 +16,7 @@ interface ContactsPageProps {
     sort?: string;
     dir?: string;
     view?: string;
+    page?: string;
   }>;
 }
 
@@ -55,6 +56,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
   const search = params.search?.trim() ?? "";
   const sort = params.sort ?? "";
   const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const view = params.view ?? "recent";
 
   const session = await auth();
@@ -106,6 +108,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
         convertedFromLead: { select: { sfId: true } },
       },
       orderBy,
+      skip: (page - 1) * LIMIT,
       take: LIMIT,
     }),
     prisma.contact.count({ where }),
@@ -211,6 +214,8 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
       preservedParams={preservedParams}
       views={VIEWS}
       currentView={view}
+      page={page}
+      pageSize={LIMIT}
       massConfig={{
         entity: "contact",
         // Contacts don't have a status field; only Change Owner / Send Email work

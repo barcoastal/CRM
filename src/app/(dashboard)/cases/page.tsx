@@ -18,6 +18,7 @@ interface CasesPageProps {
     sort?: string;
     dir?: string;
     view?: string;
+    page?: string;
   }>;
 }
 
@@ -69,6 +70,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const search = params.search?.trim() ?? "";
   const sort = params.sort ?? "";
   const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const view = params.view ?? "all-open";
 
   const where: Prisma.CaseWhereInput = {};
@@ -107,6 +109,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
         owner: { select: { id: true, name: true, email: true } },
       },
       orderBy,
+      skip: (page - 1) * LIMIT,
       take: LIMIT,
     }),
     prisma.case.count({ where }),
@@ -178,6 +181,8 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       preservedParams={preservedParams}
       views={VIEWS}
       currentView={view}
+      page={page}
+      pageSize={LIMIT}
       massConfig={{
         entity: "case",
         statusField: "status",

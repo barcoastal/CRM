@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   SfListSearch,
   SfRowCheckbox,
@@ -82,6 +82,10 @@ export interface SfListPageProps {
   views?: SfViewOption[];
   /** current selected view value (matches ?view=) */
   currentView?: string;
+  /** 1-based current page (for pagination) */
+  page?: number;
+  /** rows per page (for pagination) */
+  pageSize?: number;
 }
 
 export function SfListPage(props: SfListPageProps) {
@@ -102,9 +106,26 @@ export function SfListPage(props: SfListPageProps) {
     massConfig,
     views,
     currentView,
+    page,
+    pageSize,
   } = props;
 
   const ids = rows.map((r) => r.id);
+
+  // Pagination (only when page + pageSize are provided)
+  const pageNum = page && page > 0 ? page : 1;
+  const size = pageSize && pageSize > 0 ? pageSize : 0;
+  const totalPages = size > 0 ? Math.max(1, Math.ceil(count / size)) : 1;
+  const showPager = size > 0 && totalPages > 1;
+  const startIdx = count === 0 ? 0 : (pageNum - 1) * size + 1;
+  const endIdx = Math.min(pageNum * size, count);
+  const pageHref = (p: number) =>
+    buildHref(pathname, preservedParams, {
+      search: searchQuery || undefined,
+      sort: sortKey || undefined,
+      dir: sortKey ? sortDir : undefined,
+      page: p > 1 ? String(p) : undefined,
+    });
 
   return (
     <SfSelectionProvider ids={ids}>
@@ -355,6 +376,31 @@ export function SfListPage(props: SfListPageProps) {
             </tbody>
           </table>
         </div>
+
+        {showPager && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              padding: "10px 16px",
+              background: "#fff",
+              border: "1px solid #dddbda",
+              borderTop: "none",
+              fontSize: 13,
+              color: "#3e3e3c",
+            }}
+          >
+            <span>
+              {startIdx}–{endIdx} of {count} · Page {pageNum} of {totalPages}
+            </span>
+            <div style={{ display: "flex", gap: 8 }}>
+              <PagerLink href={pageHref(pageNum - 1)} disabled={pageNum <= 1} label="‹ Previous" />
+              <PagerLink href={pageHref(pageNum + 1)} disabled={pageNum >= totalPages} label="Next ›" />
+            </div>
+          </div>
+        )}
 
         <style>{`
           .sf-row-link:hover { text-decoration: underline; }
@@ -626,6 +672,27 @@ function DownChev() {
 /* ------------------------------------------------------------------ */
 /* Helpers                                                            */
 /* ------------------------------------------------------------------ */
+
+function PagerLink({ href, disabled, label }: { href: string; disabled: boolean; label: string }) {
+  const style: CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "5px 12px",
+    border: "1px solid #dddbda",
+    borderRadius: 4,
+    fontSize: 13,
+    fontWeight: 600,
+    textDecoration: "none",
+  };
+  if (disabled) {
+    return <span style={{ ...style, color: "#c9c7c5", background: "#f3f3f3", cursor: "not-allowed" }}>{label}</span>;
+  }
+  return (
+    <Link href={href} style={{ ...style, color: "#0070d2", background: "#fff" }}>
+      {label}
+    </Link>
+  );
+}
 
 function buildHref(
   pathname: string,

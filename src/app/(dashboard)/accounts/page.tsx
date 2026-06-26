@@ -18,6 +18,7 @@ interface AccountsPageProps {
     sort?: string;
     dir?: string;
     view?: string;
+    page?: string;
   }>;
 }
 
@@ -99,6 +100,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   const search = params.search?.trim() ?? "";
   const sort = params.sort ?? "";
   const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const view = params.view ?? "business";
 
   const session = await auth();
@@ -178,6 +180,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         convertedFromLead: { select: { sfId: true } },
       },
       orderBy,
+      skip: (page - 1) * LIMIT,
       take: LIMIT,
     }),
     prisma.account.count({ where }),
@@ -314,6 +317,8 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
       preservedParams={preservedParams}
       views={allViews}
       currentView={view}
+      page={page}
+      pageSize={LIMIT}
       massConfig={{
         entity: "account",
         statusField: "recordType",

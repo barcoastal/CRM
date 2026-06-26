@@ -34,6 +34,7 @@ interface OpportunitiesPageProps {
     sort?: string;
     dir?: string;
     view?: string;
+    page?: string;
   }>;
 }
 
@@ -82,6 +83,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   const search = params.search?.trim() ?? "";
   const sort = params.sort ?? "";
   const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const view = params.view ?? "recent";
 
   const session = await auth();
@@ -141,6 +143,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         assignedTo: { select: { id: true, name: true, email: true } },
       },
       orderBy,
+      skip: (page - 1) * LIMIT,
       take: LIMIT,
     }),
     prisma.opportunity.count({ where }),
@@ -256,6 +259,8 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
       preservedParams={preservedParams}
       views={VIEWS}
       currentView={view}
+      page={page}
+      pageSize={LIMIT}
       massConfig={{
         entity: "opportunity",
         statusField: "stage",

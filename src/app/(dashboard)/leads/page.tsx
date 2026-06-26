@@ -84,6 +84,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const search = params.search?.trim() ?? "";
   const sort = params.sort ?? "";
   const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const view = params.view ?? "recent";
 
   const session = await auth();
@@ -144,6 +145,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
         assignedTo: { select: { id: true, name: true, email: true } },
       },
       orderBy,
+      skip: (page - 1) * LIMIT,
       take: LIMIT,
     }),
     prisma.lead.count({ where }),
@@ -248,6 +250,8 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       preservedParams={preservedParams}
       views={VIEWS}
       currentView={view}
+      page={page}
+      pageSize={LIMIT}
       massConfig={{
         entity: "lead",
         statusField: "status",

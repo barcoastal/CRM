@@ -18,6 +18,7 @@ interface TasksPageProps {
     sort?: string;
     dir?: string;
     view?: string;
+    page?: string;
   }>;
 }
 
@@ -80,6 +81,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const search = params.search?.trim() ?? "";
   const sort = params.sort ?? "";
   const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const view = params.view ?? "open";
 
   const where: Prisma.TaskWhereInput = {};
@@ -121,6 +123,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         owner: { select: { id: true, name: true, email: true } },
       },
       orderBy,
+      skip: (page - 1) * LIMIT,
       take: LIMIT,
     }),
     prisma.task.count({ where }),
@@ -220,6 +223,8 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
       preservedParams={preservedParams}
       views={VIEWS}
       currentView={view}
+      page={page}
+      pageSize={LIMIT}
       massConfig={{
         entity: "task",
         statusField: "status",
