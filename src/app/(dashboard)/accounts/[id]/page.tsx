@@ -17,7 +17,7 @@ import { AccountTeamCard } from "@/components/accounts/account-team-card";
 import { ContactRolesList } from "@/components/accounts/contact-roles-list";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
-import { PaymentCalculatorV2 } from "@/components/shared/payment-calculator-v2";
+import { RescheduleCalculator } from "@/components/shared/reschedule-calculator";
 import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-list";
 import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
@@ -443,15 +443,13 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const activeOpp = account.opportunities[0];
   const calcPanel = activeOpp ? (
     <Section title="Reschedule Program">
-      <PaymentCalculatorV2
-        saveEndpoint={`/api/opportunities/${activeOpp.id}/calculator`}
+      <RescheduleCalculator
         initial={{
           totalDebt: activeOpp.totalDebt ?? totalDebt,
           termMonths: 6,
           firstPaymentDate: account.programStartDate
             ? account.programStartDate.toISOString().slice(0, 10)
             : new Date().toISOString().slice(0, 10),
-          legalPlanRequired: activeOpp.legalPlanRequired ?? false,
         }}
       />
     </Section>

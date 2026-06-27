@@ -1,0 +1,235 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import {
+  generateRescheduleSchedule,
+  RESCHEDULE_DEFAULTS,
+  type RescheduleResult,
+} from "@/lib/reschedule-schedule";
+
+export type RescheduleInitial = {
+  totalDebt?: number;
+  termMonths?: number;
+  citadelFee?: number;
+  firstPaymentDate?: string;
+  completedDraftsCount?: number;
+  completedDraftsAmount?: number;
+};
+
+const wrap: React.CSSProperties = {
+  background: "#fff",
+  border: "1px solid #d8dde6",
+  borderRadius: 4,
+  padding: 16,
+};
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  fontSize: 11,
+  fontWeight: 600,
+  color: "#3e3e3c",
+  marginBottom: 4,
+};
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  height: 32,
+  padding: "0 8px",
+  border: "1px solid #c9c7c5",
+  borderRadius: 4,
+  fontSize: 13,
+  background: "#fff",
+};
+const ro: React.CSSProperties = { ...inputStyle, background: "#f3f2f2", color: "#3e3e3c" };
+
+function money(n: number): string {
+  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      {children}
+    </div>
+  );
+}
+function ReadField({ label, value }: { label: string; value: string }) {
+  return (
+    <Field label={label}>
+      <input readOnly value={value} style={ro} />
+    </Field>
+  );
+}
+
+export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial }) {
+  const [totalDebt, setTotalDebt] = useState(initial?.totalDebt ?? 0);
+  const [termMonths, setTermMonths] = useState(initial?.termMonths ?? 6);
+  const [citadelFee, setCitadelFee] = useState(initial?.citadelFee ?? RESCHEDULE_DEFAULTS.citadelFee);
+  const [completedCount, setCompletedCount] = useState(initial?.completedDraftsCount ?? 0);
+  const [completedAmount, setCompletedAmount] = useState(initial?.completedDraftsAmount ?? 0);
+  const [firstPaymentDate, setFirstPaymentDate] = useState(
+    initial?.firstPaymentDate ?? new Date().toISOString().slice(0, 10),
+  );
+
+  const result: RescheduleResult = useMemo(
+    () =>
+      generateRescheduleSchedule({
+        totalDebt,
+        termMonths,
+        citadelFee,
+        completedDraftsCount: completedCount,
+        completedDraftsAmount: completedAmount,
+        firstPaymentDate,
+      }),
+    [totalDebt, termMonths, citadelFee, completedCount, completedAmount, firstPaymentDate],
+  );
+  const t = result.totals;
+
+  const TERMS = Array.from({ length: 30 }, (_, i) => i + 1);
+
+  return (
+    <div>
+      <div style={{ ...wrap, marginBottom: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 12 }}>
+          <Field label="Total Debt">
+            <input
+              type="number"
+              value={totalDebt}
+              onChange={(e) => setTotalDebt(Number(e.target.value) || 0)}
+              style={inputStyle}
+            />
+          </Field>
+          <Field label="No of Drafts Completed">
+            <input
+              type="number"
+              value={completedCount}
+              onChange={(e) => setCompletedCount(Number(e.target.value) || 0)}
+              style={inputStyle}
+            />
+          </Field>
+          <Field label="Completed Drafts Amount">
+            <input
+              type="number"
+              value={completedAmount}
+              onChange={(e) => setCompletedAmount(Number(e.target.value) || 0)}
+              style={inputStyle}
+            />
+          </Field>
+          <Field label="Payment Term">
+            <select value={termMonths} onChange={(e) => setTermMonths(Number(e.target.value))} style={inputStyle}>
+              {TERMS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Service Fee">
+            <input readOnly value={money(RESCHEDULE_DEFAULTS.serviceFeePerPeriod)} style={ro} />
+          </Field>
+          <Field label="Monthly Bank Fee">
+            <input readOnly value={money(RESCHEDULE_DEFAULTS.monthlyBankFee)} style={ro} />
+          </Field>
+          <Field label="Bank Setup Fee">
+            <input readOnly value={money(RESCHEDULE_DEFAULTS.bankSetupFee)} style={ro} />
+          </Field>
+          <Field label="Citadel Fee (per month)">
+            <input
+              type="number"
+              value={citadelFee}
+              onChange={(e) => setCitadelFee(Number(e.target.value) || 0)}
+              style={inputStyle}
+            />
+          </Field>
+          <Field label="Setup Fee">
+            <input readOnly value={money(t.setupFee)} style={ro} />
+          </Field>
+          <Field label="Program Fee Percent">
+            <input readOnly value={String(RESCHEDULE_DEFAULTS.programFeePercent)} style={ro} />
+          </Field>
+          <Field label="Retainer Percent">
+            <input readOnly value={String(RESCHEDULE_DEFAULTS.retainerPercent)} style={ro} />
+          </Field>
+          <Field label="Settlement Percent">
+            <input readOnly value={String(RESCHEDULE_DEFAULTS.settlementPercent)} style={ro} />
+          </Field>
+          <Field label="First Payment Date">
+            <input
+              type="date"
+              value={firstPaymentDate}
+              onChange={(e) => setFirstPaymentDate(e.target.value)}
+              style={inputStyle}
+            />
+          </Field>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          <ReadField label="Retainer Amount" value={money(t.retainerAmount)} />
+          <ReadField label="Total Settlement Amt" value={money(t.settlementAmount)} />
+          <ReadField label="Total Program Fee" value={money(t.programFeeAmount)} />
+          <ReadField label="Estimated Program Cost" value={money(t.estimatedProgramCost)} />
+          <ReadField label="Estimated Savings" value={money(t.estimatedSavings)} />
+          <ReadField label="Weekly Draft Amount" value={money(t.weeklyDraftAmount)} />
+          <ReadField label="No. of Payments" value={String(t.noOfPayments)} />
+        </div>
+      </div>
+
+      {/* Schedule */}
+      <div style={{ ...wrap, overflowX: "auto", padding: 0 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          <thead>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+              {[
+                "Payment Date",
+                "Weekly Draft",
+                "Program Fee",
+                "Retainer Fee",
+                "Setup Fee",
+                "Bank Fee",
+                "Service Fee",
+                "Citadel Fee",
+                "Escrow Amount",
+                "Running Balance",
+                "Status",
+              ].map((h) => (
+                <th
+                  key={h}
+                  style={{
+                    textAlign: "left",
+                    padding: "8px 10px",
+                    fontWeight: 700,
+                    fontSize: 11,
+                    color: "#3e3e3c",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {result.rows.map((r) => (
+              <tr key={r.index} style={{ borderBottom: "1px solid #f3f3f3" }}>
+                <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
+                  {r.date.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
+                </td>
+                <td style={{ padding: "8px 10px" }}>{money(r.weeklyDraftAmount)}</td>
+                <td style={{ padding: "8px 10px" }}>{money(r.programFee)}</td>
+                <td style={{ padding: "8px 10px" }}>{money(r.retainerFee)}</td>
+                <td style={{ padding: "8px 10px" }}>{money(r.setupFee)}</td>
+                <td style={{ padding: "8px 10px" }}>{money(r.bankFee)}</td>
+                <td style={{ padding: "8px 10px" }}>{money(r.serviceFee)}</td>
+                <td style={{ padding: "8px 10px" }}>{money(r.citadelFee)}</td>
+                <td style={{ padding: "8px 10px" }}>{money(r.escrowAmount)}</td>
+                <td style={{ padding: "8px 10px" }}>{money(r.runningBalance)}</td>
+                <td style={{ padding: "8px 10px", color: r.status === "Completed" ? "#2e844a" : "#706e6b" }}>
+                  {r.status}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
