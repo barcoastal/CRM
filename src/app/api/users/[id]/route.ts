@@ -35,6 +35,7 @@ const updateUserSchema = z.object({
   managerId: z.string().cuid().optional().nullable(),
   isActive: z.boolean().optional(),
   isCloser: z.boolean().optional(),
+  five9Username: z.string().max(255).optional().nullable(),
 });
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -65,6 +66,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (d.managerId !== undefined) data.managerId = d.managerId;
   if (d.isActive !== undefined) data.isActive = d.isActive;
   if (d.isCloser !== undefined) data.isCloser = d.isCloser;
+  if (d.five9Username !== undefined) data.five9Username = d.five9Username || null;
 
   const user = await prisma.user.update({
     where: { id }, data,

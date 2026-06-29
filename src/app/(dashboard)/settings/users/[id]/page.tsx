@@ -9,7 +9,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
       where: { id },
       select: {
         id: true, name: true, email: true, role: true,
-        profileId: true, hierarchyRoleId: true, managerId: true, isActive: true, isCloser: true,
+        profileId: true, hierarchyRoleId: true, managerId: true, isActive: true, isCloser: true, five9Username: true,
       },
     }),
     prisma.profile.findMany({ where: { isActive: true }, orderBy: { label: "asc" }, select: { id: true, name: true, label: true } }),
@@ -30,6 +30,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
         managerId: user.managerId,
         isActive: user.isActive,
         isCloser: user.isCloser,
+        five9Username: user.five9Username,
       }}
       profiles={profiles}
       roles={roles}

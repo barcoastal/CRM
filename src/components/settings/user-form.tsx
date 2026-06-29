@@ -27,6 +27,7 @@ export function UserForm({
     managerId: string | null;
     isActive: boolean;
     isCloser: boolean;
+    five9Username: string | null;
   };
   profiles: Option[];
   roles: Option[];
@@ -45,6 +46,7 @@ export function UserForm({
   const [managerId, setManagerId] = useState<string>(initial?.managerId ?? "");
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
   const [isCloser, setIsCloser] = useState(initial?.isCloser ?? false);
+  const [five9Username, setFive9Username] = useState(initial?.five9Username ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +64,7 @@ export function UserForm({
       managerId: managerId || null,
       isActive,
       isCloser,
+      five9Username: five9Username.trim() || null,
     };
     if (password) body.password = password;
     if (!isEdit && !password) {
@@ -160,6 +163,17 @@ export function UserForm({
                 <input type="checkbox" checked={isCloser} onChange={(e) => setIsCloser(e.target.checked)} />
                 Show the phone dialer for this user
               </label>,
+            ],
+            [
+              "Five9 Username",
+              <input
+                key="f9"
+                value={five9Username}
+                onChange={(e) => setFive9Username(e.target.value)}
+                placeholder="e.g. bar1@coastaldebt.com"
+                className="slds-input"
+                style={inputStyle}
+              />,
             ],
           ]}
         />
