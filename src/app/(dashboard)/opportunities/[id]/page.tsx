@@ -111,7 +111,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         },
       },
       account: { select: { id: true, name: true, recordType: true } },
-      primaryContact: { select: { id: true, fullName: true } },
+      primaryContact: { select: { id: true, fullName: true, email: true } },
       assignedTo: { select: { id: true, name: true } },
       client: true,
       debts: {
@@ -812,7 +812,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
           <RequestDocumentsButton
             opportunityId={opp.id}
-            defaultEmail={opp.lead?.email ?? undefined}
+            defaultEmail={opp.oppEmail ?? opp.primaryContact?.email ?? opp.lead?.email ?? undefined}
             defaultName={opp.primaryContact?.fullName ?? opp.lead?.contactName ?? undefined}
           />
         </div>
