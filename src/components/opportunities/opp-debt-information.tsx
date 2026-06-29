@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CreditorCombobox } from "@/components/debts/creditor-combobox";
 
 export type OppDebtRow = {
   id: string;
@@ -264,10 +265,10 @@ export function OppDebtInformation({
           {showForm && (
             <tr style={{ background: "#fafaf9", borderTop: "1px solid #d8dde6" }}>
               <td style={td}>
-                <input
+                <CreditorCombobox
                   value={form.creditorName}
-                  onChange={(e) => setForm({ ...form, creditorName: e.target.value })}
-                  placeholder="Search…"
+                  onChange={(v) => setForm({ ...form, creditorName: v })}
+                  placeholder="Search creditor…"
                   style={inputStyle}
                 />
               </td>

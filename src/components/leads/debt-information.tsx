@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CreditorCombobox } from "@/components/debts/creditor-combobox";
 
 export type LeadDebtRow = {
   id: string;
@@ -254,10 +255,10 @@ export function DebtInformation({
                 </select>
               </td>
               <td style={td}>
-                <input
+                <CreditorCombobox
                   value={form.creditorName}
-                  onChange={(e) => setForm({ ...form, creditorName: e.target.value })}
-                  placeholder="e.g. OnDeck"
+                  onChange={(v) => setForm({ ...form, creditorName: v })}
+                  placeholder="Search creditor…"
                   style={inputStyle}
                 />
               </td>

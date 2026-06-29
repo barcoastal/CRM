@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CreditorCombobox } from "@/components/debts/creditor-combobox";
 
 interface AddDebtDialogProps {
   open: boolean;
@@ -88,7 +89,12 @@ export function AddDebtDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 col-span-2">
               <Label htmlFor="creditorName">Creditor Name *</Label>
-              <Input id="creditorName" name="creditorName" required />
+              <CreditorCombobox
+                id="creditorName"
+                name="creditorName"
+                required
+                className="bg-[#f2f3ff] border-0 rounded-lg text-sm placeholder:text-[#444656] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3052ff]/20 focus-visible:ring-offset-0 h-10 px-3 py-2 w-full min-w-0"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="creditorPhone">Creditor Phone</Label>
