@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 
 export type EntityType = "lead" | "opportunity" | "account" | "contact";
 export type FieldType = "text" | "textarea" | "number" | "date" | "datetime" | "select" | "checkbox" | "email" | "phone";
@@ -60,6 +61,7 @@ export function InlineEditableField({
   const [committedNode, setCommittedNode] = useState<ReactNode>(displayNode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -110,6 +112,10 @@ export function InlineEditableField({
         const txt = await res.text().catch(() => "");
         throw new Error(txt || `Save failed (${res.status})`);
       }
+      // Re-fetch the server component so the rest of the page (header/title,
+      // related panels, derived fields) reflects the change without a manual
+      // browser refresh.
+      router.refresh();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Save failed";
       // Revert
