@@ -44,6 +44,7 @@ const createUserSchema = z.object({
   hierarchyRoleId: z.string().cuid().optional().nullable(),
   managerId: z.string().cuid().optional().nullable(),
   isActive: z.boolean().default(true),
+  isCloser: z.boolean().default(false),
 });
 
 export async function POST(request: NextRequest) {
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
       hierarchyRoleId: d.hierarchyRoleId ?? null,
       managerId: d.managerId ?? null,
       isActive: d.isActive,
+      isCloser: d.isCloser,
     },
     select: {
       id: true, name: true, email: true, role: true, isActive: true,

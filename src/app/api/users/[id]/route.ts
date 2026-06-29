@@ -34,6 +34,7 @@ const updateUserSchema = z.object({
   hierarchyRoleId: z.string().cuid().optional().nullable(),
   managerId: z.string().cuid().optional().nullable(),
   isActive: z.boolean().optional(),
+  isCloser: z.boolean().optional(),
 });
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -63,6 +64,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (d.hierarchyRoleId !== undefined) data.hierarchyRoleId = d.hierarchyRoleId;
   if (d.managerId !== undefined) data.managerId = d.managerId;
   if (d.isActive !== undefined) data.isActive = d.isActive;
+  if (d.isCloser !== undefined) data.isCloser = d.isCloser;
 
   const user = await prisma.user.update({
     where: { id }, data,

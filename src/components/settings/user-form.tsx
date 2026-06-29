@@ -26,6 +26,7 @@ export function UserForm({
     hierarchyRoleId: string | null;
     managerId: string | null;
     isActive: boolean;
+    isCloser: boolean;
   };
   profiles: Option[];
   roles: Option[];
@@ -43,6 +44,7 @@ export function UserForm({
   const [hierarchyRoleId, setHierarchyRoleId] = useState<string>(initial?.hierarchyRoleId ?? "");
   const [managerId, setManagerId] = useState<string>(initial?.managerId ?? "");
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
+  const [isCloser, setIsCloser] = useState(initial?.isCloser ?? false);
   const [submitting, setSubmitting] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +61,7 @@ export function UserForm({
       hierarchyRoleId: hierarchyRoleId || null,
       managerId: managerId || null,
       isActive,
+      isCloser,
     };
     if (password) body.password = password;
     if (!isEdit && !password) {
@@ -149,6 +152,13 @@ export function UserForm({
               <label key="a" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
                 <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
                 User can sign in
+              </label>,
+            ],
+            [
+              "Closer",
+              <label key="c" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                <input type="checkbox" checked={isCloser} onChange={(e) => setIsCloser(e.target.checked)} />
+                Show the phone dialer for this user
               </label>,
             ],
           ]}

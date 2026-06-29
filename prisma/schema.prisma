@@ -19,6 +19,7 @@ model User {
   role              String    @default("SALES_REP") // LEGACY string role — replaced by profileId in Phase 2
   avatar            String?
   isActive          Boolean   @default(true)
+  isCloser          Boolean   @default(false) // closers see the Five9 popup dialer
   lastLoginAt       DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
