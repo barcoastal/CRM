@@ -35,7 +35,20 @@ export function DocumentsUpload({
   const ref = useRef<HTMLInputElement>(null);
   const [hover, setHover] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const baseUrl = endpoint ?? `/api/leads/${leadId}/documents`;
+
+  async function remove(doc: DocItem) {
+    if (!confirm(`Delete "${doc.name}"? This cannot be undone.`)) return;
+    setDeletingId(doc.id);
+    try {
+      const res = await fetch(`${baseUrl}/${doc.id}`, { method: "DELETE" });
+      if (res.ok) router.refresh();
+      else alert("Could not delete the file. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function upload(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -115,20 +128,46 @@ export function DocumentsUpload({
               <th style={th}>Size</th>
               <th style={th}>Uploaded By</th>
               <th style={th}>Uploaded</th>
+              <th style={{ ...th, textAlign: "right" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {items.map((d) => (
               <tr key={d.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
                 <td style={td}>
-                  <a href={`${baseUrl}/${d.id}`} style={{ color: "#0070d2" }}>
+                  <a
+                    href={`${baseUrl}/${d.id}?view=1`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#0070d2" }}
+                  >
                     {d.name}
                   </a>
                 </td>
                 <td style={td}>{d.type}</td>
-                <td style={td}>{d.fileSize ? formatBytes(d.fileSize) : "—"}</td>
-                <td style={td}>{d.uploadedBy?.name ?? "—"}</td>
+                <td style={td}>{d.fileSize ? formatBytes(d.fileSize) : "-"}</td>
+                <td style={td}>{d.uploadedBy?.name ?? "-"}</td>
                 <td style={td}>{new Date(d.createdAt).toLocaleString()}</td>
+                <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>
+                  <a
+                    href={`${baseUrl}/${d.id}?view=1`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={actionLink}
+                  >
+                    View
+                  </a>
+                  <a href={`${baseUrl}/${d.id}`} style={actionLink}>
+                    Download
+                  </a>
+                  <button
+                    onClick={() => remove(d)}
+                    disabled={deletingId === d.id}
+                    style={{ ...actionLink, ...actionBtn, color: "#c23934", cursor: deletingId === d.id ? "wait" : "pointer" }}
+                  >
+                    {deletingId === d.id ? "Deleting…" : "Delete"}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -151,6 +190,21 @@ const th: React.CSSProperties = {
 const td: React.CSSProperties = {
   padding: "10px 12px",
   color: "#080707",
+};
+
+const actionLink: React.CSSProperties = {
+  color: "#0070d2",
+  fontSize: 13,
+  fontWeight: 600,
+  textDecoration: "none",
+  marginLeft: 14,
+};
+
+const actionBtn: React.CSSProperties = {
+  background: "none",
+  border: "none",
+  padding: 0,
+  font: "inherit",
 };
 
 function formatBytes(n: number) {
