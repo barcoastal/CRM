@@ -6,6 +6,8 @@ import { DispositionModal } from "@/components/leads/disposition-modal";
 import { LEAD_STATUSES, STAGE_TO_SUB_DISPOSITIONS, type LeadStatusV2 } from "@/lib/sf-canonical";
 import { CallTranscriber } from "./call-transcriber";
 
+const FIVE9_AGENT_URL = "https://app-atl.five9.com/clients/agent/main.html?role=Agent";
+
 interface LeadContext {
   id: string;
   contactName: string;
@@ -40,6 +42,23 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
   const [loadingLead, setLoadingLead] = useState(false);
   const [currentPhone, setCurrentPhone] = useState<string | null>(null);
   const [wrapped, setWrapped] = useState(false); // disposition saved → waiting for next call
+  // Run Five9 in its own window instead of the embedded iframe. The iframe loses
+  // its Five9 session on call-connect (browser blocks the cookie in a cross-site
+  // frame); a real window keeps it logged in. Screen-pop here is unaffected (it
+  // reads the server-side supervisor feed, not the iframe).
+  const [poppedOut, setPoppedOut] = useState(false);
+  useEffect(() => {
+    try { setPoppedOut(localStorage.getItem("five9PoppedOut") === "1"); } catch {}
+  }, []);
+  function openFive9Window() {
+    window.open(FIVE9_AGENT_URL, "five9agent", "width=1240,height=840");
+    setPoppedOut(true);
+    try { localStorage.setItem("five9PoppedOut", "1"); } catch {}
+  }
+  function useEmbeddedFive9() {
+    setPoppedOut(false);
+    try { localStorage.setItem("five9PoppedOut", "0"); } catch {}
+  }
 
   // Refs so the polling interval always sees the latest call identity without
   // re-subscribing. A call is identified by onCallSince (its start timestamp).
@@ -168,12 +187,50 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
           softphone (extension + local service). We screen-pop the lead on the
           left from its postMessage callConnected events. */}
       <div>
-        <iframe
-          src={"https://app-atl.five9.com/clients/agent/main.html?role=Agent"}
-          title="Five9 Agent Desktop"
-          allow="microphone; autoplay; clipboard-read; clipboard-write"
-          style={{ width: "100%", height: "calc(100vh - 130px)", minHeight: 600, border: "1px solid #d8dde6", borderRadius: 4, background: "#fff" }}
-        />
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8 }}>
+          <button
+            onClick={openFive9Window}
+            style={{ background: "#0070d2", color: "#fff", border: 0, padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+          >
+            Open Five9 in its own window
+          </button>
+          {poppedOut && (
+            <button
+              onClick={useEmbeddedFive9}
+              style={{ background: "#fff", color: "#0070d2", border: "1px solid #d8dde6", padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            >
+              Use embedded here
+            </button>
+          )}
+        </div>
+        {poppedOut ? (
+          <div
+            style={{
+              border: "1px solid #d8dde6", borderRadius: 4, background: "#fff",
+              height: "calc(100vh - 170px)", minHeight: 560, display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24, gap: 12, color: "#3e3e3c",
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: 16 }}>Five9 is running in its own window</div>
+            <div style={{ fontSize: 13, color: "#706e6b", maxWidth: 420 }}>
+              Keeping the dialer in its own window stops Five9 from logging you out when a call connects.
+              The matching lead still loads here automatically while you talk.
+            </div>
+            <button
+              onClick={openFive9Window}
+              style={{ background: "#0070d2", color: "#fff", border: 0, padding: "8px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            >
+              Reopen the Five9 window
+            </button>
+          </div>
+        ) : (
+          <iframe
+            src={FIVE9_AGENT_URL}
+            title="Five9 Agent Desktop"
+            allow="microphone; autoplay; clipboard-read; clipboard-write"
+            style={{ width: "100%", height: "calc(100vh - 170px)", minHeight: 600, border: "1px solid #d8dde6", borderRadius: 4, background: "#fff" }}
+          />
+        )}
       </div>
     </div>
   );

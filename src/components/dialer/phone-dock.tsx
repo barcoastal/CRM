@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 /**
@@ -23,6 +24,7 @@ interface ActiveCall {
 }
 
 export function PhoneDock() {
+  const pathname = usePathname();
   const [hydrated, setHydrated] = useState(false);
   const [open, setOpen] = useState(false); // iframe mounted (= logged-in / available)
   const [expanded, setExpanded] = useState(true);
@@ -96,6 +98,9 @@ export function PhoneDock() {
   }, [open]);
 
   if (!hydrated) return null;
+  // The /dialer page has its own full Five9 desktop; rendering the dock there
+  // too would log the agent into Five9 twice and kick one session on connect.
+  if (pathname?.startsWith("/dialer")) return null;
 
   const onCall = !!call?.active && !!call?.onCallSince;
   const durSec = onCall && call?.onCallSince ? Math.max(0, Math.floor((now - call.onCallSince) / 1000)) : 0;
