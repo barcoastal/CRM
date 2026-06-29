@@ -46,6 +46,7 @@ export function EnvelopesRelatedList({
   leadId,
   defaultSignerName,
   defaultSignerEmail,
+  recommendedAgreement,
 }: {
   envelopes: EnvelopeRow[];
   opportunityId?: string;
@@ -53,6 +54,7 @@ export function EnvelopesRelatedList({
   leadId?: string;
   defaultSignerName?: string;
   defaultSignerEmail?: string;
+  recommendedAgreement?: "Victory" | "Citadel" | null;
 }) {
   const router = useRouter();
   const [modal, setModal] = useState(false);
@@ -221,6 +223,7 @@ export function EnvelopesRelatedList({
         <SendContractModal
           opportunityId={opportunityId}
           defaultSigner={{ name: defaultSignerName ?? null, email: defaultSignerEmail ?? null }}
+          recommendedAgreement={recommendedAgreement}
           open={templateModal}
           onClose={() => setTemplateModal(false)}
         />

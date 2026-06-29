@@ -39,6 +39,7 @@ export function OppHeaderButtons({
   defaultPhone,
   defaultSignerName,
   forecastCategory,
+  recommendedAgreement,
 }: {
   opportunityId: string;
   currentStage: string;
@@ -46,6 +47,7 @@ export function OppHeaderButtons({
   defaultPhone?: string | null;
   defaultSignerName?: string | null;
   forecastCategory?: string | null;
+  recommendedAgreement?: "Victory" | "Citadel" | null;
 }) {
   const initialCategory: ForecastCategory =
     forecastCategory && isForecastCategory(forecastCategory)
@@ -92,6 +94,7 @@ export function OppHeaderButtons({
       <SendContractModal
         opportunityId={opportunityId}
         defaultSigner={{ name: defaultSignerName ?? null, email: defaultEmail ?? null, phone: defaultPhone ?? null }}
+        recommendedAgreement={recommendedAgreement}
         open={contractModal}
         onClose={() => setContractModal(false)}
       />

@@ -16,6 +16,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import type { Agreement } from "@/lib/creditor-agreements";
 
 interface TemplateOption {
   id: string;
@@ -29,11 +30,13 @@ interface TemplateOption {
 export interface SendContractModalProps {
   opportunityId: string;
   defaultSigner?: { name?: string | null; email?: string | null; phone?: string | null };
+  /** Agreement recommended by the creditors on the file (VLP -> Victory, else Citadel). */
+  recommendedAgreement?: Agreement | null;
   open: boolean;
   onClose: () => void;
 }
 
-export function SendContractModal({ opportunityId, defaultSigner, open, onClose }: SendContractModalProps) {
+export function SendContractModal({ opportunityId, defaultSigner, recommendedAgreement, open, onClose }: SendContractModalProps) {
   const router = useRouter();
   const [templates, setTemplates] = useState<TemplateOption[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
@@ -43,6 +46,7 @@ export function SendContractModal({ opportunityId, defaultSigner, open, onClose 
   const [signerPhone, setSignerPhone] = useState(defaultSigner?.phone ?? "");
   const [documentName, setDocumentName] = useState("");
   const [sending, setSending] = useState(false);
+  const [recMatched, setRecMatched] = useState(false);
   const [result, setResult] = useState<{ envelopeId: string; signingUrl: string; emailSent: boolean } | null>(null);
 
   useEffect(() => {
@@ -53,11 +57,24 @@ export function SendContractModal({ opportunityId, defaultSigner, open, onClose 
       .then((j: { items?: TemplateOption[] }) => {
         const items = (j.items ?? []).filter((t) => t.isActive);
         setTemplates(items);
-        if (items.length === 1) setTemplateId(items[0].id);
+        // Pre-select the agreement recommended by the file's creditors, by
+        // matching the agreement word ("Victory"/"Citadel") in the template name.
+        const rec = recommendedAgreement
+          ? items.find((t) => t.name.toLowerCase().includes(recommendedAgreement.toLowerCase()))
+          : undefined;
+        if (rec) {
+          setTemplateId(rec.id);
+          setRecMatched(true);
+        } else if (items.length === 1) {
+          setTemplateId(items[0].id);
+          setRecMatched(false);
+        } else {
+          setRecMatched(false);
+        }
       })
       .catch(() => toast.error("Failed to load templates"))
       .finally(() => setLoadingTemplates(false));
-  }, [open]);
+  }, [open, recommendedAgreement]);
 
   // Reset on close so the next open is clean.
   useEffect(() => {
@@ -163,6 +180,23 @@ export function SendContractModal({ opportunityId, defaultSigner, open, onClose 
             </div>
           ) : (
             <>
+              {recommendedAgreement && (
+                <div
+                  style={{
+                    background: recMatched ? "#eef4fb" : "#fef5e7",
+                    border: `1px solid ${recMatched ? "#c5d9f1" : "#f4d9a6"}`,
+                    borderRadius: 4,
+                    padding: "8px 10px",
+                    fontSize: 12,
+                    color: "#3e3e3c",
+                    marginBottom: 4,
+                  }}
+                >
+                  Recommended agreement: <strong>{recommendedAgreement}</strong> (based on the
+                  creditors on this file).
+                  {!recMatched && " No template name matches it yet, pick one below."}
+                </div>
+              )}
               <label style={lbl}>Template</label>
               <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} style={inp} disabled={loadingTemplates}>
                 <option value="">

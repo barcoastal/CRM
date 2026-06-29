@@ -15,6 +15,7 @@ import { RescheduleCalculator } from "@/components/shared/reschedule-calculator"
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { RequestDocumentsButton } from "@/components/opportunities/request-documents-button";
 import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-list";
+import { resolveAgreement } from "@/lib/creditor-agreements";
 import { TotalPaymentsSummary } from "@/components/opportunities/total-payments-summary";
 import { DocusignEnvelopeStatus } from "@/components/opportunities/docusign-envelope-status";
 import { OppReportsCard } from "@/components/opportunities/opp-reports-card";
@@ -787,6 +788,8 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     </Section>
   );
 
+  const recommendedAgreement = resolveAgreement(opp.debts.map((d) => d.creditorName));
+
   const documentsPanel = (
     <>
       <EnvelopesRelatedList
@@ -807,6 +810,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         opportunityId={opp.id}
         defaultSignerName={opp.primaryContact?.fullName}
         defaultSignerEmail={opp.lead?.email ?? undefined}
+        recommendedAgreement={recommendedAgreement}
       />
       <Section title={`Files (${opp.documents.length})`}>
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
@@ -905,7 +909,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           { label: "Opportunity Owner", value: ownerDisplay },
           { label: "Opp Id", value: sfOppIdDisplay },
         ]}
-        actions={<OppHeaderButtons opportunityId={opp.id} currentStage={opp.stage} forecastCategory={opp.forecastCategory ?? null} defaultEmail={emailDisplay ?? opp.lead?.email ?? null} defaultPhone={phoneDisplay ?? opp.lead?.phone ?? null} defaultSignerName={opp.primaryContact?.fullName ?? opp.lead?.contactName ?? null} />}
+        actions={<OppHeaderButtons opportunityId={opp.id} currentStage={opp.stage} forecastCategory={opp.forecastCategory ?? null} defaultEmail={emailDisplay ?? opp.lead?.email ?? null} defaultPhone={phoneDisplay ?? opp.lead?.phone ?? null} defaultSignerName={opp.primaryContact?.fullName ?? opp.lead?.contactName ?? null} recommendedAgreement={recommendedAgreement} />}
         pathStages={PATH}
         pathCurrentIndex={oppPathIndex(opp.stage)}
         pathActionLabel={(() => {
