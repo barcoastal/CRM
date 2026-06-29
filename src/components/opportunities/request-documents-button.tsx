@@ -2,15 +2,33 @@
 
 import { useState } from "react";
 
+const COPY = {
+  DOCUMENTS: {
+    button: "Request Documents",
+    title: "Request Documents",
+    blurb: "Emails a secure upload link. Files the client uploads are filed on this Opportunity and its Account.",
+    placeholder: "e.g. Please upload your last 3 months of bank statements and your loan agreement.",
+  },
+  INFO: {
+    button: "Request Info",
+    title: "Request Info",
+    blurb: "Emails a secure link asking the client for their mailing address and contact details. What they submit is saved on the Account and logged on this Opportunity.",
+    placeholder: "e.g. Please confirm your current mailing address and best contact number.",
+  },
+} as const;
+
 export function RequestDocumentsButton({
   opportunityId,
   defaultEmail,
   defaultName,
+  kind = "DOCUMENTS",
 }: {
   opportunityId: string;
   defaultEmail?: string | null;
   defaultName?: string | null;
+  kind?: "DOCUMENTS" | "INFO";
 }) {
+  const copy = COPY[kind];
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState(defaultEmail ?? "");
   const [name, setName] = useState(defaultName ?? "");
@@ -25,7 +43,7 @@ export function RequestDocumentsButton({
       const res = await fetch(`/api/opportunities/${opportunityId}/document-requests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipientEmail: email, recipientName: name, message }),
+        body: JSON.stringify({ recipientEmail: email, recipientName: name, message, kind }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
@@ -54,17 +72,14 @@ export function RequestDocumentsButton({
   return (
     <>
       <button onClick={() => setOpen(true)} style={btn}>
-        Request Documents
+        {copy.button}
       </button>
 
       {open && (
         <div style={overlay} onClick={() => !busy && setOpen(false)}>
           <div style={modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: "0 0 4px", fontSize: 16, color: "#080707" }}>Request Documents</h2>
-            <p style={{ margin: "0 0 16px", fontSize: 13, color: "#706e6b" }}>
-              Emails a secure upload link. Files the client uploads are filed on this Opportunity and
-              its Account.
-            </p>
+            <h2 style={{ margin: "0 0 4px", fontSize: 16, color: "#080707" }}>{copy.title}</h2>
+            <p style={{ margin: "0 0 16px", fontSize: 13, color: "#706e6b" }}>{copy.blurb}</p>
 
             <label style={label}>Recipient email</label>
             <input value={email} onChange={(e) => setEmail(e.target.value)} style={input} type="email" />
@@ -77,7 +92,7 @@ export function RequestDocumentsButton({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={3}
-              placeholder="e.g. Please upload your last 3 months of bank statements and your loan agreement."
+              placeholder={copy.placeholder}
               style={{ ...input, height: "auto", padding: 8, resize: "vertical" }}
             />
 

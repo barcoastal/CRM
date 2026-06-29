@@ -813,7 +813,13 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         recommendedAgreement={recommendedAgreement}
       />
       <Section title={`Files (${opp.documents.length})`}>
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 12 }}>
+          <RequestDocumentsButton
+            opportunityId={opp.id}
+            kind="INFO"
+            defaultEmail={opp.oppEmail ?? opp.primaryContact?.email ?? opp.lead?.email ?? undefined}
+            defaultName={opp.primaryContact?.fullName ?? opp.lead?.contactName ?? undefined}
+          />
           <RequestDocumentsButton
             opportunityId={opp.id}
             defaultEmail={opp.oppEmail ?? opp.primaryContact?.email ?? opp.lead?.email ?? undefined}

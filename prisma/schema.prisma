@@ -1283,6 +1283,8 @@ model DocumentRequest {
   recipientName  String?
   recipientEmail String
   message        String?
+  kind           String       @default("DOCUMENTS") // DOCUMENTS | INFO
+  collectedJson  Json? // for INFO requests: snapshot of what the client submitted
   status         String       @default("SENT") // SENT | COMPLETED | EXPIRED | CANCELLED
   expiresAt      DateTime?
   completedAt    DateTime?

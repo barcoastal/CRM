@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { sendESignEmail } from "@/lib/esign/send-email";
-import { renderDocRequestHtml, uploadUrl } from "@/lib/document-request";
+import { renderDocRequestHtml, renderInfoRequestHtml, uploadUrl, intakeUrl } from "@/lib/document-request";
 
 // GET — list the document requests already sent for this opportunity.
 export async function GET(
@@ -41,6 +41,7 @@ export async function POST(
     recipientName?: string;
     message?: string;
     expiresInDays?: number;
+    kind?: string;
   };
 
   const recipientEmail = (body.recipientEmail ?? "").trim();
@@ -48,6 +49,7 @@ export async function POST(
     return NextResponse.json({ error: "A valid recipient email is required" }, { status: 400 });
   }
 
+  const kind = body.kind === "INFO" ? "INFO" : "DOCUMENTS";
   const days = Number.isFinite(body.expiresInDays) ? Number(body.expiresInDays) : 14;
   const expiresAt =
     days > 0 ? new Date(Date.now() + days * 24 * 60 * 60 * 1000) : null;
@@ -60,6 +62,7 @@ export async function POST(
       recipientEmail,
       recipientName: body.recipientName?.trim() || null,
       message: body.message?.trim() || null,
+      kind,
       expiresAt,
       createdById: session.userId,
     },
@@ -70,24 +73,33 @@ export async function POST(
     select: { name: true },
   });
 
+  const link = kind === "INFO" ? intakeUrl(req.token) : uploadUrl(req.token);
   const from = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
   const sent = await sendESignEmail({
     from,
     to: recipientEmail,
-    subject: "Please upload your documents",
-    html: renderDocRequestHtml({
-      recipientName: req.recipientName,
-      senderName: sender?.name ?? null,
-      message: req.message,
-      uploadUrl: uploadUrl(req.token),
-    }),
+    subject: kind === "INFO" ? "Please confirm your information" : "Please upload your documents",
+    html:
+      kind === "INFO"
+        ? renderInfoRequestHtml({
+            recipientName: req.recipientName,
+            senderName: sender?.name ?? null,
+            message: req.message,
+            intakeUrl: link,
+          })
+        : renderDocRequestHtml({
+            recipientName: req.recipientName,
+            senderName: sender?.name ?? null,
+            message: req.message,
+            uploadUrl: link,
+          }),
     replyTo: session.email,
   });
 
   return NextResponse.json({
     id: req.id,
     token: req.token,
-    url: uploadUrl(req.token),
+    url: link,
     emailed: sent.ok,
     emailError: sent.ok ? undefined : sent.error,
   });

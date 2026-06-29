@@ -21,6 +21,11 @@ export function uploadUrl(token: string): string {
   return `${appBaseUrl()}/upload/${token}`;
 }
 
+/** Public, no-login URL a recipient visits to fill in their info (address etc.). */
+export function intakeUrl(token: string): string {
+  return `${appBaseUrl()}/intake/${token}`;
+}
+
 /**
  * Render the "please upload your documents" email. Plain inline-styled HTML so
  * it lands cleanly in Gmail/Outlook without an MJML pipeline.
@@ -61,6 +66,53 @@ export function renderDocRequestHtml(args: {
             Or copy and paste this link into your browser:
           </p>
           <p style="margin:0;font-size:12px;color:#0070d2;word-break:break-all;">${args.uploadUrl}</p>
+        </td>
+      </tr>
+    </table>
+    <p style="text-align:center;margin:16px auto 0;font-size:11px;color:#706e6b;">Coastal Debt Resolve</p>
+  </body>
+</html>`;
+}
+
+/**
+ * Render the "please confirm your information" email for an INFO request.
+ */
+export function renderInfoRequestHtml(args: {
+  recipientName?: string | null;
+  senderName?: string | null;
+  message?: string | null;
+  intakeUrl: string;
+}): string {
+  const first = (args.recipientName ?? "").split(" ")[0] || "there";
+  const greeting = `Hi ${first},`;
+  const sender = args.senderName || "Coastal Debt";
+  const note = args.message
+    ? `<p style="margin:0 0 16px 0;font-size:14px;line-height:1.5;color:#3e3e3c;white-space:pre-wrap;">${escapeHtml(
+        args.message,
+      )}</p>`
+    : "";
+  return `<!doctype html>
+<html>
+  <body style="margin:0;padding:24px;background:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#080707;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;margin:0 auto;background:#fff;border-radius:6px;border:1px solid #dddbda;">
+      <tr>
+        <td style="padding:24px;">
+          <h1 style="margin:0 0 12px 0;font-size:18px;color:#080707;">Please confirm your information</h1>
+          <p style="margin:0 0 12px 0;font-size:14px;line-height:1.5;">${greeting}</p>
+          <p style="margin:0 0 16px 0;font-size:14px;line-height:1.5;">
+            ${escapeHtml(sender)} needs your mailing address and contact details to move your file
+            forward. Use the secure link below to fill them in. You do not need an account.
+          </p>
+          ${note}
+          <p style="margin:0 0 24px 0;">
+            <a href="${args.intakeUrl}" style="display:inline-block;background:#0070d2;color:#fff;text-decoration:none;padding:10px 18px;border-radius:4px;font-size:14px;font-weight:600;">
+              Fill in my information
+            </a>
+          </p>
+          <p style="margin:0 0 8px 0;font-size:12px;color:#706e6b;">
+            Or copy and paste this link into your browser:
+          </p>
+          <p style="margin:0;font-size:12px;color:#0070d2;word-break:break-all;">${args.intakeUrl}</p>
         </td>
       </tr>
     </table>
