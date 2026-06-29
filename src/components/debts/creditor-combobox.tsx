@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { KNOWN_CREDITORS } from "@/lib/creditors";
 
 /**
@@ -32,6 +33,31 @@ export function CreditorCombobox(props: CreditorComboboxProps) {
   const [open, setOpen] = useState(false);
   const [hi, setHi] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropRef = useRef<HTMLUListElement>(null);
+  const [rect, setRect] = useState<{ left: number; top: number; bottom: number; width: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  const measure = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setRect({ left: r.left, top: r.top, bottom: r.bottom, width: r.width });
+  };
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    measure();
+    const onMove = () => measure();
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", onMove);
+    return () => {
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
+    };
+  }, [open]);
 
   const set = (v: string) => {
     if (!controlled) setInner(v);
@@ -55,7 +81,9 @@ export function CreditorCombobox(props: CreditorComboboxProps) {
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t) || dropRef.current?.contains(t)) return;
+      setOpen(false);
     }
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
@@ -87,6 +115,7 @@ export function CreditorCombobox(props: CreditorComboboxProps) {
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
       <input
+        ref={inputRef}
         id={props.id}
         name={props.name}
         required={props.required}
@@ -104,14 +133,26 @@ export function CreditorCombobox(props: CreditorComboboxProps) {
         onFocus={() => setOpen(true)}
         onKeyDown={onKey}
       />
-      {open && (matches.length > 0 || isCustom) && (
+      {mounted &&
+        open &&
+        rect &&
+        (matches.length > 0 || isCustom) &&
+        createPortal(
+        (() => {
+          const maxH = 240;
+          const spaceBelow = window.innerHeight - rect.bottom;
+          const flipUp = spaceBelow < maxH + 8 && rect.top > spaceBelow;
+          return (
         <ul
+          ref={dropRef}
           style={{
-            position: "absolute",
-            top: "calc(100% + 2px)",
-            left: 0,
-            right: 0,
-            zIndex: 60,
+            position: "fixed",
+            left: rect.left,
+            width: rect.width,
+            ...(flipUp
+              ? { bottom: window.innerHeight - rect.top + 2 }
+              : { top: rect.bottom + 2 }),
+            zIndex: 9999,
             margin: 0,
             padding: 4,
             listStyle: "none",
@@ -119,7 +160,7 @@ export function CreditorCombobox(props: CreditorComboboxProps) {
             border: "1px solid #d8dde6",
             borderRadius: 6,
             boxShadow: "0 6px 18px rgba(0,0,0,0.16)",
-            maxHeight: 240,
+            maxHeight: maxH,
             overflowY: "auto",
           }}
         >
@@ -162,6 +203,9 @@ export function CreditorCombobox(props: CreditorComboboxProps) {
             </li>
           ))}
         </ul>
+          );
+        })(),
+        document.body,
       )}
     </div>
   );
