@@ -43,6 +43,7 @@ model User {
   assignedClients           Client[]                        @relation("ClientNegotiator")
   negotiations              Negotiation[]
   uploadedDocuments         Document[]
+  createdDocumentRequests   DocumentRequest[]               @relation("DocRequestCreatedBy")
   opportunities             Opportunity[]                   @relation("OpportunityAssignee")
   ownedAccounts             Account[]                       @relation("AccountOwner")
   ownedContacts             Contact[]                       @relation("ContactOwner")
@@ -440,6 +441,7 @@ model Account {
   cases              Case[]                   @relation("AccountCases")
   history            AccountHistory[]
   documents          Document[]               @relation("AccountDocuments")
+  documentRequests   DocumentRequest[]        @relation("AccountDocRequests")
   envelopes          Envelope[]               @relation("AccountEnvelopes")
   cadenceEnrollments CadenceEnrollment[]      @relation("AccountCadenceEnrollments")
 
@@ -831,6 +833,7 @@ model Lead {
   paymentCalculations LeadPaymentCalculation[]
   history             LeadHistory[]
   documents           Document[]               @relation("LeadDocuments")
+  documentRequests    DocumentRequest[]        @relation("LeadDocRequests")
   debts               LeadDebt[]
   envelopes           Envelope[]               @relation("LeadEnvelopes")
   suppressionEntries  SuppressionEntry[]       @relation("LeadSuppressionEntries")
@@ -1084,6 +1087,7 @@ model Opportunity {
   client                      Client?
   debts                       Debt[]
   documents                   Document[]
+  documentRequests            DocumentRequest[]        @relation("OppDocRequests")
   programPlans                ProgramPlan[]
   financialSummaries          FinancialSummary[]
   tasks                       Task[]                          @relation("OpportunityTasks")
@@ -1262,6 +1266,33 @@ model Document {
 
   @@index([leadId])
   @@index([accountId])
+}
+
+// A secure, no-login link emailed to a lead/client so they can upload their
+// own documents (loan docs, statements, etc.) back to us. Files they upload
+// are filed onto the Opportunity (and its Account) as normal Document records.
+model DocumentRequest {
+  id             String       @id @default(cuid())
+  token          String       @unique @default(cuid())
+  opportunityId  String?
+  opportunity    Opportunity? @relation("OppDocRequests", fields: [opportunityId], references: [id], onDelete: Cascade)
+  accountId      String?
+  account        Account?     @relation("AccountDocRequests", fields: [accountId], references: [id], onDelete: Cascade)
+  leadId         String?
+  lead           Lead?        @relation("LeadDocRequests", fields: [leadId], references: [id], onDelete: Cascade)
+  recipientName  String?
+  recipientEmail String
+  message        String?
+  status         String       @default("SENT") // SENT | COMPLETED | EXPIRED | CANCELLED
+  expiresAt      DateTime?
+  completedAt    DateTime?
+  uploadCount    Int          @default(0)
+  createdById    String
+  createdBy      User         @relation("DocRequestCreatedBy", fields: [createdById], references: [id])
+  createdAt      DateTime     @default(now())
+
+  @@index([opportunityId])
+  @@index([token])
 }
 
 // ============ PHASE 3: DEBT OPERATIONS ============

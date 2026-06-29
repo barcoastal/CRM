@@ -13,6 +13,7 @@ import { OppHeaderButtons } from "@/components/opportunities/opp-header-buttons"
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
 import { RescheduleCalculator } from "@/components/shared/reschedule-calculator";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
+import { RequestDocumentsButton } from "@/components/opportunities/request-documents-button";
 import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-list";
 import { TotalPaymentsSummary } from "@/components/opportunities/total-payments-summary";
 import { DocusignEnvelopeStatus } from "@/components/opportunities/docusign-envelope-status";
@@ -808,6 +809,13 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         defaultSignerEmail={opp.lead?.email ?? undefined}
       />
       <Section title={`Files (${opp.documents.length})`}>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+          <RequestDocumentsButton
+            opportunityId={opp.id}
+            defaultEmail={opp.lead?.email ?? undefined}
+            defaultName={opp.primaryContact?.fullName ?? opp.lead?.contactName ?? undefined}
+          />
+        </div>
         <DocumentsUpload
           endpoint={`/api/opportunities/${opp.id}/documents`}
           items={opp.documents.map((d) => ({
