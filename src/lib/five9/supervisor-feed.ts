@@ -41,7 +41,8 @@ function hostOf(url: string): string {
 
 class SupervisorFeed {
   private agentCalls = new Map<string, AgentCall>(); // five9UserId -> state/call
-  private userIdByEmail = new Map<string, string>(); // lowercased email -> five9UserId
+  private userIdByEmail = new Map<string, string>(); // lowercased email/username -> five9UserId
+  private idByFullName = new Map<string, string>(); // lowercased "first last" -> five9UserId (ambiguous names dropped)
   private eventCounts: Record<string, number> = {}; // eventId -> count (diagnostics)
   private rawLog: Array<{ at: number; eventId: string | null; reason: string | null; preview: string }> = []; // last interesting messages
   private jar: Cookie[] = [];
@@ -82,6 +83,22 @@ class SupervisorFeed {
     if (!call) return null;
     // Only treat genuinely active states as "on a call".
     if (call.state !== "ON_CALL") return null;
+    return call;
+  }
+
+  /**
+   * Fallback match by the agent's full name ("First Last"), so a CRM user whose
+   * Five9 login differs from their email still screen-pops without any manual
+   * five9Username — as long as their name matches the Five9 roster and is not a
+   * duplicate. Ambiguous (shared) names are dropped from the map, so they need
+   * the explicit five9Username override instead.
+   */
+  getCallForName(name: string | null | undefined): AgentCall | null {
+    if (!name) return null;
+    const id = this.idByFullName.get(name.trim().toLowerCase().replace(/\s+/g, " "));
+    if (!id) return null;
+    const call = this.agentCalls.get(id);
+    if (!call || call.state !== "ON_CALL") return null;
     return call;
   }
 
@@ -156,6 +173,7 @@ class SupervisorFeed {
   debugSnapshot(username?: string | null): {
     mapSize: number;
     userMapSize: number;
+    nameMapSize: number;
     stateCounts: Record<string, number>;
     onCallAgents: Array<{ id: string; usernames: string[]; state: string; callType: string | null; customer: string | null; campaignId: string | null }>;
     sample: Array<{ id: string; state: string; callType: string | null; customer: string | null }>;
@@ -185,7 +203,7 @@ class SupervisorFeed {
       const id = this.userIdByEmail.get(username.toLowerCase()) ?? null;
       lookup = { username, mappedId: id, foundCall: id ? this.agentCalls.get(id) ?? null : null };
     }
-    return { mapSize: this.agentCalls.size, userMapSize: this.userIdByEmail.size, stateCounts, onCallAgents, sample, lookup, eventCounts: this.eventCounts, rawLog: this.rawLog.slice(-12) };
+    return { mapSize: this.agentCalls.size, userMapSize: this.userIdByEmail.size, nameMapSize: this.idByFullName.size, stateCounts, onCallAgents, sample, lookup, eventCounts: this.eventCounts, rawLog: this.rawLog.slice(-12) };
   }
 
   /**
@@ -333,16 +351,30 @@ class SupervisorFeed {
         console.warn("[supervisor-feed] domain users", res.status);
         return;
       }
-      const users = (await res.json().catch(() => [])) as Array<{ id?: string; userName?: string; email?: string }>;
+      const users = (await res.json().catch(() => [])) as Array<{
+        id?: string; userName?: string; email?: string; firstName?: string; lastName?: string; fullName?: string;
+      }>;
       if (!Array.isArray(users)) return;
       const map = new Map<string, string>();
+      // Build name -> id, but DROP any name shared by >1 agent (ambiguous).
+      const nameCounts = new Map<string, number>();
+      const nameMap = new Map<string, string>();
+      const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
       for (const u of users) {
         if (!u.id) continue;
         if (u.userName) map.set(String(u.userName).toLowerCase(), u.id);
         if (u.email) map.set(String(u.email).toLowerCase(), u.id);
+        const full = (u.fullName || [u.firstName, u.lastName].filter(Boolean).join(" ")).trim();
+        if (full) {
+          const k = norm(full);
+          nameCounts.set(k, (nameCounts.get(k) ?? 0) + 1);
+          nameMap.set(k, u.id);
+        }
       }
+      for (const [k, c] of nameCounts) if (c > 1) nameMap.delete(k); // drop ambiguous names
       if (map.size) this.userIdByEmail = map;
-      console.log(`[supervisor-feed] loaded ${map.size} domain user mappings`);
+      this.idByFullName = nameMap;
+      console.log(`[supervisor-feed] loaded ${map.size} user mappings, ${nameMap.size} unique-name mappings`);
     } catch (e) {
       console.warn("[supervisor-feed] loadDomainUsers failed:", e instanceof Error ? e.message : e);
     }

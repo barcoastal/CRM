@@ -65,10 +65,12 @@ export async function GET() {
   // 1. Supervisor feed (real-time, all call directions).
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { five9Username: true, email: true },
+    select: { five9Username: true, email: true, name: true },
   });
   const username = user?.five9Username ?? user?.email ?? null;
-  const call = supervisorFeed.getCallForUsername(username);
+  // Match by explicit Five9 username/email first; fall back to the agent's full
+  // name from the Five9 roster so most agents screen-pop with no manual setup.
+  const call = supervisorFeed.getCallForUsername(username) ?? supervisorFeed.getCallForName(user?.name);
   if (call) {
     const lead = await matchLead(call.customer);
     // For outbound the customer IS the dialed number — pop it even if no lead matched.
