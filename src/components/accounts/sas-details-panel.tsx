@@ -78,7 +78,7 @@ export function SasDetailsPanel({ accountId }: { accountId: string }) {
   const c = data?.customer ?? null;
   const debits = data?.debits ?? [];
   const nsfDrafts = debits.filter(isNsf);
-  const nsfCount = (c?.totalfailed ?? 0) || nsfDrafts.length;
+  const nsfCount = nsfDrafts.length; // consistent with the rows highlighted below
 
   return (
     <div style={wrap}>
@@ -106,7 +106,7 @@ export function SasDetailsPanel({ accountId }: { accountId: string }) {
             <span style={statusBadge(c.customerstatus)}>{c.customerstatus ?? "Unknown"}</span>
             {nsfCount > 0 && (
               <span style={nsfBadge}>
-                NSF: {nsfCount} returned draft{nsfCount === 1 ? "" : "s"}
+                {nsfCount} failed / NSF draft{nsfCount === 1 ? "" : "s"}
               </span>
             )}
             {c.isflagged && <span style={flagBadge}>Flagged</span>}
@@ -151,8 +151,8 @@ export function SasDetailsPanel({ accountId }: { accountId: string }) {
                         <tr key={i} style={{ borderBottom: "1px solid #f3f3f3", background: nsf ? "#fdecea" : undefined }}>
                           <td style={td}>{date(d.debitdate)}</td>
                           <td style={td}>{money(d.total)}</td>
-                          <td style={{ ...td, fontWeight: 600, color: nsf ? "#c23934" : "#2e844a" }}>
-                            {nsf ? "Returned / NSF" : d.status ?? "-"}
+                          <td style={{ ...td, fontWeight: 600, color: statusColor(d.status, nsf) }}>
+                            {d.status ?? "-"}
                           </td>
                           <td style={{ ...td, color: nsf ? "#c23934" : "#3e3e3c" }}>{d.reasonmessage ?? "-"}</td>
                           <td style={td}>{date(d.datecleared)}</td>
@@ -188,6 +188,14 @@ const errorBox: React.CSSProperties = { background: "#fdecea", border: "1px soli
 const nsfBadge: React.CSSProperties = { background: "#c23934", color: "#fff", padding: "3px 10px", borderRadius: 12, fontSize: 12, fontWeight: 700 };
 const flagBadge: React.CSSProperties = { background: "#fe9339", color: "#fff", padding: "3px 10px", borderRadius: 12, fontSize: 12, fontWeight: 700 };
 const okBadge: React.CSSProperties = { background: "#eef4fb", color: "#0070d2", padding: "3px 10px", borderRadius: 12, fontSize: 12, fontWeight: 600 };
+/** Color a draft status: success green, failed/NSF red, everything else neutral. */
+function statusColor(status: string | undefined, nsf: boolean): string {
+  if (nsf) return "#c23934";
+  const s = (status ?? "").toLowerCase();
+  if (/success|cleared|settled|posted/.test(s)) return "#2e844a";
+  return "#706e6b";
+}
+
 function statusBadge(status?: string): React.CSSProperties {
   const s = (status ?? "").toLowerCase();
   const active = s.includes("active");
