@@ -121,6 +121,45 @@ async function sasCall<T = unknown>(method: string, body: Record<string, unknown
   }
 }
 
+/**
+ * Raw probe of an arbitrary SAS method — returns the full envelope (Success,
+ * Message, Records, and the parsed ProcessData) so we can discover the real
+ * response shapes before building features. Admin/diagnostic use only.
+ */
+export async function sasProbe(
+  method: string,
+  body: Record<string, unknown> = {},
+): Promise<{ ok: boolean; message: string | null; records: number | null; sample: unknown; rawProcessData: string | null }> {
+  const { endpoint, apiKey, companyKey, securityKey } = await getCreds();
+  const url = `${endpoint}${endpoint.includes("?") ? "&" : "?"}APIKey=${encodeURIComponent(apiKey)}&CompanyKey=${encodeURIComponent(companyKey)}&Method=${encodeURIComponent(method)}`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (securityKey) headers["X-SecurityKey"] = securityKey;
+  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  const text = await res.text();
+  let data: SasResponse;
+  try {
+    data = JSON.parse(text) as SasResponse;
+  } catch {
+    return { ok: false, message: `HTTP ${res.status}: ${text.slice(0, 300)}`, records: null, sample: null, rawProcessData: null };
+  }
+  let parsed: unknown = null;
+  if (data.ProcessData) {
+    try {
+      const arr = JSON.parse(data.ProcessData) as unknown[];
+      parsed = Array.isArray(arr) ? arr.slice(0, 3) : arr; // first few rows only
+    } catch {
+      parsed = null;
+    }
+  }
+  return {
+    ok: !!data.Success,
+    message: data.Message ?? null,
+    records: data.Records ?? null,
+    sample: parsed,
+    rawProcessData: data.ProcessData ? data.ProcessData.slice(0, 800) : null,
+  };
+}
+
 function normalizeDraftStatus(s: string): string {
   const lower = (s ?? "").toLowerCase();
   if (lower.includes("schedul")) return "SCHEDULED";
