@@ -13,6 +13,7 @@ import { AccountHeaderButtons } from "@/components/accounts/account-header-butto
 import { BankDetailsCard } from "@/components/accounts/bank-details-card";
 import { HealthCheckCard } from "@/components/accounts/health-check-card";
 import { EscrowBalanceCard } from "@/components/accounts/escrow-balance-card";
+import { SasDetailsPanel } from "@/components/accounts/sas-details-panel";
 import { AccountTeamCard } from "@/components/accounts/account-team-card";
 import { ContactRolesList } from "@/components/accounts/contact-roles-list";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
@@ -598,11 +599,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   );
 
   const paymentSummariesPanel = (
-    <Section title="Payment Summaries">
-      <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>
-        Aggregated payment view — coming next.
-      </div>
-    </Section>
+    <SasDetailsPanel accountId={account.id} />
   );
 
   const settlementsPanel = (

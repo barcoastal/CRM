@@ -170,6 +170,75 @@ function normalizeDraftStatus(s: string): string {
   return s ? s.toUpperCase() : "SCHEDULED";
 }
 
+// ---- Account detail pull (powers the account SAS panel) ----------------
+
+export interface SasCustomer {
+  id: number;
+  remoteid: string;
+  firstname?: string;
+  lastname?: string;
+  company?: string;
+  display?: string;
+  customerstatus?: string;
+  city?: string;
+  state?: string;
+  postalcode?: string;
+  phone1?: string;
+  email?: string;
+  isflagged?: boolean;
+  isaudited?: boolean;
+  lastaction?: string;
+  totalfailed?: number; // count of failed/NSF drafts
+  totaldebt?: number;
+  totaldebits?: number; // total drafted to date
+  totalfees?: number;
+  totalcitadel?: number;
+  balance?: number;
+  balance_earmark?: number;
+}
+
+export interface SasDebit {
+  total?: number;
+  debitdate?: string;
+  status?: string; // Successful | Pending | Failed/Returned ...
+  reasonmessage?: string; // "ACH Cleared", NSF reason, etc.
+  datecleared?: string;
+  transactionid?: string;
+  payouts?: number;
+}
+
+/**
+ * Build the SAS filter params for one account. SAS filters GetCustomerRecords /
+ * GetCustomerDebits by `RemoteID` (the Salesforce account id) or `CustomerID`
+ * (the numeric SAS id). Prefer the SF id; fall back to externalSasId.
+ */
+function customerFilter(sfId?: string | null, externalSasId?: string | null): Record<string, string> | null {
+  if (sfId) return { RemoteID: sfId };
+  if (externalSasId && /^\d+$/.test(externalSasId)) return { CustomerID: externalSasId };
+  if (externalSasId) return { RemoteID: externalSasId };
+  return null;
+}
+
+/** Live pull of one account's SAS customer record + draft history. */
+export async function getSasAccountDetails(args: {
+  sfId?: string | null;
+  externalSasId?: string | null;
+}): Promise<{ customer: SasCustomer | null; debits: SasDebit[] }> {
+  const filter = customerFilter(args.sfId, args.externalSasId);
+  if (!filter) return { customer: null, debits: [] };
+
+  const recs = await sasCall<SasCustomer>("GetCustomerRecords", filter).catch(() => [] as SasCustomer[]);
+  // A matched filter returns exactly one row; a missed filter returns the full
+  // (paginated) list — never show that, it would be the wrong customer.
+  const customer = recs.length === 1 ? recs[0] : null;
+
+  const debits = await sasCall<SasDebit>("GetCustomerDebits", filter).catch(() => [] as SasDebit[]);
+  // Newest first.
+  debits.sort((a, b) => String(b.debitdate ?? "").localeCompare(String(a.debitdate ?? "")));
+
+  return { customer, debits };
+}
+
 export const sasProvider: PaymentProcessor = {
   name: "SAS",
 
