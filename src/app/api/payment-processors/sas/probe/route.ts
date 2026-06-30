@@ -1,12 +1,15 @@
 /**
- * TEMPORARY admin diagnostic — discover SAS API response shapes before building
- * the account SAS panel. Remove after the shapes are mapped.
+ * TEMPORARY admin diagnostic — discover SAS API response shapes / filter params
+ * before building the account SAS panel. Remove after the shapes are mapped.
  *
- *   GET /api/payment-processors/sas/probe?sasId=<externalSasId>
- *   GET /api/payment-processors/sas/probe?accountId=<crm account id>
+ * Default (no method): runs a fixed set of discovery probes.
  *
- * Tries a handful of likely customer/draft methods and returns the raw envelope
- * + a few sample rows for each, so we can see real field names.
+ * Query-driven single call:
+ *   /api/payment-processors/sas/probe?method=GetCustomerRecords&p.CustomerID=2113
+ *   Any query param prefixed "p." becomes a SAS body field (p.CustomerID -> CustomerID).
+ *
+ * Helpers:
+ *   ?accountId=<crm id>  -> resolves that account's externalSasId for context
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -18,42 +21,38 @@ export async function GET(request: NextRequest) {
   if ("response" in r) return r.response;
 
   const url = new URL(request.url);
+  const method = url.searchParams.get("method");
+
+  // Single query-driven call
+  if (method) {
+    const body: Record<string, unknown> = {};
+    for (const [k, v] of url.searchParams.entries()) {
+      if (k.startsWith("p.")) body[k.slice(2)] = v;
+    }
+    const result = await sasProbe(method, body).catch((e) => ({ error: String(e) }));
+    return NextResponse.json({ method, body, result });
+  }
+
+  // Default discovery set
   let sasId = url.searchParams.get("sasId") ?? undefined;
   const accountId = url.searchParams.get("accountId") ?? undefined;
-
   if (!sasId && accountId) {
     const a = await prisma.account.findUnique({ where: { id: accountId }, select: { externalSasId: true } });
     sasId = a?.externalSasId ?? undefined;
   }
-  // Fall back to the first account that has a SAS id, just to get a live sample.
   if (!sasId) {
     const a = await prisma.account.findFirst({ where: { externalSasId: { not: null } }, select: { externalSasId: true } });
     sasId = a?.externalSasId ?? undefined;
   }
-
   const out: Record<string, unknown> = { sasIdUsed: sasId ?? null };
-
-  // Candidate methods to discover. We pass the customer id under several common
-  // param names since we don't yet know which SAS expects.
   const idParams = sasId ? { remoteid: sasId, customer_remoteid: sasId, CustomerID: sasId, RemoteID: sasId } : {};
   const probes: Array<[string, Record<string, unknown>]> = [
     ["GetBalances", {}],
-    ["GetCustomerRecords", {}],
     ["GetCustomerRecords", idParams],
-    ["GetCustomers", {}],
-    ["GetUpdatedDebits", { SinceDate: "2020-01-01" }],
-    ["GetDebits", idParams],
     ["GetCustomerDebits", idParams],
   ];
-
-  for (const [method, body] of probes) {
-    const key = `${method}${Object.keys(body).length ? "(id)" : "()"}`;
-    try {
-      out[key] = await sasProbe(method, body);
-    } catch (e) {
-      out[key] = { error: e instanceof Error ? e.message : String(e) };
-    }
+  for (const [m, body] of probes) {
+    out[`${m}${Object.keys(body).length ? "(id)" : "()"}`] = await sasProbe(m, body).catch((e) => ({ error: String(e) }));
   }
-
   return NextResponse.json(out);
 }
