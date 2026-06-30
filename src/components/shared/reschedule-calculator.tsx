@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   generateRescheduleSchedule,
   RESCHEDULE_DEFAULTS,
@@ -60,6 +60,51 @@ function ReadField({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** Format a digits/decimal string with thousands separators, preserving a
+ * trailing "." or partial decimals so the user can keep typing. */
+function formatLive(raw: string): string {
+  if (raw === "") return "";
+  const dot = raw.indexOf(".");
+  const intPart = dot === -1 ? raw : raw.slice(0, dot);
+  const intFmt = intPart === "" ? "" : Number(intPart).toLocaleString("en-US");
+  if (dot === -1) return intFmt;
+  const decPart = raw.slice(dot + 1).replace(/\./g, "").slice(0, 2);
+  return `${intFmt}.${decPart}`;
+}
+
+/** Money text input that shows thousands separators as you type. */
+function MoneyInput({
+  value,
+  onChange,
+  style,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  style?: React.CSSProperties;
+}) {
+  const [text, setText] = useState(value ? value.toLocaleString("en-US") : "");
+  const lastNum = useRef(value);
+
+  // Resync when the value changes from outside (e.g. initial / reset), but not
+  // while the user is mid-edit (when our own onChange already matches).
+  useEffect(() => {
+    if (value !== lastNum.current) {
+      lastNum.current = value;
+      setText(value ? value.toLocaleString("en-US") : "");
+    }
+  }, [value]);
+
+  function handle(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/[^0-9.]/g, "");
+    const num = raw === "" ? 0 : Number(raw) || 0;
+    lastNum.current = num;
+    onChange(num);
+    setText(formatLive(raw));
+  }
+
+  return <input inputMode="decimal" value={text} onChange={handle} style={style} />;
+}
+
 export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial }) {
   const [totalDebt, setTotalDebt] = useState(initial?.totalDebt ?? 0);
   const [termMonths, setTermMonths] = useState(initial?.termMonths ?? 6);
@@ -91,12 +136,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
       <div style={{ ...wrap, marginBottom: 12 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 12 }}>
           <Field label="Total Debt">
-            <input
-              type="number"
-              value={totalDebt}
-              onChange={(e) => setTotalDebt(Number(e.target.value) || 0)}
-              style={inputStyle}
-            />
+            <MoneyInput value={totalDebt} onChange={setTotalDebt} style={inputStyle} />
           </Field>
           <Field label="No of Drafts Completed">
             <input
@@ -107,12 +147,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
             />
           </Field>
           <Field label="Completed Drafts Amount">
-            <input
-              type="number"
-              value={completedAmount}
-              onChange={(e) => setCompletedAmount(Number(e.target.value) || 0)}
-              style={inputStyle}
-            />
+            <MoneyInput value={completedAmount} onChange={setCompletedAmount} style={inputStyle} />
           </Field>
           <Field label="Payment Term">
             <select value={termMonths} onChange={(e) => setTermMonths(Number(e.target.value))} style={inputStyle}>
@@ -133,12 +168,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
             <input readOnly value={money(RESCHEDULE_DEFAULTS.bankSetupFee)} style={ro} />
           </Field>
           <Field label="Citadel Fee (per month)">
-            <input
-              type="number"
-              value={citadelFee}
-              onChange={(e) => setCitadelFee(Number(e.target.value) || 0)}
-              style={inputStyle}
-            />
+            <MoneyInput value={citadelFee} onChange={setCitadelFee} style={inputStyle} />
           </Field>
           <Field label="Setup Fee">
             <input readOnly value={money(t.setupFee)} style={ro} />
