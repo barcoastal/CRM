@@ -170,6 +170,13 @@ function normalizeDraftStatus(s: string): string {
   return s ? s.toUpperCase() : "SCHEDULED";
 }
 
+/** All SAS balance rows (id, remoteid, current/in/out). One bulk call. */
+export async function getAllSasBalances(): Promise<
+  Array<{ id: number; remoteid: string; current_balance: number; balance_earmark?: number; balance_in?: number; balance_out?: number }>
+> {
+  return sasCall("GetBalances", {});
+}
+
 // ---- Account detail pull (powers the account SAS panel) ----------------
 
 export interface SasCustomer {
