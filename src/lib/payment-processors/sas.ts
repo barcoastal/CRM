@@ -213,9 +213,15 @@ export interface SasDebit {
  * (the numeric SAS id). Prefer the SF id; fall back to externalSasId.
  */
 function customerFilter(sfId?: string | null, externalSasId?: string | null): Record<string, string> | null {
-  if (sfId) return { RemoteID: sfId };
-  if (externalSasId && /^\d+$/.test(externalSasId)) return { CustomerID: externalSasId };
-  if (externalSasId) return { RemoteID: externalSasId };
+  // SAS keys on the legacy Salesforce id (001VO...) or the numeric SAS customer
+  // id, both of which we backfilled into externalSasId. The CRM's current sfId
+  // is a different SF org (0018Y...) and does NOT match SAS, so only fall back
+  // to it if it actually looks like a SAS-style 001 id.
+  if (externalSasId) {
+    if (/^\d+$/.test(externalSasId)) return { CustomerID: externalSasId };
+    return { RemoteID: externalSasId };
+  }
+  if (sfId && sfId.startsWith("001")) return { RemoteID: sfId };
   return null;
 }
 
