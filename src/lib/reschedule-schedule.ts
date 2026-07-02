@@ -24,7 +24,8 @@ export const RESCHEDULE_DEFAULTS = {
   serviceFeePerPeriod: 55,
   monthlyBankFee: 15,
   bankSetupFee: 10,
-  citadelFee: 0,
+  // Monthly legal fee (Citadel legal plan). Charged once per month; standard $145.
+  citadelFee: 145,
 } as const;
 
 /**

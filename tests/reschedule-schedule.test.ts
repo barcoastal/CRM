@@ -25,7 +25,7 @@ describe("reschedule schedule matches Salesforce", () => {
   });
 
   it("without citadel, falls to service×(term×4−1) base", () => {
-    const r = generateRescheduleSchedule({ totalDebt: 150000, termMonths: 6 });
+    const r = generateRescheduleSchedule({ totalDebt: 150000, termMonths: 6, citadelFee: 0 });
     // 64500 + 30000 + 55*23 + 15*6 + 10 = 95865 ; /23 = 4168.04
     expect(r.totals.weeklyDraftAmount).toBeCloseTo(4168.04, 2);
   });
