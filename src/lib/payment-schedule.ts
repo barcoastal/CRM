@@ -199,8 +199,8 @@ export function generatePaymentSchedule(input: PaymentScheduleInput): PaymentSch
   const setupRowAmount = round2(setupFee + retainerAmount + setupRowBankFee);
 
   // ============ Per-row schedule generation ============
+  // Projected rows are all "Pending" — don't infer "Completed" from a past date.
   const startDate = new Date(input.firstPaymentDate ?? new Date());
-  const today = new Date();
   const rows: PaymentRow[] = [];
 
   // Row 1 — Setup Row (paid upfront, Setup + Retainer)
@@ -214,7 +214,7 @@ export function generatePaymentSchedule(input: PaymentScheduleInput): PaymentSch
     monthlyBankFee: setupRowBankFee,
     citadelFee: 0,
     weeklySavings: 0,
-    status: startDate < today ? "Completed" : "Pending",
+    status: "Pending",
   });
 
   // Per-row breakdown state (mirrors Apex monthYearNoOfPaymentsMap)
@@ -259,7 +259,7 @@ export function generatePaymentSchedule(input: PaymentScheduleInput): PaymentSch
       monthlyBankFee: bankFeeThisRow,
       citadelFee: citadelThisRow,
       weeklySavings: savingsThisRow,
-      status: date < today ? "Completed" : "Pending",
+      status: "Pending",
     });
   }
 

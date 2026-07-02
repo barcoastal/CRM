@@ -152,8 +152,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
   return (
-    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
+    <div>
       <div style={{ ...wrap, marginBottom: 12 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 12 }}>
           <Field label="Total Debt">
@@ -233,8 +232,9 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
         </div>
       </div>
 
-      {/* Schedule */}
-      <div style={{ ...wrap, overflowX: "auto", padding: 0 }}>
+      {/* Schedule (left) + Total Payments Summary (right) */}
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <div style={{ flex: 1, minWidth: 0, ...wrap, overflowX: "auto", padding: 0 }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
             <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
@@ -289,8 +289,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
             ))}
           </tbody>
         </table>
-      </div>
-      </div>
+        </div>
 
       {/* Total Payments Summary — mirrors the SF side panel */}
       <aside style={{ width: 300, flexShrink: 0 }}>
@@ -332,6 +331,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
           ))}
         </div>
       </aside>
+      </div>
     </div>
   );
 }

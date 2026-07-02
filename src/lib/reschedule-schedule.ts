@@ -144,8 +144,10 @@ export function generateRescheduleSchedule(input: RescheduleInput): RescheduleRe
   const estimatedSavings = round2(debt - estimatedProgramCost);
 
   // ---- schedule rows ----
+  // Every row here is a projected/remaining draft (a reschedule already excludes
+  // the completed drafts), so all rows are "Pending" — matching SF. Do NOT derive
+  // "Completed" from a past date; the program start can be in the past.
   const start = new Date(input.firstPaymentDate ?? new Date());
-  const today = new Date();
   const rows: RescheduleRow[] = [];
 
   // Row 1 — retainer + setup paid upfront, plus the bank setup fee and the
@@ -164,7 +166,7 @@ export function generateRescheduleSchedule(input: RescheduleInput): RescheduleRe
     citadelFee: 0,
     escrowAmount: 0,
     runningBalance: 0,
-    status: start < today ? "Completed" : "Pending",
+    status: "Pending",
   });
 
   let programRemaining = programFeeAmount;
@@ -210,7 +212,7 @@ export function generateRescheduleSchedule(input: RescheduleInput): RescheduleRe
       citadelFee: citadelThisRow,
       escrowAmount: escrow,
       runningBalance: running,
-      status: date < today ? "Completed" : "Pending",
+      status: "Pending",
     });
   }
 
