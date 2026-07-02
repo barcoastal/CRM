@@ -111,8 +111,11 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   const [totalDebt, setTotalDebt] = useState(initial?.totalDebt ?? 0);
   const [termMonths, setTermMonths] = useState(initial?.termMonths ?? 6);
   const [citadelFee, setCitadelFee] = useState(initial?.citadelFee ?? RESCHEDULE_DEFAULTS.citadelFee);
-  const [completedCount, setCompletedCount] = useState(initial?.completedDraftsCount ?? 0);
-  const [completedAmount, setCompletedAmount] = useState(initial?.completedDraftsAmount ?? 0);
+  const noOfDebts = initial?.noOfDebts ?? 0;
+  // Reschedule-only: number/amount of drafts already collected. Default 0 for a
+  // fresh projection; not shown as an input (SF doesn't expose them here).
+  const completedCount = initial?.completedDraftsCount ?? 0;
+  const completedAmount = initial?.completedDraftsAmount ?? 0;
   const [firstPaymentDate, setFirstPaymentDate] = useState(
     initial?.firstPaymentDate ?? new Date().toISOString().slice(0, 10),
   );
@@ -156,16 +159,11 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
           <Field label="Total Debt">
             <MoneyInput value={totalDebt} onChange={setTotalDebt} style={inputStyle} />
           </Field>
-          <Field label="No of Drafts Completed">
-            <input
-              type="number"
-              value={completedCount}
-              onChange={(e) => setCompletedCount(Number(e.target.value) || 0)}
-              style={inputStyle}
-            />
+          <Field label="No of Debts Included">
+            <input readOnly value={String(noOfDebts)} style={ro} />
           </Field>
-          <Field label="Completed Drafts Amount">
-            <MoneyInput value={completedAmount} onChange={setCompletedAmount} style={inputStyle} />
+          <Field label="Current Total Debt">
+            <input readOnly value={money(totalDebt)} style={ro} />
           </Field>
           <Field label="Payment Term">
             <select value={termMonths} onChange={(e) => setTermMonths(Number(e.target.value))} style={inputStyle}>

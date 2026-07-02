@@ -746,7 +746,14 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       <RescheduleCalculator
         initial={{
           totalDebt: latestCalc?.totalDebt ?? totalDebtVal,
-          termMonths: latestCalc?.programFeePeriod ?? 6,
+          termMonths:
+            latestCalc?.programFeePeriod ||
+            (oppSfData["Payment_Term__c"] != null && Number(oppSfData["Payment_Term__c"]) > 0
+              ? Number(oppSfData["Payment_Term__c"])
+              : 0) ||
+            6,
+          noOfDebts: opp.debts.length,
+          citadelFee: latestCalc?.citadelFee ?? undefined,
           firstPaymentDate: latestCalc?.firstPaymentDate
             ? latestCalc.firstPaymentDate.toISOString().slice(0, 10)
             : new Date().toISOString().slice(0, 10),
