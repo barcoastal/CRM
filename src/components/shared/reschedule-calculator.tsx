@@ -136,17 +136,6 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   );
   const t = result.totals;
 
-  // ---- Total Payments Summary (mirrors the SF side panel) ----
-  const sum = (fn: (r: RescheduleResult["rows"][number]) => number) =>
-    Math.round(result.rows.reduce((s, r) => s + fn(r), 0) * 100) / 100;
-  const totalProgramCost = sum((r) => r.weeklyDraftAmount);
-  const totalProcessorFee = sum((r) => r.bankFee);
-  const totalServiceFee = sum((r) => r.serviceFee);
-  const totalCitadelFee = sum((r) => r.citadelFee);
-  const totalEscrow = sum((r) => r.escrowAmount);
-  const estimatedYouSave = Math.round((t.totalDebt - totalProgramCost) * 100) / 100;
-  const monthlyPayment = Math.round(t.weeklyDraftAmount * 4 * 100) / 100;
-
   const TERMS = Array.from({ length: 30 }, (_, i) => i + 1);
   const PROCESSORS = ["SAS Processor", "RAM Processor", "LAPP Processor", "Reliant Processor"];
   const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -232,9 +221,8 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
         </div>
       </div>
 
-      {/* Schedule (left) + Total Payments Summary (right) */}
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-        <div style={{ flex: 1, minWidth: 0, ...wrap, overflowX: "auto", padding: 0 }}>
+      {/* Schedule */}
+      <div style={{ ...wrap, overflowX: "auto", padding: 0 }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
             <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
@@ -290,48 +278,6 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
           </tbody>
         </table>
         </div>
-
-      {/* Total Payments Summary — mirrors the SF side panel */}
-      <aside style={{ width: 300, flexShrink: 0 }}>
-        <div style={{ ...wrap, padding: 0, overflow: "hidden" }}>
-          <div style={{ padding: "10px 12px", fontWeight: 700, fontSize: 13, borderBottom: "1px solid #d8dde6", background: "#fafaf9" }}>
-            Total Payments Summary
-          </div>
-          {([
-            ["Total Program Length", String(termMonths)],
-            ["Total Retainer Payment Count", String(t.noOfPayments)],
-            ["Total Debt", money(t.totalDebt)],
-            ["Total Program Cost", money(totalProgramCost)],
-            ["Total Retainer Fee", money(t.retainerAmount)],
-            ["Total Program Fee", money(t.programFeeAmount)],
-            ["Total Setup Fee", money(t.setupFee)],
-            ["Total Processor Fee", money(totalProcessorFee)],
-            ["Total Service Fee", money(totalServiceFee)],
-            ["Total Citadel Fee", money(totalCitadelFee)],
-            ["Total Escrow Amount", money(totalEscrow)],
-            ["Estimated Amount You Save", money(estimatedYouSave)],
-            ["Total Weekly Payment", money(t.weeklyDraftAmount)],
-            ["Total Weekly Saving", money(monthlyPayment)],
-          ] as [string, string][]).map(([label, value], i) => (
-            <div
-              key={label}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 8,
-                padding: "8px 12px",
-                fontSize: 12,
-                background: i % 2 ? "#fff" : "#fafafa",
-                borderBottom: "1px solid #f3f3f3",
-              }}
-            >
-              <span style={{ color: "#3e3e3c" }}>{label}</span>
-              <span style={{ fontWeight: 600, color: "#080707", whiteSpace: "nowrap" }}>{value}</span>
-            </div>
-          ))}
-        </div>
-      </aside>
-      </div>
     </div>
   );
 }

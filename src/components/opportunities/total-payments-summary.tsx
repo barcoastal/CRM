@@ -1,35 +1,34 @@
 /**
- * Total Payments Summary — right rail on the SF Opportunity detail.
+ * Total Payments Summary — right-rail card on the Opportunity / Account detail,
+ * mirroring the SF "Total Payments Summary" panel next to the Reschedule Program
+ * calculator.
  *
- * SF layout reference: docs/sf-screenshots/sf-opp-kenya.png — rail block titled
- * "Total Payments Summary" with the header "No Records Found" when empty. SF
- * surfaces the DS_Total_* roll-ups from Program_Plan__c → Opportunity (these
- * are summary fields rolling up Draft__c & Fee__c records).
- *
- * We compute these client-side from either:
- *   1. The active ProgramPlan's drafts/fees (preferred — matches SF rollups), or
- *   2. The latest saved Payment Calculator snapshot when the program hasn't
- *      been signed yet (so the rail isn't empty during Working Opportunity).
- *
- * Fields mirrored 1:1 with SF Total_Payments_Summary on opportunity detail:
- *   Program Length, Total Debt, Total Program Cost, Total Program Fee,
- *   Total Setup Fee, Total Bank Fee, Total Service Fee, Total Settlement,
- *   Total Weekly Payment.
+ * Values are computed server-side from the deal's reschedule schedule (same math
+ * as the Payment Calculator), so the rail matches SF's numbers to the cent for
+ * the deal's real inputs. Fields (in SF order):
+ *   Total Program Length, Total Retainer Payment Count, Total Debt,
+ *   Total Program Cost, Total Retainer Fee, Total Program Fee, Total Setup Fee,
+ *   Total Processor Fee, Total Service Fee, Total Escrow Amount,
+ *   Estimated Amount You Save, Total Weekly Payment, Total Weekly Saving.
  */
 
 import { fmtMoney } from "@/lib/opp-formulas";
 
 export interface TotalPaymentsSummaryProps {
   programLengthMonths: number | null;
+  retainerPaymentCount: number | null;
   totalDebt: number;
   totalProgramCost: number | null;
+  totalRetainerFee: number | null;
   totalProgramFee: number | null;
   totalSetupFee: number | null;
-  totalBankFee: number | null;
+  totalProcessorFee: number | null;
   totalServiceFee: number | null;
-  totalSettlement: number | null;
+  totalEscrowAmount: number | null;
+  estimatedYouSave: number | null;
   totalWeeklyPayment: number | null;
-  /** When true and all rollups are null, render the SF "No Records Found" empty state. */
+  totalWeeklySaving: number | null;
+  /** When true and the rollups are empty, render the SF "No Records Found" state. */
   empty?: boolean;
 }
 
@@ -47,28 +46,26 @@ const valueCellStyle: React.CSSProperties = {
 
 export function TotalPaymentsSummary(props: TotalPaymentsSummaryProps) {
   const rows: [string, string | null][] = [
-    [
-      "Program Length",
-      props.programLengthMonths ? `${props.programLengthMonths} mo` : null,
-    ],
-    ["Total Debt", `$${props.totalDebt.toLocaleString()}`],
+    ["Total Program Length", props.programLengthMonths != null ? String(props.programLengthMonths) : null],
+    ["Total Retainer Payment Count", props.retainerPaymentCount != null ? String(props.retainerPaymentCount) : null],
+    ["Total Debt", `$${props.totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
     ["Total Program Cost", fmtMoney(props.totalProgramCost)],
+    ["Total Retainer Fee", fmtMoney(props.totalRetainerFee)],
     ["Total Program Fee", fmtMoney(props.totalProgramFee)],
     ["Total Setup Fee", fmtMoney(props.totalSetupFee)],
-    ["Total Bank Fee", fmtMoney(props.totalBankFee)],
+    ["Total Processor Fee", fmtMoney(props.totalProcessorFee)],
     ["Total Service Fee", fmtMoney(props.totalServiceFee)],
-    ["Total Settlement", fmtMoney(props.totalSettlement)],
+    ["Total Escrow Amount", fmtMoney(props.totalEscrowAmount)],
+    ["Estimated Amount You Save", fmtMoney(props.estimatedYouSave)],
     ["Total Weekly Payment", fmtMoney(props.totalWeeklyPayment)],
+    ["Total Weekly Saving", fmtMoney(props.totalWeeklySaving)],
   ];
 
   const allEmpty =
     props.empty &&
     props.totalProgramCost == null &&
     props.totalProgramFee == null &&
-    props.totalSetupFee == null &&
-    props.totalBankFee == null &&
-    props.totalServiceFee == null &&
-    props.totalSettlement == null;
+    props.totalWeeklyPayment == null;
 
   return (
     <article
@@ -91,9 +88,7 @@ export function TotalPaymentsSummary(props: TotalPaymentsSummaryProps) {
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
           Total Payments Summary
         </h3>
-        {allEmpty && (
-          <span style={{ fontSize: 12, color: "#706e6b" }}>No Records Found</span>
-        )}
+        {allEmpty && <span style={{ fontSize: 12, color: "#706e6b" }}>No Records Found</span>}
       </header>
       {!allEmpty && (
         <table style={{ width: "100%", fontSize: 12, padding: "0 12px 8px" }}>

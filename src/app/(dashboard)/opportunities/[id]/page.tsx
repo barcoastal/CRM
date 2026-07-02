@@ -12,6 +12,7 @@ import { OppTabs } from "@/components/opportunities/opp-tabs";
 import { OppHeaderButtons } from "@/components/opportunities/opp-header-buttons";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
 import { RescheduleCalculator } from "@/components/shared/reschedule-calculator";
+import { generateRescheduleSchedule } from "@/lib/reschedule-schedule";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { RequestDocumentsButton } from "@/components/opportunities/request-documents-button";
 import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-list";
@@ -741,17 +742,47 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     </Section>
   );
 
+  // Deal's real payment term (saved calc period -> SF Payment_Term__c -> 6).
+  const reschedTermMonths =
+    latestCalc?.programFeePeriod ||
+    (oppSfData["Payment_Term__c"] != null && Number(oppSfData["Payment_Term__c"]) > 0
+      ? Number(oppSfData["Payment_Term__c"])
+      : 0) ||
+    6;
+  const reschedDebt = latestCalc?.totalDebt ?? totalDebtVal;
+  // Server-side schedule so the right-rail Total Payments Summary matches the
+  // calculator (and SF) to the cent for the deal's real inputs.
+  const reschedSchedule = generateRescheduleSchedule({
+    totalDebt: reschedDebt,
+    termMonths: reschedTermMonths,
+    citadelFee: latestCalc?.citadelFee ?? undefined,
+  });
+  const rRows = reschedSchedule.rows;
+  const rSum = (fn: (r: (typeof rRows)[number]) => number) =>
+    Math.round(rRows.reduce((s, r) => s + fn(r), 0) * 100) / 100;
+  const rProgramCost = rSum((r) => r.weeklyDraftAmount);
+  const summaryValues = {
+    programLengthMonths: reschedTermMonths,
+    retainerPaymentCount: reschedSchedule.totals.noOfPayments,
+    totalDebt: reschedDebt,
+    totalProgramCost: rProgramCost,
+    totalRetainerFee: reschedSchedule.totals.retainerAmount,
+    totalProgramFee: reschedSchedule.totals.programFeeAmount,
+    totalSetupFee: reschedSchedule.totals.setupFee,
+    totalProcessorFee: rSum((r) => r.bankFee),
+    totalServiceFee: rSum((r) => r.serviceFee),
+    totalEscrowAmount: rSum((r) => r.escrowAmount),
+    estimatedYouSave: Math.round((reschedDebt - rProgramCost) * 100) / 100,
+    totalWeeklyPayment: reschedSchedule.totals.weeklyDraftAmount,
+    totalWeeklySaving: Math.round(reschedSchedule.totals.weeklyDraftAmount * 4 * 100) / 100,
+  };
+
   const calcPanel = (
     <Section title="Payment Calculator">
       <RescheduleCalculator
         initial={{
-          totalDebt: latestCalc?.totalDebt ?? totalDebtVal,
-          termMonths:
-            latestCalc?.programFeePeriod ||
-            (oppSfData["Payment_Term__c"] != null && Number(oppSfData["Payment_Term__c"]) > 0
-              ? Number(oppSfData["Payment_Term__c"])
-              : 0) ||
-            6,
+          totalDebt: reschedDebt,
+          termMonths: reschedTermMonths,
           noOfDebts: opp.debts.length,
           citadelFee: latestCalc?.citadelFee ?? undefined,
           firstPaymentDate: latestCalc?.firstPaymentDate
@@ -969,16 +1000,20 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
                 Total Payments Summary → Reports → DocuSign Envelope Status →
                 Contact Roles. Activity / Chatter sits below. */}
             <TotalPaymentsSummary
-              programLengthMonths={latestCalc?.programFeePeriod ?? null}
-              totalDebt={totalDebtVal}
-              totalProgramCost={formulas.totalAmountWithFees ?? latestCalc?.estimatedAmount ?? null}
-              totalProgramFee={formulas.totalProgramFee ?? null}
-              totalSetupFee={latestCalc?.setupFee ?? null}
-              totalBankFee={formulas.totalBankFee ?? null}
-              totalServiceFee={latestCalc?.serviceFee ?? null}
-              totalSettlement={formulas.estimatedSettlement ?? latestCalc?.totalSettlement ?? null}
-              totalWeeklyPayment={totalWeekly || null}
-              empty={!latestCalc && opp.programPlans.length === 0}
+              programLengthMonths={summaryValues.programLengthMonths}
+              retainerPaymentCount={summaryValues.retainerPaymentCount}
+              totalDebt={summaryValues.totalDebt}
+              totalProgramCost={summaryValues.totalProgramCost}
+              totalRetainerFee={summaryValues.totalRetainerFee}
+              totalProgramFee={summaryValues.totalProgramFee}
+              totalSetupFee={summaryValues.totalSetupFee}
+              totalProcessorFee={summaryValues.totalProcessorFee}
+              totalServiceFee={summaryValues.totalServiceFee}
+              totalEscrowAmount={summaryValues.totalEscrowAmount}
+              estimatedYouSave={summaryValues.estimatedYouSave}
+              totalWeeklyPayment={summaryValues.totalWeeklyPayment}
+              totalWeeklySaving={summaryValues.totalWeeklySaving}
+              empty={reschedDebt <= 0}
             />
             <OppReportsCard opportunityId={opp.id} />
             <DocusignEnvelopeStatus
