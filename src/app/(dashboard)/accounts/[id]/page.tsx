@@ -442,14 +442,24 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   );
 
   const activeOpp = account.opportunities[0];
+  // Real per-deal payment term (months). Prefer the signed program plan, then
+  // the SF Payment_Term__c snapshot, else fall back to 6. A hardcoded 6 here
+  // produced wrong draft amounts for any deal not on a 6-month term.
+  let oppSfData: Record<string, unknown> = {};
+  try { oppSfData = activeOpp?.sfDataJson ? JSON.parse(activeOpp.sfDataJson) as Record<string, unknown> : {}; } catch { /* empty */ }
+  const sfTerm = oppSfData["Payment_Term__c"] != null ? Number(oppSfData["Payment_Term__c"]) : NaN;
+  const reschedTermMonths =
+    account.programPlans[0]?.termMonths ||
+    (Number.isFinite(sfTerm) && sfTerm > 0 ? sfTerm : 0) ||
+    6;
   const calcPanel = activeOpp ? (
     <Section title="Reschedule Program">
       <RescheduleCalculator
         initial={{
           totalDebt: activeOpp.totalDebt ?? totalDebt,
-          termMonths: 6,
-          firstPaymentDate: account.programStartDate
-            ? account.programStartDate.toISOString().slice(0, 10)
+          termMonths: reschedTermMonths,
+          firstPaymentDate: (account.programPlans[0]?.firstDraftDate ?? account.programStartDate)
+            ? (account.programPlans[0]?.firstDraftDate ?? account.programStartDate)!.toISOString().slice(0, 10)
             : new Date().toISOString().slice(0, 10),
         }}
       />

@@ -30,20 +30,22 @@ export const RESCHEDULE_DEFAULTS = {
 
 /**
  * Program-fee collection rate per draft: program fee = (draft − service) × rate,
- * with the remainder funding escrow (min savings). Bank/citadel fees are drawn
- * from the escrow side, so they don't change the program fee (which is why every
- * early row shows the same program fee).
+ * capped by the remaining program balance; the rest funds escrow (min savings).
+ * Bank/citadel fees are drawn from the escrow side, so they don't change the
+ * program fee (matches SF: every early row shows the same program fee).
  *
- * NOTE: SF's "Payment Calculator Settings" custom setting has
- * Min_Savings_Collection_Percent_Weekly__c = 30.00% (confirmed 2026-07-02),
- * which would imply a 0.70 rate → $1,946.91/row. But the live SF schedule shows
- * $1,841.91/row, so the real mechanism is a 30% savings FLOOR plus a separate
- * program-collection cap (likely programFeePeriod-based), NOT a flat 70% split.
- * The 0.66225 below is back-solved from the screenshot to match the visible rows
- * to the cent; it must be replaced once the full schedule / live formula is known.
- * TODO(bar): confirm against the full 23-row schedule to finalize.
+ * Rate = 100% − 30% min-savings = 70%, confirmed from SF's Payment Calculator
+ * Settings custom setting (Min_Savings_Collection_Percent_Monthly = 30.00%,
+ * used for all frequencies; verified 2026-07-02 in the cdcrm org).
+ *
+ * APPROXIMATE: this reproduces the SF program/escrow columns to within a few
+ * percent (e.g. live shows $1,841.91 on the $100k/6mo deal vs $1,946.91 here,
+ * and $2,570.04 vs $2,563.04 on the $408k/18mo deal). The exact per-row rule
+ * lives in a separate SF component that also spreads program collection across
+ * the term; it does NOT affect the weekly DRAFT amount (the ACH charge), only
+ * how each draft is split into program vs escrow in the display.
  */
-const PROGRAM_COLLECT_RATE = 0.662248;
+const PROGRAM_COLLECT_RATE = 0.7;
 
 export interface RescheduleInput {
   totalDebt: number;
