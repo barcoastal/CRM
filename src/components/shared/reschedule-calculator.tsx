@@ -14,6 +14,8 @@ export type RescheduleInitial = {
   firstPaymentDate?: string;
   completedDraftsCount?: number;
   completedDraftsAmount?: number;
+  paymentProcessor?: string;
+  noOfDebts?: number;
 };
 
 const wrap: React.CSSProperties = {
@@ -114,6 +116,8 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   const [firstPaymentDate, setFirstPaymentDate] = useState(
     initial?.firstPaymentDate ?? new Date().toISOString().slice(0, 10),
   );
+  const [paymentProcessor, setPaymentProcessor] = useState(initial?.paymentProcessor ?? "SAS Processor");
+  const [weeklyPaymentDay, setWeeklyPaymentDay] = useState("Friday");
 
   const result: RescheduleResult = useMemo(
     () =>
@@ -129,10 +133,24 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   );
   const t = result.totals;
 
+  // ---- Total Payments Summary (mirrors the SF side panel) ----
+  const sum = (fn: (r: RescheduleResult["rows"][number]) => number) =>
+    Math.round(result.rows.reduce((s, r) => s + fn(r), 0) * 100) / 100;
+  const totalProgramCost = sum((r) => r.weeklyDraftAmount);
+  const totalProcessorFee = sum((r) => r.bankFee);
+  const totalServiceFee = sum((r) => r.serviceFee);
+  const totalCitadelFee = sum((r) => r.citadelFee);
+  const totalEscrow = sum((r) => r.escrowAmount);
+  const estimatedYouSave = Math.round((t.totalDebt - totalProgramCost) * 100) / 100;
+  const monthlyPayment = Math.round(t.weeklyDraftAmount * 4 * 100) / 100;
+
   const TERMS = Array.from({ length: 30 }, (_, i) => i + 1);
+  const PROCESSORS = ["SAS Processor", "RAM Processor", "LAPP Processor", "Reliant Processor"];
+  const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
   return (
-    <div>
+    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ ...wrap, marginBottom: 12 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 12 }}>
           <Field label="Total Debt">
@@ -189,6 +207,20 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
               onChange={(e) => setFirstPaymentDate(e.target.value)}
               style={inputStyle}
             />
+          </Field>
+          <Field label="Weekly Payment Day">
+            <select value={weeklyPaymentDay} onChange={(e) => setWeeklyPaymentDay(e.target.value)} style={inputStyle}>
+              {DAYS.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Payment Processor">
+            <select value={paymentProcessor} onChange={(e) => setPaymentProcessor(e.target.value)} style={inputStyle}>
+              {PROCESSORS.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
           </Field>
         </div>
 
@@ -260,6 +292,48 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
           </tbody>
         </table>
       </div>
+      </div>
+
+      {/* Total Payments Summary — mirrors the SF side panel */}
+      <aside style={{ width: 300, flexShrink: 0 }}>
+        <div style={{ ...wrap, padding: 0, overflow: "hidden" }}>
+          <div style={{ padding: "10px 12px", fontWeight: 700, fontSize: 13, borderBottom: "1px solid #d8dde6", background: "#fafaf9" }}>
+            Total Payments Summary
+          </div>
+          {([
+            ["Total Program Length", String(termMonths)],
+            ["Total Retainer Payment Count", String(t.noOfPayments)],
+            ["Total Debt", money(t.totalDebt)],
+            ["Total Program Cost", money(totalProgramCost)],
+            ["Total Retainer Fee", money(t.retainerAmount)],
+            ["Total Program Fee", money(t.programFeeAmount)],
+            ["Total Setup Fee", money(t.setupFee)],
+            ["Total Processor Fee", money(totalProcessorFee)],
+            ["Total Service Fee", money(totalServiceFee)],
+            ["Total Citadel Fee", money(totalCitadelFee)],
+            ["Total Escrow Amount", money(totalEscrow)],
+            ["Estimated Amount You Save", money(estimatedYouSave)],
+            ["Total Weekly Payment", money(t.weeklyDraftAmount)],
+            ["Total Weekly Saving", money(monthlyPayment)],
+          ] as [string, string][]).map(([label, value], i) => (
+            <div
+              key={label}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 8,
+                padding: "8px 12px",
+                fontSize: 12,
+                background: i % 2 ? "#fff" : "#fafafa",
+                borderBottom: "1px solid #f3f3f3",
+              }}
+            >
+              <span style={{ color: "#3e3e3c" }}>{label}</span>
+              <span style={{ fontWeight: 600, color: "#080707", whiteSpace: "nowrap" }}>{value}</span>
+            </div>
+          ))}
+        </div>
+      </aside>
     </div>
   );
 }
