@@ -46,8 +46,8 @@ export const SF_DEFAULTS = {
   retainerPercent: 10,
   setupFee: 850,
   serviceFeePerPeriod: 55,
-  monthlyBankFee: 10,
-  bankSetupFee: 15,
+  monthlyBankFee: 15,
+  bankSetupFee: 10,
   citadelFee: 0,
   additionalMonthForCitadelFee: 0,
   frequency: "WEEKLY" as Frequency,
@@ -169,10 +169,11 @@ export function generatePaymentSchedule(input: PaymentScheduleInput): PaymentSch
   const totalPaymentAmount = round2(
     settlementAmount +
       programFeeAmount +
-      // Service fee is charged for every week of the program (term × 4), even
-      // though there are term×4−1 weekly payment rows. Matches the SF calculator
-      // (verified live: $50k/6mo → $1,430.22, $100k/6mo → $2,799.78).
-      servicePerPeriod * (term * 4) +
+      // Service fee is charged once per weekly payment row: (term × 4) − 1.
+      // This is the exact Apex formula in PaymentCalculatorElements
+      // .getTotalPaymentAmount() (serviceFee × ((paymentTerm × 4) − 1)).
+      // Verified live 2026-07-02: $100k/6mo/SAS → weekly draft $2,836.30.
+      servicePerPeriod * noOfActualPayments +
       monthlyBankFee * term +
       citadelFee * term +
       citadelFee * additionalMonthForCitadelFee +
@@ -190,7 +191,11 @@ export function generatePaymentSchedule(input: PaymentScheduleInput): PaymentSch
   const totalAmountWithFees = round2(debt * (totalWithFeesPercent / 100));
   const estimatedSavePercent = round2(100 - totalWithFeesPercent);
   const estimatedAmountYouSave = round2(debt * (estimatedSavePercent / 100));
-  const setupRowAmount = round2(setupFee + retainerAmount);
+  // The upfront setup/retainer draft also carries the bank setup fee plus the
+  // first month's bank fee, matching the SF setup row (e.g. $10,000 retainer +
+  // $850 setup + $25 bank = $10,875).
+  const setupRowBankFee = round2(bankSetupFee + monthlyBankFee);
+  const setupRowAmount = round2(setupFee + retainerAmount + setupRowBankFee);
 
   // ============ Per-row schedule generation ============
   const startDate = new Date(input.firstPaymentDate ?? new Date());
@@ -205,7 +210,7 @@ export function generatePaymentSchedule(input: PaymentScheduleInput): PaymentSch
     setupFee: setupFee,
     weeklyProgramFee: 0,
     weeklyServiceFee: 0,
-    monthlyBankFee: 0,
+    monthlyBankFee: setupRowBankFee,
     citadelFee: 0,
     weeklySavings: 0,
     status: startDate < today ? "Completed" : "Pending",
@@ -220,14 +225,12 @@ export function generatePaymentSchedule(input: PaymentScheduleInput): PaymentSch
     const date = addWeeks(startDate, i + 1);
     const monthKey = monthYearKey(date);
 
-    // Bank fee on first weekly row of each new month + bankSetupFee on very first row
+    // Monthly bank fee on the first weekly row of each new month. The bank
+    // setup fee and the first month's bank fee are carried on the setup row.
     let bankFeeThisRow = 0;
     if (!monthsSeenForBank.has(monthKey)) {
       bankFeeThisRow = monthlyBankFee;
       monthsSeenForBank.add(monthKey);
-    }
-    if (i === 0) {
-      bankFeeThisRow += bankSetupFee;
     }
 
     // Citadel fee once per month

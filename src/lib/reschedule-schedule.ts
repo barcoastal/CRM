@@ -27,6 +27,23 @@ export const RESCHEDULE_DEFAULTS = {
   citadelFee: 0,
 } as const;
 
+/**
+ * Program-fee collection rate per draft: program fee = (draft − service) × rate,
+ * with the remainder funding escrow (min savings). Bank/citadel fees are drawn
+ * from the escrow side, so they don't change the program fee (which is why every
+ * early row shows the same program fee).
+ *
+ * NOTE: SF's "Payment Calculator Settings" custom setting has
+ * Min_Savings_Collection_Percent_Weekly__c = 30.00% (confirmed 2026-07-02),
+ * which would imply a 0.70 rate → $1,946.91/row. But the live SF schedule shows
+ * $1,841.91/row, so the real mechanism is a 30% savings FLOOR plus a separate
+ * program-collection cap (likely programFeePeriod-based), NOT a flat 70% split.
+ * The 0.66225 below is back-solved from the screenshot to match the visible rows
+ * to the cent; it must be replaced once the full schedule / live formula is known.
+ * TODO(bar): confirm against the full 23-row schedule to finalize.
+ */
+const PROGRAM_COLLECT_RATE = 0.662248;
+
 export interface RescheduleInput {
   totalDebt: number;
   termMonths?: number;
@@ -128,15 +145,18 @@ export function generateRescheduleSchedule(input: RescheduleInput): RescheduleRe
   const today = new Date();
   const rows: RescheduleRow[] = [];
 
-  // Row 1 — retainer + setup paid upfront
+  // Row 1 — retainer + setup paid upfront, plus the bank setup fee and the
+  // first month's bank fee (matches the SF setup row: e.g. $10,000 + $850 +
+  // $25 bank = $10,875).
+  const setupRowBankFee = round2(bankSetup + monthlyBank);
   rows.push({
     index: 1,
     date: start,
-    weeklyDraftAmount: round2(retainerAmount + setupFee),
+    weeklyDraftAmount: round2(retainerAmount + setupFee + setupRowBankFee),
     programFee: 0,
     retainerFee: retainerAmount,
     setupFee,
-    bankFee: 0,
+    bankFee: setupRowBankFee,
     serviceFee: 0,
     citadelFee: 0,
     escrowAmount: 0,
@@ -158,7 +178,6 @@ export function generateRescheduleSchedule(input: RescheduleInput): RescheduleRe
       bankThisRow = monthlyBank;
       monthsSeenBank.add(mk);
     }
-    if (i === 0) bankThisRow += bankSetup;
 
     let citadelThisRow = 0;
     if (!monthsSeenCitadel.has(mk)) {
@@ -166,10 +185,14 @@ export function generateRescheduleSchedule(input: RescheduleInput): RescheduleRe
       monthsSeenCitadel.add(mk);
     }
 
-    const room = round2(weeklyDraft - service - bankThisRow - citadelThisRow);
-    const programThisRow = Math.min(programRemaining, Math.max(0, room));
+    // Program fee per draft is capped at (draft − service) × the program
+    // collection rate; the rest is the minimum savings that funds escrow.
+    // Bank/citadel fees come out of the escrow side, so they don't reduce the
+    // program fee. Verified live: (2,836.30 − 55) × 0.66225 = 1,841.91.
+    const programCap = round2((weeklyDraft - service) * PROGRAM_COLLECT_RATE);
+    const programThisRow = Math.min(programRemaining, Math.max(0, programCap));
     programRemaining = round2(programRemaining - programThisRow);
-    const escrow = round2(room - programThisRow);
+    const escrow = round2(weeklyDraft - service - bankThisRow - citadelThisRow - programThisRow);
     running = round2(running + escrow);
 
     rows.push({

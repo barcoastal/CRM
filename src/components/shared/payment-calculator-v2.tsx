@@ -36,6 +36,8 @@ export type PaymentCalcInitial = {
   termMonths?: number;
   firstPaymentDate?: string;
   legalPlanRequired?: boolean;
+  monthlyBankFee?: number;
+  citadelFee?: number;
 };
 
 const TERM_OPTIONS = Array.from({ length: 30 }, (_, i) => i + 1);
@@ -54,21 +56,23 @@ export function PaymentCalculatorV2({
     initial?.firstPaymentDate ?? new Date().toISOString().slice(0, 10)
   );
   const [legalPlanRequired, setLegalPlanRequired] = useState(initial?.legalPlanRequired ?? false);
+  const [monthlyBankFee, setMonthlyBankFee] = useState(initial?.monthlyBankFee ?? SF_DEFAULTS.monthlyBankFee);
+  const [citadelFee, setCitadelFee] = useState(initial?.citadelFee ?? SF_DEFAULTS.citadelFee);
   const [paymentProcessor, setPaymentProcessor] = useState("SAS Processor");
   const [recordType, setRecordType] = useState<"Business Lead">("Business Lead");
   const [computed, setComputed] = useState<PaymentScheduleResult | null>(null);
   const [saving, setSaving] = useState(false);
 
   const live: PaymentScheduleResult = useMemo(
-    () => generatePaymentSchedule({ totalDebt, termMonths, firstPaymentDate, legalPlanRequired }),
-    [totalDebt, termMonths, firstPaymentDate, legalPlanRequired]
+    () => generatePaymentSchedule({ totalDebt, termMonths, firstPaymentDate, legalPlanRequired, monthlyBankFee, citadelFee }),
+    [totalDebt, termMonths, firstPaymentDate, legalPlanRequired, monthlyBankFee, citadelFee]
   );
   const result = computed ?? live;
   const t = result.totals;
 
   function calculate() {
     setComputed(
-      generatePaymentSchedule({ totalDebt, termMonths, firstPaymentDate, legalPlanRequired })
+      generatePaymentSchedule({ totalDebt, termMonths, firstPaymentDate, legalPlanRequired, monthlyBankFee, citadelFee })
     );
   }
 
@@ -90,8 +94,8 @@ export function PaymentCalculatorV2({
           paymentProcessor,
           setupFee: t.setupFee,
           serviceFeePerPeriod: SF_DEFAULTS.serviceFeePerPeriod,
-          bankFeePerPeriod: SF_DEFAULTS.monthlyBankFee,
-          citadelFeePerPeriod: 0,
+          bankFeePerPeriod: monthlyBankFee,
+          citadelFeePerPeriod: citadelFee,
           totalSettlement: t.totalSettlementAmt,
           estimatedAmount: t.newTotalDebtAmount,
         }),
@@ -178,8 +182,25 @@ export function PaymentCalculatorV2({
             options={TERM_OPTIONS.map((n) => String(n))}
           />
           <NumField label="Service Fee" v={t.weeklyServiceFee} readonly prefix="$" />
-          <NumField label="Monthly Bank Fee" v={t.monthlyBankFee} readonly prefix="$" />
+          <NumField
+            label="Monthly Bank Fee"
+            v={monthlyBankFee}
+            on={(n) => {
+              setMonthlyBankFee(n);
+              setComputed(null);
+            }}
+            prefix="$"
+          />
           <NumField label="Bank Setup Fee" v={t.bankSetupFee} readonly prefix="$" />
+          <NumField
+            label="Citadel Fee"
+            v={citadelFee}
+            on={(n) => {
+              setCitadelFee(n);
+              setComputed(null);
+            }}
+            prefix="$"
+          />
           <SelectField label="Payment Frequency" value="Weekly" onChange={() => {}} options={["Weekly"]} disabled />
           <SelectField
             label="Payment Processor"
