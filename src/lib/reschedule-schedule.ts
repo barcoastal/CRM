@@ -62,6 +62,8 @@ export interface RescheduleInput {
   /** drafts already completed on a reschedule (excluded from the new schedule) */
   completedDraftsCount?: number;
   completedDraftsAmount?: number;
+  /** weekday drafts land on (e.g. "Monday"). Aligns weekly dates like SF. */
+  weeklyPaymentDay?: string;
 }
 
 export interface RescheduleRow {
@@ -102,6 +104,17 @@ function addWeeks(d: Date, n: number): Date {
   const c = new Date(d);
   c.setDate(c.getDate() + n * 7);
   return c;
+}
+const WEEKDAY: Record<string, number> = {
+  Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6,
+};
+/** SF getNextPaymentDateWeekly: next week's start (Sunday) + the chosen weekday. */
+function nextWeeklyDate(current: Date, dayOffset: number): Date {
+  const d = new Date(current);
+  d.setDate(d.getDate() + 7); // into next week
+  d.setDate(d.getDate() - d.getDay()); // back to that week's Sunday
+  d.setDate(d.getDate() + dayOffset); // forward to the chosen weekday
+  return d;
 }
 function monthKey(d: Date): string {
   return `${d.getMonth() + 1}-${d.getFullYear()}`;
@@ -174,8 +187,14 @@ export function generateRescheduleSchedule(input: RescheduleInput): RescheduleRe
   const monthsSeenBank = new Set<string>();
   const monthsSeenCitadel = new Set<string>();
 
+  // If a weekly payment day is chosen, snap each draft to that weekday (SF
+  // behaviour); otherwise just add 7 days from the start date.
+  const dayOffset = input.weeklyPaymentDay ? WEEKDAY[input.weeklyPaymentDay] : undefined;
+  let cursor = start;
+
   for (let i = 0; i < noOfPayments; i++) {
-    const date = addWeeks(start, i + 1);
+    const date = dayOffset != null ? nextWeeklyDate(cursor, dayOffset) : addWeeks(start, i + 1);
+    cursor = date;
     const mk = monthKey(date);
 
     let bankThisRow = 0;

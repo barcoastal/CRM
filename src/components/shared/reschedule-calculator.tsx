@@ -78,6 +78,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   const [showRecalc, setShowRecalc] = useState(false);
   const currentWeeklyPayment = initial?.currentWeeklyPayment ?? 0;
 
+  const [refreshKey, setRefreshKey] = useState(0);
   const result: RescheduleResult = useMemo(
     () =>
       generateRescheduleSchedule({
@@ -87,8 +88,10 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
         completedDraftsCount: completedCount,
         completedDraftsAmount: completedAmount,
         firstPaymentDate,
+        weeklyPaymentDay,
       }),
-    [totalDebt, termMonths, citadelFee, completedCount, completedAmount, firstPaymentDate],
+    // refreshKey lets the refresh button force a recompute on demand.
+    [totalDebt, termMonths, citadelFee, completedCount, completedAmount, firstPaymentDate, weeklyPaymentDay, refreshKey],
   );
   const t = result.totals;
 
@@ -98,12 +101,20 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8 }}>
         <button
           onClick={() => setShowRecalc(true)}
           style={{ background: "#0070d2", color: "#fff", border: 0, padding: "7px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
         >
           Recalculate
+        </button>
+        <button
+          onClick={() => setRefreshKey((k) => k + 1)}
+          title="Refresh"
+          aria-label="Refresh"
+          style={{ background: "#fff", color: "#0070d2", border: "1px solid #d8dde6", padding: "7px 12px", borderRadius: 4, fontSize: 15, fontWeight: 700, cursor: "pointer", lineHeight: 1 }}
+        >
+          ↻
         </button>
       </div>
       <div style={{ ...wrap, marginBottom: 12 }}>
