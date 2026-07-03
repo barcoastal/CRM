@@ -459,6 +459,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           totalDebt: activeOpp.totalDebt ?? totalDebt,
           termMonths: reschedTermMonths,
           noOfDebts: activeOpp._count?.debts ?? activeOpp.debts.length,
+          currentWeeklyPayment: activeOpp.currentWeeklyPayment ?? 0,
           firstPaymentDate: (account.programPlans[0]?.firstDraftDate ?? account.programStartDate)
             ? (account.programPlans[0]?.firstDraftDate ?? account.programStartDate)!.toISOString().slice(0, 10)
             : new Date().toISOString().slice(0, 10),

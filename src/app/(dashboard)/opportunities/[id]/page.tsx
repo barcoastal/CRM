@@ -790,6 +790,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           totalDebt: reschedDebt,
           termMonths: reschedTermMonths,
           noOfDebts: opp.debts.length,
+          currentWeeklyPayment: opp.currentWeeklyPayment ?? 0,
           citadelFee: latestCalc?.citadelFee ?? undefined,
           firstPaymentDate: latestCalc?.firstPaymentDate
             ? latestCalc.firstPaymentDate.toISOString().slice(0, 10)

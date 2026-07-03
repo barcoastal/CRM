@@ -6,6 +6,11 @@ import {
   RESCHEDULE_DEFAULTS,
   type RescheduleResult,
 } from "@/lib/reschedule-schedule";
+import { RescheduleRecalculateModal } from "./reschedule-recalculate-modal";
+
+// Program lengths (months) that qualify for the "Extra Bonus" badge. Mirrors the
+// SF Qualified_For_Bonus_Program_Length__c custom setting; edit as needed.
+const BONUS_PROGRAM_LENGTHS = [6, 7, 8, 9, 10, 11, 12];
 
 export type RescheduleInitial = {
   totalDebt?: number;
@@ -16,6 +21,7 @@ export type RescheduleInitial = {
   completedDraftsAmount?: number;
   paymentProcessor?: string;
   noOfDebts?: number;
+  currentWeeklyPayment?: number;
 };
 
 const wrap: React.CSSProperties = {
@@ -121,6 +127,8 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   );
   const [paymentProcessor, setPaymentProcessor] = useState(initial?.paymentProcessor ?? "SAS Processor");
   const [weeklyPaymentDay, setWeeklyPaymentDay] = useState("Friday");
+  const [showRecalc, setShowRecalc] = useState(false);
+  const currentWeeklyPayment = initial?.currentWeeklyPayment ?? 0;
 
   const result: RescheduleResult = useMemo(
     () =>
@@ -142,6 +150,14 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
 
   return (
     <div>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+        <button
+          onClick={() => setShowRecalc(true)}
+          style={{ background: "#0070d2", color: "#fff", border: 0, padding: "7px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+        >
+          Recalculate
+        </button>
+      </div>
       <div style={{ ...wrap, marginBottom: 12 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 12 }}>
           <Field label="Total Debt">
@@ -278,6 +294,30 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
           </tbody>
         </table>
         </div>
+
+      {showRecalc && (
+        <RescheduleRecalculateModal
+          currentTerm={termMonths}
+          inputs={{
+            totalDebt,
+            settlementPercent: RESCHEDULE_DEFAULTS.settlementPercent,
+            programFeePercent: RESCHEDULE_DEFAULTS.programFeePercent,
+            retainerPercent: RESCHEDULE_DEFAULTS.retainerPercent,
+            setupFee: RESCHEDULE_DEFAULTS.setupFee,
+            serviceFee: RESCHEDULE_DEFAULTS.serviceFeePerPeriod,
+            monthlyBankFee: RESCHEDULE_DEFAULTS.monthlyBankFee,
+            bankSetupFee: RESCHEDULE_DEFAULTS.bankSetupFee,
+            citadelFee,
+            currentWeeklyPayment,
+          }}
+          bonusProgramLengths={BONUS_PROGRAM_LENGTHS}
+          onApply={(t) => {
+            setTermMonths(t);
+            setShowRecalc(false);
+          }}
+          onClose={() => setShowRecalc(false)}
+        />
+      )}
     </div>
   );
 }
