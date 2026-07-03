@@ -229,9 +229,11 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   // Totals summary
   const totalDebtVal = opp.debts.reduce((s, d) => s + d.originalBalance, 0) || opp.totalDebt || 0;
   const totalWeekly = opp.debts.reduce((s, d) => {
-    if (d.paymentAmount == null || !d.paymentFrequency) return s;
-    const perYear: Record<string, number> = { DAILY: 252, WEEKLY: 52, BI_WEEKLY: 26, MONTHLY: 12, LUMP_SUM: 1 };
-    return s + ((d.paymentAmount * (perYear[d.paymentFrequency] ?? 0)) / 52);
+    if (d.paymentAmount == null || d.paymentAmount <= 0 || !d.paymentFrequency) return s;
+    // SF business-week conversion (mirrors LeadTriggerHandler / lead-debt-rollup):
+    // Daily ×5, Weekly ×1, Bi-Weekly ÷2, Monthly ÷4, Lump-sum 0. NOT annualized.
+    const perWeek: Record<string, number> = { DAILY: 5, WEEKLY: 1, BI_WEEKLY: 0.5, MONTHLY: 0.25, LUMP_SUM: 0 };
+    return s + d.paymentAmount * (perWeek[d.paymentFrequency] ?? 1);
   }, 0);
 
   // Compute DS_* formula fields read-time so they always reflect current
@@ -763,7 +765,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   const rProgramCost = rSum((r) => r.weeklyDraftAmount);
   // SF programPlanModal formula: Estimated Weekly Saving = currentWeeklyPayment
   // − program weekly draft. Retainer is collected in a single upfront draft.
-  const currentWeekly = opp.currentWeeklyPayment ?? 0;
+  const currentWeekly = opp.currentWeeklyPayment || totalWeekly;
   const summaryValues = {
     programLengthMonths: reschedTermMonths,
     retainerPaymentCount: rRows.filter((r) => r.retainerFee > 0).length,
@@ -790,7 +792,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           totalDebt: reschedDebt,
           termMonths: reschedTermMonths,
           noOfDebts: opp.debts.length,
-          currentWeeklyPayment: opp.currentWeeklyPayment ?? 0,
+          currentWeeklyPayment: opp.currentWeeklyPayment || totalWeekly,
           citadelFee: latestCalc?.citadelFee ?? undefined,
           firstPaymentDate: latestCalc?.firstPaymentDate
             ? latestCalc.firstPaymentDate.toISOString().slice(0, 10)
