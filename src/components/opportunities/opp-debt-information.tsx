@@ -69,12 +69,14 @@ const td: React.CSSProperties = {
   fontSize: 13,
 };
 
-const PERIODS_PER_YEAR: Record<string, number> = {
-  DAILY: 252,
-  WEEKLY: 52,
-  BI_WEEKLY: 26,
-  MONTHLY: 12,
-  LUMP_SUM: 1,
+// SF business-week conversion (mirrors LeadTriggerHandler): a Daily payment is
+// weekly ×5 (5 business days), NOT annualized. e.g. $1,000/day → $5,000/week.
+const PER_WEEK: Record<string, number> = {
+  DAILY: 5,
+  WEEKLY: 1,
+  BI_WEEKLY: 0.5,
+  MONTHLY: 0.25,
+  LUMP_SUM: 0,
 };
 
 function fmtMoney(n: number) {
@@ -172,9 +174,8 @@ export function OppDebtInformation({
 
   const totalDebt = items.reduce((s, d) => s + d.originalBalance, 0);
   const totalWeeklyPayment = items.reduce((s, d) => {
-    if (d.paymentAmount == null || !d.paymentFrequency) return s;
-    const perYear = PERIODS_PER_YEAR[d.paymentFrequency] ?? 0;
-    return s + (d.paymentAmount * perYear) / 52;
+    if (d.paymentAmount == null || d.paymentAmount <= 0 || !d.paymentFrequency) return s;
+    return s + d.paymentAmount * (PER_WEEK[d.paymentFrequency] ?? 1);
   }, 0);
   const showForm = adding || editing !== null;
 
