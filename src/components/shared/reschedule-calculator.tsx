@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   generateRescheduleSchedule,
   RESCHEDULE_DEFAULTS,
@@ -60,63 +60,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
-function ReadField({ label, value }: { label: string; value: string }) {
-  return (
-    <Field label={label}>
-      <input readOnly value={value} style={ro} />
-    </Field>
-  );
-}
-
-/** Format a digits/decimal string with thousands separators, preserving a
- * trailing "." or partial decimals so the user can keep typing. */
-function formatLive(raw: string): string {
-  if (raw === "") return "";
-  const dot = raw.indexOf(".");
-  const intPart = dot === -1 ? raw : raw.slice(0, dot);
-  const intFmt = intPart === "" ? "" : Number(intPart).toLocaleString("en-US");
-  if (dot === -1) return intFmt;
-  const decPart = raw.slice(dot + 1).replace(/\./g, "").slice(0, 2);
-  return `${intFmt}.${decPart}`;
-}
-
-/** Money text input that shows thousands separators as you type. */
-function MoneyInput({
-  value,
-  onChange,
-  style,
-}: {
-  value: number;
-  onChange: (n: number) => void;
-  style?: React.CSSProperties;
-}) {
-  const [text, setText] = useState(value ? value.toLocaleString("en-US") : "");
-  const lastNum = useRef(value);
-
-  // Resync when the value changes from outside (e.g. initial / reset), but not
-  // while the user is mid-edit (when our own onChange already matches).
-  useEffect(() => {
-    if (value !== lastNum.current) {
-      lastNum.current = value;
-      setText(value ? value.toLocaleString("en-US") : "");
-    }
-  }, [value]);
-
-  function handle(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/[^0-9.]/g, "");
-    const num = raw === "" ? 0 : Number(raw) || 0;
-    lastNum.current = num;
-    onChange(num);
-    setText(formatLive(raw));
-  }
-
-  return <input inputMode="decimal" value={text} onChange={handle} style={style} />;
-}
-
 export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial }) {
-  const [totalDebt, setTotalDebt] = useState(initial?.totalDebt ?? 0);
+  // Debt + citadel come from the deal (read-only in the calculator, like SF).
+  const totalDebt = initial?.totalDebt ?? 0;
   const [termMonths, setTermMonths] = useState(initial?.termMonths ?? 6);
-  const [citadelFee, setCitadelFee] = useState(initial?.citadelFee ?? RESCHEDULE_DEFAULTS.citadelFee);
+  const citadelFee = initial?.citadelFee ?? RESCHEDULE_DEFAULTS.citadelFee;
   const noOfDebts = initial?.noOfDebts ?? 0;
   // Reschedule-only: number/amount of drafts already collected. Default 0 for a
   // fresh projection; not shown as an input (SF doesn't expose them here).
@@ -159,15 +107,36 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
         </button>
       </div>
       <div style={{ ...wrap, marginBottom: 12 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 12 }}>
-          <Field label="Total Debt">
-            <MoneyInput value={totalDebt} onChange={setTotalDebt} style={inputStyle} />
-          </Field>
+        {/* 7-column input header, 1:1 with the SF Reschedule Program panel */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 12 }}>
           <Field label="No of Debts Included">
             <input readOnly value={String(noOfDebts)} style={ro} />
           </Field>
           <Field label="Current Total Debt">
             <input readOnly value={money(totalDebt)} style={ro} />
+          </Field>
+          <Field label="Total Debt Included">
+            <input readOnly value={money(totalDebt)} style={ro} />
+          </Field>
+          <Field label="Service Fee">
+            <input readOnly value={money(RESCHEDULE_DEFAULTS.serviceFeePerPeriod)} style={ro} />
+          </Field>
+          <Field label="Payment Processor">
+            <select value={paymentProcessor} onChange={(e) => setPaymentProcessor(e.target.value)} style={inputStyle}>
+              {PROCESSORS.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Monthly Bank Fee">
+            <input readOnly value={money(RESCHEDULE_DEFAULTS.monthlyBankFee)} style={ro} />
+          </Field>
+          <Field label="Bank Setup Fee">
+            <input readOnly value={money(RESCHEDULE_DEFAULTS.bankSetupFee)} style={ro} />
+          </Field>
+
+          <Field label="Frequency">
+            <input readOnly value="Weekly" style={ro} />
           </Field>
           <Field label="Payment Term">
             <select value={termMonths} onChange={(e) => setTermMonths(Number(e.target.value))} style={inputStyle}>
@@ -177,18 +146,6 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
                 </option>
               ))}
             </select>
-          </Field>
-          <Field label="Service Fee">
-            <input readOnly value={money(RESCHEDULE_DEFAULTS.serviceFeePerPeriod)} style={ro} />
-          </Field>
-          <Field label="Monthly Bank Fee">
-            <input readOnly value={money(RESCHEDULE_DEFAULTS.monthlyBankFee)} style={ro} />
-          </Field>
-          <Field label="Bank Setup Fee">
-            <input readOnly value={money(RESCHEDULE_DEFAULTS.bankSetupFee)} style={ro} />
-          </Field>
-          <Field label="Citadel Fee (per month)">
-            <MoneyInput value={citadelFee} onChange={setCitadelFee} style={inputStyle} />
           </Field>
           <Field label="Setup Fee">
             <input readOnly value={money(t.setupFee)} style={ro} />
@@ -202,6 +159,8 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
           <Field label="Settlement Percent">
             <input readOnly value={String(RESCHEDULE_DEFAULTS.settlementPercent)} style={ro} />
           </Field>
+          <div />
+
           <Field label="First Payment Date">
             <input
               type="date"
@@ -217,23 +176,6 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
               ))}
             </select>
           </Field>
-          <Field label="Payment Processor">
-            <select value={paymentProcessor} onChange={(e) => setPaymentProcessor(e.target.value)} style={inputStyle}>
-              {PROCESSORS.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </Field>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-          <ReadField label="Retainer Amount" value={money(t.retainerAmount)} />
-          <ReadField label="Total Settlement Amt" value={money(t.settlementAmount)} />
-          <ReadField label="Total Program Fee" value={money(t.programFeeAmount)} />
-          <ReadField label="Estimated Program Cost" value={money(t.estimatedProgramCost)} />
-          <ReadField label="Estimated Savings" value={money(t.estimatedSavings)} />
-          <ReadField label="Weekly Draft Amount" value={money(t.weeklyDraftAmount)} />
-          <ReadField label="No. of Payments" value={String(t.noOfPayments)} />
         </div>
       </div>
 
