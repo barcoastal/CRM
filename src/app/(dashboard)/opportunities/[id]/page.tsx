@@ -761,9 +761,12 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   const rSum = (fn: (r: (typeof rRows)[number]) => number) =>
     Math.round(rRows.reduce((s, r) => s + fn(r), 0) * 100) / 100;
   const rProgramCost = rSum((r) => r.weeklyDraftAmount);
+  // SF programPlanModal formula: Estimated Weekly Saving = currentWeeklyPayment
+  // − program weekly draft. Retainer is collected in a single upfront draft.
+  const currentWeekly = opp.currentWeeklyPayment ?? 0;
   const summaryValues = {
     programLengthMonths: reschedTermMonths,
-    retainerPaymentCount: reschedSchedule.totals.noOfPayments,
+    retainerPaymentCount: rRows.filter((r) => r.retainerFee > 0).length,
     totalDebt: reschedDebt,
     totalProgramCost: rProgramCost,
     totalRetainerFee: reschedSchedule.totals.retainerAmount,
@@ -774,7 +777,10 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     totalEscrowAmount: rSum((r) => r.escrowAmount),
     estimatedYouSave: Math.round((reschedDebt - rProgramCost) * 100) / 100,
     totalWeeklyPayment: reschedSchedule.totals.weeklyDraftAmount,
-    totalWeeklySaving: Math.round(reschedSchedule.totals.weeklyDraftAmount * 4 * 100) / 100,
+    totalWeeklySaving:
+      currentWeekly > 0
+        ? Math.round((currentWeekly - reschedSchedule.totals.weeklyDraftAmount) * 100) / 100
+        : null,
   };
 
   const calcPanel = (

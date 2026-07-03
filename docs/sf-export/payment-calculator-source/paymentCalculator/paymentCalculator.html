@@ -1,0 +1,243 @@
+<template>
+    <template if:true={showSpinner}>
+        <lightning-spinner alternative-text="Loading"></lightning-spinner>
+    </template>
+    <lightning-layout multiple-rows style="background: white;">
+        <lightning-layout-item padding="around-small" size="12">
+            <div class="slds-card_boundary" style="padding-bottom: 1rem;">
+                <lightning-layout class="slds-card_boundary" style="background-color:#f5f5f5;">
+                    <lightning-layout-item size="2" padding="around-small">
+                        <div style="padding-top: 0.3rem;padding-bottom: 0.3rem;" class="slds-text-heading_small">
+                            <b>Calculator</b>
+                        </div> 
+                    </lightning-layout-item>
+                    <lightning-layout-item size="4" padding="around-small">
+                        <lightning-combobox 
+                            name="Lead Type"
+                            variant="label-hidden"
+                            placeholder="Select Lead Type" 
+                            options={leadTypes}
+                            value={leadTypeValue} 
+                            onchange={setLeadType}
+                            disabled={disableLeadType}>
+                        </lightning-combobox>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="6" padding="around-small">
+                        <div style="float:right;">
+                            <template if:true={showSaveButton}>
+                                <lightning-button variant="brand" label="Save Calculation Details" title="Save Calculation Details" onclick={saveLeadDetails} class="slds-m-left_x-small"></lightning-button>
+                            </template>
+                            <lightning-button variant="brand" label="Calculate" title="Calculate" onclick={calculatePayments} class="slds-m-left_x-small"></lightning-button>
+                            <lightning-button-icon icon-name="utility:refresh"  
+                                alternative-text="Refresh" 
+                                title="Refresh"
+                                onclick={refreshCalculator}
+                                class="slds-m-left_x-small">
+                            </lightning-button-icon>
+                        </div>
+                    </lightning-layout-item>
+                </lightning-layout>
+                <div class="slds-grid slds-wrap margin-space">
+                    <div class="slds-col slds-size_2-of-12 margin-right-space">
+                        <lightning-input 
+                            name = "totalDebt"
+                            label="Total Debt" 
+                            type="number" 
+                            formatter="currency" 
+                            value={totalDebt}
+                            
+                            onchange={setTotalDebt}
+                            onblur={resetTotalDebt}>
+                        </lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-right-space margin-left-space">
+                        <lightning-combobox 
+                            name="paymentTermValue"
+                            label="Payment Term" 
+                            placeholder="Select Program Term"
+                            options={paymentTerms}
+                            value={paymentTermValue} 
+                            onchange={setPaymentTerm}>
+                        </lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-input 
+                            name="serviceFee"
+                            label="Service Fee"
+                            type="number" 
+                            formatter="currency" 
+                            value={serviceFee}
+                            disabled>
+                        </lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-input 
+                            name="monthlyBankFee"
+                            label="Monthly Bank Fee"
+                            type="number" 
+                            formatter="currency" 
+                            value={monthlyBankFee}
+                            onchange={setMonthlyBankFee}
+                            disabled
+                            onblur={resetMonthlyBankFee}>
+                        </lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-input 
+                            name="bankSetupFee"
+                            label="Bank Setup Fee"
+                            type="number" 
+                            formatter="currency" 
+                            value={bankSetupFee}
+                            disabled
+                            onchange={setMonthlyBankFee}
+                            onblur={resetMonthlyBankFee}
+                            >
+                        </lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-right-space margin-left-space">
+                        <lightning-combobox 
+                            name="paymentFrequencyValue"
+                            label="Payment Frequency" 
+                            placeholder="Select Payment Frequency"
+                            options={paymentFrequencies}
+                            value={paymentFrequencyValue} 
+                            disabled
+                            onchange={setPaymentFrequency}>
+                        </lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-combobox 
+                            name="setupFeeValue"
+                            label="Setup Fee" 
+                            placeholder="Select Setup Fee" 
+                            options={setupFeeValues}
+                            value={setupFeeValue} 
+                            disabled 
+                            onchange={setSetupFee}>
+                        </lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-combobox 
+                            name="settlementPercentValue"
+                            label="Settlement Percent" 
+                            placeholder="Select Settlement Percentage" 
+                            options={settlementPercentages}
+                            value={settlementPercentValue} 
+                            disabled
+                            onchange={setSettlementPercent}>
+                        </lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-right-space margin-left-space">
+                        <lightning-input 
+                            name="downPayment"
+                            label="Down Payment" 
+                            type="number" 
+                            formatter="currency" 
+                            value={downPayment}
+                            onchange={setDownPayment}
+                            disabled
+                            onblur={resetDownPayment}>
+                        </lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-combobox 
+                            name="programFeePercentValue"
+                            label="Program Fee Percent" 
+                            placeholder="Select Program Fee Percentage"
+                            options={programFeePercentages}
+                            value={programFeePercentValue} 
+                            disabled
+                            onchange={setProgramFeePercent}>
+                        </lightning-combobox>
+                    </div>
+                    <template if:true={renderRetainer}>
+                        <div class="slds-col slds-size_2-of-12 margin-right-space margin-left-space">
+                            <lightning-combobox 
+                                name="retainerPercentValue"
+                                label="Retainer Percentage" 
+                                placeholder="Select Retainer Percentage" 
+                                options={retainerPercentages}
+                                value={retainerPercentValue} 
+                                disabled
+                                onchange={setRetainerPercent}>
+                            </lightning-combobox>
+                        </div>
+
+                        <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                            <lightning-input 
+                                name="Retainer Amount" 
+                                label="Retainer Amount"
+                                type="number" 
+                                formatter="currency" 
+                                value={retainerAmount}
+                                disabled>
+                            </lightning-input>
+                        </div>
+                    </template>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-input 
+                            name="Total Settlement Amount" 
+                            label="Total Settlement Amt"
+                            type="number" 
+                            formatter="currency" 
+                            value={settlementAmount}
+                            disabled>
+                        </lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-input 
+                            name="Total Program Fee Amount" 
+                            label="Total Program Fee"
+                            type="number" 
+                            formatter="currency" 
+                            value={programFeeAmount}
+                            disabled>
+                        </lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-input 
+                            name="Estimated Program Cost" 
+                            label="Total Amount With Fees(73%)"
+                            type="number" 
+                            formatter="currency" 
+                            value={totalAmountWithFees}
+                            disabled>
+                        </lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-input 
+                            name="Estimated Savings" 
+                            label="Esitimated Amount You Save (27%)"
+                            type="number" 
+                            formatter="currency" 
+                            value={estimatedSaving}
+                            disabled>
+                        </lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-input 
+                            name="Monthly Payments" 
+                            label={paymentAmountLabel}
+                            type="number" 
+                            formatter="currency" 
+                            value={monthlyPayments}
+                            disabled>
+                        </lightning-input>
+                    </div>
+                </div>
+            </div>
+        </lightning-layout-item>
+        <lightning-layout-item padding="around-small" size="12">
+            <div class="scrollable-container">
+                <lightning-datatable
+                    key-field="PaymentNo"
+                    columns={columns}
+                    show-row-number-column
+                    hide-checkbox-column
+                    data={paymentData}>
+                </lightning-datatable>
+            </div>
+        </lightning-layout-item>
+    </lightning-layout>
+</template>

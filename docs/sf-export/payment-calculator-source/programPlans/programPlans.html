@@ -1,0 +1,613 @@
+<template>
+
+    <template if:true={showSpinner}>
+        <lightning-spinner alternative-text="Loading" class="spinner-cls"></lightning-spinner>
+    </template>
+
+    <lightning-layout multiple-rows="true">
+        <lightning-layout-item padding="around-small" size="12">
+            <template if:true={showWarning}>
+                <div class="slds-notify slds-notify_alert slds-alert_warning" role="alert">
+                    <lightning-icon icon-name="utility:warning" alternative-text="Warning!" variant="warning" size="x-small"></lightning-icon>
+                    <h2>&nbsp; {label.debtChangeAlert}</h2>
+                </div>
+            </template>
+            <template if:true={showLegalPlanRescheduleWaring}>
+                <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
+                    <lightning-icon icon-name="utility:error" alternative-text="Warning!" variant="warning" size="x-small"></lightning-icon>
+                    <h2>&nbsp; {label.legalPlanChangeAlert}</h2>
+                </div>
+            </template>
+
+            <template if:true={showPaymentProcChangeWarning}>
+                <div class="slds-notify slds-notify_alert slds-alert_warning" role="alert">
+                    <lightning-icon icon-name="utility:warning" alternative-text="Warning!" variant="warning" size="x-small"></lightning-icon>
+                    <h2>&nbsp; {label.paymentProcessorChangeAlert}</h2>
+                </div>
+            </template>            
+            <div class="slds-card_boundary">
+                <lightning-layout class="slds-card_boundary" style="background-color:#f5f5f5;">
+                    <lightning-layout-item size="4" padding="around-small">
+                        <div style="padding-top: 0.3rem;padding-bottom: 0.3rem;" class="slds-text-heading_small">
+                            <b>Reschedule Program</b>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="8" padding="around-small">
+                        <div style="float: right;">
+                            <template if:true={canLogWiredDraft}>
+                                <lightning-button variant="brand" label="Log Wire Draft" title="Log Wired Draft" onclick={openLogWirePaymentModal} class="slds-m-left_x-small"></lightning-button>
+                            </template>
+                            <template if:true={showReschedule}>
+                                <lightning-button variant="brand"  if:false={renderEnhancedView}  label="Reschedule" title="Reschedule" onclick={rescheduleProgram} class="slds-m-left_x-small" disabled={isDisabled}></lightning-button>
+                                <lightning-button variant="brand" if:true={renderEnhancedView} label="Recalculate" title="Recalculate" onclick={recalculateProgram} class="slds-m-left_x-small" disabled={isDisabled}></lightning-button>
+                            </template>
+                            <template if:true={showSaveRescheduleButton}>
+                                <lightning-button variant="brand" label="Save" title="Save Reschedule" onclick={validateProgram} class="slds-m-left_x-small" disabled={saveIsDisabled}></lightning-button>
+                            </template>
+                            <template if:true={showSavePaymentsButton}>
+                                <lightning-button variant="brand" label="Save" title="Save Payments" onclick={savePayments} class="slds-m-left_x-small" disabled={saveIsDisabled}></lightning-button>
+                            </template>
+                            <template if:true={showChangeDayButton}>
+                                <lightning-button variant="brand" label="Change Day of Future Drafts" title="Change Day of Future Drafts" onclick={openChangeDayModal} class="slds-m-left_x-small"></lightning-button>
+                            </template>
+                            <lightning-button-icon icon-name="utility:refresh"  
+                                alternative-text="Refresh Debts Aggregation" 
+                                title="Refresh Debts Aggregation"
+                                onclick={queryDebtDetails}
+                                class="slds-m-left_x-small">
+                            </lightning-button-icon>
+                        </div>
+                    </lightning-layout-item>
+                </lightning-layout>
+                <div class="slds-card_boundary">
+                    <div class="slds-grid slds-wrap margin-spacePanel">
+                        <div class="slds-col slds-size--1-of-7 margin-right-space">
+                            <lightning-input 
+                                name = "noOfDebts"
+                                label="No of Debts Included"
+                                type="number" 
+                                value={noOfDebts}
+                                disabled>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size--1-of-7 margin-left-space margin-right-space">
+                            <lightning-input 
+                                name = "totalDebt"
+                                label="Current Total Debt" 
+                                type="number" 
+                                formatter="currency" 
+                                value={totalDebt}
+                                disabled>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size--1-of-7 margin-left-space margin-right-space">
+                            <lightning-input 
+                                name = "totalDebtIncluded"
+                                label="Total Debt Included" 
+                                type="number" 
+                                formatter="currency" 
+                                value={totalDebtIncluded}
+                                disabled>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size--1-of-7 margin-left-space margin-right-space">
+                            <lightning-input 
+                                name="serviceFee"
+                                label="Service Fee"
+                                type="number" 
+                                formatter="currency" 
+                                value={serviceFee}
+                                disabled>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size--1-of-7 margin-left-space margin-right-space">
+                            <lightning-combobox
+                                name="Processor__c"
+                                label="Payment Processor"
+                                value={processorValue}
+                                placeholder="Select Status"
+                                options={processorOptions}
+                                disabled={isProcessorDisabled}
+                                onchange={handleProcessorChange}>
+                            </lightning-combobox>
+                        </div>
+                        <div class="slds-col slds-size--1-of-7 margin-right-space margin-left-space">
+                            <lightning-input 
+                                name="monthlyBankFee"
+                                label="Monthly Bank Fee"
+                                type="number" 
+                                formatter="currency" 
+                                value={monthlyBankFee}
+                                disabled>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size--1-of-7 margin-left-space">
+                            <lightning-input
+                                name="bankSetupFee"
+                                label="Bank Setup Fee"
+                                type="number"  
+                                formatter="currency" 
+                                value={bankSetupFee}                             
+                                disabled>
+                            </lightning-input>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-grid slds-wrap margin-space">
+                    <div class="slds-col slds-size_2-of-12 margin-right-space">
+                        <lightning-combobox 
+                            name="paymentFrequency"
+                            label="Frequency" 
+                            placeholder="Select Payment Frequency"
+                            options={paymentFrequencies}
+                            value={paymentFrequency} 
+                            onchange={setPaymentFrequency}
+                            disabled
+                            dropdown-alignment="auto">
+                        </lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-combobox 
+                            name="paymentTerm"
+                            label="Payment Term" 
+                            placeholder="Select Program Term"
+                            options={paymentTerms}
+                            class="paymentTerm"
+                            value={paymentTerm} 
+                            disabled={isLockOpportunity}
+                            onchange={setPaymentTerm}
+                            dropdown-alignment="auto">
+                        </lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-input 
+                            name="setupFee"
+                            label="Setup Fee"
+                            type="number"
+                            value={setupFee}
+                            disabled>
+                        </lightning-input>
+                    </div>                    
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-combobox 
+                            name="programFeePercentage"
+                            label="Program Fee Percent" 
+                            placeholder="Select Program Fee Percentage"
+                            options={programFeePercentages}
+                            value={programFeePercentage} 
+                            onchange={setProgramFeePercent}
+                            dropdown-alignment="auto"
+                            disabled={isDisableOpp}>
+                        </lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space">
+                        <lightning-combobox 
+                            name="retainerPercentage"
+                            label="Retainer Percent" 
+                            placeholder="Select Retainer Percentage" 
+                            options={retainerPercentages}
+                            value={retainerPercentage} 
+                            onchange={setRetainerPercent}
+                            dropdown-alignment="auto"
+                            disabled={isDisableOpp}>
+                        </lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                        <lightning-combobox 
+                            name="settlementPercentage"
+                            label="Settlement Percent" 
+                            placeholder="Select Settlement Percentage" 
+                            options={settlementPercentages}
+                            value={settlementPercentage} 
+                            onchange={setSettlementPercent}
+                            dropdown-alignment="auto"
+                            disabled={isDisableOpp}>
+                        </lightning-combobox>
+                    </div>
+                </div>
+                <div class="slds-grid slds-wrap margin-space" style="padding-bottom:1rem;">
+                    <div class="slds-col slds-size_2-of-12 margin-right-space">
+                        <lightning-input 
+                            name="firstPaymentDate"
+                            label="First Payment Date" 
+                            type="date" 
+                            value={firstPaymentDate}
+                             disabled={isLockOpportunity}
+                            onchange={setFirstPaymentDate}>
+                        </lightning-input>
+                    </div>
+                    <template if:true={renderNextPaymentDay}>
+                        <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                            <lightning-combobox 
+                                name="nextPaymentDay"
+                                label="Next Payment Day" 
+                                options={recurringPaymentDays}
+                                value={nextPaymentDay} 
+                                onchange={setFirstPaymentDay}
+                                dropdown-alignment="auto">
+                            </lightning-combobox>
+                        </div>
+                    </template>
+                    <template if:true={renderBiMonthlyPaymentDay}>
+                        <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                            <lightning-combobox 
+                                name="secondPaymentDay"
+                                label="Second Payment Day" 
+                                options={secondPaymentDays}
+                                value={secondPaymentDay}
+                                onchange={setSecondPaymentDay}
+                                dropdown-alignment="auto">
+                            </lightning-combobox>
+                        </div>
+                    </template>
+                    <template if:true={renderWeeklyPaymentDay}>
+                        <div class="slds-col slds-size_2-of-12 margin-left-space margin-right-space">
+                            <lightning-combobox 
+                                name="weeklyPaymentDay"
+                                label="Weekly Payment Day" 
+                                options={weeklyPaymentDays}
+                                value={weeklyPaymentDay}
+                                onchange={setWeeklyPaymentDay}
+                                 disabled={isLockOpportunity}
+                                dropdown-alignment="auto">
+                            </lightning-combobox>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+             
+        </lightning-layout-item>
+        <lightning-layout-item padding="around-small" size="12">
+
+            <c-datatable if:true={renderDataTable} columns={columns} rows={parentTableRecords} table-config={tableProperties}
+                ontoggletree={handleOnExpandTreeEvent} onactionclick={handleActionClick} oninputchange={handleParentTableInputChange}>
+            </c-datatable>
+            <table class="slds-table slds-no-row-hover slds-table--header-fixed slds-table_col-bordered slds-table_resizable-cols table-cls">
+                <thead>
+                    <tr class="slds-text-title_caps" if:true={tableProperties.isCalculateTotalRow}>
+                        <template for:each={totalRows} for:item="col">
+                            <td key={col.column} style={col.style}>
+                                <lightning-formatted-number value={col.value} format-style="currency"></lightning-formatted-number>
+                            </td>
+                        </template>
+                    </tr>
+                </thead>
+            </table>
+        </lightning-layout-item>
+    </lightning-layout>
+     <c-modal class="editModal" header="Edit Payment" modal-size="medium" onclosedialog={closeModal}>
+
+    <lightning-record-edit-form
+        if:true={selectedRecordId}
+        record-id={selectedRecordId}
+        object-api-name="Draft__c"
+        density="comfy"
+        onsubmit={handleSubmit}
+        oncancel={closeModal}
+    >
+        <lightning-messages></lightning-messages>
+
+        <lightning-layout multiple-rows>
+            <lightning-layout-item size="6">
+                <lightning-output-field field-name="Name"></lightning-output-field>
+            </lightning-layout-item>
+            <lightning-layout-item size="6">
+                <lightning-input-field field-name="Draft_Status__c"></lightning-input-field>
+            </lightning-layout-item>
+            
+
+            <lightning-layout-item size="6">
+                <lightning-output-field field-name="Draft_Total_Amount__c"></lightning-output-field>
+            </lightning-layout-item>
+            <lightning-layout-item size="6">
+                <lightning-output-field field-name="Retainer_SetupFee_Draft__c"></lightning-output-field>
+            </lightning-layout-item>
+
+            <lightning-layout-item size="6" >
+                <lightning-input-field field-name="Program_Fee__c"></lightning-input-field>
+            </lightning-layout-item>
+            <lightning-layout-item size="6">
+                <lightning-output-field field-name="External_SAS_Id__c"></lightning-output-field>
+            </lightning-layout-item>
+           
+            <lightning-layout-item size="6">
+                <lightning-input-field field-name="Retainer_Fee__c"></lightning-input-field>
+            </lightning-layout-item>
+             <lightning-layout-item size="6">
+                <lightning-output-field field-name="External_RAM_Id__c"></lightning-output-field>
+            </lightning-layout-item>
+            
+
+            <lightning-layout-item size="6">
+                <lightning-input-field field-name="Service_Fee__c"></lightning-input-field>
+            </lightning-layout-item>
+            <lightning-layout-item size="6">
+                <lightning-output-field field-name="Sync_Status__c"></lightning-output-field>
+            </lightning-layout-item>
+            
+
+            <lightning-layout-item size="6">
+                <lightning-input-field field-name="Setup_Fee__c"></lightning-input-field>
+            </lightning-layout-item>
+            <lightning-layout-item size="6">
+                <lightning-output-field field-name="CreatedDate"></lightning-output-field>
+            </lightning-layout-item>
+           
+
+            <lightning-layout-item size="6">
+                <lightning-input-field field-name="Citadel_Fee__c"></lightning-input-field>
+            </lightning-layout-item>
+             <lightning-layout-item size="6">
+                <lightning-output-field field-name="CreatedById"></lightning-output-field>
+            </lightning-layout-item>
+
+            <lightning-layout-item size="6">
+                <lightning-input-field field-name="Processor_Fee__c"></lightning-input-field>
+            </lightning-layout-item>
+            <lightning-layout-item size="6">
+                <lightning-output-field field-name="LastModifiedDate"></lightning-output-field>
+            </lightning-layout-item>
+
+            <lightning-layout-item size="6">
+                <lightning-input-field field-name="Draft_Amount__c"></lightning-input-field>
+            </lightning-layout-item>
+            <lightning-layout-item size="6">
+                <lightning-output-field field-name="LastModifiedById"></lightning-output-field>
+            </lightning-layout-item>           
+
+        </lightning-layout>
+
+        <lightning-layout
+            class="slds-m-top_large"
+            horizontal-align="center"
+        >
+            <lightning-layout-item padding="around-small">
+                <lightning-button
+                    variant="neutral"
+                    label="Cancel"
+                    onclick={closeModal}
+                ></lightning-button>
+            </lightning-layout-item>
+
+            <lightning-layout-item padding="around-small">
+                <lightning-button
+                    variant="brand"
+                    type="submit"
+                    label="Save"
+                ></lightning-button>
+            </lightning-layout-item>
+        </lightning-layout>
+
+    </lightning-record-edit-form>
+
+
+     </c-modal>
+    <c-modal class="logWirePaymentModal" header={wireModalHeader} modal-size="medium" onclosedialog={closeLogWirePaymentModal}>
+        <template if:true={isLogWireSpinner}>
+            <lightning-spinner alternative-text="Saving..."></lightning-spinner>
+        </template>
+
+        <div>
+
+            <!-- Error Banner -->
+            <template if:true={wireFormError}>
+                <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_medium" role="alert">
+                    <lightning-icon icon-name="utility:error" alternative-text="Error" variant="inverse" size="x-small"></lightning-icon>
+                    <span class="slds-m-left_x-small">{wireFormError}</span>
+                </div>
+            </template>
+
+            <!-- Fields Row 1 -->
+            <lightning-layout multiple-rows>
+                <lightning-layout-item size="6" padding="around-small">
+                    <lightning-input
+                        label="Wire Draft Date"
+                        type="date"
+                        required
+                        value={wireDraftDate}
+                        max={todayDate}
+                        onchange={handleWireDraftDateChange}>
+                    </lightning-input>
+                </lightning-layout-item>
+                <lightning-layout-item size="6" padding="around-small">
+                    <lightning-input
+                        label="Wire Draft Amount"
+                        type="number"
+                        formatter="currency"
+                        required
+                        value={wireDraftAmount}
+                        min="0.01"
+                        step="0.01"
+                        data-field="wireDraftAmount"
+                        onchange={handleWireFieldChange}>
+                    </lightning-input>
+                </lightning-layout-item>
+                <lightning-layout-item size="6" padding="around-small">
+                    <lightning-combobox
+                        label="Wire Type"
+                        value={wireType}
+                        options={wireTypeOptions}
+                        onchange={handleWireTypeChange}
+                        placeholder="Select Wire Type"
+                        required>
+                    </lightning-combobox>
+                </lightning-layout-item>
+                <lightning-layout-item size="6" padding="around-small">
+                    <lightning-input
+                        label="Wire Fee"
+                        type="number"
+                        formatter="currency"
+                        value={wirePaymentFee}
+                        disabled>
+                    </lightning-input>
+                </lightning-layout-item>
+                <lightning-layout-item size="6" padding="around-small">
+                    <lightning-input
+                        label="Escrow Amount"
+                        type="number"
+                        formatter="currency"
+                        value={escrowAmount}
+                        disabled>
+                    </lightning-input>
+                </lightning-layout-item>
+                <lightning-layout-item size="6" padding="around-small">
+                    <lightning-input
+                        label="Status"
+                        value="Completed"
+                        disabled>
+                    </lightning-input>
+                </lightning-layout-item>
+                <lightning-layout-item size="6" padding="around-small">
+                    <lightning-input
+                        type="checkbox"
+                        label="Legal Fee Paid"
+                        checked={wireLegalFeePaid}
+                        onchange={handleWireLegalFeePaidChange}>
+                    </lightning-input>
+                </lightning-layout-item>
+
+            </lightning-layout>
+
+            <div class="slds-m-top_small slds-p-horizontal_small">
+                <lightning-file-upload
+                    label="Upload Wire Document"
+                    name="wireFileUploader"
+                    record-id={drecordId}
+                    onuploadfinished={handleWireFileUploadFinished}
+                    multiple>
+                </lightning-file-upload>
+                <p class="slds-text-body_small slds-text-color_weak slds-m-top_x-small">
+                    File will be linked to the Draft, Opportunity and Account.
+                </p>
+                <template if:true={allWireFiles.length}>
+                    <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered slds-m-top_small" role="grid">
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <th scope="col" style="width:2rem"></th>
+                                <th scope="col"><div class="slds-truncate slds-text-title_caps">Name</div></th>
+                                <th scope="col" style="width:6rem"><div class="slds-truncate slds-text-title_caps">Type</div></th>
+                                <th scope="col" style="width:6rem"><div class="slds-truncate slds-text-title_caps">Size</div></th>
+                                <th scope="col" style="width:3rem"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={allWireFiles} for:item="wfile">
+                                <tr key={wfile.documentId} class="slds-hint-parent">
+                                    <td>
+                                        <lightning-icon icon-name={wfile.iconName} size="x-small"></lightning-icon>
+                                    </td>
+                                    <td>
+                                        <div class="slds-truncate slds-text-body_small" title={wfile.name}>{wfile.name}</div>
+                                    </td>
+                                    <td>
+                                        <div class="slds-truncate slds-text-body_small">{wfile.extension}</div>
+                                    </td>
+                                    <td>
+                                        <div class="slds-truncate slds-text-body_small">{wfile.formattedSize}</div>
+                                    </td>
+                                    <td>
+                                        <button class="slds-button slds-button_icon slds-button_icon-error" title="Delete file"
+                                            data-document-id={wfile.documentId}
+                                            onclick={handleDeleteWireFile}>
+                                            <lightning-icon icon-name="utility:delete" size="x-small"></lightning-icon>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+            </div>
+
+        </div>
+
+        <!-- Footer Buttons -->
+        <div slot="footer" class="slds-grid slds-grid_align-center slds-grid_vertical-align-center slds-gutters_small">
+            <div>
+                <lightning-button variant="neutral" label="Cancel" onclick={closeLogWirePaymentModal}></lightning-button>
+            </div>
+            <template if:false={createdDraftId}>
+                <div class="slds-col slds-shrink-none">
+                    <lightning-button variant="brand" label="Save" onclick={saveWireDraft}></lightning-button>
+                </div>
+            </template>
+        </div>
+    </c-modal>
+
+    <c-modal class="changeDayModal" header="Change Day of Future Drafts" modal-size="small" onclosedialog={closeChangeDayModal}>
+        <template if:true={renderWeeklyPaymentDay}>
+            <div class="slds-p-around_medium">
+                <lightning-combobox
+                    name="weeklyPaymentDay"
+                    label="Weekly Payment Day"
+                    options={weeklyPaymentDays}
+                    value={selectedWeeklyPaymentDay}
+                    onchange={handleChangeDayWeeklyPaymentDay}
+                    dropdown-alignment="auto">
+                </lightning-combobox>
+            </div>
+        </template>
+        <div slot="footer" class="slds-grid slds-grid_align-center slds-gutters_medium">
+            <div>
+                <lightning-button variant="neutral" label="Cancel" onclick={closeChangeDayModal}></lightning-button>
+            </div>
+            <div class="slds-col">
+                <lightning-button variant="brand" label="Proceed" disabled={isProceedChangeDayDisabled} onclick={handleProceedChangeDay}></lightning-button>
+            </div>
+        </div>
+    </c-modal>
+
+    <c-modal class="splitRetainerSetupFeeModal" header="Split Retainer and Setup Fee" modal-size="medium" onclosedialog={closeRetainerSetupFeeModal}>
+        <lightning-layout style="background-color:#f5f5f5;" multiple-rows>
+            <lightning-layout-item padding="around-small" size="4">
+                <lightning-input disabled="true" label="Retainer Fee" value={retSetRetainerFee}></lightning-input>
+            </lightning-layout-item>
+            <lightning-layout-item padding="around-small" size="4">
+                <lightning-input disabled="true" label="Setup Fee" value={retSetSetupFee}></lightning-input>
+            </lightning-layout-item>
+            <lightning-layout-item padding="around-small" size="4">
+                <lightning-input disabled="true" label="Total Citaldel Fee" value={retSetRecord.citaldelFee}></lightning-input>
+            </lightning-layout-item>
+            <lightning-layout-item padding="around-small" size="4">
+                <lightning-input disabled="true" label="Total Bank Fee" value={retSetRecord.processorFee}></lightning-input>
+            </lightning-layout-item>
+            <lightning-layout-item padding="around-small" size="4">
+                <lightning-input disabled="true" label="Total Amount" value={retSetTotal}></lightning-input>
+            </lightning-layout-item>
+            <!--<lightning-layout-item padding="around-small" size="3">
+                <lightning-input type="number" formatter="currency" label="Amount to Split" value={retSetSplit}></lightning-input>
+            </lightning-layout-item>-->
+        </lightning-layout>
+        <lightning-button label="Auto Split" variant="brand" onclick={autoSplit} style="float:right;padding-top: 1%;padding-bottom: 1%;">
+        </lightning-button>
+
+        <div style="display: inline-block;">
+            <c-datatable class="retainerSetupFeeTable" columns={retainerSetupFeeModalColumns} rows={retainerSetupFeeRecords} table-config={retainerSetupTableProperties}
+                onactionclick={handleActionClick} oninputchange={handleChildTableInputChange}>
+            </c-datatable>
+        </div>
+        <div slot="footer">
+            <div>
+                <div class="slds-grid  slds-align_absolute-left">
+                    <div style="padding-top:0.5rem">
+                        <lightning-input type="checkbox" variant="label-hidden" checked={consentMovePayments} onchange={setConsentChange}></lightning-input>
+                    </div>
+                    <div style="padding-top:0.6rem">
+                        Move the upcoming drafts to the next viable dates
+                    </div>
+                    <span class="slds-grid" style="padding-left:2%">
+                        <div class="slds-p-right_x-small slds-p-left_x-small">
+                            <lightning-button label="Close" variant="brand" onclick={closeRetainerSetupFeeModal}>
+                            </lightning-button>
+                        </div>
+                        <div>
+                            <lightning-button label="Apply" variant="brand" onclick={applyRetainerSetupFee}>
+                            </lightning-button>
+                        </div>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </c-modal>
+</template>

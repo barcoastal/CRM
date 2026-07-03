@@ -1,0 +1,32 @@
+.custom-box {
+    text-align: center;
+    background-color: #f4f6f9;
+    padding: 1rem;
+    border: 1px solid #d8dde6;
+}
+.slds-card_boundary {
+    border: 1px solid #d8dde6;
+    border-radius: 0.25rem;
+}
+.scrollable-container {
+    height: 50%;
+    overflow: auto;
+}
+.margin-left-space {
+    padding-left: 0.25rem;
+}
+.margin-right-space {
+    padding-right: 0.25rem;
+}
+.margin-top-space {
+    padding-top: 0.5rem;
+}
+.margin-bottom-space {
+    padding-bottom: 0.5rem;
+}
+.margin-space {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}

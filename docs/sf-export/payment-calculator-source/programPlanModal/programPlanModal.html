@@ -1,0 +1,65 @@
+<template>
+    <lightning-modal-header label="Program Recalculate"></lightning-modal-header>
+    <lightning-modal-body>
+        <div>
+        <div>
+        <lightning-button  label="Compare With Other Program" title="Download action"   icon-name="utility:magicwand" class="slds-m-left_x-small" onclick={showCustomProgram}></lightning-button>
+        <lightning-button  style="padding-left:0.5rem;" label="Save" onclick={handleSave} ></lightning-button>
+    <div class="checkbox-group" style="display:flex"   if:true={isShowCustomSelection}>
+        <lightning-layout multiple-rows>
+      
+        <template for:each={options} for:item="option">
+              <lightning-layout-item size="1" key={option.value} style="    padding: 0.5rem;">
+                <c-gradecmp label={option.label} checked={option.selected} onchange={handleChange}></c-gradecmp>
+           
+              </lightning-layout-item>
+        </template>
+        </lightning-layout>
+    </div>
+
+     <lightning-button  label="Save" title="Download action" if:true={showSave} icon-name="utility:save"  style="padding:0.5rem;" class="slds-m-left_x-small" onclick={handleCustomSave}></lightning-button>
+</div>
+<div style="padding-top: 1rem;">
+        <template for:each={paymentRecords} for:item="row" >
+        <c-visual-picker key={row.paymentTerm} picker-input-value={row.selected} program-length={row.paymentTerm}  picker-checked={row.selected} picker-input-id={row.paymentTerm} style="padding:1.5rem;" picker-size="slds-visual-picker slds-visual-picker_medium"
+            picker-type="radio" onvalueselected={handleValueSelected}>
+            <span slot="pickertext">
+                  <div class="bonus-highlight" if:true={row.initialSelected}>
+                        <lightning-icon
+                            icon-name="utility:success"
+                            size="x-small"
+                            class="bonus-icon"
+                        ></lightning-icon>
+                        <span>{qualifiedForBonus}</span>
+                    </div>
+                    <div if:false={row.initialSelected} style="display: inline-flex;"></div>
+
+                <span class="slds-text-heading_large">
+                    <lightning-formatted-number class="amount" value={row.monthlyPayments} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                    
+                </span>
+                <span class="slds-text-title slds-text-heading_small subtitle" style="font-weight: 600;">Weekly Payment</span>
+            </br>
+                <span class="slds-text-title row">New Estimated Program cost : 
+                    <lightning-formatted-number value={row.estimatedProgramCost} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                </span>
+                <span class="slds-text-title row">Total Estimated Savings :
+                    <lightning-formatted-number value={row.estimatedSavingWithFee} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                </span>
+                <span class="slds-text-title row highlight">Estimated Weekly Saving :
+                    <lightning-formatted-number value={row.weeklyEstimatedSaving} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                </span>
+            </span>
+            <span slot="pickerbody">
+                <p class="slds-text-heading_small" style="font-weight: 600;
+                color: #1a96ff;">{row.paymentTerm} Month Program</p>
+            </span>
+        </c-visual-picker>
+    </template>
+ </div>
+</div>
+    </lightning-modal-body>
+    <lightning-modal-footer>
+
+    </lightning-modal-footer>
+</template>
