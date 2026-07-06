@@ -83,6 +83,11 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   const [showSplit, setShowSplit] = useState(false);
   const [actionMenuRow, setActionMenuRow] = useState<number | null>(null);
   const [splitRows, setSplitRows] = useState<SplitRow[] | null>(null);
+  // Per-row draft actions (Add / Edit / Skip) on regular draft rows.
+  const [skipped, setSkipped] = useState<Set<number>>(new Set());
+  const [editingRow, setEditingRow] = useState<number | null>(null);
+  const [rowEdits, setRowEdits] = useState<Record<number, { date: string; amount: number }>>({});
+  const [extraRows, setExtraRows] = useState<(DisplayRow & { _after: number })[]>([]);
   const currentWeeklyPayment = initial?.currentWeeklyPayment ?? 0;
 
   const [refreshKey, setRefreshKey] = useState(0);
@@ -151,6 +156,19 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
     });
     return [parent, ...children, ...reDated];
   }, [splitRows, result.rows, t.retainerAmount, t.setupFee]);
+
+  // Apply per-row Edit overrides and inserted (Add) rows.
+  const finalRows: DisplayRow[] = useMemo(() => {
+    const combined: DisplayRow[] = [];
+    for (const r of displayRows) {
+      combined.push(r);
+      extraRows.filter((x) => x._after === r.index).forEach((x) => combined.push(x));
+    }
+    return combined.map((r) => {
+      const e = rowEdits[r.index];
+      return e ? { ...r, date: new Date(e.date), weeklyDraftAmount: e.amount } : r;
+    });
+  }, [displayRows, rowEdits, extraRows]);
 
   return (
     <div>
@@ -287,63 +305,126 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
             </tr>
           </thead>
           <tbody>
-            {displayRows.map((r) => (
-              <tr key={r.index} style={{ borderBottom: "1px solid #f3f3f3", background: r._child ? "#d6ecf7" : undefined }}>
-                <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
-                  {r.date.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
-                </td>
-                <td style={{ padding: "8px 10px" }}>{money(r.weeklyDraftAmount)}</td>
-                <td style={{ padding: "8px 10px" }}>{money(r.programFee)}</td>
-                <td style={{ padding: "8px 10px" }}>{money(r.retainerFee)}</td>
-                <td style={{ padding: "8px 10px" }}>{money(r.setupFee)}</td>
-                <td style={{ padding: "8px 10px" }}>{money(r.bankFee)}</td>
-                <td style={{ padding: "8px 10px" }}>{money(r.serviceFee)}</td>
-                <td style={{ padding: "8px 10px" }}>{money(r.citadelFee)}</td>
-                <td style={{ padding: "8px 10px" }}>{money(r.escrowAmount)}</td>
-                <td style={{ padding: "8px 10px" }}>{money(r.runningBalance)}</td>
-                <td style={{ padding: "8px 10px", color: r.status === "Completed" ? "#2e844a" : "#706e6b" }}>
-                  {r.status}
-                </td>
-                <td style={{ padding: "8px 10px", position: "relative" }}>
-                  {r.index === 1 && (
-                    <>
-                      <button
-                        onClick={() => setActionMenuRow((cur) => (cur === r.index ? null : r.index))}
-                        aria-label="Row actions"
-                        style={{ border: "1px solid #d8dde6", background: "#fff", borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: 14, lineHeight: 1 }}
+            {finalRows.map((r) => {
+              const isSkipped = skipped.has(r.index);
+              const isEditing = editingRow === r.index;
+              const ed = rowEdits[r.index];
+              const dateVal = ed?.date ?? r.date.toISOString().slice(0, 10);
+              const amtVal = ed?.amount ?? r.weeklyDraftAmount;
+              return (
+                <tr
+                  key={r.index}
+                  style={{
+                    borderBottom: "1px solid #f3f3f3",
+                    background: isSkipped ? "#f3f2f2" : r._child ? "#d6ecf7" : undefined,
+                    opacity: isSkipped ? 0.55 : 1,
+                  }}
+                >
+                  <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
+                    {isEditing ? (
+                      <input
+                        type="date"
+                        value={dateVal}
+                        onChange={(e) => setRowEdits((m) => ({ ...m, [r.index]: { date: e.target.value, amount: amtVal } }))}
+                        style={{ height: 28, padding: "0 6px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 12 }}
+                      />
+                    ) : (
+                      r.date.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
+                    )}
+                  </td>
+                  <td style={{ padding: "8px 10px", textDecoration: isSkipped ? "line-through" : undefined }}>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        step="any"
+                        value={amtVal}
+                        onChange={(e) => setRowEdits((m) => ({ ...m, [r.index]: { amount: Number(e.target.value) || 0, date: dateVal } }))}
+                        style={{ width: 110, height: 28, padding: "0 6px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 12 }}
+                      />
+                    ) : (
+                      money(r.weeklyDraftAmount)
+                    )}
+                  </td>
+                  <td style={{ padding: "8px 10px" }}>{money(r.programFee)}</td>
+                  <td style={{ padding: "8px 10px" }}>{money(r.retainerFee)}</td>
+                  <td style={{ padding: "8px 10px" }}>{money(r.setupFee)}</td>
+                  <td style={{ padding: "8px 10px" }}>{money(r.bankFee)}</td>
+                  <td style={{ padding: "8px 10px" }}>{money(r.serviceFee)}</td>
+                  <td style={{ padding: "8px 10px" }}>{money(r.citadelFee)}</td>
+                  <td style={{ padding: "8px 10px" }}>{money(r.escrowAmount)}</td>
+                  <td style={{ padding: "8px 10px" }}>{money(r.runningBalance)}</td>
+                  <td style={{ padding: "8px 10px", color: isSkipped ? "#c23934" : r.status === "Completed" ? "#2e844a" : "#706e6b" }}>
+                    {isSkipped ? "Skipped" : r.status}
+                  </td>
+                  <td style={{ padding: "8px 10px", position: "relative" }}>
+                    <button
+                      onClick={() => setActionMenuRow((cur) => (cur === r.index ? null : r.index))}
+                      aria-label="Row actions"
+                      style={{ border: "1px solid #d8dde6", background: "#fff", borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: 14, lineHeight: 1 }}
+                    >
+                      ▾
+                    </button>
+                    {actionMenuRow === r.index && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          right: 8,
+                          top: "100%",
+                          zIndex: 20,
+                          background: "#fff",
+                          border: "1px solid #d8dde6",
+                          borderRadius: 4,
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                          minWidth: 120,
+                        }}
                       >
-                        ▾
-                      </button>
-                      {actionMenuRow === r.index && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            right: 8,
-                            top: "100%",
-                            zIndex: 20,
-                            background: "#fff",
-                            border: "1px solid #d8dde6",
-                            borderRadius: 4,
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                            minWidth: 130,
-                          }}
-                        >
-                          <button onClick={() => { setActionMenuRow(null); setShowSplit(true); }} style={menuItem}>
-                            Edit Split
-                          </button>
-                          <button
-                            onClick={() => { setActionMenuRow(null); setSplitRows(computeSplit(splitParams)); }}
-                            style={menuItem}
-                          >
-                            View Split
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
+                        {r.index === 1 ? (
+                          <>
+                            <button onClick={() => { setActionMenuRow(null); setShowSplit(true); }} style={menuItem}>Edit Split</button>
+                            <button onClick={() => { setActionMenuRow(null); setSplitRows(computeSplit(splitParams)); }} style={menuItem}>View Split</button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => {
+                                setActionMenuRow(null);
+                                setExtraRows((xs) => [
+                                  ...xs,
+                                  { ...r, index: -(xs.length + 1), _after: r.index, _child: false, status: "Pending", runningBalance: 0 },
+                                ]);
+                              }}
+                              style={menuItem}
+                            >
+                              Add
+                            </button>
+                            <button
+                              onClick={() => { setActionMenuRow(null); setEditingRow((cur) => (cur === r.index ? null : r.index)); }}
+                              style={menuItem}
+                            >
+                              {isEditing ? "Done" : "Edit"}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setActionMenuRow(null);
+                                setSkipped((s) => {
+                                  const n = new Set(s);
+                                  if (n.has(r.index)) n.delete(r.index);
+                                  else n.add(r.index);
+                                  return n;
+                                });
+                              }}
+                              style={menuItem}
+                            >
+                              {isSkipped ? "Unskip" : "Skip"}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         </div>
