@@ -5,19 +5,21 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { buildContractData } from "@/lib/contracts/merge-data";
-import { fillDocxToPdf } from "@/lib/contracts/docx-merge";
+import { fillPacketToPdf } from "@/lib/contracts/docx-merge";
 
 export async function POST(req: NextRequest) {
   try {
     const form = await req.formData();
-    const file = form.get("file");
+    const files = form.getAll("file").filter((f): f is File => f instanceof File);
     const opportunityId = String(form.get("opportunityId") ?? "");
-    if (!(file instanceof File)) return NextResponse.json({ error: "No .docx file uploaded" }, { status: 400 });
+    if (files.length === 0) return NextResponse.json({ error: "No .docx file uploaded" }, { status: 400 });
     if (!opportunityId) return NextResponse.json({ error: "opportunityId required" }, { status: 400 });
 
-    const buf = Buffer.from(await file.arrayBuffer());
+    const templates = await Promise.all(
+      files.map(async (f) => ({ buffer: Buffer.from(await f.arrayBuffer()), name: f.name || "contract.docx" })),
+    );
     const data = await buildContractData(opportunityId);
-    const pdf = await fillDocxToPdf(buf, data, file.name || "contract.docx");
+    const pdf = await fillPacketToPdf(templates, data);
 
     return new NextResponse(new Uint8Array(pdf), {
       headers: {

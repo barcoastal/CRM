@@ -8,20 +8,20 @@ import { useState } from "react";
  * Opportunity ID, and preview the filled PDF.
  */
 export default function ContractPreviewPage() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [oppId, setOppId] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   async function run() {
-    if (!file || !oppId) return;
+    if (!files.length || !oppId) return;
     setBusy(true);
     setErr(null);
     setPdfUrl(null);
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      files.forEach((f) => fd.append("file", f));
       fd.append("opportunityId", oppId.trim());
       const res = await fetch("/api/contracts/preview", { method: "POST", body: fd });
       if (!res.ok) {
@@ -48,13 +48,19 @@ export default function ContractPreviewPage() {
 
       <div style={{ display: "grid", gap: 12, maxWidth: 480 }}>
         <label style={{ fontSize: 13, fontWeight: 600 }}>
-          Template (.docx)
+          Templates (.docx) — pick 1 or more; they merge into one packet in order
           <input
             type="file"
             accept=".docx"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            multiple
+            onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
             style={{ display: "block", marginTop: 4, fontSize: 13 }}
           />
+          {files.length > 0 && (
+            <span style={{ display: "block", marginTop: 4, fontWeight: 400, color: "#706e6b" }}>
+              {files.map((f) => f.name).join(" + ")}
+            </span>
+          )}
         </label>
         <label style={{ fontSize: 13, fontWeight: 600 }}>
           Opportunity ID
@@ -67,8 +73,8 @@ export default function ContractPreviewPage() {
         </label>
         <button
           onClick={run}
-          disabled={!file || !oppId || busy}
-          style={{ justifySelf: "start", background: "#0070d2", color: "#fff", border: 0, padding: "8px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: busy ? "wait" : "pointer", opacity: !file || !oppId ? 0.5 : 1 }}
+          disabled={!files.length || !oppId || busy}
+          style={{ justifySelf: "start", background: "#0070d2", color: "#fff", border: 0, padding: "8px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: busy ? "wait" : "pointer", opacity: !files.length || !oppId ? 0.5 : 1 }}
         >
           {busy ? "Generating…" : "Generate Preview"}
         </button>

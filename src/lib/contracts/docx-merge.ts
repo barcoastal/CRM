@@ -9,6 +9,7 @@
  */
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
+import { PDFDocument } from "pdf-lib";
 import { convertWordToPdf } from "@/lib/esign/docx-to-pdf";
 
 export type MergeData = Record<string, unknown>;
@@ -34,4 +35,27 @@ export async function fillDocxToPdf(
 ): Promise<Buffer> {
   const filled = fillDocxTemplate(docxBuffer, data);
   return convertWordToPdf(filled, name);
+}
+
+/** Merge several PDFs into one, in order. */
+export async function mergePdfs(pdfBuffers: Buffer[]): Promise<Buffer> {
+  const out = await PDFDocument.create();
+  for (const buf of pdfBuffers) {
+    const src = await PDFDocument.load(buf);
+    const pages = await out.copyPages(src, src.getPageIndices());
+    pages.forEach((p) => out.addPage(p));
+  }
+  return Buffer.from(await out.save());
+}
+
+/** Fill several .docx templates with the same data and merge into one packet PDF. */
+export async function fillPacketToPdf(
+  templates: { buffer: Buffer; name: string }[],
+  data: MergeData,
+): Promise<Buffer> {
+  const pdfs: Buffer[] = [];
+  for (const tpl of templates) {
+    pdfs.push(await fillDocxToPdf(tpl.buffer, data, tpl.name));
+  }
+  return mergePdfs(pdfs);
 }
