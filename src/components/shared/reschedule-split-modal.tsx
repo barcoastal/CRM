@@ -12,7 +12,7 @@ import { useMemo, useState } from "react";
  * (retainer + setup + bank + citadel) is spread evenly across the N dates.
  */
 
-export type SplitRow = { date: string; amount: number; bankFee: number; citadelFee: number };
+export type SplitRow = { date: string; amount: number; bankFee: number; citadelFee: number; setupFee: number };
 
 export type SplitParams = {
   retainerAmount: number;
@@ -23,6 +23,8 @@ export type SplitParams = {
   weeklyDraft: number;
   firstPaymentDate: string;
   weeklyPaymentDay: string;
+  /** $995 legal plan puts setup on row 0; else on row 1 (SF calculateSetupFee). */
+  legalPlanRequired?: boolean;
 };
 
 const WEEKDAY: Record<string, number> = {
@@ -71,8 +73,11 @@ export function computeSplit(p: SplitParams): SplitRow[] {
   const citTotal = fees.reduce((s, f) => s + f.citadelFee, 0);
   const total = p.retainerAmount + p.setupFee + bankTotal + citTotal;
   const per = r2(total / count);
+  // SF calculateSetupFee: setup fee lands on row 0 (legal plan) or row 1 (else).
+  const setupIdx = p.legalPlanRequired ? 0 : Math.min(1, count - 1);
   return fees.map((f, i) => ({
     ...f,
+    setupFee: i === setupIdx ? p.setupFee : 0,
     amount: i === count - 1 ? r2(total - per * (count - 1)) : per,
   }));
 }
@@ -112,11 +117,11 @@ export function RescheduleSplitModal({
 
         <div style={{ padding: 16 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 12 }}>
-            <RO label="Retainer Fee" value={money(params.retainerAmount)} />
-            <RO label="Setup Fee" value={money(params.setupFee)} />
-            <RO label="Total Citadel Fee" value={money(citTotal)} />
-            <RO label="Total Bank Fee" value={money(bankTotal)} />
-            <RO label="Total Amount" value={money(totalAmount)} />
+            <RO label="Retainer Fee" value={String(params.retainerAmount)} />
+            <RO label="Setup Fee" value={String(params.setupFee)} />
+            <RO label="Total Citaldel Fee" value={String(citTotal)} />
+            <RO label="Total Bank Fee" value={String(bankTotal)} />
+            <RO label="Total Amount" value={String(totalAmount)} />
           </div>
 
           {!readOnly && (
@@ -143,11 +148,22 @@ export function RescheduleSplitModal({
                   return (
                     <tr key={i} style={{ borderBottom: "1px solid #f3f3f3" }}>
                       {!readOnly && (
-                        <td style={td}>
+                        <td style={{ ...td, display: "flex", gap: 6 }}>
+                          <button
+                            onClick={() => setRows((rs) => [
+                              ...rs.slice(0, i + 1),
+                              { date: row.date, amount: 0, bankFee: 0, citadelFee: 0, setupFee: 0 },
+                              ...rs.slice(i + 1),
+                            ])}
+                            style={circBtn("#1589ee")}
+                            aria-label="Add row"
+                          >
+                            +
+                          </button>
                           <button
                             onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))}
-                            style={{ border: 0, background: "none", color: "#c23934", cursor: "pointer", fontSize: 14 }}
-                            aria-label="Remove"
+                            style={circBtn("#ea6b66")}
+                            aria-label="Remove row"
                           >
                             🗑
                           </button>
@@ -217,5 +233,6 @@ const card: React.CSSProperties = { background: "#fff", border: "1px solid #d8dd
 const th: React.CSSProperties = { textAlign: "left", padding: "8px 10px", fontWeight: 700, fontSize: 11, color: "#3e3e3c", whiteSpace: "nowrap" };
 const td: React.CSSProperties = { padding: "6px 10px", whiteSpace: "nowrap" };
 const cellInput: React.CSSProperties = { width: "100%", height: 30, padding: "0 6px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 12, background: "#fff" };
+const circBtn = (bg: string): React.CSSProperties => ({ width: 24, height: 24, borderRadius: "50%", border: 0, background: bg, color: "#fff", cursor: "pointer", fontSize: 12, lineHeight: 1, display: "inline-flex", alignItems: "center", justifyContent: "center" });
 const btnBrand: React.CSSProperties = { background: "#0070d2", color: "#fff", border: 0, padding: "7px 16px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" };
 const btnOutline: React.CSSProperties = { background: "#fff", color: "#0070d2", border: "1px solid #d8dde6", padding: "7px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" };

@@ -14,6 +14,8 @@ import { RescheduleSplitModal, computeSplit, type SplitRow, type SplitParams } f
 // SF Qualified_For_Bonus_Program_Length__c custom setting; edit as needed.
 const BONUS_PROGRAM_LENGTHS = [6, 7, 8, 9, 10, 11, 12];
 
+type DisplayRow = RescheduleRow & { _child?: boolean };
+
 export type RescheduleInitial = {
   totalDebt?: number;
   termMonths?: number;
@@ -113,38 +115,42 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
     weeklyDraft: t.weeklyDraftAmount,
     firstPaymentDate,
     weeklyPaymentDay,
+    legalPlanRequired: t.setupFee >= 995,
   };
 
-  // When a retainer/setup split is applied, replace the single setup row with the
-  // split rows and re-date the program weekly draws to start after the last split.
-  const displayRows: RescheduleRow[] = useMemo(() => {
+  // View Split: keep the parent setup/retainer summary row, then the highlighted
+  // split children (retainer = amount − setup − bank − citadel), then the program
+  // draws re-dated after the last split.
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const displayRows: DisplayRow[] = useMemo(() => {
     if (!splitRows || splitRows.length === 0) return result.rows;
+    const total = round2(splitRows.reduce((s, r) => s + r.amount, 0));
+    const bankT = round2(splitRows.reduce((s, r) => s + r.bankFee, 0));
+    const citT = round2(splitRows.reduce((s, r) => s + r.citadelFee, 0));
+    const parent: DisplayRow = {
+      index: 1, date: new Date(splitRows[0].date), weeklyDraftAmount: total,
+      programFee: 0, retainerFee: t.retainerAmount, setupFee: t.setupFee,
+      bankFee: bankT, serviceFee: 0, citadelFee: citT, escrowAmount: 0,
+      runningBalance: 0, status: "Pending",
+    };
     let run = 0;
-    const splitDisplay: RescheduleRow[] = splitRows.map((s, i) => {
-      run = Math.round((run + s.amount) * 100) / 100;
+    const children: DisplayRow[] = splitRows.map((s, i) => {
+      run = round2(run + s.amount);
       return {
-        index: i + 1,
-        date: new Date(s.date),
-        weeklyDraftAmount: s.amount,
-        programFee: 0,
-        retainerFee: Math.round((s.amount - s.bankFee - s.citadelFee) * 100) / 100,
-        setupFee: 0,
-        bankFee: s.bankFee,
-        serviceFee: 0,
-        citadelFee: s.citadelFee,
-        escrowAmount: 0,
-        runningBalance: run,
-        status: "Pending" as const,
+        index: i + 2, date: new Date(s.date), weeklyDraftAmount: s.amount, programFee: 0,
+        retainerFee: round2(s.amount - s.bankFee - s.setupFee - s.citadelFee),
+        setupFee: s.setupFee, bankFee: s.bankFee, serviceFee: 0, citadelFee: s.citadelFee,
+        escrowAmount: 0, runningBalance: run, status: "Pending", _child: true,
       };
     });
     const lastSplit = new Date(splitRows[splitRows.length - 1].date);
-    const reDated = result.rows.slice(1).map((r, i) => {
+    const reDated: DisplayRow[] = result.rows.slice(1).map((r, i) => {
       const d = new Date(lastSplit);
       d.setDate(d.getDate() + 7 * (i + 1));
-      return { ...r, index: splitDisplay.length + i + 1, date: d };
+      return { ...r, index: 1 + children.length + i + 1, date: d };
     });
-    return [...splitDisplay, ...reDated];
-  }, [splitRows, result.rows]);
+    return [parent, ...children, ...reDated];
+  }, [splitRows, result.rows, t.retainerAmount, t.setupFee]);
 
   return (
     <div>
@@ -282,7 +288,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
           </thead>
           <tbody>
             {displayRows.map((r) => (
-              <tr key={r.index} style={{ borderBottom: "1px solid #f3f3f3" }}>
+              <tr key={r.index} style={{ borderBottom: "1px solid #f3f3f3", background: r._child ? "#d6ecf7" : undefined }}>
                 <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
                   {r.date.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
                 </td>
