@@ -13,12 +13,14 @@ export default function ContractPreviewPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [plan, setPlan] = useState<string | null>(null);
 
   async function run() {
     if (!files.length || !oppId) return;
     setBusy(true);
     setErr(null);
     setPdfUrl(null);
+    setPlan(null);
     try {
       const fd = new FormData();
       files.forEach((f) => fd.append("file", f));
@@ -27,6 +29,36 @@ export default function ContractPreviewPage() {
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error || `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      setPdfUrl(URL.createObjectURL(blob));
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function runRouted() {
+    if (!oppId) return;
+    setBusy(true);
+    setErr(null);
+    setPdfUrl(null);
+    setPlan(null);
+    try {
+      const res = await fetch("/api/contracts/packet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ opportunityId: oppId.trim() }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || `HTTP ${res.status}`);
+      }
+      const p = res.headers.get("X-Packet-Plan");
+      if (p) {
+        const parsed = JSON.parse(p) as { processor: string; legal: string };
+        setPlan(`Coastal + ${parsed.processor} + ${parsed.legal}`);
       }
       const blob = await res.blob();
       setPdfUrl(URL.createObjectURL(blob));
@@ -78,8 +110,24 @@ export default function ContractPreviewPage() {
         >
           {busy ? "Generating…" : "Generate Preview"}
         </button>
+        <div style={{ borderTop: "1px solid #eef1f6", paddingTop: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Or: auto-routed packet from the deal</div>
+          <p style={{ color: "#706e6b", fontSize: 12, margin: "0 0 8px" }}>
+            Ignores the upload above. Uses the templates saved under{" "}
+            <a href="/contracts/templates" style={{ color: "#0070d2" }}>Contract Templates</a> and routes
+            Coastal + processor (SAS/RAM) + legal (Citadel/Victory) automatically.
+          </p>
+          <button
+            onClick={runRouted}
+            disabled={!oppId || busy}
+            style={{ justifySelf: "start", background: "#2e844a", color: "#fff", border: 0, padding: "8px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: busy ? "wait" : "pointer", opacity: !oppId ? 0.5 : 1 }}
+          >
+            {busy ? "Generating…" : "Generate Routed Packet"}
+          </button>
+        </div>
       </div>
 
+      {plan && <div style={{ marginTop: 16, color: "#2e844a", fontSize: 13, fontWeight: 600 }}>Packet: {plan}</div>}
       {err && <div style={{ marginTop: 16, color: "#c23934", fontSize: 13 }}>Error: {err}</div>}
       {pdfUrl && (
         <div style={{ marginTop: 16 }}>
