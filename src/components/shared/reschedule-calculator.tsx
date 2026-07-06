@@ -79,6 +79,8 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   const [weeklyPaymentDay, setWeeklyPaymentDay] = useState("Friday");
   const [showRecalc, setShowRecalc] = useState(false);
   const [showSplit, setShowSplit] = useState(false);
+  const [showSplitView, setShowSplitView] = useState(false);
+  const [actionMenuRow, setActionMenuRow] = useState<number | null>(null);
   const [splitRows, setSplitRows] = useState<SplitRow[] | null>(null);
   const currentWeeklyPayment = initial?.currentWeeklyPayment ?? 0;
 
@@ -133,12 +135,6 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8 }}>
-        <button
-          onClick={() => setShowSplit(true)}
-          style={{ background: "#fff", color: "#0070d2", border: "1px solid #d8dde6", padding: "7px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-        >
-          Split Retainer / Setup Fee
-        </button>
         {splitRows && (
           <button
             onClick={() => setSplitRows(null)}
@@ -252,6 +248,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
                 "Escrow Amount",
                 "Running Balance",
                 "Status",
+                "Action",
               ].map((h) => (
                 <th
                   key={h}
@@ -287,6 +284,43 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
                 <td style={{ padding: "8px 10px", color: r.status === "Completed" ? "#2e844a" : "#706e6b" }}>
                   {r.status}
                 </td>
+                <td style={{ padding: "8px 10px", position: "relative" }}>
+                  <button
+                    onClick={() => setActionMenuRow((cur) => (cur === r.index ? null : r.index))}
+                    aria-label="Row actions"
+                    style={{ border: "1px solid #d8dde6", background: "#fff", borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: 14, lineHeight: 1 }}
+                  >
+                    ▾
+                  </button>
+                  {actionMenuRow === r.index && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: 8,
+                        top: "100%",
+                        zIndex: 20,
+                        background: "#fff",
+                        border: "1px solid #d8dde6",
+                        borderRadius: 4,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                        minWidth: 130,
+                      }}
+                    >
+                      <button
+                        onClick={() => { setActionMenuRow(null); setShowSplit(true); }}
+                        style={menuItem}
+                      >
+                        Edit Split
+                      </button>
+                      <button
+                        onClick={() => { setActionMenuRow(null); setShowSplitView(true); }}
+                        style={menuItem}
+                      >
+                        View Split
+                      </button>
+                    </div>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -317,7 +351,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
         />
       )}
 
-      {showSplit && (
+      {(showSplit || showSplitView) && (
         <RescheduleSplitModal
           retainerAmount={t.retainerAmount}
           setupFee={t.setupFee}
@@ -327,13 +361,30 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
           weeklyDraft={t.weeklyDraftAmount}
           firstPaymentDate={firstPaymentDate}
           weeklyPaymentDay={weeklyPaymentDay}
+          existingRows={splitRows}
+          readOnly={showSplitView}
           onApply={(rows) => {
             setSplitRows(rows);
             setShowSplit(false);
           }}
-          onClose={() => setShowSplit(false)}
+          onClose={() => {
+            setShowSplit(false);
+            setShowSplitView(false);
+          }}
         />
       )}
     </div>
   );
 }
+
+const menuItem: React.CSSProperties = {
+  display: "block",
+  width: "100%",
+  textAlign: "left",
+  border: 0,
+  background: "none",
+  padding: "8px 12px",
+  fontSize: 13,
+  color: "#080707",
+  cursor: "pointer",
+};

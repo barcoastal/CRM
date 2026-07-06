@@ -50,6 +50,8 @@ export function RescheduleSplitModal({
   weeklyDraft,
   firstPaymentDate,
   weeklyPaymentDay,
+  existingRows,
+  readOnly = false,
   onApply,
   onClose,
 }: {
@@ -61,10 +63,13 @@ export function RescheduleSplitModal({
   weeklyDraft: number;
   firstPaymentDate: string;
   weeklyPaymentDay: string;
+  /** current split (for View Split / re-editing); if absent, auto-split. */
+  existingRows?: SplitRow[] | null;
+  readOnly?: boolean;
   onApply: (rows: SplitRow[]) => void;
   onClose: () => void;
 }) {
-  const autoRows = useMemo(() => computeAutoSplit(), [/* on mount */]);
+  const autoRows = useMemo(() => (existingRows && existingRows.length ? existingRows : computeAutoSplit()), []);
   const [rows, setRows] = useState<SplitRow[]>(autoRows);
   const [moveDrafts, setMoveDrafts] = useState(true);
 
@@ -117,7 +122,7 @@ export function RescheduleSplitModal({
     <div style={overlay} onClick={onClose}>
       <div style={dialog} onClick={(e) => e.stopPropagation()}>
         <header style={dialogHeader}>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Split Retainer and Setup Fee</h2>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{readOnly ? "View Split" : "Split Retainer and Setup Fee"}</h2>
           <button onClick={onClose} style={xBtn} aria-label="Close">×</button>
         </header>
 
@@ -130,9 +135,11 @@ export function RescheduleSplitModal({
             <RO label="Total Amount" value={money(retainerAmount + setupFee + bankTotalDisplay + citTotalDisplay)} />
           </div>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-            <button style={btnBrand} onClick={() => setRows(computeAutoSplit())}>Auto Split</button>
-          </div>
+          {!readOnly && (
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+              <button style={btnBrand} onClick={() => setRows(computeAutoSplit())}>Auto Split</button>
+            </div>
+          )}
 
           <div style={{ ...card, overflow: "auto", maxHeight: 320 }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -152,8 +159,9 @@ export function RescheduleSplitModal({
                       <input
                         type="date"
                         value={row.date}
+                        readOnly={readOnly}
                         onChange={(e) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, date: e.target.value } : r)))}
-                        style={cellInput}
+                        style={{ ...cellInput, background: readOnly ? "#f3f2f2" : "#fff" }}
                       />
                     </td>
                     <td style={td}>
@@ -161,18 +169,21 @@ export function RescheduleSplitModal({
                         type="number"
                         step="any"
                         value={row.amount}
+                        readOnly={readOnly}
                         onChange={(e) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, amount: Number(e.target.value) || 0 } : r)))}
-                        style={cellInput}
+                        style={{ ...cellInput, background: readOnly ? "#f3f2f2" : "#fff" }}
                       />
                     </td>
                     <td style={td}>
-                      <button
-                        onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))}
-                        style={{ border: 0, background: "none", color: "#c23934", cursor: "pointer", fontSize: 15 }}
-                        aria-label="Remove"
-                      >
-                        🗑
-                      </button>
+                      {!readOnly && (
+                        <button
+                          onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))}
+                          style={{ border: 0, background: "none", color: "#c23934", cursor: "pointer", fontSize: 15 }}
+                          aria-label="Remove"
+                        >
+                          🗑
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -181,16 +192,22 @@ export function RescheduleSplitModal({
           </div>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-              <input type="checkbox" checked={moveDrafts} onChange={(e) => setMoveDrafts(e.target.checked)} />
-              Move the upcoming drafts to the next viable dates
-            </label>
+            {readOnly ? (
+              <span />
+            ) : (
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                <input type="checkbox" checked={moveDrafts} onChange={(e) => setMoveDrafts(e.target.checked)} />
+                Move the upcoming drafts to the next viable dates
+              </label>
+            )}
             <div style={{ display: "flex", gap: 8 }}>
               <span style={{ fontSize: 12, alignSelf: "center", color: "#706e6b" }}>
                 Total: <b style={{ color: "#080707" }}>{money(totalAmount)}</b>
               </span>
               <button style={btnOutline} onClick={onClose}>Close</button>
-              <button style={btnBrand} onClick={() => onApply(rows)}>Apply</button>
+              {!readOnly && (
+                <button style={btnBrand} onClick={() => onApply(rows)}>Apply</button>
+              )}
             </div>
           </div>
         </div>
