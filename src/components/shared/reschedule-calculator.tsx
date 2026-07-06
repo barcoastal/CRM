@@ -8,7 +8,7 @@ import {
   type RescheduleRow,
 } from "@/lib/reschedule-schedule";
 import { RescheduleRecalculateModal } from "./reschedule-recalculate-modal";
-import { RescheduleSplitModal, type SplitRow } from "./reschedule-split-modal";
+import { RescheduleSplitModal, computeSplit, type SplitRow, type SplitParams } from "./reschedule-split-modal";
 
 // Program lengths (months) that qualify for the "Extra Bonus" badge. Mirrors the
 // SF Qualified_For_Bonus_Program_Length__c custom setting; edit as needed.
@@ -79,7 +79,6 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   const [weeklyPaymentDay, setWeeklyPaymentDay] = useState("Friday");
   const [showRecalc, setShowRecalc] = useState(false);
   const [showSplit, setShowSplit] = useState(false);
-  const [showSplitView, setShowSplitView] = useState(false);
   const [actionMenuRow, setActionMenuRow] = useState<number | null>(null);
   const [splitRows, setSplitRows] = useState<SplitRow[] | null>(null);
   const currentWeeklyPayment = initial?.currentWeeklyPayment ?? 0;
@@ -105,24 +104,39 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   const PROCESSORS = ["SAS Processor", "RAM Processor", "LAPP Processor", "Reliant Processor"];
   const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
+  const splitParams: SplitParams = {
+    retainerAmount: t.retainerAmount,
+    setupFee: t.setupFee,
+    citadelFee,
+    monthlyBankFee: RESCHEDULE_DEFAULTS.monthlyBankFee,
+    bankSetupFee: RESCHEDULE_DEFAULTS.bankSetupFee,
+    weeklyDraft: t.weeklyDraftAmount,
+    firstPaymentDate,
+    weeklyPaymentDay,
+  };
+
   // When a retainer/setup split is applied, replace the single setup row with the
   // split rows and re-date the program weekly draws to start after the last split.
   const displayRows: RescheduleRow[] = useMemo(() => {
     if (!splitRows || splitRows.length === 0) return result.rows;
-    const splitDisplay: RescheduleRow[] = splitRows.map((s, i) => ({
-      index: i + 1,
-      date: new Date(s.date),
-      weeklyDraftAmount: s.amount,
-      programFee: 0,
-      retainerFee: s.amount,
-      setupFee: 0,
-      bankFee: 0,
-      serviceFee: 0,
-      citadelFee: 0,
-      escrowAmount: 0,
-      runningBalance: 0,
-      status: "Pending",
-    }));
+    let run = 0;
+    const splitDisplay: RescheduleRow[] = splitRows.map((s, i) => {
+      run = Math.round((run + s.amount) * 100) / 100;
+      return {
+        index: i + 1,
+        date: new Date(s.date),
+        weeklyDraftAmount: s.amount,
+        programFee: 0,
+        retainerFee: Math.round((s.amount - s.bankFee - s.citadelFee) * 100) / 100,
+        setupFee: 0,
+        bankFee: s.bankFee,
+        serviceFee: 0,
+        citadelFee: s.citadelFee,
+        escrowAmount: 0,
+        runningBalance: run,
+        status: "Pending" as const,
+      };
+    });
     const lastSplit = new Date(splitRows[splitRows.length - 1].date);
     const reDated = result.rows.slice(1).map((r, i) => {
       const d = new Date(lastSplit);
@@ -285,40 +299,41 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
                   {r.status}
                 </td>
                 <td style={{ padding: "8px 10px", position: "relative" }}>
-                  <button
-                    onClick={() => setActionMenuRow((cur) => (cur === r.index ? null : r.index))}
-                    aria-label="Row actions"
-                    style={{ border: "1px solid #d8dde6", background: "#fff", borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: 14, lineHeight: 1 }}
-                  >
-                    ▾
-                  </button>
-                  {actionMenuRow === r.index && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        right: 8,
-                        top: "100%",
-                        zIndex: 20,
-                        background: "#fff",
-                        border: "1px solid #d8dde6",
-                        borderRadius: 4,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                        minWidth: 130,
-                      }}
-                    >
+                  {r.index === 1 && (
+                    <>
                       <button
-                        onClick={() => { setActionMenuRow(null); setShowSplit(true); }}
-                        style={menuItem}
+                        onClick={() => setActionMenuRow((cur) => (cur === r.index ? null : r.index))}
+                        aria-label="Row actions"
+                        style={{ border: "1px solid #d8dde6", background: "#fff", borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: 14, lineHeight: 1 }}
                       >
-                        Edit Split
+                        ▾
                       </button>
-                      <button
-                        onClick={() => { setActionMenuRow(null); setShowSplitView(true); }}
-                        style={menuItem}
-                      >
-                        View Split
-                      </button>
-                    </div>
+                      {actionMenuRow === r.index && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            right: 8,
+                            top: "100%",
+                            zIndex: 20,
+                            background: "#fff",
+                            border: "1px solid #d8dde6",
+                            borderRadius: 4,
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                            minWidth: 130,
+                          }}
+                        >
+                          <button onClick={() => { setActionMenuRow(null); setShowSplit(true); }} style={menuItem}>
+                            Edit Split
+                          </button>
+                          <button
+                            onClick={() => { setActionMenuRow(null); setSplitRows(computeSplit(splitParams)); }}
+                            style={menuItem}
+                          >
+                            View Split
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </td>
               </tr>
@@ -351,26 +366,15 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
         />
       )}
 
-      {(showSplit || showSplitView) && (
+      {showSplit && (
         <RescheduleSplitModal
-          retainerAmount={t.retainerAmount}
-          setupFee={t.setupFee}
-          citadelFee={citadelFee}
-          monthlyBankFee={RESCHEDULE_DEFAULTS.monthlyBankFee}
-          bankSetupFee={RESCHEDULE_DEFAULTS.bankSetupFee}
-          weeklyDraft={t.weeklyDraftAmount}
-          firstPaymentDate={firstPaymentDate}
-          weeklyPaymentDay={weeklyPaymentDay}
+          params={splitParams}
           existingRows={splitRows}
-          readOnly={showSplitView}
           onApply={(rows) => {
             setSplitRows(rows);
             setShowSplit(false);
           }}
-          onClose={() => {
-            setShowSplit(false);
-            setShowSplitView(false);
-          }}
+          onClose={() => setShowSplit(false)}
         />
       )}
     </div>
