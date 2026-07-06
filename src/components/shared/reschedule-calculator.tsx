@@ -5,8 +5,10 @@ import {
   generateRescheduleSchedule,
   RESCHEDULE_DEFAULTS,
   type RescheduleResult,
+  type RescheduleRow,
 } from "@/lib/reschedule-schedule";
 import { RescheduleRecalculateModal } from "./reschedule-recalculate-modal";
+import { RescheduleSplitModal, type SplitRow } from "./reschedule-split-modal";
 
 // Program lengths (months) that qualify for the "Extra Bonus" badge. Mirrors the
 // SF Qualified_For_Bonus_Program_Length__c custom setting; edit as needed.
@@ -76,6 +78,8 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   const [paymentProcessor, setPaymentProcessor] = useState(initial?.paymentProcessor ?? "SAS Processor");
   const [weeklyPaymentDay, setWeeklyPaymentDay] = useState("Friday");
   const [showRecalc, setShowRecalc] = useState(false);
+  const [showSplit, setShowSplit] = useState(false);
+  const [splitRows, setSplitRows] = useState<SplitRow[] | null>(null);
   const currentWeeklyPayment = initial?.currentWeeklyPayment ?? 0;
 
   const [refreshKey, setRefreshKey] = useState(0);
@@ -99,9 +103,50 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   const PROCESSORS = ["SAS Processor", "RAM Processor", "LAPP Processor", "Reliant Processor"];
   const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
+  // When a retainer/setup split is applied, replace the single setup row with the
+  // split rows and re-date the program weekly draws to start after the last split.
+  const displayRows: RescheduleRow[] = useMemo(() => {
+    if (!splitRows || splitRows.length === 0) return result.rows;
+    const splitDisplay: RescheduleRow[] = splitRows.map((s, i) => ({
+      index: i + 1,
+      date: new Date(s.date),
+      weeklyDraftAmount: s.amount,
+      programFee: 0,
+      retainerFee: s.amount,
+      setupFee: 0,
+      bankFee: 0,
+      serviceFee: 0,
+      citadelFee: 0,
+      escrowAmount: 0,
+      runningBalance: 0,
+      status: "Pending",
+    }));
+    const lastSplit = new Date(splitRows[splitRows.length - 1].date);
+    const reDated = result.rows.slice(1).map((r, i) => {
+      const d = new Date(lastSplit);
+      d.setDate(d.getDate() + 7 * (i + 1));
+      return { ...r, index: splitDisplay.length + i + 1, date: d };
+    });
+    return [...splitDisplay, ...reDated];
+  }, [splitRows, result.rows]);
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8 }}>
+        <button
+          onClick={() => setShowSplit(true)}
+          style={{ background: "#fff", color: "#0070d2", border: "1px solid #d8dde6", padding: "7px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+        >
+          Split Retainer / Setup Fee
+        </button>
+        {splitRows && (
+          <button
+            onClick={() => setSplitRows(null)}
+            style={{ background: "#fff", color: "#c23934", border: "1px solid #d8dde6", padding: "7px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+          >
+            Clear Split
+          </button>
+        )}
         <button
           onClick={() => setShowRecalc(true)}
           style={{ background: "#0070d2", color: "#fff", border: 0, padding: "7px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
@@ -225,7 +270,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
             </tr>
           </thead>
           <tbody>
-            {result.rows.map((r) => (
+            {displayRows.map((r) => (
               <tr key={r.index} style={{ borderBottom: "1px solid #f3f3f3" }}>
                 <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
                   {r.date.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
@@ -269,6 +314,24 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
             setShowRecalc(false);
           }}
           onClose={() => setShowRecalc(false)}
+        />
+      )}
+
+      {showSplit && (
+        <RescheduleSplitModal
+          retainerAmount={t.retainerAmount}
+          setupFee={t.setupFee}
+          citadelFee={citadelFee}
+          monthlyBankFee={RESCHEDULE_DEFAULTS.monthlyBankFee}
+          bankSetupFee={RESCHEDULE_DEFAULTS.bankSetupFee}
+          weeklyDraft={t.weeklyDraftAmount}
+          firstPaymentDate={firstPaymentDate}
+          weeklyPaymentDay={weeklyPaymentDay}
+          onApply={(rows) => {
+            setSplitRows(rows);
+            setShowSplit(false);
+          }}
+          onClose={() => setShowSplit(false)}
         />
       )}
     </div>
