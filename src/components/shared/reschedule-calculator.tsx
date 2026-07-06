@@ -164,11 +164,23 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
       combined.push(r);
       extraRows.filter((x) => x._after === r.index).forEach((x) => combined.push(x));
     }
-    return combined.map((r) => {
+    const rows = combined.map((r) => {
       const e = rowEdits[r.index];
       return e ? { ...r, date: new Date(e.date), weeklyDraftAmount: e.amount } : r;
     });
-  }, [displayRows, rowEdits, extraRows]);
+    // Skipping a payment DEFERS it: the program still collects the full amount,
+    // so each skipped draft is re-added at the end (program extends by one week).
+    const deferred = rows.filter((r) => skipped.has(r.index) && r.index !== 1);
+    if (deferred.length && rows.length) {
+      let d = new Date(rows[rows.length - 1].date);
+      deferred.forEach((r, i) => {
+        d = new Date(d);
+        d.setDate(d.getDate() + 7);
+        rows.push({ ...r, index: -5000 - i, date: new Date(d), status: "Pending", _child: false, runningBalance: 0 });
+      });
+    }
+    return rows;
+  }, [displayRows, rowEdits, extraRows, skipped]);
 
   return (
     <div>
