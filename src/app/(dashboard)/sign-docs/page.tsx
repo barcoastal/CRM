@@ -87,11 +87,18 @@ export default async function SignDocsHubPage() {
         </div>
         <div className="flex gap-2">
           <Link
+            href="/contracts/templates"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-[13px] font-semibold text-[#1a7d37] bg-white border border-[#1a7d37]"
+          >
+            <FileText className="size-4" />
+            Packet Templates (Word)
+          </Link>
+          <Link
             href="/templates/esign"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-[13px] font-semibold text-white bg-[#3052ff] border border-[#3052ff]"
           >
             <Layers className="size-4" />
-            Templates
+            PDF Templates
           </Link>
           <Link
             href="/templates/esign/new"
@@ -99,7 +106,7 @@ export default async function SignDocsHubPage() {
             style={{ background: "linear-gradient(135deg, #0034e4, #3052ff)" }}
           >
             <Plus className="size-4" />
-            New Template
+            New PDF Template
           </Link>
         </div>
       </div>
@@ -211,6 +218,28 @@ export default async function SignDocsHubPage() {
         </section>
 
         <section className="space-y-5">
+          <div className="bg-white rounded-xl overflow-hidden border border-[#1a7d37]/30" style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}>
+            <div className="px-5 py-4 border-b border-[#f2f3ff] flex items-center justify-between">
+              <h2 className="text-[14px] font-bold text-[#131b2e]">Contract Packets (Word)</h2>
+              <Link href="/contracts/templates" className="text-[12px] text-[#1a7d37] font-semibold">
+                Manage
+              </Link>
+            </div>
+            <div className="px-5 py-4 text-[12px] text-[#444656] space-y-2">
+              <p>
+                Author agreements in a Word-style editor, drop signature/date fields inline, and send them as one
+                auto-routed packet: Coastal + processor (SAS/RAM) + legal (Citadel/Victory), signed once.
+              </p>
+              <Link
+                href="/contracts/templates"
+                className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#1a7d37]"
+              >
+                <FileText className="size-3.5" />
+                Open packet templates
+              </Link>
+            </div>
+          </div>
+
           <div className="bg-white rounded-xl overflow-hidden" style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}>
             <div className="px-5 py-4 border-b border-[#f2f3ff] flex items-center justify-between">
               <h2 className="text-[14px] font-bold text-[#131b2e]">Status Breakdown</h2>
