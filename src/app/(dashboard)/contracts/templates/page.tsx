@@ -80,27 +80,33 @@ export default function ContractTemplatesPage() {
                 )}
               </div>
             </div>
-            <label
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "#0070d2",
-                cursor: busy === r.category ? "wait" : "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {busy === r.category ? "Uploading…" : r.originalName ? "Replace" : "Upload"}
-              <input
-                type="file"
-                accept=".docx"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) upload(r.category, f);
-                  e.target.value = "";
+            <div style={{ display: "flex", alignItems: "center", gap: 16, whiteSpace: "nowrap" }}>
+              {r.originalName && (
+                <a href={`/contracts/templates/${r.category}/edit`} style={{ fontSize: 13, fontWeight: 600, color: "#2e844a" }}>
+                  Edit fields
+                </a>
+              )}
+              <label
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#0070d2",
+                  cursor: busy === r.category ? "wait" : "pointer",
                 }}
-              />
-            </label>
+              >
+                {busy === r.category ? "Uploading…" : r.originalName ? "Replace" : "Upload"}
+                <input
+                  type="file"
+                  accept=".docx"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) upload(r.category, f);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
           </div>
         ))}
       </div>
