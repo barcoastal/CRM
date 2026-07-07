@@ -32,11 +32,20 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
   const citadel = latestCalc?.citadelFee ?? 145;
   const firstPaymentDate = acct?.programStartDate ?? opp.firstDraftDate ?? new Date();
 
+  // Feed EVERY saved calculator input into the same engine so the contract's
+  // payment structure matches the opportunity to the cent. Undefined values
+  // fall back to the calculator's own defaults inside generateRescheduleSchedule.
   const sched = generateRescheduleSchedule({
     totalDebt,
     termMonths: term,
     citadelFee: citadel,
     firstPaymentDate: firstPaymentDate.toISOString().slice(0, 10),
+    settlementPercent: latestCalc?.settlementPercentage ?? undefined,
+    programFeePercent: latestCalc?.programFeePercent ?? undefined,
+    retainerPercent: latestCalc?.retainerPercentage ?? undefined,
+    setupFee: latestCalc?.setupFee ?? undefined,
+    serviceFeePerPeriod: latestCalc?.serviceFee ?? undefined,
+    monthlyBankFee: latestCalc?.monthlyBankFee ?? undefined,
   });
   const t = sched.totals;
 
@@ -69,7 +78,13 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
     else DebitSchedule.push({ DepositAmount: usd(amt), StartDate: mdY(r.date), NumberOfPayments: 1 });
   }
 
-  const dispensationFee = totalDebt * (RESCHED.programFeePercent / 100);
+  // Effective percentages: saved calc if present, else the calculator defaults.
+  const settlementPct = latestCalc?.settlementPercentage ?? RESCHED.settlementPercent;
+  const programFeePct = latestCalc?.programFeePercent ?? RESCHED.programFeePercent;
+  const retainerPct = latestCalc?.retainerPercentage ?? RESCHED.retainerPercent;
+  const serviceFeeVal = latestCalc?.serviceFee ?? 55;
+
+  const dispensationFee = totalDebt * (programFeePct / 100);
   const totalWithFees = sched.rows.reduce((s, r) => s + r.weeklyDraftAmount, 0);
 
   return {
@@ -86,11 +101,11 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
     FirstPaymentAmount: usd(sched.rows[0]?.weeklyDraftAmount ?? 0),
     RetainerAmount: usd(t.retainerAmount),
     DispensationFee: usd(dispensationFee),
-    SettlementPercent: String(RESCHED.settlementPercent),
-    ProgramFeePercent: String(RESCHED.programFeePercent),
-    RetainerPercent: String(RESCHED.retainerPercent),
+    SettlementPercent: String(settlementPct),
+    ProgramFeePercent: String(programFeePct),
+    RetainerPercent: String(retainerPct),
     SetupFee: usd(t.setupFee),
-    ServiceFee: usd(55),
+    ServiceFee: usd(serviceFeeVal),
     TotalWithFees: usd(totalWithFees),
     EstimatedSavings: usd(Math.round((totalDebt - totalWithFees) * 100) / 100),
     WeeklyPayment: usd(sched.rows[1]?.weeklyDraftAmount ?? t.weeklyDraftAmount),
