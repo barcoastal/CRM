@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import "superdoc/style.css";
+import { SCALAR_FIELDS, TABLE_FIELDS, tableFieldHtml } from "@/lib/contracts/fields";
 
 /**
  * In-CRM Word-style editor for a contract template. Opens the stored .docx with
@@ -22,6 +23,12 @@ type SuperDocInstance = {
   export: (o: { triggerDownload: boolean; isFinalDoc?: boolean }) => Promise<Blob>;
   destroy?: () => void;
 };
+
+// Group the scalar CRM fields for the palette.
+const SCALAR_GROUPS = SCALAR_FIELDS.reduce<Record<string, typeof SCALAR_FIELDS>>((acc, f) => {
+  (acc[f.group] ??= []).push(f);
+  return acc;
+}, {});
 
 export function DocxFieldEditor({ category, label }: { category: string; label: string }) {
   const editorId = `sd-editor-${category}`;
@@ -86,6 +93,28 @@ export function DocxFieldEditor({ category, label }: { category: string; label: 
     editor.commands.insertContent(` ${token} `, { contentType: "text" });
   }
 
+  /** Insert a CRM merge token, e.g. {{ClientName}}, at the cursor. */
+  function insertCrmField(token: string) {
+    const editor = sdRef.current?.activeEditor;
+    if (!editor) {
+      setStatus("Click inside the document first, then insert.");
+      return;
+    }
+    editor.commands.insertContent(`{{${token}}}`, { contentType: "text" });
+  }
+
+  /** Insert a repeating CRM table (creditors / payment schedule / ACH). */
+  function insertCrmTable(tableToken: string) {
+    const editor = sdRef.current?.activeEditor;
+    if (!editor) {
+      setStatus("Click inside the document first, then insert.");
+      return;
+    }
+    const field = TABLE_FIELDS.find((t) => t.token === tableToken);
+    if (!field) return;
+    editor.commands.insertContent(tableFieldHtml(field), { contentType: "html" });
+  }
+
   async function save() {
     if (!sdRef.current) return;
     setSaving(true);
@@ -127,32 +156,102 @@ export function DocxFieldEditor({ category, label }: { category: string; label: 
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        <span style={{ fontSize: 12, color: "#706e6b", alignSelf: "center", fontWeight: 600 }}>Insert field:</span>
-        {FIELDS.map((f) => (
-          <button
-            key={f.token}
-            onClick={() => insertField(f.token)}
-            disabled={!ready}
-            title={f.hint}
-            style={{ background: "#eef2ff", color: "#3730a3", border: "1px solid #c7d2fe", padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: ready ? "pointer" : "default", opacity: ready ? 1 : 0.5 }}
-          >
-            + {f.label}
-          </button>
-        ))}
-      </div>
-
       {saved && (
         <div style={{ fontSize: 13, marginBottom: 8, color: saved.startsWith("Error") ? "#c23934" : "#2e844a", fontWeight: 600 }}>
           {saved}
         </div>
       )}
 
-      <div id={toolbarId} style={{ border: "1px solid #e6e6e6", borderRadius: "4px 4px 0 0", minHeight: 40 }} />
-      <div
-        id={editorId}
-        style={{ border: "1px solid #e6e6e6", borderTop: 0, borderRadius: "0 0 4px 4px", minHeight: 600, background: "#f5f6f8" }}
-      />
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div id={toolbarId} style={{ border: "1px solid #e6e6e6", borderRadius: "4px 4px 0 0", minHeight: 40 }} />
+          <div
+            id={editorId}
+            style={{ border: "1px solid #e6e6e6", borderTop: 0, borderRadius: "0 0 4px 4px", minHeight: 600, background: "#f5f6f8" }}
+          />
+        </div>
+
+        <aside style={{ width: 260, flexShrink: 0, border: "1px solid #e6e6e6", borderRadius: 6, padding: 12, maxHeight: 700, overflowY: "auto", position: "sticky", top: 12 }}>
+          <div style={{ fontSize: 11, color: "#706e6b", marginBottom: 10 }}>
+            Click in the document, then click a field to drop it in. CRM fields auto-fill from the deal when you send.
+          </div>
+
+          <PaletteGroup title="Signature fields" color="#3730a3" bg="#eef2ff" border="#c7d2fe">
+            {FIELDS.map((f) => (
+              <Chip key={f.token} disabled={!ready} title={f.hint} color="#3730a3" bg="#eef2ff" border="#c7d2fe" onClick={() => insertField(f.token)}>
+                + {f.label}
+              </Chip>
+            ))}
+          </PaletteGroup>
+
+          {Object.entries(SCALAR_GROUPS).map(([group, fields]) => (
+            <PaletteGroup key={group} title={`CRM: ${group}`} color="#0f5132" bg="#e7f5ec" border="#a3d9b8">
+              {fields.map((f) => (
+                <Chip key={f.token} disabled={!ready} title={`{{${f.token}}}`} color="#0f5132" bg="#e7f5ec" border="#a3d9b8" onClick={() => insertCrmField(f.token)}>
+                  + {f.label}
+                </Chip>
+              ))}
+            </PaletteGroup>
+          ))}
+
+          <PaletteGroup title="CRM tables" color="#8a4b00" bg="#fdf0e3" border="#f2c79a">
+            {TABLE_FIELDS.map((t) => (
+              <Chip key={t.token} disabled={!ready} title={`{{#${t.token}}}…{{/${t.token}}}`} color="#8a4b00" bg="#fdf0e3" border="#f2c79a" onClick={() => insertCrmTable(t.token)}>
+                + {t.label}
+              </Chip>
+            ))}
+          </PaletteGroup>
+        </aside>
+      </div>
     </div>
+  );
+}
+
+function PaletteGroup({
+  title,
+  children,
+}: {
+  title: string;
+  color: string;
+  bg: string;
+  border: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#706e6b", marginBottom: 6 }}>
+        {title}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{children}</div>
+    </div>
+  );
+}
+
+function Chip({
+  children,
+  onClick,
+  disabled,
+  title,
+  color,
+  bg,
+  border,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled: boolean;
+  title: string;
+  color: string;
+  bg: string;
+  border: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      style={{ background: bg, color, border: `1px solid ${border}`, padding: "4px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1 }}
+    >
+      {children}
+    </button>
   );
 }
