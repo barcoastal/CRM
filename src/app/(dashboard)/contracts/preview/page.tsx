@@ -14,6 +14,9 @@ export default function ContractPreviewPage() {
   const [err, setErr] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [plan, setPlan] = useState<string | null>(null);
+  const [signerName, setSignerName] = useState("");
+  const [signerEmail, setSignerEmail] = useState("");
+  const [sendResult, setSendResult] = useState<string | null>(null);
 
   async function run() {
     if (!files.length || !oppId) return;
@@ -62,6 +65,33 @@ export default function ContractPreviewPage() {
       }
       const blob = await res.blob();
       setPdfUrl(URL.createObjectURL(blob));
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendPacket() {
+    if (!oppId || !signerName.trim() || !signerEmail.trim()) return;
+    setBusy(true);
+    setErr(null);
+    setSendResult(null);
+    try {
+      const res = await fetch("/api/contracts/packet/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          opportunityId: oppId.trim(),
+          signerName: signerName.trim(),
+          signerEmail: signerEmail.trim(),
+        }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || j.details || `HTTP ${res.status}`);
+      setSendResult(
+        `Sent ${j.packet} · ${j.pages} pages · ${j.signatureCount} signature spot(s) · email ${j.emailSent ? "sent" : "FAILED"}\n${j.signingUrl}`,
+      );
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -125,9 +155,36 @@ export default function ContractPreviewPage() {
             {busy ? "Generating…" : "Generate Routed Packet"}
           </button>
         </div>
+        <div style={{ borderTop: "1px solid #eef1f6", paddingTop: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Or: send the routed packet for signature</div>
+          <p style={{ color: "#706e6b", fontSize: 12, margin: "0 0 8px" }}>
+            Builds the routed packet, detects <code>{"\\s\\"}</code> / <code>{"\\d\\"}</code> / <code>{"\\n\\"}</code>{" "}
+            anchors in your templates, and emails the signer one link to sign all agreements once.
+          </p>
+          <input
+            value={signerName}
+            onChange={(e) => setSignerName(e.target.value)}
+            placeholder="Signer name"
+            style={{ display: "block", width: "100%", height: 32, padding: "0 8px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 13, marginBottom: 6 }}
+          />
+          <input
+            value={signerEmail}
+            onChange={(e) => setSignerEmail(e.target.value)}
+            placeholder="Signer email"
+            style={{ display: "block", width: "100%", height: 32, padding: "0 8px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 13, marginBottom: 8 }}
+          />
+          <button
+            onClick={sendPacket}
+            disabled={!oppId || !signerName.trim() || !signerEmail.trim() || busy}
+            style={{ justifySelf: "start", background: "#5867e8", color: "#fff", border: 0, padding: "8px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: busy ? "wait" : "pointer", opacity: !oppId || !signerName.trim() || !signerEmail.trim() ? 0.5 : 1 }}
+          >
+            {busy ? "Sending…" : "Generate & Send Packet"}
+          </button>
+        </div>
       </div>
 
       {plan && <div style={{ marginTop: 16, color: "#2e844a", fontSize: 13, fontWeight: 600 }}>Packet: {plan}</div>}
+      {sendResult && <div style={{ marginTop: 16, color: "#2e844a", fontSize: 13, fontWeight: 600, whiteSpace: "pre-wrap" }}>{sendResult}</div>}
       {err && <div style={{ marginTop: 16, color: "#c23934", fontSize: 13 }}>Error: {err}</div>}
       {pdfUrl && (
         <div style={{ marginTop: 16 }}>
