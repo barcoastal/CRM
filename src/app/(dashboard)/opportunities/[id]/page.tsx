@@ -908,6 +908,23 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             .replace(/s Received$/, "");
           return `Mark ${short} Complete`;
         })()}
+        pathAdvance={(() => {
+          // Clicking the button advances to the NEXT real stage (SF behavior).
+          // The path's terminal "Closed" chevron maps to the real win stage.
+          const progression = [
+            "Working Opportunity",
+            "Waiting for Agreements",
+            "Agreements Received",
+            "Ready To Close",
+            "Contract Sent",
+            "Contract Signed",
+            "Closed Won First Payment Pending",
+            "Closed Won - First Payment Completed",
+          ];
+          const cur = progression.indexOf(formatStage(opp.stage));
+          const nextStage = cur >= 0 && cur < progression.length - 1 ? progression[cur + 1] : null;
+          return { entity: "opportunities", entityId: opp.id, nextStage };
+        })()}
         details={
           <>
             <PathSidePanelServer

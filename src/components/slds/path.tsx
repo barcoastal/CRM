@@ -16,17 +16,53 @@ export interface PathStage {
   sublabel?: string;
 }
 
+/**
+ * Wiring for the action button: same as SF, clicking "Mark ... Complete"
+ * advances the record to the next stage. Pages pass the entity route + the
+ * actual next stage value; the button PATCHes the field endpoint and reloads.
+ */
+export interface PathAdvance {
+  /** API route segment, e.g. "opportunities" | "leads" | "accounts". */
+  entity: string;
+  entityId: string;
+  /** The stage value to set when clicked. Null = terminal stage (button disabled). */
+  nextStage: string | null;
+  /** Field to PATCH (default "stage"). */
+  fieldKey?: string;
+}
+
 export function Path({
   stages,
   currentIndex,
   actionLabel = "Mark as Current Stage",
   onAction,
+  advance,
 }: {
   stages: readonly PathStage[];
   currentIndex: number;
   actionLabel?: string;
   onAction?: () => void;
+  advance?: PathAdvance;
 }) {
+  const handleAction = async () => {
+    if (onAction) return onAction();
+    if (!advance?.nextStage) return;
+    try {
+      const res = await fetch(`/api/${advance.entity}/${advance.entityId}/field`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [advance.fieldKey ?? "stage"]: advance.nextStage }),
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(j.error || "Could not update the stage.");
+        return;
+      }
+      window.location.reload();
+    } catch {
+      alert("Could not update the stage.");
+    }
+  };
   return (
     <div
       style={{
@@ -93,7 +129,8 @@ export function Path({
 
       {/* SF renders this as a solid brand-blue button. */}
       <button
-        onClick={onAction}
+        onClick={handleAction}
+        disabled={!onAction && !advance?.nextStage}
         style={{
           marginLeft: 12,
           background: "#0176d3",

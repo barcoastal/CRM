@@ -39,7 +39,9 @@ function InfoIcon() {
       height="13"
       viewBox="0 0 16 16"
       aria-hidden="true"
-      style={{ marginLeft: 5, flexShrink: 0, verticalAlign: "-2px" }}
+      // display:inline defeats Tailwind preflight's `svg { display: block }`,
+      // which otherwise wraps the icon onto its own line below the label.
+      style={{ display: "inline", marginLeft: 5, flexShrink: 0, verticalAlign: "-2px" }}
     >
       <circle cx="8" cy="8" r="7.25" fill="#747474" />
       <rect x="7" y="6.8" width="2" height="5.2" rx="0.6" fill="#fff" />
@@ -87,7 +89,7 @@ export function TotalPaymentsSummary(props: TotalPaymentsSummaryProps) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "10px 12px",
+          padding: "8px 12px",
           borderBottom: allEmpty ? "none" : "1px solid #c9c9c9",
         }}
       >
@@ -109,7 +111,7 @@ export function TotalPaymentsSummary(props: TotalPaymentsSummaryProps) {
               >
                 <td
                   style={{
-                    padding: "10px 12px",
+                    padding: "8px 12px",
                     color: "#444444",
                     fontSize: 11.5,
                     textTransform: "uppercase",
@@ -127,7 +129,7 @@ export function TotalPaymentsSummary(props: TotalPaymentsSummaryProps) {
                 </td>
                 <td
                   style={{
-                    padding: "10px 12px",
+                    padding: "8px 12px",
                     color: "#181818",
                     fontSize: 13,
                     fontWeight: 400,

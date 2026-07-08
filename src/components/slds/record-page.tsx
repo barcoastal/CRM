@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { ObjectHeader, type ObjectHeaderField } from "./object-header";
-import { Path, type PathStage } from "./path";
+import { Path, type PathStage, type PathAdvance } from "./path";
 
 /**
  * Canonical SF Lightning record-page layout:
@@ -19,6 +19,7 @@ export function RecordPage({
   pathStages,
   pathCurrentIndex,
   pathActionLabel,
+  pathAdvance,
   details,
   rail,
 }: {
@@ -31,6 +32,7 @@ export function RecordPage({
   pathStages?: readonly PathStage[];
   pathCurrentIndex?: number;
   pathActionLabel?: string;
+  pathAdvance?: PathAdvance;
   details: ReactNode;
   rail?: ReactNode;
 }) {
@@ -49,6 +51,7 @@ export function RecordPage({
           stages={pathStages}
           currentIndex={pathCurrentIndex}
           actionLabel={pathActionLabel ?? "Mark Current Stage"}
+          advance={pathAdvance}
         />
       )}
       <div
