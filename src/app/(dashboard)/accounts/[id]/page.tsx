@@ -497,7 +497,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
                 <td style={td}>{a.date.toLocaleString()}</td>
                 <td style={td}>{a.type}</td>
                 <td style={td}>{a.subject}</td>
-                <td style={td}>{a.meta ?? "—"}</td>
+                <td style={td}>{a.meta ?? "-"}</td>
               </tr>
             ))}
           </tbody>
@@ -554,7 +554,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
               <span>{d.creditorName}</span>
               <span>${d.originalBalance.toLocaleString()}</span>
-              <span>${d.paymentAmount?.toLocaleString() ?? "—"}</span>
+              <span>${d.paymentAmount?.toLocaleString() ?? "-"}</span>
               <StatusPill label={d.status} tone={genericTone(d.status)} />
             </div>
           )}
@@ -749,9 +749,10 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     <RecordPage
       entity="Account"
       entityLabel="Account"
-      recordTitle={headerTitle}
-      recordSubtitle={account.name}
+      recordTitle={account.name}
+      recordSubtitle={headerTitle}
       highlights={[
+        { label: "Total Debt", value: headerTitle },
         { label: "Client Status", value: <StatusPill label={account.clientStatus} tone={statusTone(account.clientStatus)} /> },
         { label: "Processor Status", value: account.processorStatus ?? "Not Synced" },
         { label: "Payment Status", value: <StatusPill label={account.paymentStatus} tone={statusTone(account.paymentStatus)} /> },

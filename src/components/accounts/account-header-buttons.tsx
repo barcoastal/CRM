@@ -9,13 +9,13 @@ import { ACCOUNT_STAGES, ACCOUNT_STAGE_TO_SUB_DISPOSITIONS } from "@/lib/sf-cano
 
 const btn: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #dddbda",
+  border: "1px solid #d8dde6",
   color: "#0070d2",
   padding: "0 12px",
   height: 32,
   borderRadius: 4,
   fontSize: 13,
-  fontWeight: 400,
+  fontWeight: 600,
   cursor: "pointer",
   display: "inline-flex",
   alignItems: "center",

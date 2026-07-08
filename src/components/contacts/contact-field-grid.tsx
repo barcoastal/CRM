@@ -115,7 +115,7 @@ export function ContactField({ label, value }: { label: string; value: ReactNode
           wordBreak: "break-word",
         }}
       >
-        {isEmpty ? <span style={{ color: "#b0adab" }}>{"—"}</span> : value}
+        {isEmpty ? <span style={{ color: "#b0adab" }}>{"-"}</span> : value}
       </div>
       {/* Spacer keeps the 3-column grid intact. Read-only ContactField rows
           intentionally render NO pencil. Only rows wired via CE() +
