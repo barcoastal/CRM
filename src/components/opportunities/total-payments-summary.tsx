@@ -33,12 +33,12 @@ export interface TotalPaymentsSummaryProps {
 }
 
 const labelCellStyle: React.CSSProperties = {
-  padding: "6px 0",
+  padding: "4px 0",
   color: "#747474",
   fontSize: 12,
 };
 const valueCellStyle: React.CSSProperties = {
-  padding: "6px 0",
+  padding: "4px 0",
   textAlign: "right",
   fontWeight: 600,
   fontSize: 12,

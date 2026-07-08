@@ -31,7 +31,8 @@ export function ObjectHeader({
         background: "#f3f3f3",
         border: "1px solid #c9c9c9",
         borderRadius: 4,
-        padding: "12px 16px 0",
+        // Measured from the live org: .slds-page-header padding is 8px 12px.
+        padding: "8px 12px 0",
         boxShadow: "0 2px 2px 0 rgba(0,0,0,0.1)",
       }}
     >
@@ -111,10 +112,10 @@ export function ObjectHeader({
       {highlights.length > 0 && (
         <div
           style={{
-            marginTop: 10,
-            paddingTop: 10,
-            paddingBottom: 8,
-            borderTop: "1px solid #ecebea",
+            marginTop: 6,
+            paddingTop: 6,
+            paddingBottom: 6,
+            borderTop: "1px solid #e5e5e5",
           }}
         >
           <ul

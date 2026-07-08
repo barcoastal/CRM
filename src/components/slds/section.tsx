@@ -177,8 +177,8 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div
       style={{
-        padding: "6px 0",
-        minHeight: 32,
+        padding: "4px 0",
+        minHeight: 28,
         position: "relative",
         display: "grid",
         gridTemplateColumns: "33% 1fr 28px",

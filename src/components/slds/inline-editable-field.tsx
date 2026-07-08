@@ -52,7 +52,7 @@ export function InlineEditableField({
 }: InlineEditableFieldProps) {
   // Pad cells used to align two-column rows skip rendering entirely.
   if (label === "__PAD__") {
-    return <div aria-hidden="true" style={{ minHeight: 32, padding: "6px 0" }} />;
+    return <div aria-hidden="true" style={{ minHeight: 28, padding: "4px 0" }} />;
   }
 
   const [editing, setEditing] = useState(false);
@@ -161,8 +161,8 @@ export function InlineEditableField({
         gridTemplateColumns: editing ? "33% 1fr 56px" : "33% 1fr 28px",
         alignItems: "start",
         gap: 8,
-        padding: "6px 0",
-        minHeight: 32,
+        padding: "4px 0",
+        minHeight: 28,
         borderBottom: "1px solid #e5e5e5",
         fontSize: 13,
         lineHeight: 1.35,
@@ -193,7 +193,7 @@ export function InlineEditableField({
               disabled={saving}
               style={inputStyle}
             >
-              <option value="">— None —</option>
+              <option value="">- None -</option>
               {options?.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
