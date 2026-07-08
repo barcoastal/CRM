@@ -749,10 +749,12 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     <RecordPage
       entity="Account"
       entityLabel="Account"
-      recordTitle={account.name}
-      recordSubtitle={headerTitle}
+      // SF Lightning shows the TOTAL DEBT dollar amount as the Account record
+      // title (verified against the live org); the account name is the
+      // subtitle since our chrome has no workspace tab to carry it.
+      recordTitle={headerTitle}
+      recordSubtitle={account.name}
       highlights={[
-        { label: "Total Debt", value: headerTitle },
         { label: "Client Status", value: <StatusPill label={account.clientStatus} tone={statusTone(account.clientStatus)} /> },
         { label: "Processor Status", value: account.processorStatus ?? "Not Synced" },
         { label: "Payment Status", value: <StatusPill label={account.paymentStatus} tone={statusTone(account.paymentStatus)} /> },
@@ -789,11 +791,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       }
       rail={
         <>
-          {/* SF rail order — Health Check, Escrow Balance, Bank Details, Opportunities, Contacts */}
-          <HealthCheckCard
-            welcomeCallCompleted={account.welcomeCallCompleted}
-            firstPaymentReceived={account.firstPaymentReceived}
-          />
+          {/* SF rail order (verified live) — Escrow Balance, Bank Details first;
+              our Health Check + related cards follow. */}
           <EscrowBalanceCard
             accountId={account.id}
             balance={account.escrowBalance}
@@ -808,6 +807,10 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
               bankAccountNumber: account.bankAccountNumber,
               bankAccountType: account.bankAccountType,
             }}
+          />
+          <HealthCheckCard
+            welcomeCallCompleted={account.welcomeCallCompleted}
+            firstPaymentReceived={account.firstPaymentReceived}
           />
           <RelatedList
             entity="Opportunity"

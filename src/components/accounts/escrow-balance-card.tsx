@@ -106,8 +106,11 @@ export function EscrowBalanceCard({
         )}
       </header>
       <div style={{ padding: "20px 16px 16px", textAlign: "center" }}>
-        <div style={{ fontSize: 28, fontWeight: 700, color: "#04844b" }}>
-          ${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        <div style={{ fontSize: 28, fontWeight: 700, color: balance < 0 ? "#ba0517" : "#04844b" }}>
+          {/* SF shows negative balances in red accounting parens: ($0.00) */}
+          {balance < 0
+            ? `($${Math.abs(balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
+            : `$${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
         </div>
         {pulledAt && (
           <div style={{ fontSize: 11, color: "#747474", marginTop: 6 }}>

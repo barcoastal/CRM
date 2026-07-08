@@ -239,7 +239,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           // Row 2: Email | Date Of Birth
           [
             "Email",
-            <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{emailVal ?? "-"}{emailVal && <ComposeEmailButton defaultTo={emailVal} leadId={lead.id} label="Email" />}</span>,
+            <span key="em" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>{emailVal ?? "-"}{emailVal && <ComposeEmailButton defaultTo={emailVal} leadId={lead.id} label="" />}</span>,
             { fieldKey: "email", type: "email", rawValue: lead.email ?? emailVal },
           ],
           E("Date Of Birth", sfDate("Date_Of_Birth__c"), "Date_Of_Birth__c", "date"),
@@ -851,13 +851,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         </>
       }
       highlights={[
-        // SF Lead detail highlights row (verified against sf-lead-detail.png):
-        // 5 columns — Title, Email, Phone, Mobile, Lead Id. Company is shown
-        // in the Lead Information section below, not the highlight strip.
-        { label: "Title", value: sf("Title") },
-        { label: "Email", value: emailVal },
+        // SF Lead detail highlights row (verified against the live org):
+        // Company | Phone | Email | Lead Id.
+        { label: "Company", value: lead.businessName },
         { label: "Phone", value: phoneVal },
-        { label: "Mobile", value: mobileVal },
+        { label: "Email", value: emailVal },
         { label: "Lead Id", value: displayLeadId },
       ]}
       actions={<LeadHeaderButtons leadId={lead.id} currentStage={stage} converted={!!converted} defaultEmail={emailVal} defaultPhone={phoneVal} businessName={lead.businessName ?? undefined} contactName={displayContactName} />}

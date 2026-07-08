@@ -16,28 +16,33 @@ export type AccountTabKey =
   | "Marketing"
   | "All SF Fields";
 
-// SF tab bar order — exactly matches Lightning Account record page.
+// SF Lightning Account record page tab order (verified against the live org):
+// Related | Details | Opportunities, Related is the default tab. Our extra
+// CRM tabs follow, with the least-used ones in the More overflow.
 // "All SF Fields" is intentionally NOT in the tab strip; it's reachable via
 // a footer link on the Details tab.
 const PRIMARY_TABS: AccountTabKey[] = [
+  "Related Records",
   "Details",
+  "Opportunities",
   "Payment Calculator",
   "Activities",
   "Documents",
-  "Related Records",
-  "Payment Summaries",
-  "Settlements",
 ];
 const MORE_TABS: AccountTabKey[] = [
-  "Opportunities",
+  "Payment Summaries",
+  "Settlements",
   "Contacts",
   "Team",
   "Marketing",
 ];
 const TABS: AccountTabKey[] = [...PRIMARY_TABS, ...MORE_TABS];
 
+// SF labels the tab "Related".
+const TAB_LABEL: Partial<Record<AccountTabKey, string>> = { "Related Records": "Related" };
+
 export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNode> }) {
-  const [tab, setTab] = useState<AccountTabKey>("Details");
+  const [tab, setTab] = useState<AccountTabKey>("Related Records");
   const [moreOpen, setMoreOpen] = useState(false);
   const moreActive = MORE_TABS.includes(tab);
   return (
@@ -82,7 +87,7 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
                 whiteSpace: "nowrap",
               }}
             >
-              {t}
+              {TAB_LABEL[t] ?? t}
             </button>
           );
         })}
@@ -105,7 +110,7 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
               gap: 4,
             }}
           >
-            {moreActive ? tab : "More"}
+            {moreActive ? (TAB_LABEL[tab] ?? tab) : "More"}
             <svg width="9" height="9" viewBox="0 0 10 10" style={{ fill: "currentColor" }}>
               <path d="M0 2l5 6 5-6z" />
             </svg>

@@ -412,11 +412,12 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     </>
   );
 
-  const relatedFooter = (
-    <ContactSection title="Related Records" defaultOpen={false}>
+  // SF Lightning puts Related as the FIRST tab on the Contact record page.
+  const relatedPanel = (
+    <ContactSection title="Related Records" defaultOpen>
       <RelatedList
         entity="Opportunity"
-        title={`Opportunities as Primary Contact (${contact.primaryForOpportunity.length})`}
+        title="Opportunities as Primary Contact"
         items={contact.primaryForOpportunity}
         renderItem={(o) => (
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
@@ -432,7 +433,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       />
       <RelatedList
         entity="Account"
-        title={`Related Accounts (${contact.accountRelations.length})`}
+        title="Related Accounts"
         items={contact.accountRelations.map((r) => ({ id: r.id, role: r.role, account: r.account }))}
         renderItem={(r) => (
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12 }}>
@@ -447,7 +448,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       />
       <RelatedList
         entity="Case"
-        title={`Cases (${contact.cases.length})`}
+        title="Cases"
         items={contact.cases}
         renderItem={(c) => (
           <div>
@@ -461,7 +462,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       />
       <RelatedList
         entity="Task"
-        title={`Open Tasks (${contact.tasks.filter((t) => t.status !== "COMPLETED").length})`}
+        title="Open Tasks"
         items={contact.tasks.filter((t) => t.status !== "COMPLETED")}
         renderItem={(t) => (
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12 }}>
@@ -491,12 +492,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     </details>
   );
 
-  const detailsFooter = (
-    <>
-      {relatedFooter}
-      {allSfFooter}
-    </>
-  );
+  const detailsFooter = allSfFooter;
 
   return (
     <RecordPage
@@ -515,7 +511,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           ),
         },
         { label: "Phone", value: contact.phone ?? sfc("Phone") },
-        { label: "Mobile", value: contact.mobilePhone ?? sfc("MobilePhone") },
+        { label: "Lead Id", value: sfc("Lead_Number__c") ?? sfc("Lead_Id__c") },
         {
           label: "Email",
           value: emailVal ? (
@@ -530,6 +526,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       details={
         <ContactTabs
           panels={{
+            Related: relatedPanel,
             Details: detailsPanel,
             Marketing: marketingPanel,
           }}
