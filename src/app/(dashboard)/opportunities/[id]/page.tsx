@@ -292,6 +292,14 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   );
 
   const ownerDisplay = opp.assignedTo?.name ?? oppSf("Owner_Full_Name__c");
+  // Active users for the Opportunity Owner inline-edit select (SF: change owner).
+  const ownerOptions = (
+    await prisma.user.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    })
+  ).map((u) => ({ label: u.name, value: u.id }));
   const closeDateDisplay = opp.expectedCloseDate?.toLocaleDateString() ?? oppSfDate("CloseDate");
   const totalDebtDisplay = `$${totalDebtVal.toLocaleString()}`;
   const probabilityDisplay = (() => {
@@ -359,7 +367,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           entityId={opp.id}
           fields={[
             // Row 1: Owner | Expected Revenue
-            ["Opportunity Owner", ownerDisplay],
+            E("Opportunity Owner", ownerDisplay, "assignedToId", "select", { rawValue: opp.assignedToId ?? null, options: ownerOptions }),
             ["Expected Revenue", expectedRevenueDisplay],
             // Row 2: Private | Close Date
             ["Private", oppSfBool("IsPrivate") ?? oppSfBool("Private__c")],

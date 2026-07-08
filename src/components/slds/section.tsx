@@ -140,7 +140,9 @@ export function FieldGrid({
       style={{
         display: "grid",
         gridTemplateColumns: columns === 1 ? "1fr" : "1fr 1fr",
-        columnGap: 0,
+        // SF Lightning separates the two columns with a plain gutter - no
+        // vertical divider line.
+        columnGap: 32,
       }}
     >
       {fields.map((row, i) => {
@@ -164,32 +166,19 @@ export function FieldGrid({
         }
         return <Field key={i} label={label} value={value} />;
       })}
-      <style jsx>{`
-        /* SF Lightning: vertical separator between the two columns.
-           Left column (odd cells) gets a right border + right padding;
-           right column (even cells) gets left padding for breathing room. */
-        :global(.sf-field-grid--2col > .sf-field:nth-child(odd)) {
-          border-right: 1px solid #c9c9c9;
-          padding-right: 16px;
-        }
-        :global(.sf-field-grid--2col > .sf-field:nth-child(even)) {
-          padding-left: 16px;
-        }
-      `}</style>
     </div>
   );
 }
 
 export function Field({ label, value }: { label: string; value: ReactNode }) {
-  // SF Lightning record-page field row — tightened to match SF density. SF
-  // uses ~11px labels in #747474 gray, ~12.5px values in #181818, 30px row
-  // height with 6px vertical padding. Horizontal layout: label 33% | value |
-  // pencil 28px.
+  // SF Lightning record-page field row (measured from the live org):
+  // 12px regular #444 labels, 13px #181818 values, 32px min row height,
+  // subtle #e5e5e5 underline. Horizontal layout: label 33% | value | 28px.
   return (
     <div
       style={{
         padding: "6px 0",
-        minHeight: 30,
+        minHeight: 32,
         position: "relative",
         display: "grid",
         gridTemplateColumns: "33% 1fr 28px",
@@ -200,9 +189,9 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
     >
       <div
         style={{
-          fontSize: 11,
+          fontSize: 12,
           color: "#444444",
-          fontWeight: 700,
+          fontWeight: 400,
           lineHeight: 1.35,
           paddingTop: 1,
         }}
@@ -211,7 +200,7 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
       </div>
       <div
         style={{
-          fontSize: 12.5,
+          fontSize: 13,
           color: "#181818",
           wordBreak: "break-word",
           lineHeight: 1.35,
@@ -230,7 +219,7 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
       <span aria-hidden="true" style={{ display: "inline-block", width: 24, height: 24 }} />
       <style jsx>{`
         :global(.sf-field) {
-          border-bottom: 1px solid #c9c9c9;
+          border-bottom: 1px solid #e5e5e5;
         }
       `}</style>
     </div>

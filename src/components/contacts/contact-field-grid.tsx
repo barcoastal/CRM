@@ -92,7 +92,7 @@ export function ContactField({ label, value }: { label: string; value: ReactNode
         gap: 12,
         padding: "8px 0",
         minHeight: 32,
-        borderBottom: "1px solid #ecebea",
+        borderBottom: "1px solid #e5e5e5",
         fontSize: 13,
         lineHeight: 1.35,
       }}

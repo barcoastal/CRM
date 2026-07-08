@@ -57,6 +57,7 @@ export const LEAD_COLUMNS: Record<string, ColumnSpec> = {
 export const OPPORTUNITY_COLUMNS: Record<string, ColumnSpec> = {
   name: { kind: "string" },
   stage: { kind: "string" },
+  assignedToId: { kind: "string" }, // Opportunity Owner (FK to User; UI passes a valid user id)
   recordType: { kind: "string" },
   version: { kind: "string" },
   totalDebt: { kind: "number" },
