@@ -157,6 +157,14 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const phoneVal = account.phone ?? acctSf("Phone");
   const emailVal = account.email ?? acctSf("Email__c");
   const ownerName = account.owner?.name ?? acctSf("Owner_Full_Name__c") ?? acctSf("OwnerName");
+  // Active users for the Account Owner inline-edit select (SF: change owner).
+  const ownerOptions = (
+    await prisma.user.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    })
+  ).map((u) => ({ label: u.name, value: u.id }));
   const parentAcctNode = account.parentAccount?.name
     ? <Link href={`/accounts/${account.parentAccount.id}`} style={{ color: "#0176d3" }}>{account.parentAccount.name}</Link>
     : acctSf("Parent_Account_Name__c") ?? acctSf("ParentName") ?? acctSf("Parent_Account__c");
@@ -229,9 +237,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           fields={[
             // Row 1: Account Name | Rating
             E("Account Name", account.name ?? acctSf("Name"), "name", "text", { rawValue: account.name }),
-            ["Rating", ratingDisplay],
+            E("Rating", ratingDisplay, "Rating"),
             // Row 2: Account Owner | Owner Full Name
-            ["Account Owner", ownerName],
+            E("Account Owner", ownerName, "ownerId", "select", { rawValue: account.ownerId ?? null, options: ownerOptions }),
             ["Owner Full Name", ownerFullNameDisplay],
             // Row 3: Parent Account | Processor Status
             ["Parent Account", parentAcctNode],
@@ -267,32 +275,32 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             E("EIN Number / Tax Id", account.ein ?? acctSf("EIN_Number_Tax_Id__c"), "ein", "text", { rawValue: account.ein }),
             E("SIC Code", sicCodeDisplay, "Sic"),
             // Row 11: Lead Number | Total Debt
-            ["Lead Number", acctSf("Lead_Number__c") ?? acctSf("Lead_Id__c") ?? acctSf("LeadId")],
+            E("Lead Number", acctSf("Lead_Number__c") ?? acctSf("Lead_Id__c") ?? acctSf("LeadId"), "Lead_Number__c"),
             ["Total Debt", totalDebtSfDisplay],
             // Row 12: Program Start Date | Current Balance
-            ["Program Start Date", account.programStartDate?.toLocaleDateString() ?? acctSfDate("Program_Start_Date__c")],
+            E("Program Start Date", account.programStartDate?.toLocaleDateString() ?? acctSfDate("Program_Start_Date__c"), "programStartDate", "date", { rawValue: account.programStartDate ?? null }),
             ["Current Balance", currentBalanceDisplay],
             // Row 13: Program End Date | Creditor Type
-            ["Program End Date", account.programEndDate?.toLocaleDateString() ?? acctSfDate("Program_End_Date__c")],
-            ["Creditor Type", creditorTypeDisplay],
+            E("Program End Date", account.programEndDate?.toLocaleDateString() ?? acctSfDate("Program_End_Date__c"), "programEndDate", "date", { rawValue: account.programEndDate ?? null }),
+            E("Creditor Type", creditorTypeDisplay, "Creditor_Type__c"),
             // Row 14: External SAS Id | Account Record Type
-            ["External SAS Id", account.externalSasId ?? acctSf("External_SAS_Id__c")],
+            E("External SAS Id", account.externalSasId ?? acctSf("External_SAS_Id__c"), "externalSasId", "text", { rawValue: account.externalSasId }),
             ["Account Record Type", accountRecordTypeDisplay],
             // Row 15: External RAM Id | Primary Contact
-            ["External RAM Id", acctSf("External_RAM_Id__c") ?? acctSf("RAM_Id__c")],
+            E("External RAM Id", acctSf("External_RAM_Id__c") ?? acctSf("RAM_Id__c"), "externalRamId", "text", { rawValue: account.externalRamId }),
             ["Primary Contact", primaryContactNode],
             // Row 16: External Citadel Id | Synced DateTime
-            ["External Citadel Id", acctSf("External_Citadel_Id__c")],
+            E("External Citadel Id", acctSf("External_Citadel_Id__c"), "External_Citadel_Id__c"),
             ["Synced DateTime", syncedDateTimeDisplay],
             // Row 17: Sync Status | Closer
             ["Sync Status", acctSf("Sync_Status__c")],
-            ["Closer", closerDisplay],
+            E("Closer", closerDisplay, "Closer__c"),
             // Row 18: Bank Account Sync | First Draft Date
             ["Bank Account Sync", account.bankAccountSyncStatus ?? acctSf("Bank_Account_Sync_Status__c")],
-            ["First Draft Date", firstDraftDateDisplay],
+            E("First Draft Date", firstDraftDateDisplay, "First_Draft_Date__c", "date"),
             // Row 19: Client Number | First Contract Signed Date
             ["Client Number", acctSf("Client_Number__c")],
-            ["First Contract Signed Date", acctSfDate("First_Contract_Signed_Date__c")],
+            E("First Contract Signed Date", acctSfDate("First_Contract_Signed_Date__c"), "First_Contract_Signed_Date__c", "date"),
             // Row 20: Last Contacted DateTime | First Payment Completed Date
             ["Last Contacted DateTime", lastContactedDateTimeDisplay],
             ["First Payment Completed Date", firstPaymentCompletedDateDisplay],
@@ -300,34 +308,34 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["Week Days Between Last Activity Date", weekDaysBetweenLastActivityDisplay],
             ["Last Called Time", lastCalledTimeDisplay],
             // Row 21: Legal Status | Last Emailed Time
-            ["Legal Status", account.legalStatus ?? acctSf("Legal_Status__c")],
+            E("Legal Status", account.legalStatus ?? acctSf("Legal_Status__c"), "legalStatus", "text", { rawValue: account.legalStatus }),
             ["Last Emailed Time", lastEmailedTimeDisplay],
             // Row 22: Negotiation Status | Last SMS Time
-            ["Negotiation Status", acctSf("NegotiationStatus__c")],
+            E("Negotiation Status", acctSf("NegotiationStatus__c"), "NegotiationStatus__c"),
             ["Last SMS Time", lastSMSTimeDisplay],
             // Row 23: HIGH UCC RISK | Last Synced By
-            ["HIGH UCC RISK", acctSfBool("HIGH_UCC_RISK__c") ?? (account.highUccRisk ? "Yes" : "No")],
+            E("HIGH UCC RISK", acctSfBool("HIGH_UCC_RISK__c") ?? (account.highUccRisk ? "Yes" : "No"), "highUccRisk", "checkbox", { rawValue: account.highUccRisk ?? null }),
             ["Last Synced By", lastSyncedByDisplay],
             // Row 24: Qualified Financial | Last Synced Date Time
-            ["Qualified Financial", acctSfBool("Qualified_Financial__c")],
+            E("Qualified Financial", acctSfBool("Qualified_Financial__c"), "Qualified_Financial__c", "checkbox"),
             ["Last Synced Date Time", lastSyncedDateTimeDisplay],
             // Row 25: Creditor Lien Risk | Collection Agency
-            ["Creditor Lien Risk", acctSf("Creditor_Lien_Risk__c")],
-            ["Collection Agency", collectionAgencyDisplay],
+            E("Creditor Lien Risk", acctSf("Creditor_Lien_Risk__c"), "Creditor_Lien_Risk__c"),
+            E("Collection Agency", collectionAgencyDisplay, "collectionAgency", "text", { rawValue: account.collectionAgency }),
             // Row 26: Debt Negotiator | Program Completion Stage
-            ["Debt Negotiator", acctSf("Debt_Negotiator__c")],
+            E("Debt Negotiator", acctSf("Debt_Negotiator__c"), "Debt_Negotiator__c"),
             ["Program Completion Stage", programCompletionStageDisplay],
             // Row 27: Cancellation Reason | Legal Network
-            ["Cancellation Reason", account.cancellationReason ?? acctSf("Cancellation_Reason__c")],
-            ["Legal Network", legalNetworkDisplay],
+            E("Cancellation Reason", account.cancellationReason ?? acctSf("Cancellation_Reason__c"), "cancellationReason", "text", { rawValue: account.cancellationReason }),
+            E("Legal Network", legalNetworkDisplay, "Legal_Network__c"),
             // Row 28: Work Phone | Legal Network Sync Status
-            ["Work Phone", acctSf("Work_Phone__c")],
+            E("Work Phone", acctSf("Work_Phone__c"), "Work_Phone__c", "phone"),
             ["Legal Network Sync Status", legalNetworkSyncStatusDisplay],
             // Row 29: Billing Address | Shipping Address
             ["Billing Address", billingAddressNode],
             ["Shipping Address", shippingAddressNode],
             // Row 30: Billing County | (empty right)
-            ["Billing County", billingCountyDisplay],
+            E("Billing County", billingCountyDisplay, "BillingCounty__c"),
             ["", null],
           ]}
         />

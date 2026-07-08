@@ -115,6 +115,7 @@ export const OPPORTUNITY_COLUMNS: Record<string, ColumnSpec> = {
 
 export const ACCOUNT_COLUMNS: Record<string, ColumnSpec> = {
   name: { kind: "string" },
+  ownerId: { kind: "string" }, // Account Owner (FK to User; UI passes a valid user id)
   recordType: { kind: "string" },
   type: { kind: "string" },
   ein: { kind: "string" },
