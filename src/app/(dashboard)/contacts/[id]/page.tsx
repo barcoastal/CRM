@@ -259,13 +259,19 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     // Row 9: Lead Id | Assistant
     ["Lead Id", sfc("Lead_Number__c") ?? sfc("Lead_Id__c") ?? sfc("LeadId__c") ?? sfc("Lead_ID__c")],
     CE("Assistant", sfc("AssistantName"), "AssistantName"),
-    // Row 10: Verified Phone Number | Asst. Phone
-    CE("Verified Phone Number", sfcBool("Verified_Phone_Number__c"), "Verified_Phone_Number__c", "checkbox"),
+    // Row 10: Alternate Email | Asst. Phone (SF pairs these)
+    CE("Alternate Email", sfc("Alternate_Email__c"), "Alternate_Email__c", "email"),
     CE("Asst. Phone", sfc("AssistantPhone"), "AssistantPhone", "phone"),
-    // Row 11: Sync To Account Engagement | (empty right — SF leaves blank)
+    // Row 11: Verified Phone Number | (empty right — SF leaves blank)
+    CE("Verified Phone Number", sfcBool("Verified_Phone_Number__c"), "Verified_Phone_Number__c", "checkbox"),
+    ["__PAD__", null],
+    // Row 12: Sync To Account Engagement | (empty right)
     CE("Sync To Account Engagement", sfcBool("Sync_To_Account_Engagement__c") ?? sfcBool("Sync_to_Pardot__c"), "Sync_To_Account_Engagement__c", "checkbox"),
     ["__PAD__", null],
-    // Row 12: Mailing Address | Other Address
+  ];
+
+  // SF "Address Information" section (its own card, like SF).
+  const addressInformationFields: Parameters<typeof ContactFieldGrid>[0]["fields"] = [
     ["Mailing Address", mailingAddress],
     ["Other Address", otherAddress],
   ];
@@ -274,6 +280,10 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     <>
       <ContactSection title="Contact Information">
         <ContactFieldGrid fields={contactInformationFields} entityType="contact" entityId={contact.id} />
+      </ContactSection>
+
+      <ContactSection title="Address Information">
+        <ContactFieldGrid fields={addressInformationFields} entityType="contact" entityId={contact.id} />
       </ContactSection>
 
       {contact.primaryAccount && (
@@ -356,9 +366,9 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
             // Row 1: Email Opt Out | Account Engagement Grade
             ["Email Opt Out", sfcBool("HasOptedOutOfEmail")],
             ["Account Engagement Grade", sfc("pi__grade__c")],
-            // Row 2: Account Engagement Campaign | Account Engagement First Referrer Type
+            // Row 2: Account Engagement Campaign | Account Engagement First Search Type
             ["Account Engagement Campaign", sfc("pi__campaign__c")],
-            ["Account Engagement First Referrer Type", sfc("pi__first_referrer_type__c")],
+            ["Account Engagement First Search Type", sfc("pi__first_search_type__c")],
             // Row 3: Account Engagement Comments | Account Engagement Hard Bounced
             ["Account Engagement Comments", sfc("pi__comments__c")],
             ["Account Engagement Hard Bounced", sfcBool("pi__pardot_hard_bounced__c")],
@@ -367,15 +377,15 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
             ["Account Engagement Last Activity", sfcDate("pi__last_activity__c")],
             // Row 5: Account Engagement Created Date | Account Engagement Last Scored At
             ["Account Engagement Created Date", sfcDate("pi__created_date__c")],
-            ["Account Engagement Last Scored At", sfcDate("pi__last_scored_at__c")],
+            ["Account Engagement Last Scored At", sfcDate("pi__Pardot_Last_Scored_At__c") ?? sfcDate("pi__last_scored_at__c")],
             // Row 6: Account Engagement First Activity | Account Engagement Notes
             ["Account Engagement First Activity", sfcDate("pi__first_activity__c")],
             ["Account Engagement Notes", sfc("pi__notes__c")],
-            // Row 7: Account Engagement First Referrer | Account Engagement Score
-            ["Account Engagement First Referrer", sfc("pi__first_referrer__c") ?? sfc("pi__first_touch_url__c")],
+            // Row 7: Account Engagement First Touch URL | Account Engagement Score
+            ["Account Engagement First Touch URL", sfc("pi__first_touch_url__c") ?? sfc("pi__first_referrer__c")],
             ["Account Engagement Score", sfc("pi__score__c")],
-            // Row 8: Account Engagement First Referrer Query | Account Engagement URL
-            ["Account Engagement First Referrer Query", sfc("pi__first_referrer_query__c") ?? sfc("pi__first_search__c")],
+            // Row 8: Account Engagement First Search Term | Account Engagement URL
+            ["Account Engagement First Search Term", sfc("pi__first_search_term__c") ?? sfc("pi__first_referrer_query__c")],
             ["Account Engagement URL", sfc("pi__url__c")],
             // Row 9: Created By | Last Modified By
             ["Created By", `${sfc("CreatedBy_Full_Name__c") ?? ""}${sfcDate("CreatedDate") ? `, ${sfcDate("CreatedDate")}` : ""}`.trim() || sfcDate("CreatedDate")],

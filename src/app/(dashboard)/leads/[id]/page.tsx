@@ -222,10 +222,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // Section 1: Lead Information (TwoColumnsTopToBottom)
   // Source: docs/sf-export/sfdx-raw/layouts/Lead-Lead Layout.layout-meta.xml
   // Column 1 has 34 fields; column 2 has 17 fields. We interleave row-by-row
-  // until col2 is exhausted, then list the remaining col1 fields.
-  // Skipped per "dev/internal" rule:
-  //   Append_Leads_Counter__c (counter), Call_counter__c (counter),
-  //   Sync_To_Account_Engagement__c (sync flag).
+  // until col2 is exhausted, then list the remaining col1 fields. All 34 col1
+  // fields are rendered in SF order (counters + sync flag included) so the
+  // rows line up with SF exactly.
   const leadInformation = (
     <Section title="Lead Information">
       <FieldGrid
@@ -279,18 +278,23 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           // Row 13: Hubspot Id | Preferred Language
           ["Hubspot Id", sf("Hubspot_Id__c")],
           E("Preferred Language", sf("Preferred_Language__c"), "Preferred_Language__c"),
-          // Row 14: Has Calendly Event | Lead Assignment Date
-          ["Has Calendly Event", yesNo(sf("Has_Calendly_Event__c"))],
+          // Row 14: Append Leads Counter | Lead Assignment Date (SF col1 row 14)
+          ["Append Leads Counter", sf("Append_Leads_Counter__c")],
           ["Lead Assignment Date", lead.leadAssignmentDate?.toLocaleDateString() ?? sfDate("Lead_Assignment_Date__c")],
-          // Row 15: Is Archived | Verified Phone Number
-          ["Is Archived", yesNo(sf("Is_Archived__c"))],
+          // Row 15: Has Calendly Event | Verified Phone Number
+          ["Has Calendly Event", yesNo(sf("Has_Calendly_Event__c"))],
           ["Verified Phone Number", yesNo(sf("Verified_Phone_Number__c"))],
-          // Row 16: Archived Date | MCA Lender External Id
-          ["Archived Date", sfDate("Archived_Date__c")],
+          // Row 16: Call counter | MCA Lender External Id
+          ["Call counter", sf("Call_counter__c")],
           ["MCA Lender External Id", sf("MCA_Lender_External_Id__c")],
-          // Row 17: IPQS IsActive | Five9 Final Stage
-          ["IPQS IsActive", yesNo(sf("IPQS_IsActive__c"))],
+          // Row 17: Is Archived | Five9 Final Stage
+          ["Is Archived", yesNo(sf("Is_Archived__c"))],
           ["Five9 Final Stage", yesNo(sf("Five9_Final_Stage__c"))],
+          // Col2 exhausted from here; continue col1 in SF order.
+          ["Archived Date", sfDate("Archived_Date__c")],
+          ["", null],
+          ["IPQS IsActive", yesNo(sf("IPQS_IsActive__c"))],
+          ["", null],
           // Col2 exhausted; remaining col1 fields (one per row, left column).
           ["IPQS Active Status", sf("IPQS_Active_Status__c")],
           ["", null],
@@ -313,6 +317,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           ["Lead Score", sf("Lead_Score__c")],
           ["", null],
           ["Ad Click Id", sf("Ad_Click_Id__c")],
+          ["", null],
+          ["Sync To Account Engagement", yesNo(sf("Sync_To_Account_Engagement__c"))],
           ["", null],
           ["Facebook Lead Id", sf("Facebook_Lead_Id__c")],
           ["", null],
@@ -527,37 +533,48 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   // Section 9: Account Engagement (TwoColumnsLeftToRight)
   // SF layout col1 mixes HasOptedOutOfEmail + pi__* + Form_* fields.
-  // Per instructions we skip pi__* (Pardot internals); we keep a small number of
-  // pi__ fields that surface meaningful user-facing data (grade, score,
-  // hard_bounced, last_activity) since the SF page header relies on them.
+  // SF Account Engagement — exact interleave of the Lead Layout XML
+  // (col1: opt-out, campaign, comments, conversion, created, first activity,
+  // first touch, first search term, Form Name/Position/Type; col2: first search
+  // type, grade, hard bounced, last activity, last scored, notes, score, url,
+  // Form Page/SubPage).
   const accountEngagement = (
     <Section title="Account Engagement" defaultOpen={false}>
       <FieldGrid
         fields={[
-          // Row 1: Email Opt Out | Account Engagement Grade
+          // Row 1: Email Opt Out | First Search Type
           ["Email Opt Out", yesNo(sf("HasOptedOutOfEmail"))],
-          ["Grade", sf("pi__grade__c")],
-          // Row 2: First Activity | Account Engagement Score
-          ["First Activity", sfDate("pi__first_activity__c")],
-          ["Account Engagement Score", sf("pi__score__c")],
-          // Row 3: Last Activity | Hard Bounced
-          ["Last Activity", sfDate("pi__last_activity__c")],
-          ["Hard Bounced", yesNo(sf("pi__pardot_hard_bounced__c"))],
-          // Row 4: Conversion Date | Last Scored At
-          ["Conversion Date", sfDate("pi__conversion_date__c")],
-          ["Last Scored At", sfDate("pi__Pardot_Last_Scored_At__c")],
-          // Row 5: Form Name | First Touch URL
-          ["Form Name", sf("Form_Name__c")],
-          ["First Touch URL", sf("pi__first_touch_url__c")],
-          // Row 6: Form Position | First Search Term
-          ["Form Position", sf("Form_Position__c")],
-          ["First Search Term", sf("pi__first_search_term__c")],
-          // Row 7: Form Type | First Search Type
-          ["Form Type", sf("Form_Type__c")],
           ["First Search Type", sf("pi__first_search_type__c")],
-          // Row 8: Form Page | Form SubPage
+          // Row 2: Campaign | Grade
+          ["Campaign", sf("pi__campaign__c")],
+          ["Grade", sf("pi__grade__c")],
+          // Row 3: Comments | Hard Bounced
+          ["Comments", sf("pi__comments__c")],
+          ["Hard Bounced", yesNo(sf("pi__pardot_hard_bounced__c"))],
+          // Row 4: Conversion Date | Last Activity
+          ["Conversion Date", sfDate("pi__conversion_date__c")],
+          ["Last Activity", sfDate("pi__last_activity__c")],
+          // Row 5: Created Date | Last Scored At
+          ["Created Date", sfDate("pi__created_date__c")],
+          ["Last Scored At", sfDate("pi__Pardot_Last_Scored_At__c")],
+          // Row 6: First Activity | Notes
+          ["First Activity", sfDate("pi__first_activity__c")],
+          ["Notes", sf("pi__notes__c")],
+          // Row 7: First Touch URL | Score
+          ["First Touch URL", sf("pi__first_touch_url__c")],
+          ["Account Engagement Score", sf("pi__score__c")],
+          // Row 8: First Search Term | URL
+          ["First Search Term", sf("pi__first_search_term__c")],
+          ["URL", sf("pi__url__c")],
+          // Row 9: Form Name | Form Page
+          ["Form Name", sf("Form_Name__c")],
           ["Form Page", sf("Form_Page__c")],
+          // Row 10: Form Position | Form SubPage
+          ["Form Position", sf("Form_Position__c")],
           ["Form SubPage", sf("Form_SubPage__c")],
+          // Row 11: Form Type | (right col exhausted)
+          ["Form Type", sf("Form_Type__c")],
+          ["", null],
         ]}
       />
     </Section>

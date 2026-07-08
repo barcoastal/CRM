@@ -265,8 +265,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             // Row 10: EIN Number / Tax Id | SIC Code
             E("EIN Number / Tax Id", account.ein ?? acctSf("EIN_Number_Tax_Id__c"), "ein", "text", { rawValue: account.ein }),
             E("SIC Code", sicCodeDisplay, "Sic"),
-            // Row 11: Lead Id | Total Debt
-            ["Lead Id", acctSf("Lead_Id__c") ?? acctSf("LeadId")],
+            // Row 11: Lead Number | Total Debt
+            ["Lead Number", acctSf("Lead_Number__c") ?? acctSf("Lead_Id__c") ?? acctSf("LeadId")],
             ["Total Debt", totalDebtSfDisplay],
             // Row 12: Program Start Date | Current Balance
             ["Program Start Date", account.programStartDate?.toLocaleDateString() ?? acctSfDate("Program_Start_Date__c")],
@@ -284,12 +284,15 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["External Citadel Id", acctSf("External_Citadel_Id__c")],
             ["Synced DateTime", syncedDateTimeDisplay],
             // Row 17: Sync Status | Closer
-            ["Sync Status", account.bankAccountSyncStatus ?? acctSf("Sync_Status__c") ?? acctSf("Bank_Account_Sync_Status__c")],
+            ["Sync Status", acctSf("Sync_Status__c")],
             ["Closer", closerDisplay],
             // Row 18: Bank Account Sync | First Draft Date
             ["Bank Account Sync", account.bankAccountSyncStatus ?? acctSf("Bank_Account_Sync_Status__c")],
             ["First Draft Date", firstDraftDateDisplay],
-            // Row 19: Last Contacted DateTime | First Payment Completed Date
+            // Row 19: Client Number | First Contract Signed Date
+            ["Client Number", acctSf("Client_Number__c")],
+            ["First Contract Signed Date", acctSfDate("First_Contract_Signed_Date__c")],
+            // Row 20: Last Contacted DateTime | First Payment Completed Date
             ["Last Contacted DateTime", lastContactedDateTimeDisplay],
             ["First Payment Completed Date", firstPaymentCompletedDateDisplay],
             // Row 20: Week Days Between Last Activity Date | Last Called Time
