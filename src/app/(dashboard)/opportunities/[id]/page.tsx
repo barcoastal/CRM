@@ -357,84 +357,120 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           entityType="opportunity"
           entityId={opp.id}
           fields={[
-            // Exact parity with SF "DS Opportunity Layout" (Debt Settlement record
-            // type). Fields listed in the layout's TwoColumns interleave order
-            // (even index = left col, odd = right col).
-            // Row 1: Opportunity Name | Opportunity Owner
-            E("Opportunity Name", oppName, "name", "text", { rawValue: opp.name ?? oppName }),
+            // Row 1: Owner | Expected Revenue
             ["Opportunity Owner", ownerDisplay],
-            // Row 2: Account Name | Lead Id
+            ["Expected Revenue", expectedRevenueDisplay],
+            // Row 2: Private | Close Date
+            ["Private", oppSfBool("IsPrivate") ?? oppSfBool("Private__c")],
+            E("Close Date", closeDateDisplay, "expectedCloseDate", "date", { rawValue: opp.expectedCloseDate ?? null }),
+            // Row 3: Opportunity Name | Next Step
+            E("Opportunity Name", oppName, "name", "text", { rawValue: opp.name ?? oppName }),
+            E("Next Step", nextStepDisplay, "nextStep"),
+            // Row 4: Account Name | Stage
             ["Account Name", accountLink],
-            ["Lead Id", sfLeadIdDisplay],
-            // Row 3: Stage | Lead Source
             [
               "Stage",
               <StatusPill key="s" label={formatStage(opp.stage)} tone={opportunityStageTone(opp.stage)} />,
               { fieldKey: "stage", type: "select", rawValue: opp.stage, options: PATH_HAPPY.map((s) => ({ label: s, value: s })) },
             ],
-            E("Lead Source", opp.lead?.source ?? oppSf("LeadSource"), "leadSource"),
-            // Row 4: Version Status | Lead Source Category
-            ["Version Status", oppSf("Version_Status__c")],
-            E("Lead Source Category", oppSf("Lead_Source_Category__c"), "leadSourceCategory"),
-            // Row 5: Last Disposition | Probability (%)
+            // Row 5: Type | Last Disposition
+            ["Type", opp.recordType.replace(/_/g, " ")],
             E("Last Disposition", lastDispositionDisplay, "Last_Disposition__c"),
+            // Row 6: Lead Source | Last Disposition DateTime
+            E("Lead Source", opp.lead?.source ?? oppSf("LeadSource"), "leadSource"),
+            ["Last Disposition DateTime", lastDispositionDateTimeDisplay],
+            // Row 7: Lead Source Category | Probability (%)
+            E("Lead Source Category", oppSf("Lead_Source_Category__c"), "leadSourceCategory"),
             E("Probability (%)", probabilityDisplay, "probability", "number", { rawValue: opp.probability ?? null }),
-            // Row 6: Phone | Total Debt
+            // Row 8: Lead Id | Primary Campaign Source
+            ["Lead Id", sfLeadIdDisplay],
+            ["Primary Campaign Source", primaryCampaignSourceDisplay],
+            // Row 9: Phone | Timezone
             [
               "Phone",
               phoneDisplay ? <span key="ph" style={{ color: "#1589ee" }}>{phoneDisplay}</span> : null,
               { fieldKey: "oppPhone", type: "phone", rawValue: opp.oppPhone ?? phoneDisplay ?? null },
             ],
-            ["Total Debt", oppSfDollar("Total_Debt__c") ?? totalDebtDisplay],
-            // Row 7: Email | Current Total Debt
+            E("Timezone", timezoneDisplay, "timezone"),
+            // Row 10: Email | Total Debt
             [
               "Email",
               emailDisplay ? <a key="em" href={`mailto:${emailDisplay}`} style={{ color: "#1589ee" }}>{emailDisplay}</a> : null,
               { fieldKey: "oppEmail", type: "email", rawValue: opp.oppEmail ?? emailDisplay ?? null },
             ],
-            E("Current Total Debt", currentTotalDebtDisplay, "currentTotalDebt", "number", { rawValue: opp.currentTotalDebt ?? null }),
-            // Row 8: Preferred method of Contact | Secured Party
+            ["Total Debt", oppSfDollar("Total_Debt__c") ?? totalDebtDisplay],
+            // Row 11: Preferred method of Contact | Current Total Debt
             E("Preferred method of Contact", oppSf("Preferred_Method_Of_Contact__c") ?? oppSf("Preferred_method_of_Contact__c"), "preferredMethodOfContact"),
-            E("Secured Party", oppSf("Secured_Party__c"), "securedParty"),
-            // Row 9: Legal Plan Required | First Draft Date
+            E("Current Total Debt", currentTotalDebtDisplay, "currentTotalDebt", "number", { rawValue: opp.currentTotalDebt ?? null }),
+            // Row 12: Legal Plan Required | Secured Party
             E("Legal Plan Required", oppSfBool("Legal_Plan_Required__c"), "legalPlanRequired", "checkbox", { rawValue: opp.legalPlanRequired ?? null }),
-            E("First Draft Date", oppSfDate("First_Draft_Date__c"), "firstDraftDate", "date", { rawValue: opp.firstDraftDate ?? null }),
-            // Row 10: Timezone | First Contract Signed Date
-            E("Timezone", timezoneDisplay, "timezone"),
-            E("First Contract Signed Date", oppSfDateTime("First_Contract_Signed_Date__c"), "firstContractSignedDateOpp", "datetime", { rawValue: opp.firstContractSignedDateOpp ?? null }),
-            // Row 11: Current Weekly Payment | Number Of Days From First ContractSigned
+            E("Secured Party", oppSf("Secured_Party__c"), "securedParty"),
+            // Row 13: Addendum Required | Call ASAP
+            E("Addendum Required", oppSfBool("Addendum_Required__c"), "addendumRequired", "checkbox", { rawValue: opp.addendumRequired ?? null }),
+            E("Call ASAP", oppSfBool("Call_ASAP__c"), "Call_ASAP__c", "checkbox"),
+            // Row 14: Current Weekly Payment | Business Start Date
             E("Current Weekly Payment", oppSfDollar("Current_Weekly_Payment__c"), "currentWeeklyPayment", "number", { rawValue: opp.currentWeeklyPayment ?? null }),
-            ["Number Of Days From First ContractSigned", oppSf("Number_Of_Days_From_First_ContractSigned__c")],
-            // Row 12: Current Monthly Payment | Verified Phone Number
+            E("Business Start Date", oppSfDate("Business_Start_Date__c"), "businessStartDate", "date", { rawValue: opp.businessStartDate ?? null }),
+            // Row 15: Current Monthly Payment | Hopper Priority
             E("Current Monthly Payment", oppSfDollar("Current_Monthly_Payment__c"), "currentMonthlyPayment", "number", { rawValue: opp.currentMonthlyPayment ?? null }),
-            E("Verified Phone Number", oppSfBool("Verified_Phone_Number__c"), "Verified_Phone_Number__c", "checkbox"),
-            // Row 13: Dialer Group | Qualified Financial Formula
+            ["Hopper Priority", oppSf("Hopper_priority_c__c") ?? oppSf("Hopper_Priority__c")],
+            // Row 16: Weekly Payment to Debt Ratio | Outbound ANI Identifier
+            E("Weekly Payment to Debt Ratio", oppSf("Weekly_Payment_To_Debt_Ratio__c"), "weeklyPaymentToDebtRatio", "number", { rawValue: opp.weeklyPaymentToDebtRatio ?? null }),
+            ["Outbound ANI Identifier", oppSf("Outbound_ANI_Identifier__c")],
+            // Row 17: Preferred Language | Outbound ANI Date
+            E("Preferred Language", oppSf("Preferred_Language__c"), "preferredLanguage"),
+            ["Outbound ANI Date", oppSfDate("Outbound_ANI_Date__c")],
+            // Row 18: Dialer Group | Outbound ANI From
             E("Dialer Group", oppSf("Dialer_Group__c"), "dialerGroup"),
-            ["Qualified Financial Formula", oppSfBool("Qualified_Financial_Formula__c") ?? oppSfBool("Qualified_Financial__c")],
-            // Row 14: HIGH UCC RISK | First Payment Completed Date
-            E("HIGH UCC RISK", oppSfBool("HIGH_UCC_RISK__c") ?? oppSfBool("High_UCC_Risk__c"), "highUccRisk", "checkbox", { rawValue: opp.highUccRisk ?? null }),
+            ["Outbound ANI From", oppSf("Outbound_ANI_From__c")],
+            // Row 19: Add to Five9 List Id | First Draft Date
+            ["Add to Five9 List Id", oppSf("Add_to_f9list_Id__c")],
+            E("First Draft Date", oppSfDate("First_Draft_Date__c"), "firstDraftDate", "date", { rawValue: opp.firstDraftDate ?? null }),
+            // Row 20: Delete from Five9 List Id | First Contract Signed Date
+            ["Delete from Five9 List Id", oppSf("Delete_from_f9list_id__c")],
+            E("First Contract Signed Date", oppSfDateTime("First_Contract_Signed_Date__c"), "firstContractSignedDateOpp", "datetime", { rawValue: opp.firstContractSignedDateOpp ?? null }),
+            // Row 21: First Payment Completed Date | Number Of Days From First ContractSigned
             ["First Payment Completed Date", oppSfDate("First_Payment_Completed_Date__c")],
-            // Row 15: First Payment Completed | Re-shuffle Opportunity
+            ["Number Of Days From First ContractSigned", oppSf("Number_Of_Days_From_First_ContractSigned__c")],
+            // Row 22: Opportunity Assignment Date | Qualified Financial Formula
+            ["Opportunity Assignment Date", oppSfDate("Opportunity_Assignment_Date__c")],
+            ["Qualified Financial Formula", oppSfBool("Qualified_Financial_Formula__c") ?? oppSfBool("Qualified_Financial__c")],
+            // Row 23: Verified Phone Number | First Payment Completed
+            E("Verified Phone Number", oppSfBool("Verified_Phone_Number__c"), "Verified_Phone_Number__c", "checkbox"),
             ["First Payment Completed", oppSfBool("First_Payment_Completed__c")],
+            // Row 24: HIGH UCC RISK | Processor
+            E("HIGH UCC RISK", oppSfBool("HIGH_UCC_RISK__c") ?? oppSfBool("High_UCC_Risk__c"), "highUccRisk", "checkbox", { rawValue: opp.highUccRisk ?? null }),
+            E("Processor", oppSf("Processor__c"), "Processor__c"),
+            // Row 25: Account Status | Re-shuffle Opportunity
+            E("Account Status", oppSf("Account_Status__c"), "Account_Status__c"),
             ["Re-shuffle Opportunity", oppSfBool("Re_shuffle_Opportunity__c")],
-            // Row 16: Ad Click Id | Re-shuffle count
+            // Row 26: Ad Click Id | Re-shuffle count
             ["Ad Click Id", oppSf("Ad_Click_Id__c")],
             ["Re-shuffle count", oppSf("Re_shuffle_count__c")],
-            // Row 17: Opportunity Record Type | Opportunity Reinstated DateTime
-            ["Opportunity Record Type", opp.recordType.replace(/_/g, " ")],
-            ["Opportunity Reinstated DateTime", oppSfDateTime("Opportunity_Reinstated_DateTime__c")],
-            // Row 18: Active Opportunity | Reactivate Reason
+            // Row 27: Active Opportunity | Opportunity Record Type
             ["Active Opportunity", oppSfBool("Active_Opportunity__c")],
-            ["Reactivate Reason", oppSf("Reactivate_Reason__c")],
-            // Row 19: Opportunity Amended DateTime | Legal Network
+            ["Opportunity Record Type", opp.recordType.replace(/_/g, " ")],
+            // Row 28: Opportunity Reinstated DateTime | Opportunity Amended DateTime
+            ["Opportunity Reinstated DateTime", oppSfDateTime("Opportunity_Reinstated_DateTime__c")],
             ["Opportunity Amended DateTime", oppSfDateTime("Opportunity_Amended_DateTime__c")],
-            E("Legal Network", oppSf("Legal_Network__c"), "Legal_Network__c"),
-            // Row 20: Opportunity Reactivated DateTime | Opportunity Reshuffled DateTime
+            // Row 29: Opportunity Reactivated DateTime | Reactivate Reason
             ["Opportunity Reactivated DateTime", oppSfDateTime("Opportunity_Reactivated_DateTime__c")],
+            ["Reactivate Reason", oppSf("Reactivate_Reason__c")],
+            // Row 30: Opportunity Reshuffled DateTime | Legal Network
             ["Opportunity Reshuffled DateTime", oppSfDateTime("Opportunity_Reshuffled_DateTime__c")],
-            // Row 21: Affiliate | Eli Ad click
+            E("Legal Network", oppSf("Legal_Network__c"), "Legal_Network__c"),
+            // Row 31: Affiliate | (empty right — SF left col continues alone)
             ["Affiliate", oppSf("Affiliate__c")],
+            ["", null],
+            // Row 32: Eli Ad click | (empty right)
             ["Eli Ad click", oppSf("Eli_Ad_click__c") ?? oppSf("Eli_Ad_Click__c")],
+            ["", null],
+            // Row 33: Has Closer Notes | (empty right)
+            ["Has Closer Notes", oppSfBool("Has_Closer_Notes__c")],
+            ["", null],
+            // Row 34: Latest Closer Notes | (empty right)
+            ["Latest Closer Notes", oppSf("Latest_Closer_Notes__c")],
+            ["", null],
           ]}
         />
       </Section>
@@ -451,11 +487,11 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             // Row 2: Fronter Lookup | Closer Lookup
             ["Fronter Lookup", oppSf("FronterLookup__c")],
             ["Closer Lookup", oppSf("CloserLookup__c")],
-            // Row 3: Call Transferred By Lookup | Call Received By
-            ["Call Transferred By Lookup", oppSf("Call_Transferred_By_Lookup__c")],
-            ["Call Received By", oppSf("Call_Received_By__c")],
-            // Row 4: Call Transferred By | Call Received By Lookup
+            // Row 3: Call Transferred By | Call Received By
             ["Call Transferred By", oppSf("Call_Transferred_By__c")],
+            ["Call Received By", oppSf("Call_Received_By__c")],
+            // Row 4: Call Transferred By Lookup | Call Received By Lookup
+            ["Call Transferred By Lookup", oppSf("Call_Transferred_By_Lookup__c")],
             ["Call Received By Lookup", oppSf("Call_Received_By_Lookup__c")],
             // Row 5: Call Tranferred DateTime | Call Received Date
             ["Call Tranferred DateTime", oppSfDateTime("Call_Tranferred_DateTime__c") ?? oppSfDateTime("Call_Transferred_DateTime__c")],
@@ -463,16 +499,19 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             // Row 6: Call Transfer Status | Transfer Qualification
             E("Call Transfer Status", oppSf("Call_Transfer_Status__c"), "callTransferStatus"),
             E("Transfer Qualification", oppSf("Transfer_Qualification__c"), "transferQualification"),
-            // Row 7: Sub Disposition | Last Sub Disposition
+            // Row 7: Sub Disposition | Last Contacted DateTime
             E("Sub Disposition", oppSf("Sub_Disposition__c"), "subDisposition"),
-            ["Last Sub Disposition", oppSf("Last_Sub_Disposition__c")],
-            // Row 8: Last Call | Last Contacted DateTime
-            ["Last Call", oppSfDateTime("Last_Call__c") ?? oppSfDateTime("Last_Call_DateTime__c")],
             E("Last Contacted DateTime", oppSfDateTime("Last_Contacted_DateTime__c"), "lastContactedAt", "datetime", { rawValue: opp.lastContactedAt ?? null }),
-            // Row 9: Last Email | Week Days Between Last Contacted Date
-            ["Last Email", oppSfDateTime("Last_Email__c") ?? oppSfDateTime("Last_Email_DateTime__c")],
+            // Row 8: Last Sub Disposition | Week Days Between Last Contacted Date
+            ["Last Sub Disposition", oppSf("Last_Sub_Disposition__c")],
             ["Week Days Between Last Contacted Date", oppSf("Week_Days_Between_Last_Contacted_Date__c")],
-            // Row 10: Last SMS | (right col exhausted)
+            // Row 9: Last Call | (right col exhausted)
+            ["Last Call", oppSfDateTime("Last_Call__c") ?? oppSfDateTime("Last_Call_DateTime__c")],
+            ["", null],
+            // Row 10: Last Email | (empty)
+            ["Last Email", oppSfDateTime("Last_Email__c") ?? oppSfDateTime("Last_Email_DateTime__c")],
+            ["", null],
+            // Row 11: Last SMS | (empty)
             ["Last SMS", oppSfDateTime("Last_SMS__c") ?? oppSfDateTime("Last_SMS_DateTime__c")],
             ["", null],
           ]}
@@ -494,11 +533,11 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             // Row 3: Processor Info | Bank Change
             E("Processor Info", oppSf("Processor_Info__c"), "processorInfo"),
             E("Bank Change", opp.bankChange ?? oppSf("Bank_Change__c"), "bankChange", "text", { rawValue: opp.bankChange }),
-            // Row 4: Lender Agreements Collected | COJ or TRO
+            // Row 4: Lender Agreements Collected | Status with Lender/s
             E("Lender Agreements Collected", oppSf("Lender_Agreements_Collected__c"), "lenderAgreementsCollected"),
-            E("COJ or TRO", oppSf("COJ_or_TRO__c"), "cojOrTro"),
-            // Row 5: Status with Lender/s | First Payment to Legal
             E("Status with Lender/s", oppSf("Status_with_Lenders__c") ?? oppSf("Status_with_Lender_s__c"), "statusWithLenders"),
+            // Row 5: COJ or TRO | First Payment to Legal
+            E("COJ or TRO", oppSf("COJ_or_TRO__c"), "cojOrTro"),
             E("First Payment to Legal", oppSfBool("First_Payment_to_Legal__c"), "firstPaymentToLegal", "checkbox", { rawValue: opp.firstPaymentToLegal ?? null }),
             // Row 6: Summons or Judgment | Welcome Call Scheduled
             E("Summons or Judgment", oppSf("Summons_or_Judgment__c"), "summonsOrJudgment"),
@@ -515,23 +554,31 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         </div>
       </Section>
 
-      {/* SF "Additional Information" section is empty in the DS Opportunity Layout. */}
-      <Section title="Additional Information" defaultOpen={false}>
-        <div style={{ padding: 12, fontSize: 12, color: "#706e6b" }}>
-          No fields in this section.
-        </div>
-      </Section>
-
-      <Section title="System Information">
-        {/* SF DS layout System Information: Created By | Last Modified By, then Close Date. */}
+      <Section title="Additional Information">
+        {/* SF Additional Information — TwoColumnsLeftToRight. */}
         <FieldGrid
           entityType="opportunity"
           entityId={opp.id}
           fields={[
+            // Row 1: Order Number | Main Competitor/s
+            E("Order Number", oppSf("OrderNumber__c") ?? oppSf("Order_Number__c"), "orderNumber"),
+            E("Main Competitor/s", oppSf("MainCompetitors__c") ?? oppSf("Main_Competitors__c"), "mainCompetitors"),
+            // Row 2: Current Generator(s) | Delivery/Installation Status
+            E("Current Generator(s)", oppSf("CurrentGenerators__c") ?? oppSf("Current_Generators__c"), "currentGenerators"),
+            E("Delivery/Installation Status", oppSf("DeliveryInstallationStatus__c") ?? oppSf("Delivery_Installation_Status__c"), "deliveryInstallationStatus"),
+            // Row 3: Tracking Number | (empty)
+            E("Tracking Number", oppSf("TrackingNumber__c") ?? oppSf("Tracking_Number__c"), "trackingNumber"),
+            ["", null],
+          ]}
+        />
+      </Section>
+
+      <Section title="System Information">
+        {/* SF System Information — TwoColumnsTopToBottom: Created By | Last Modified By. */}
+        <FieldGrid
+          fields={[
             ["Created By", createdByDisplay || opp.createdAt.toLocaleString()],
             ["Last Modified By", oppSf("LastModifiedBy_Full_Name__c") ?? opp.updatedAt.toLocaleString()],
-            E("Close Date", closeDateDisplay, "expectedCloseDate", "date", { rawValue: opp.expectedCloseDate ?? null }),
-            ["", null],
           ]}
         />
       </Section>
@@ -556,6 +603,85 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         </div>
       </Section>
 
+      <Section title="DocuSign / Settlement Formulas" defaultOpen={false}>
+        {/* CRM-computed DS_* formulas (live, sourced from CRM data) sit next to
+            their SF snapshot counterparts so users can sanity-check parity. */}
+        <FieldGrid
+          fields={[
+            ["DS Estimated Settlement", fmtMoney(formulas.estimatedSettlement)],
+            ["DS Total Program Fee", fmtMoney(formulas.totalProgramFee)],
+            ["DS Total Bank Fee", fmtMoney(formulas.totalBankFee)],
+            ["DS Total Amount With Fees", fmtMoney(formulas.totalAmountWithFees)],
+            ["DS Buyout Fee", fmtMoney(formulas.buyoutFee)],
+            ["DS Total Buyout Amount", fmtMoney(formulas.totalBuyoutAmount)],
+            ["DS Total Savings", fmtMoney(formulas.totalSavings)],
+            ["DS Total Savings %", fmtPercent(formulas.totalSavingsPercent)],
+          ]}
+        />
+      </Section>
+
+      <Section title="DS Settlement Details" defaultOpen={false}>
+        {/* Salesforce snapshot of all DS_*__c fields exactly as SF surfaces them.
+            Labels are kept verbatim from the SF describe (e.g. "DS Total Fee
+            Percentage" already includes a "%" suffix in its SF value, so we
+            render the raw string). */}
+        <FieldGrid
+          fields={[
+            ["DS Estimated Amount You Save", oppSfDollar("DS_Estimated_Amount_You_Save__c")],
+            ["DS Estimated Program Fee", oppSfDollar("DS_Estimated_Program_Fee__c")],
+            ["DS Estimated Retainer Fee", oppSfDollar("DS_Estimated_Retainer_Fee__c")],
+            ["DS First Deposit Amount", oppSfDollar("DS_First_Deposit_Amount__c")],
+            ["DS First Retainer/Setup Fee", oppSfDollar("DS_First_Retainer_Setup_Fee__c")],
+            ["DS Monthly Service Fee", oppSfDollar("DS_Monthly_Service_Fee__c")],
+            ["DS Weekly Service Fee", oppSfDollar("DS_Weekly_Service_Fee__c")],
+            ["DS Payment Frequency", oppSf("DS_Payment_Frequency__c")],
+            ["DS Program Fee Percentage", oppSf("DS_Program_Fee_Percentage__c")],
+            ["DS Retainer Percentage", oppSf("DS_Retainer_Percentage__c")],
+            ["DS Settlement Percentage", oppSf("DS_Settlement_Percentage__c")],
+            ["DS Total Citadel Fee", oppSfDollar("DS_Total_Citadel_Fee__c")],
+            ["DS Total Draft Amount", oppSfDollar("DS_Total_Draft_Amount__c")],
+            ["DS Total Escrow Amount", oppSfDollar("DS_Total_Escrow_Amount__c")],
+            ["DS Total Fee Percentage", oppSf("DS_Total_Fee_Percentage__c")],
+            ["DS Total Processor Fee", oppSfDollar("DS_Total_Processor_Fee__c")],
+            ["DS Total Retainer Fee", oppSfDollar("DS_Total_Retainer_Fee__c")],
+            ["DS Total Service Fee", oppSfDollar("DS_Total_Service_Fee__c")],
+            ["DS Total Setup Fee", oppSfDollar("DS_Total_Setup_Fee__c")],
+            ["DS RAM Contract Rule", oppSf("DS_RAM_Contract_Rule__c")],
+            ["DS Current Day", oppSf("DS_Current_Day__c")],
+            ["DS Current Month", oppSf("DS_Current_Month__c")],
+            ["DS Current Year", oppSf("DS_Current_Year__c")],
+          ]}
+        />
+      </Section>
+
+      <Section title="DS Buyout Details" defaultOpen={false}>
+        <FieldGrid
+          fields={[
+            ["DS Buyout Savings", oppSfDollar("DS_Buyout_Savings__c")],
+            ["DS Buyout Settlement to Creditors", oppSfDollar("DS_Buyout_Settlement_to_Creditors__c")],
+            ["DS Buyout Total Program Cost", oppSfDollar("DS_Buyout_Total_Program_Cost__c")],
+          ]}
+        />
+      </Section>
+
+      <Section title="Payment Calculator (SF Report Link)" defaultOpen={false}>
+        {/* SF stores this as an HTML anchor blob; render the raw markup so the
+            embedded report link stays clickable for parity with SF. */}
+        <FieldGrid
+          fields={[
+            ["Payment Calculator Drafts View", oppSf("Payment_Calculator_Drafts_View__c") ? (
+              <div
+                key="pcv"
+                style={{ fontSize: 13 }}
+                // Render SF HTML anchor exactly as SF stores it. The script
+                // already prints this as a fragment so we let SF retain its own
+                // styling/href.
+                dangerouslySetInnerHTML={{ __html: oppSf("Payment_Calculator_Drafts_View__c") ?? "" }}
+              />
+            ) : null],
+          ]}
+        />
+      </Section>
 
       {opp.notes && !oppSf("Description") && (
         <Section title="Notes" defaultOpen={false}>
