@@ -220,8 +220,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     <>
       {/* SF Dakota Enterprises Account Details — pair-by-pair parity with SF Lightning.
           Rows alternate left/right top-to-bottom; even index = left col,
-          odd index = right col. E(...) rows are inline-editable. */}
-      <Section title="Details">
+          odd index = right col. E(...) rows are inline-editable.
+          SF marks Account Information + Address Information detailHeading=false,
+          so Lightning renders these fields with NO section header. Bare grid. */}
         <FieldGrid
           entityType="account"
           entityId={account.id}
@@ -330,7 +331,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["", null],
           ]}
         />
-      </Section>
 
       <Section title="Program & Financial (from SF)" defaultOpen={false}>
         <FieldGrid

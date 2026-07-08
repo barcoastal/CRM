@@ -225,8 +225,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // until col2 is exhausted, then list the remaining col1 fields. All 34 col1
   // fields are rendered in SF order (counters + sync flag included) so the
   // rows line up with SF exactly.
+  // SF marks the first Lead Information section detailHeading=false, so
+  // Lightning shows its fields with NO section header. Bare grid, like SF.
   const leadInformation = (
-    <Section title="Lead Information">
+    <div>
       <FieldGrid
         entityType="lead"
         entityId={lead.id}
@@ -333,7 +335,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <strong>Score reason:</strong> {lead.scoreReason}
         </div>
       )}
-    </Section>
+    </div>
   );
 
   // Section 2: Company Information (TwoColumnsLeftToRight)
@@ -580,36 +582,33 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     </Section>
   );
 
-  // Section 10: Additional Information (TwoColumnsLeftToRight)
+  // Sections 10-11: Additional Information + Description Information.
+  // SF marks both detailHeading=false, so Lightning renders their fields with
+  // NO section headers, flowing after the last headed section. Bare grids.
   const additionalInformation = (
-    <Section title="Additional Information" defaultOpen={false}>
-      <FieldGrid
-        fields={[
-          // Row 1: Product Interest | Current Generators
-          ["Product Interest", sf("ProductInterest__c")],
-          ["Current Generators", sf("CurrentGenerators__c")],
-          // Row 2: SIC Code | Number of Locations
-          ["SIC Code", sf("SICCode__c")],
-          ["Number of Locations", sf("NumberofLocations__c")],
-          // Row 3: Created By | Last Modified By
-          ["Created By", sf("CreatedById")],
-          ["Last Modified By", sf("LastModifiedById")],
-        ]}
-      />
-    </Section>
+    <FieldGrid
+      fields={[
+        // Row 1: Product Interest | Current Generators
+        ["Product Interest", sf("ProductInterest__c")],
+        ["Current Generators", sf("CurrentGenerators__c")],
+        // Row 2: SIC Code | Number of Locations
+        ["SIC Code", sf("SICCode__c")],
+        ["Number of Locations", sf("NumberofLocations__c")],
+        // Row 3: Created By | Last Modified By
+        ["Created By", sf("CreatedById")],
+        ["Last Modified By", sf("LastModifiedById")],
+      ]}
+    />
   );
 
-  // Section 11: Description Information (OneColumn)
   const descriptionInformation = (
-    <Section title="Description Information" defaultOpen={false}>
-      <FieldGrid
-        columns={1}
-        fields={[
-          ["Description", sf("Description")],
-          ["Lenders", sf("Lenders__c")],
-        ]}
-      />
-    </Section>
+    <FieldGrid
+      columns={1}
+      fields={[
+        ["Description", sf("Description")],
+        ["Lenders", sf("Lenders__c")],
+      ]}
+    />
   );
 
   // SF Lead detail does NOT show a giant in-body "Convert" call-to-action — the

@@ -278,13 +278,10 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
 
   const detailsPanel = (
     <>
-      <ContactSection title="Contact Information">
-        <ContactFieldGrid fields={contactInformationFields} entityType="contact" entityId={contact.id} />
-      </ContactSection>
-
-      <ContactSection title="Address Information">
-        <ContactFieldGrid fields={addressInformationFields} entityType="contact" entityId={contact.id} />
-      </ContactSection>
+      {/* SF marks Contact Information + Address Information detailHeading=false,
+          so Lightning renders these fields with NO section headers. Bare grids. */}
+      <ContactFieldGrid fields={contactInformationFields} entityType="contact" entityId={contact.id} />
+      <ContactFieldGrid fields={addressInformationFields} entityType="contact" entityId={contact.id} />
 
       {contact.primaryAccount && (
         <ContactSection title="Account Information" defaultOpen={false}>
