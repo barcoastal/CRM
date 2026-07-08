@@ -89,7 +89,7 @@ export function TotalPaymentsSummary(props: TotalPaymentsSummaryProps) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "10px 12px",
+          padding: "8px 12px",
           borderBottom: allEmpty ? "none" : "1px solid #c9c9c9",
         }}
       >
@@ -111,7 +111,7 @@ export function TotalPaymentsSummary(props: TotalPaymentsSummaryProps) {
               >
                 <td
                   style={{
-                    padding: "10px 12px",
+                    padding: "8px 12px",
                     color: "#444444",
                     fontSize: 11.5,
                     textTransform: "uppercase",
@@ -129,7 +129,7 @@ export function TotalPaymentsSummary(props: TotalPaymentsSummaryProps) {
                 </td>
                 <td
                   style={{
-                    padding: "10px 12px",
+                    padding: "8px 12px",
                     color: "#181818",
                     fontSize: 13,
                     fontWeight: 400,
