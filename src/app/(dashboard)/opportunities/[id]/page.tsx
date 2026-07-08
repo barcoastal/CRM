@@ -351,9 +351,10 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       {/* SF Opportunity Layout — exact pair-by-pair parity with the exported
           docs/sf-export/sfdx-raw/layouts/Opportunity-Opportunity Layout.layout-meta.xml.
           Even index = left col, odd = right col (TwoColumns interleave).
-          E(...) rows are inline-editable. */}
-      <Section title="Opportunity Information">
-        <FieldGrid
+          E(...) rows are inline-editable.
+          SF marks this section detailHeading=false, so Lightning renders the
+          fields with NO section header — we do the same (bare grid, no card). */}
+      <FieldGrid
           entityType="opportunity"
           entityId={opp.id}
           fields={[
@@ -473,7 +474,6 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             ["", null],
           ]}
         />
-      </Section>
 
       <Section title="Call Disposition">
         {/* SF Call Disposition — TwoColumnsLeftToRight. */}
@@ -546,142 +546,37 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         />
       </Section>
 
-      {/* SF "Other Information" section is intentionally empty in the layout XML
-          (no fields). Rendered as a placeholder for layout parity. */}
-      <Section title="Other Information" defaultOpen={false}>
-        <div style={{ padding: 12, fontSize: 12, color: "#706e6b" }}>
-          No fields in this section.
+      {/* SF marks Other/Additional/System/Description/Custom Links sections
+          detailHeading=false, so Lightning shows their fields with NO section
+          headers, flowing after Client Questionnaire. Mirror that: one bare
+          grid, no cards. ("Other Information" and "Custom Links" have zero
+          fields in the layout, so they render nothing.) */}
+      <FieldGrid
+        entityType="opportunity"
+        entityId={opp.id}
+        fields={[
+          // Additional Information — Row 1: Order Number | Main Competitor/s
+          E("Order Number", oppSf("OrderNumber__c") ?? oppSf("Order_Number__c"), "orderNumber"),
+          E("Main Competitor/s", oppSf("MainCompetitors__c") ?? oppSf("Main_Competitors__c"), "mainCompetitors"),
+          // Row 2: Current Generator(s) | Delivery/Installation Status
+          E("Current Generator(s)", oppSf("CurrentGenerators__c") ?? oppSf("Current_Generators__c"), "currentGenerators"),
+          E("Delivery/Installation Status", oppSf("DeliveryInstallationStatus__c") ?? oppSf("Delivery_Installation_Status__c"), "deliveryInstallationStatus"),
+          // Row 3: Tracking Number | (empty)
+          E("Tracking Number", oppSf("TrackingNumber__c") ?? oppSf("Tracking_Number__c"), "trackingNumber"),
+          ["", null],
+          // System Information: Created By | Last Modified By
+          ["Created By", createdByDisplay || opp.createdAt.toLocaleString()],
+          ["Last Modified By", oppSf("LastModifiedBy_Full_Name__c") ?? opp.updatedAt.toLocaleString()],
+        ]}
+      />
+      {/* Description Information — OneColumn, single Description field. */}
+      <div style={{ padding: "8px 0", display: "grid", gridTemplateColumns: "16.5% 1fr 28px", gap: 8, alignItems: "start" }}>
+        <div style={{ fontSize: 12, color: "#3e3e3c", paddingTop: 1 }}>Description</div>
+        <div style={{ fontSize: 13, color: "#080707", whiteSpace: "pre-wrap" }}>
+          {opp.notes ?? oppSf("Description") ?? ""}
         </div>
-      </Section>
-
-      <Section title="Additional Information">
-        {/* SF Additional Information — TwoColumnsLeftToRight. */}
-        <FieldGrid
-          entityType="opportunity"
-          entityId={opp.id}
-          fields={[
-            // Row 1: Order Number | Main Competitor/s
-            E("Order Number", oppSf("OrderNumber__c") ?? oppSf("Order_Number__c"), "orderNumber"),
-            E("Main Competitor/s", oppSf("MainCompetitors__c") ?? oppSf("Main_Competitors__c"), "mainCompetitors"),
-            // Row 2: Current Generator(s) | Delivery/Installation Status
-            E("Current Generator(s)", oppSf("CurrentGenerators__c") ?? oppSf("Current_Generators__c"), "currentGenerators"),
-            E("Delivery/Installation Status", oppSf("DeliveryInstallationStatus__c") ?? oppSf("Delivery_Installation_Status__c"), "deliveryInstallationStatus"),
-            // Row 3: Tracking Number | (empty)
-            E("Tracking Number", oppSf("TrackingNumber__c") ?? oppSf("Tracking_Number__c"), "trackingNumber"),
-            ["", null],
-          ]}
-        />
-      </Section>
-
-      <Section title="System Information">
-        {/* SF System Information — TwoColumnsTopToBottom: Created By | Last Modified By. */}
-        <FieldGrid
-          fields={[
-            ["Created By", createdByDisplay || opp.createdAt.toLocaleString()],
-            ["Last Modified By", oppSf("LastModifiedBy_Full_Name__c") ?? opp.updatedAt.toLocaleString()],
-          ]}
-        />
-      </Section>
-
-      <Section title="Description Information">
-        {/* SF Description Information — OneColumn, single Description field. */}
-        <div style={{ padding: "8px 0", display: "grid", gridTemplateColumns: "16.5% 1fr 28px", gap: 8, alignItems: "start" }}>
-          <div style={{ fontSize: 12, color: "#3e3e3c", paddingTop: 1 }}>Description</div>
-          <div style={{ fontSize: 13, color: "#080707", whiteSpace: "pre-wrap" }}>
-            {opp.notes ?? oppSf("Description") ?? ""}
-          </div>
-          <div />
-        </div>
-      </Section>
-
-      {/* SF "Custom Links" section renders the DeliveryStatus custom link. */}
-      <Section title="Custom Links" defaultOpen={false}>
-        <div style={{ padding: "8px 0", display: "grid", gridTemplateColumns: "16.5% 1fr 28px", gap: 8, alignItems: "start" }}>
-          <div style={{ fontSize: 12, color: "#3e3e3c", paddingTop: 1 }}>Delivery Status</div>
-          <div style={{ fontSize: 13, color: "#1589ee" }}>{oppSf("Delivery_Status__c") ?? ""}</div>
-          <div />
-        </div>
-      </Section>
-
-      <Section title="DocuSign / Settlement Formulas" defaultOpen={false}>
-        {/* CRM-computed DS_* formulas (live, sourced from CRM data) sit next to
-            their SF snapshot counterparts so users can sanity-check parity. */}
-        <FieldGrid
-          fields={[
-            ["DS Estimated Settlement", fmtMoney(formulas.estimatedSettlement)],
-            ["DS Total Program Fee", fmtMoney(formulas.totalProgramFee)],
-            ["DS Total Bank Fee", fmtMoney(formulas.totalBankFee)],
-            ["DS Total Amount With Fees", fmtMoney(formulas.totalAmountWithFees)],
-            ["DS Buyout Fee", fmtMoney(formulas.buyoutFee)],
-            ["DS Total Buyout Amount", fmtMoney(formulas.totalBuyoutAmount)],
-            ["DS Total Savings", fmtMoney(formulas.totalSavings)],
-            ["DS Total Savings %", fmtPercent(formulas.totalSavingsPercent)],
-          ]}
-        />
-      </Section>
-
-      <Section title="DS Settlement Details" defaultOpen={false}>
-        {/* Salesforce snapshot of all DS_*__c fields exactly as SF surfaces them.
-            Labels are kept verbatim from the SF describe (e.g. "DS Total Fee
-            Percentage" already includes a "%" suffix in its SF value, so we
-            render the raw string). */}
-        <FieldGrid
-          fields={[
-            ["DS Estimated Amount You Save", oppSfDollar("DS_Estimated_Amount_You_Save__c")],
-            ["DS Estimated Program Fee", oppSfDollar("DS_Estimated_Program_Fee__c")],
-            ["DS Estimated Retainer Fee", oppSfDollar("DS_Estimated_Retainer_Fee__c")],
-            ["DS First Deposit Amount", oppSfDollar("DS_First_Deposit_Amount__c")],
-            ["DS First Retainer/Setup Fee", oppSfDollar("DS_First_Retainer_Setup_Fee__c")],
-            ["DS Monthly Service Fee", oppSfDollar("DS_Monthly_Service_Fee__c")],
-            ["DS Weekly Service Fee", oppSfDollar("DS_Weekly_Service_Fee__c")],
-            ["DS Payment Frequency", oppSf("DS_Payment_Frequency__c")],
-            ["DS Program Fee Percentage", oppSf("DS_Program_Fee_Percentage__c")],
-            ["DS Retainer Percentage", oppSf("DS_Retainer_Percentage__c")],
-            ["DS Settlement Percentage", oppSf("DS_Settlement_Percentage__c")],
-            ["DS Total Citadel Fee", oppSfDollar("DS_Total_Citadel_Fee__c")],
-            ["DS Total Draft Amount", oppSfDollar("DS_Total_Draft_Amount__c")],
-            ["DS Total Escrow Amount", oppSfDollar("DS_Total_Escrow_Amount__c")],
-            ["DS Total Fee Percentage", oppSf("DS_Total_Fee_Percentage__c")],
-            ["DS Total Processor Fee", oppSfDollar("DS_Total_Processor_Fee__c")],
-            ["DS Total Retainer Fee", oppSfDollar("DS_Total_Retainer_Fee__c")],
-            ["DS Total Service Fee", oppSfDollar("DS_Total_Service_Fee__c")],
-            ["DS Total Setup Fee", oppSfDollar("DS_Total_Setup_Fee__c")],
-            ["DS RAM Contract Rule", oppSf("DS_RAM_Contract_Rule__c")],
-            ["DS Current Day", oppSf("DS_Current_Day__c")],
-            ["DS Current Month", oppSf("DS_Current_Month__c")],
-            ["DS Current Year", oppSf("DS_Current_Year__c")],
-          ]}
-        />
-      </Section>
-
-      <Section title="DS Buyout Details" defaultOpen={false}>
-        <FieldGrid
-          fields={[
-            ["DS Buyout Savings", oppSfDollar("DS_Buyout_Savings__c")],
-            ["DS Buyout Settlement to Creditors", oppSfDollar("DS_Buyout_Settlement_to_Creditors__c")],
-            ["DS Buyout Total Program Cost", oppSfDollar("DS_Buyout_Total_Program_Cost__c")],
-          ]}
-        />
-      </Section>
-
-      <Section title="Payment Calculator (SF Report Link)" defaultOpen={false}>
-        {/* SF stores this as an HTML anchor blob; render the raw markup so the
-            embedded report link stays clickable for parity with SF. */}
-        <FieldGrid
-          fields={[
-            ["Payment Calculator Drafts View", oppSf("Payment_Calculator_Drafts_View__c") ? (
-              <div
-                key="pcv"
-                style={{ fontSize: 13 }}
-                // Render SF HTML anchor exactly as SF stores it. The script
-                // already prints this as a fragment so we let SF retain its own
-                // styling/href.
-                dangerouslySetInnerHTML={{ __html: oppSf("Payment_Calculator_Drafts_View__c") ?? "" }}
-              />
-            ) : null],
-          ]}
-        />
-      </Section>
+        <div />
+      </div>
 
       {opp.notes && !oppSf("Description") && (
         <Section title="Notes" defaultOpen={false}>
