@@ -53,12 +53,14 @@ export async function POST(request: NextRequest) {
   // Route + fill + merge + detect anchors.
   let prepared: Awaited<ReturnType<typeof prepareAnchoredPacket>>;
   let plan: Awaited<ReturnType<typeof planPacket>>;
+  let missing: string[] = [];
   let pageCount = 0;
   try {
     plan = await planPacket(opportunityId);
-    const templates = await loadPacketTemplates(plan);
+    const loaded = await loadPacketTemplates(plan);
+    missing = loaded.missing;
     const data = await buildContractData(opportunityId);
-    const merged = await fillPacketToPdf(templates, data);
+    const merged = await fillPacketToPdf(loaded.templates, data);
     prepared = await prepareAnchoredPacket(merged);
     pageCount = (await PDFDocument.load(prepared.pdf)).getPageCount();
   } catch (e) {
@@ -152,6 +154,7 @@ export async function POST(request: NextRequest) {
     packet: `Coastal + ${plan.processor} + ${plan.legal}`,
     pages: pageCount,
     signatureCount: prepared.signatureBoxes.length,
+    skipped: missing,
     emailSent: emailRes.ok,
     emailError: emailRes.ok ? null : emailRes.error ?? null,
   });

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     if (!opportunityId) return NextResponse.json({ error: "opportunityId required" }, { status: 400 });
 
     const plan = await planPacket(opportunityId);
-    const templates = await loadPacketTemplates(plan);
+    const { templates } = await loadPacketTemplates(plan);
     const data = await buildContractData(opportunityId);
     const pdf = await fillPacketToPdf(templates, data);
 

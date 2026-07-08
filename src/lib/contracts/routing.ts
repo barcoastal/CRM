@@ -36,20 +36,30 @@ export async function planPacket(opportunityId: string): Promise<PacketPlan> {
   };
 }
 
-/** Load the routed templates' buffers; throws listing any category not yet uploaded. */
+/**
+ * Load the routed templates that ARE uploaded, in order. Missing ones are
+ * skipped (so a partial packet can still be tested/sent) and reported back.
+ * Throws only if none of the routed templates exist.
+ */
 export async function loadPacketTemplates(
   plan: PacketPlan,
-): Promise<{ category: ContractCategory; buffer: Buffer; name: string }[]> {
+): Promise<{
+  templates: { category: ContractCategory; buffer: Buffer; name: string }[];
+  missing: string[];
+}> {
   const loaded = await Promise.all(
     plan.categories.map(async (category) => ({ category, buffer: await readTemplate(category) })),
   );
+  const templates = loaded
+    .filter((t) => t.buffer)
+    .map((t) => ({ category: t.category, buffer: t.buffer as Buffer, name: `${t.category}.docx` }));
   const missing = loaded
     .filter((t) => !t.buffer)
     .map((t) => CATEGORIES.find((c) => c.key === t.category)?.label ?? t.category);
-  if (missing.length) {
+  if (templates.length === 0) {
     throw new Error(
-      `This deal routes to ${plan.processor} + ${plan.legal}, but these templates are not uploaded yet: ${missing.join(", ")}. Upload them under Contract Templates.`,
+      `This deal routes to Coastal + ${plan.processor} + ${plan.legal}, but none of those templates are uploaded yet. Upload at least the Coastal agreement under Contract Templates.`,
     );
   }
-  return loaded.map((t) => ({ category: t.category, buffer: t.buffer as Buffer, name: `${t.category}.docx` }));
+  return { templates, missing };
 }

@@ -23,7 +23,7 @@ export function SendPacketModal({
   const [signerEmail, setSignerEmail] = useState(defaultSigner?.email ?? "");
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [result, setResult] = useState<{ packet: string; pages: number; signatureCount: number; signingUrl: string; emailSent: boolean } | null>(null);
+  const [result, setResult] = useState<{ packet: string; pages: number; signatureCount: number; signingUrl: string; emailSent: boolean; skipped?: string[] } | null>(null);
 
   useEffect(() => {
     setSignerName(defaultSigner?.name ?? "");
@@ -81,6 +81,11 @@ export function SendPacketModal({
             <div style={{ color: "#444", marginBottom: 8 }}>
               {result.pages} pages · {result.signatureCount} signature spot(s) · email {result.emailSent ? "sent" : "FAILED"}
             </div>
+            {result.skipped && result.skipped.length > 0 && (
+              <div style={{ color: "#8a6d00", background: "#fff8e1", borderRadius: 4, padding: "6px 10px", fontSize: 12, marginBottom: 8 }}>
+                Not included (not uploaded yet): {result.skipped.join(", ")}
+              </div>
+            )}
             <div style={{ marginBottom: 4, fontWeight: 600 }}>Signing link:</div>
             <a href={result.signingUrl} target="_blank" rel="noreferrer" style={{ color: "#0070d2", wordBreak: "break-all" }}>
               {result.signingUrl}
