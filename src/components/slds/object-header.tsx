@@ -224,7 +224,7 @@ const ENTITY_COLOR: Record<string, string> = {
   account: "#7f8de1",
   contact: "#a094ed",
   lead: "#f88962",
-  opportunity: "#fcb95b",
+  opportunity: "#ff9a3c",
   case: "#f2cf5b",
   household: "#26c8b3",
   partners: "#56aadc",

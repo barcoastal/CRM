@@ -60,6 +60,11 @@ export function PathSidePanel({
   const guidanceText = guidance?.guidance ?? "";
   const hasAnything = !!guidance && (keyFields.length > 0 || guidanceText.trim().length > 0);
 
+  // SF Lightning only shows Key Fields / Guidance inside the Path's expanded
+  // stage panel. When nothing is configured, render nothing at all - the two
+  // permanent gray placeholder cards were a visible divergence from SF.
+  if (!hasAnything) return null;
+
   return (
     <div style={wrap}>
       {/* Key Fields */}

@@ -851,11 +851,11 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           </>
         }
         highlights={[
+          // SF Lightning highlights row: Account Name | Lead Id | Opportunity Owner | Version.
           { label: "Account Name", value: accountLink },
-          { label: "Current Total Debt", value: `$${totalDebtVal.toLocaleString()}` },
           { label: "Lead Id", value: sfLeadIdDisplay },
           { label: "Opportunity Owner", value: ownerDisplay },
-          { label: "Opp Id", value: sfOppIdDisplay },
+          { label: "Version", value: oppSf("Version_Status__c") ?? String(opp.version ?? "1.0") },
         ]}
         actions={<OppHeaderButtons opportunityId={opp.id} currentStage={opp.stage} forecastCategory={opp.forecastCategory ?? null} defaultEmail={emailDisplay ?? opp.lead?.email ?? null} defaultPhone={phoneDisplay ?? opp.lead?.phone ?? null} defaultSignerName={opp.lead?.contactName?.trim() || opp.primaryContact?.fullName?.trim() || null} recommendedAgreement={recommendedAgreement} />}
         pathStages={PATH}

@@ -91,13 +91,14 @@ export function Path({
         })}
       </div>
 
+      {/* SF renders this as a solid brand-blue button. */}
       <button
         onClick={onAction}
         style={{
           marginLeft: 12,
-          background: "#fff",
-          color: "#0176d3",
-          border: "1px solid #c9c9c9",
+          background: "#0176d3",
+          color: "#fff",
+          border: "1px solid #0176d3",
           padding: "0 16px",
           height: 32,
           borderRadius: 4,
@@ -110,7 +111,7 @@ export function Path({
           gap: 6,
         }}
       >
-        <svg width="14" height="14" viewBox="0 0 52 52" style={{ fill: "#0176d3" }}>
+        <svg width="14" height="14" viewBox="0 0 52 52" style={{ fill: "#fff" }}>
           <path d="M20.5 33.4l-7.2-7.1c-.4-.4-1-.4-1.4 0l-1.4 1.4c-.4.4-.4 1 0 1.4l9.3 9.2c.4.4 1 .4 1.4 0L42 17.5c.4-.4.4-1 0-1.4l-1.4-1.4c-.4-.4-1-.4-1.4 0L20.5 33.4z" />
         </svg>
         {actionLabel}

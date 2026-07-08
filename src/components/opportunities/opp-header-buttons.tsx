@@ -27,13 +27,6 @@ const btn: React.CSSProperties = {
   cursor: "pointer",
 };
 
-const primaryBtn: React.CSSProperties = {
-  ...btn,
-  background: "#0176d3",
-  color: "#fff",
-  borderColor: "#0176d3",
-};
-
 export function OppHeaderButtons({
   opportunityId,
   currentStage,
@@ -74,10 +67,10 @@ export function OppHeaderButtons({
       <QuickActionsRow opportunityId={opportunityId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
       <CategoryPicker opportunityId={opportunityId} value={initialCategory} size="sm" />
       <SubmitForApprovalButton entityType="Opportunity" entityId={opportunityId} />
-      <button style={{ ...primaryBtn, background: "#2e844a", borderColor: "#2e844a" }} onClick={() => setPacketModal(true)}>
+      <button style={btn} onClick={() => setPacketModal(true)}>
         Send Packet
       </button>
-      <button style={primaryBtn} onClick={() => setContractModal(true)}>
+      <button style={btn} onClick={() => setContractModal(true)}>
         Send Contract
       </button>
       <button style={btn} onClick={() => setModal(true)}>
