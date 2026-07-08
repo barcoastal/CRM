@@ -14,6 +14,7 @@ export interface FieldEditMeta {
   type?: FieldType;
   rawValue?: string | number | boolean | Date | null;
   options?: { label: string; value: string }[];
+  lookupEndpoint?: string;
   editable?: boolean;
 }
 
@@ -33,7 +34,7 @@ export function E(
   value: ReactNode,
   fieldKey: string,
   type: FieldType = "text",
-  opts?: { rawValue?: string | number | boolean | Date | null; options?: { label: string; value: string }[]; editable?: boolean },
+  opts?: { rawValue?: string | number | boolean | Date | null; options?: { label: string; value: string }[]; lookupEndpoint?: string; editable?: boolean },
 ): GridField {
   return [
     label,
@@ -43,6 +44,7 @@ export function E(
       type,
       rawValue: opts?.rawValue ?? extractRaw(value),
       options: opts?.options,
+      lookupEndpoint: opts?.lookupEndpoint,
       editable: opts?.editable,
     },
   ];
@@ -160,6 +162,7 @@ export function FieldGrid({
               entityId={entityId}
               type={edit.type ?? "text"}
               options={edit.options}
+              lookupEndpoint={edit.lookupEndpoint}
               editable={edit.editable !== false}
             />
           );

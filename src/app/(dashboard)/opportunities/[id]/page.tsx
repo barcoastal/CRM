@@ -397,8 +397,8 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             // Row 3: Opportunity Name | Next Step
             E("Opportunity Name", oppName, "name", "text", { rawValue: opp.name ?? oppName }),
             E("Next Step", nextStepDisplay, "nextStep"),
-            // Row 4: Account Name | Stage
-            ["Account Name", accountLink],
+            // Row 4: Account Name | Stage — Account is an editable lookup like SF.
+            E("Account Name", accountLink, "accountId", "lookup", { rawValue: opp.accountId ?? null, lookupEndpoint: "/api/lookup/accounts" }),
             [
               "Stage",
               <StatusPill key="s" label={formatStage(opp.stage)} tone={opportunityStageTone(opp.stage)} />,

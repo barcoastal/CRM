@@ -4,7 +4,13 @@ import { useState, useRef, useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 export type EntityType = "lead" | "opportunity" | "account" | "contact";
-export type FieldType = "text" | "textarea" | "number" | "date" | "datetime" | "select" | "checkbox" | "email" | "phone";
+export type FieldType = "text" | "textarea" | "number" | "date" | "datetime" | "select" | "checkbox" | "email" | "phone" | "lookup";
+
+export interface LookupOption {
+  id: string;
+  label: string;
+  sublabel?: string;
+}
 
 export interface InlineEditableFieldProps {
   /** Label displayed to the left (SF style). */
@@ -23,6 +29,8 @@ export interface InlineEditableFieldProps {
   type?: FieldType;
   /** Option list for select inputs. */
   options?: { label: string; value: string }[];
+  /** For type "lookup": endpoint returning { options: [{id,label,sublabel?}] } for ?q= */
+  lookupEndpoint?: string;
   /** When false, renders a row with no pencil icon. Used for system / formula fields. */
   editable?: boolean;
   /** Optional formatter for display (e.g. currency, date). */
@@ -47,6 +55,7 @@ export function InlineEditableField({
   entityId,
   type = "text",
   options,
+  lookupEndpoint,
   editable = true,
   format,
 }: InlineEditableFieldProps) {
@@ -61,8 +70,31 @@ export function InlineEditableField({
   const [committedNode, setCommittedNode] = useState<ReactNode>(displayNode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Lookup state: typeahead suggestions + the picked record id.
+  const [lookupResults, setLookupResults] = useState<LookupOption[]>([]);
+  const [lookupId, setLookupId] = useState<string | null>(null);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(null);
+  const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function onLookupType(q: string) {
+    setDraft(q);
+    setLookupId(null); // typing invalidates the previous pick
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+    if (!lookupEndpoint || q.trim().length < 2) {
+      setLookupResults([]);
+      return;
+    }
+    lookupTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`${lookupEndpoint}?q=${encodeURIComponent(q.trim())}`);
+        const j = (await res.json()) as { options?: LookupOption[] };
+        setLookupResults(j.options ?? []);
+      } catch {
+        setLookupResults([]);
+      }
+    }, 250);
+  }
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -93,13 +125,18 @@ export function InlineEditableField({
   })();
 
   async function save() {
+    // Lookups PATCH the picked record id, never free text.
+    if (type === "lookup" && !lookupId) {
+      setError("Pick a record from the list.");
+      return;
+    }
     setSaving(true);
     setError(null);
-    const parsed = parseDraft(draft, type);
-    // Optimistic update
+    const parsed = type === "lookup" ? lookupId : parseDraft(draft, type);
+    // Optimistic update (lookups display the picked label, not the id)
     const prev = committed;
     const prevNode = committedNode;
-    setCommitted(parsed as typeof value);
+    setCommitted((type === "lookup" ? draft : parsed) as typeof value);
     setCommittedNode(undefined); // fall back to raw value during save
     setEditing(false);
     try {
@@ -135,7 +172,11 @@ export function InlineEditableField({
 
   function startEdit() {
     if (!editable || saving) return;
-    setDraft(toInputString(committed, type));
+    // Lookups start with an empty search box (the raw value is a record id,
+    // not something a user should see or edit as text).
+    setDraft(type === "lookup" ? "" : toInputString(committed, type));
+    setLookupId(null);
+    setLookupResults([]);
     setEditing(true);
   }
 
@@ -183,8 +224,68 @@ export function InlineEditableField({
       </div>
 
       {editing ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
-          {type === "select" ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, position: "relative" }}>
+          {type === "lookup" ? (
+            <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+              <input
+                ref={inputRef as React.RefObject<HTMLInputElement>}
+                type="text"
+                value={draft}
+                placeholder="Search…"
+                onChange={(e) => onLookupType(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape") cancel(); }}
+                disabled={saving}
+                style={inputStyle}
+              />
+              {lookupResults.length > 0 && !lookupId && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    right: 0,
+                    background: "#fff",
+                    border: "1px solid #c9c9c9",
+                    borderRadius: 4,
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.16)",
+                    zIndex: 50,
+                    maxHeight: 220,
+                    overflowY: "auto",
+                  }}
+                >
+                  {lookupResults.map((o) => (
+                    <button
+                      key={o.id}
+                      type="button"
+                      onClick={() => {
+                        setLookupId(o.id);
+                        setDraft(o.label);
+                        setLookupResults([]);
+                      }}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "6px 10px",
+                        background: "transparent",
+                        border: 0,
+                        cursor: "pointer",
+                        fontSize: 13,
+                        color: "#181818",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f2f2")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      {o.label}
+                      {o.sublabel && (
+                        <span style={{ display: "block", fontSize: 11, color: "#747474" }}>{o.sublabel}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : type === "select" ? (
             <select
               ref={inputRef as React.RefObject<HTMLSelectElement>}
               value={draft}
