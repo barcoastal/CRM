@@ -237,7 +237,7 @@ export function PathGuidanceForm({
                     {keyFields.map((p) => {
                       const opt = fieldOptions.find((f) => f.path === p);
                       return (
-                        <li key={p} style={{ fontSize: 13, color: "#3e3e3c" }}>
+                        <li key={p} style={{ fontSize: 13, color: "#444444" }}>
                           {opt?.label ?? p}
                         </li>
                       );
@@ -375,17 +375,17 @@ const previewHeader: React.CSSProperties = {
 };
 const previewCard: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   overflow: "hidden",
 };
 const previewBar: React.CSSProperties = {
   background: "#f3f3f3",
-  borderBottom: "1px solid #d8dde6",
+  borderBottom: "1px solid #c9c9c9",
   padding: "8px 12px",
   fontSize: 12,
   fontWeight: 700,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.4,
 };

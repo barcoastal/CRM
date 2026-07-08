@@ -102,7 +102,7 @@ export default function ContractPreviewPage() {
   return (
     <div style={{ padding: 24, maxWidth: 900 }}>
       <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Contract Merge Preview</h1>
-      <p style={{ color: "#706e6b", fontSize: 13, marginBottom: 16 }}>
+      <p style={{ color: "#747474", fontSize: 13, marginBottom: 16 }}>
         Upload a Word (.docx) template using <code>{"{{ClientName}}"}</code> tokens and{" "}
         <code>{"{{#Schedule}}…{{/Schedule}}"}</code> / <code>{"{{#Creditors}}…{{/Creditors}}"}</code> loops, then
         preview it filled with a deal&apos;s data.
@@ -119,7 +119,7 @@ export default function ContractPreviewPage() {
             style={{ display: "block", marginTop: 4, fontSize: 13 }}
           />
           {files.length > 0 && (
-            <span style={{ display: "block", marginTop: 4, fontWeight: 400, color: "#706e6b" }}>
+            <span style={{ display: "block", marginTop: 4, fontWeight: 400, color: "#747474" }}>
               {files.map((f) => f.name).join(" + ")}
             </span>
           )}
@@ -136,15 +136,15 @@ export default function ContractPreviewPage() {
         <button
           onClick={run}
           disabled={!files.length || !oppId || busy}
-          style={{ justifySelf: "start", background: "#0070d2", color: "#fff", border: 0, padding: "8px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: busy ? "wait" : "pointer", opacity: !files.length || !oppId ? 0.5 : 1 }}
+          style={{ justifySelf: "start", background: "#0176d3", color: "#fff", border: 0, padding: "8px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: busy ? "wait" : "pointer", opacity: !files.length || !oppId ? 0.5 : 1 }}
         >
           {busy ? "Generating…" : "Generate Preview"}
         </button>
         <div style={{ borderTop: "1px solid #eef1f6", paddingTop: 12 }}>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Or: auto-routed packet from the deal</div>
-          <p style={{ color: "#706e6b", fontSize: 12, margin: "0 0 8px" }}>
+          <p style={{ color: "#747474", fontSize: 12, margin: "0 0 8px" }}>
             Ignores the upload above. Uses the templates saved under{" "}
-            <a href="/contracts/templates" style={{ color: "#0070d2" }}>Contract Templates</a> and routes
+            <a href="/contracts/templates" style={{ color: "#0176d3" }}>Contract Templates</a> and routes
             Coastal + processor (SAS/RAM) + legal (Citadel/Victory) automatically.
           </p>
           <button
@@ -157,7 +157,7 @@ export default function ContractPreviewPage() {
         </div>
         <div style={{ borderTop: "1px solid #eef1f6", paddingTop: 12 }}>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Or: send the routed packet for signature</div>
-          <p style={{ color: "#706e6b", fontSize: 12, margin: "0 0 8px" }}>
+          <p style={{ color: "#747474", fontSize: 12, margin: "0 0 8px" }}>
             Builds the routed packet, detects <code>{"\\s\\"}</code> / <code>{"\\d\\"}</code> / <code>{"\\n\\"}</code>{" "}
             anchors in your templates, and emails the signer one link to sign all agreements once.
           </p>
@@ -188,10 +188,10 @@ export default function ContractPreviewPage() {
       {err && <div style={{ marginTop: 16, color: "#c23934", fontSize: 13 }}>Error: {err}</div>}
       {pdfUrl && (
         <div style={{ marginTop: 16 }}>
-          <a href={pdfUrl} target="_blank" rel="noreferrer" style={{ color: "#0070d2", fontSize: 13, fontWeight: 600 }}>
+          <a href={pdfUrl} target="_blank" rel="noreferrer" style={{ color: "#0176d3", fontSize: 13, fontWeight: 600 }}>
             Open filled PDF ↗
           </a>
-          <iframe src={pdfUrl} style={{ display: "block", marginTop: 8, width: "100%", height: 700, border: "1px solid #d8dde6", borderRadius: 4 }} />
+          <iframe src={pdfUrl} style={{ display: "block", marginTop: 8, width: "100%", height: 700, border: "1px solid #c9c9c9", borderRadius: 4 }} />
         </div>
       )}
     </div>

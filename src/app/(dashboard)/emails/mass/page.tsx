@@ -135,13 +135,13 @@ export default async function MassEmailListPage() {
                     <td className="px-4 py-3 text-[12px] text-[#131b2e]">
                       <span className="font-semibold">{b.openCount}</span>
                       {b.sentCount > 0 && (
-                        <span className="text-[#706e6b] ml-1">({openPct}%)</span>
+                        <span className="text-[#747474] ml-1">({openPct}%)</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-[12px] text-[#131b2e]">
                       <span className="font-semibold">{b.clickCount}</span>
                       {b.sentCount > 0 && (
-                        <span className="text-[#706e6b] ml-1">({clickPct}%)</span>
+                        <span className="text-[#747474] ml-1">({clickPct}%)</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-[12px]">

@@ -114,5 +114,5 @@ const removeBtn: React.CSSProperties = {
 };
 const subtitle: React.CSSProperties = {
   fontSize: 12,
-  color: "#706e6b",
+  color: "#747474",
 };

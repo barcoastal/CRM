@@ -61,7 +61,7 @@ export default async function NewDashboardPage() {
             required
             autoFocus
             placeholder="Sales Overview"
-            className="w-full rounded border border-[#d8dde6] px-3 py-2 text-[13px] focus:outline-none focus:border-[#3052ff]"
+            className="w-full rounded border border-[#c9c9c9] px-3 py-2 text-[13px] focus:outline-none focus:border-[#3052ff]"
           />
         </div>
 
@@ -73,7 +73,7 @@ export default async function NewDashboardPage() {
             name="description"
             rows={3}
             placeholder="What is this dashboard for?"
-            className="w-full rounded border border-[#d8dde6] px-3 py-2 text-[13px] focus:outline-none focus:border-[#3052ff]"
+            className="w-full rounded border border-[#c9c9c9] px-3 py-2 text-[13px] focus:outline-none focus:border-[#3052ff]"
           />
         </div>
 
@@ -83,7 +83,7 @@ export default async function NewDashboardPage() {
             name="isShared"
             id="isShared"
             defaultChecked
-            className="rounded border-[#d8dde6]"
+            className="rounded border-[#c9c9c9]"
           />
           <label htmlFor="isShared" className="text-[12px] text-[#131b2e]">
             Shared with all users
@@ -100,7 +100,7 @@ export default async function NewDashboardPage() {
           </button>
           <Link
             href="/dashboards"
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded text-[#131b2e] text-[13px] font-semibold border border-[#d8dde6] bg-white"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded text-[#131b2e] text-[13px] font-semibold border border-[#c9c9c9] bg-white"
           >
             Cancel
           </Link>

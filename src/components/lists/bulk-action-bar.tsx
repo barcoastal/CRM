@@ -191,7 +191,7 @@ export function BulkActionBar({
           </>
         )}
       >
-        <div style={{ fontSize: 13, color: "#3e3e3c", marginBottom: 10 }}>
+        <div style={{ fontSize: 13, color: "#444444", marginBottom: 10 }}>
           Reassign {count} selected record{count === 1 ? "" : "s"}.
         </div>
         <select
@@ -221,7 +221,7 @@ export function BulkActionBar({
           </>
         )}
       >
-        <div style={{ fontSize: 13, color: "#3e3e3c", marginBottom: 10 }}>
+        <div style={{ fontSize: 13, color: "#444444", marginBottom: 10 }}>
           Update {count} selected record{count === 1 ? "" : "s"}.
         </div>
         <select
@@ -251,7 +251,7 @@ export function BulkActionBar({
           </>
         )}
       >
-        <div style={{ fontSize: 13, color: "#3e3e3c" }}>
+        <div style={{ fontSize: 13, color: "#444444" }}>
           Delete {count} row{count === 1 ? "" : "s"}? This cannot be undone.
         </div>
       </Modal>
@@ -263,7 +263,7 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "6px 8px",
   fontSize: 13,
-  border: "1px solid #dddbda",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   background: "#fff",
 };

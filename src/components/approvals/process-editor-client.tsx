@@ -147,14 +147,14 @@ export function ProcessEditorClient({
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 border border-[#d8dde6] rounded text-[13px] outline-none focus:border-[#3052ff]"
+              className="w-full px-3 py-2 border border-[#c9c9c9] rounded text-[13px] outline-none focus:border-[#3052ff]"
             />
           </Field>
           <Field label="Applies To">
             <select
               value={form.entityType}
               onChange={(e) => setForm({ ...form, entityType: e.target.value })}
-              className="w-full px-3 py-2 border border-[#d8dde6] rounded text-[13px] outline-none focus:border-[#3052ff] bg-white"
+              className="w-full px-3 py-2 border border-[#c9c9c9] rounded text-[13px] outline-none focus:border-[#3052ff] bg-white"
             >
               {ENTITY_TYPES.map((t) => (
                 <option key={t} value={t}>
@@ -169,7 +169,7 @@ export function ProcessEditorClient({
             value={form.description ?? ""}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={2}
-            className="w-full px-3 py-2 border border-[#d8dde6] rounded text-[13px] outline-none focus:border-[#3052ff] resize-y"
+            className="w-full px-3 py-2 border border-[#c9c9c9] rounded text-[13px] outline-none focus:border-[#3052ff] resize-y"
           />
         </Field>
         <Field label="Entry Criteria" help="A record must match ALL to be eligible.">
@@ -218,7 +218,7 @@ export function ProcessEditorClient({
         <div className="px-5 py-4 border-b border-[#f2f3ff] flex items-center justify-between">
           <div>
             <div className="text-[14px] font-bold text-[#131b2e]">Approval Steps</div>
-            <div className="text-[12px] text-[#706e6b]">
+            <div className="text-[12px] text-[#747474]">
               Requests advance through steps in order. Any approver in a step can advance.
             </div>
           </div>
@@ -234,7 +234,7 @@ export function ProcessEditorClient({
         </div>
         <div className="divide-y divide-[#f2f3ff]">
           {steps.length === 0 && (
-            <div className="px-5 py-10 text-center text-[13px] text-[#706e6b]">
+            <div className="px-5 py-10 text-center text-[13px] text-[#747474]">
               No steps yet. Add one to get started.
             </div>
           )}
@@ -308,7 +308,7 @@ function StepRow({
             />
           )}
           {step.useSubmitterManager && (
-            <div className="text-[11px] text-[#706e6b]">
+            <div className="text-[11px] text-[#747474]">
               The step will route to the manager of whoever submitted the request.
             </div>
           )}
@@ -341,7 +341,7 @@ function Field({
     <div>
       <div className="text-[12px] font-semibold text-[#444656] mb-1.5">{label}</div>
       {children}
-      {help && <div className="text-[11px] text-[#706e6b] mt-1">{help}</div>}
+      {help && <div className="text-[11px] text-[#747474] mt-1">{help}</div>}
     </div>
   );
 }

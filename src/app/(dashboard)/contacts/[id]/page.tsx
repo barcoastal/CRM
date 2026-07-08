@@ -113,7 +113,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     });
     if (reportsTo) {
       reportsToNode = (
-        <Link href={`/contacts/${reportsTo.id}`} style={{ color: "#1589ee" }}>
+        <Link href={`/contacts/${reportsTo.id}`} style={{ color: "#0176d3" }}>
           {reportsTo.fullName}
         </Link>
       );
@@ -180,7 +180,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     sfc("MailingCountry"),
   ].filter((l) => l && l.length > 0);
   const mailingAddress = mailingLines.length > 0 ? (
-    <div style={{ color: "#1589ee", whiteSpace: "pre-line" }}>{mailingLines.join("\n")}</div>
+    <div style={{ color: "#0176d3", whiteSpace: "pre-line" }}>{mailingLines.join("\n")}</div>
   ) : null;
 
   const otherLines = [
@@ -189,7 +189,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     sfc("OtherCountry"),
   ].filter((l) => l && l.length > 0);
   const otherAddress = otherLines.length > 0 ? (
-    <div style={{ color: "#1589ee", whiteSpace: "pre-line" }}>{otherLines.join("\n")}</div>
+    <div style={{ color: "#0176d3", whiteSpace: "pre-line" }}>{otherLines.join("\n")}</div>
   ) : null;
 
   // ---------- Contact Information fields — order matches SF screenshot ----------
@@ -203,7 +203,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     </span>
   );
   const accountNameNode = contact.primaryAccount ? (
-    <Link href={`/accounts/${contact.primaryAccount.id}`} style={{ color: "#1589ee" }}>
+    <Link href={`/accounts/${contact.primaryAccount.id}`} style={{ color: "#0176d3" }}>
       {contact.primaryAccount.name}
     </Link>
   ) : null;
@@ -220,7 +220,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       "Phone",
       phoneVal ? (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <span style={{ color: "#1589ee" }}>{phoneVal}</span>
+          <span style={{ color: "#0176d3" }}>{phoneVal}</span>
           <CallButton phone={phoneVal} />
         </span>
       ) : null,
@@ -244,7 +244,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       "Email",
       emailVal ? (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <a href={`mailto:${emailVal}`} style={{ color: "#1589ee" }}>{emailVal}</a>
+          <a href={`mailto:${emailVal}`} style={{ color: "#0176d3" }}>{emailVal}</a>
           <ComposeEmailButton defaultTo={emailVal} label="" />
         </span>
       ) : null,
@@ -298,7 +298,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
                 contact.primaryAccount.parentAccount?.name ? (
                   <Link
                     href={`/accounts/${contact.primaryAccount.parentAccount.id}`}
-                    style={{ color: "#1589ee" }}
+                    style={{ color: "#0176d3" }}
                   >
                     {contact.primaryAccount.parentAccount.name}
                   </Link>
@@ -392,8 +392,8 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
         {/* Description (full width) — SF renders Description as a full-row
             below the Account Engagement pair grid. */}
         <div style={{ padding: "8px 0", display: "grid", gridTemplateColumns: "minmax(120px, 165px) 1fr 24px", gap: 12, alignItems: "start" }}>
-          <div style={{ fontSize: 12, color: "#3e3e3c", paddingTop: 1 }}>Description</div>
-          <div style={{ fontSize: 13, color: "#080707", whiteSpace: "pre-wrap" }}>{sfc("Description") ?? ""}</div>
+          <div style={{ fontSize: 12, color: "#444444", paddingTop: 1 }}>Description</div>
+          <div style={{ fontSize: 13, color: "#181818", whiteSpace: "pre-wrap" }}>{sfc("Description") ?? ""}</div>
           <div />
         </div>
       </ContactSection>
@@ -420,7 +420,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
         items={contact.primaryForOpportunity}
         renderItem={(o) => (
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
-            <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee" }}>
+            <Link href={`/opportunities/${o.id}`} style={{ color: "#0176d3" }}>
               {o.name ?? o.recordType.replace(/_/g, " ")}
             </Link>
             <span>v{o.version}</span>
@@ -436,11 +436,11 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
         items={contact.accountRelations.map((r) => ({ id: r.id, role: r.role, account: r.account }))}
         renderItem={(r) => (
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12 }}>
-            <Link href={`/accounts/${r.account.id}`} style={{ color: "#1589ee" }}>
+            <Link href={`/accounts/${r.account.id}`} style={{ color: "#0176d3" }}>
               {r.account.name}
             </Link>
             <span>{r.account.recordType.replace(/_/g, " ")}</span>
-            <span style={{ color: "#706e6b" }}>{r.role ?? ""}</span>
+            <span style={{ color: "#747474" }}>{r.role ?? ""}</span>
           </div>
         )}
         emptyHint="No other accounts."
@@ -451,10 +451,10 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
         items={contact.cases}
         renderItem={(c) => (
           <div>
-            <Link href={`/cases/${c.id}`} style={{ color: "#1589ee" }}>
+            <Link href={`/cases/${c.id}`} style={{ color: "#0176d3" }}>
               {c.subject}
             </Link>
-            <span style={{ color: "#706e6b", marginLeft: 8 }}>· {c.status}</span>
+            <span style={{ color: "#747474", marginLeft: 8 }}>· {c.status}</span>
           </div>
         )}
         emptyHint="No cases."
@@ -467,7 +467,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12 }}>
             <span>{t.subject}</span>
             <span>{t.type}</span>
-            <span style={{ color: "#706e6b" }}>{t.dueDate ? new Date(t.dueDate).toLocaleDateString() : ""}</span>
+            <span style={{ color: "#747474" }}>{t.dueDate ? new Date(t.dueDate).toLocaleDateString() : ""}</span>
           </div>
         )}
         emptyHint="No open tasks."
@@ -482,7 +482,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
 
   const allSfFooter = (
     <details style={{ marginTop: 8 }}>
-      <summary style={{ cursor: "pointer", color: "#1589ee", fontSize: 12, padding: "4px 0" }}>
+      <summary style={{ cursor: "pointer", color: "#0176d3", fontSize: 12, padding: "4px 0" }}>
         View all Salesforce fields
       </summary>
       <div style={{ marginTop: 8 }}>

@@ -9,8 +9,8 @@ import { ACCOUNT_STAGES, ACCOUNT_STAGE_TO_SUB_DISPOSITIONS } from "@/lib/sf-cano
 
 const btn: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
-  color: "#0070d2",
+  border: "1px solid #c9c9c9",
+  color: "#0176d3",
   padding: "0 12px",
   height: 32,
   borderRadius: 4,
@@ -68,7 +68,7 @@ export function AccountHeaderButtons({
         {syncing ? "Syncing" : "Sync to Payment Processor"}
       </button>
       <button style={chevronBtn} aria-label="More" title="More">
-        <svg width="11" height="11" viewBox="0 0 10 10" style={{ fill: "#0070d2" }}>
+        <svg width="11" height="11" viewBox="0 0 10 10" style={{ fill: "#0176d3" }}>
           <path d="M0 2l5 6 5-6z" />
         </svg>
       </button>

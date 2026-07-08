@@ -50,13 +50,13 @@ export function ContactHeaderButtons({
   // SF-exact pill buttons: white with thin border, blue label, tiny corner radius.
   const btn: React.CSSProperties = {
     background: "#fff",
-    border: "1px solid #d8dde6",
+    border: "1px solid #c9c9c9",
     borderRadius: 4,
     padding: "0 12px",
     height: 32,
     fontSize: 13,
     fontWeight: 600,
-    color: "#0070d2",
+    color: "#0176d3",
     cursor: "pointer",
     fontFamily: "inherit",
     lineHeight: "26px",

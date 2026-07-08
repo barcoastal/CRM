@@ -134,17 +134,17 @@ export function RescheduleRecalculateModal({
                     minWidth: 230,
                     flexShrink: 0,
                     cursor: "pointer",
-                    border: isSel ? "2px solid #1a96ff" : "1px solid #d8dde6",
+                    border: isSel ? "2px solid #1a96ff" : "1px solid #c9c9c9",
                     position: "relative",
                   }}
                 >
                   {isSel && <div style={checkMark}>✓</div>}
                   <div style={{ padding: 14 }}>
                     {qualifies && <div style={bonusBadge}>✓ Qualified for Extra Bonus</div>}
-                    <div style={{ fontSize: 24, fontWeight: 700, color: o.weekly < 0 ? "#c23934" : "#080707" }}>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: o.weekly < 0 ? "#c23934" : "#181818" }}>
                       {money(o.weekly)}
                     </div>
-                    <div style={{ fontSize: 12, color: "#706e6b", marginBottom: 10 }}>Weekly Payment</div>
+                    <div style={{ fontSize: 12, color: "#747474", marginBottom: 10 }}>Weekly Payment</div>
                     <div style={cardLine}>
                       <span>New Estimated Program Cost:</span>
                       <b>{money(o.programCost)}</b>
@@ -194,11 +194,11 @@ const dialogHeader: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   padding: "12px 16px",
-  borderBottom: "1px solid #d8dde6",
+  borderBottom: "1px solid #c9c9c9",
 };
-const xBtn: React.CSSProperties = { border: 0, background: "none", fontSize: 22, cursor: "pointer", color: "#706e6b", lineHeight: 1 };
-const card: React.CSSProperties = { background: "#fff", border: "1px solid #d8dde6", borderRadius: 6 };
-const cardLine: React.CSSProperties = { display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, color: "#3e3e3c", padding: "2px 0" };
+const xBtn: React.CSSProperties = { border: 0, background: "none", fontSize: 22, cursor: "pointer", color: "#747474", lineHeight: 1 };
+const card: React.CSSProperties = { background: "#fff", border: "1px solid #c9c9c9", borderRadius: 6 };
+const cardLine: React.CSSProperties = { display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, color: "#444444", padding: "2px 0" };
 const bonusBadge: React.CSSProperties = {
   display: "inline-block",
   background: "#2e844a",
@@ -219,7 +219,7 @@ const checkMark: React.CSSProperties = {
   borderLeft: "28px solid transparent",
 };
 const btnBrand: React.CSSProperties = {
-  background: "#0070d2",
+  background: "#0176d3",
   color: "#fff",
   border: 0,
   padding: "7px 16px",
@@ -230,8 +230,8 @@ const btnBrand: React.CSSProperties = {
 };
 const btnOutline: React.CSSProperties = {
   background: "#fff",
-  color: "#0070d2",
-  border: "1px solid #d8dde6",
+  color: "#0176d3",
+  border: "1px solid #c9c9c9",
   padding: "7px 14px",
   borderRadius: 4,
   fontSize: 13,

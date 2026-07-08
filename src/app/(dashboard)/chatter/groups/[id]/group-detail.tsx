@@ -65,32 +65,32 @@ export function GroupDetail({ group, currentUserId, isMember, myRole, isFollowin
 
   return (
     <div style={{ padding: "20px 24px", maxWidth: 1080, margin: "0 auto" }}>
-      <div style={{ marginBottom: 16, fontSize: 12, color: "#706e6b" }}>
-        <Link href="/chatter" style={{ color: "#0070d2", textDecoration: "none" }}>Chatter</Link>
+      <div style={{ marginBottom: 16, fontSize: 12, color: "#747474" }}>
+        <Link href="/chatter" style={{ color: "#0176d3", textDecoration: "none" }}>Chatter</Link>
         <span style={{ margin: "0 6px" }}>/</span>
-        <Link href="/chatter/groups" style={{ color: "#0070d2", textDecoration: "none" }}>Groups</Link>
+        <Link href="/chatter/groups" style={{ color: "#0176d3", textDecoration: "none" }}>Groups</Link>
         <span style={{ margin: "0 6px" }}>/</span>
         <span>{group.name}</span>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: 18, background: "#fff", border: "1px solid #d8dde6", borderRadius: 6, marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: 18, background: "#fff", border: "1px solid #c9c9c9", borderRadius: 6, marginBottom: 16 }}>
         <span style={{
-          width: 56, height: 56, borderRadius: 6, background: "#16325c",
+          width: 56, height: 56, borderRadius: 6, background: "#181818",
           color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center",
           fontSize: 18, fontWeight: 700, flexShrink: 0,
         }}>
           {initials || "G"}
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: "#080707", margin: 0 }}>{group.name}</h1>
-          <div style={{ fontSize: 12, color: "#706e6b", marginTop: 4 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: "#181818", margin: 0 }}>{group.name}</h1>
+          <div style={{ fontSize: 12, color: "#747474", marginTop: 4 }}>
             {group.visibility === "private" ? "Private" : "Public"}
             {" · "}{group.memberCount} members
             {" · "}{group.postCount} posts
             {group.owner && <> {" · "} Owner: {group.owner.name}</>}
           </div>
           {group.description && (
-            <div style={{ fontSize: 13, color: "#3e3e3c", marginTop: 6, lineHeight: 1.45 }}>
+            <div style={{ fontSize: 13, color: "#444444", marginTop: 6, lineHeight: 1.45 }}>
               {group.description}
             </div>
           )}
@@ -102,9 +102,9 @@ export function GroupDetail({ group, currentUserId, isMember, myRole, isFollowin
               disabled={joining}
               style={{
                 padding: "5px 12px",
-                background: "#0070d2",
+                background: "#0176d3",
                 color: "#fff",
-                border: "1px solid #0070d2",
+                border: "1px solid #0176d3",
                 borderRadius: 4,
                 fontSize: 12,
                 fontWeight: 500,
@@ -125,7 +125,7 @@ export function GroupDetail({ group, currentUserId, isMember, myRole, isFollowin
           <PostComposer groupId={group.id} onPosted={reload} />
         </div>
       ) : (
-        <div style={{ marginBottom: 16, padding: 14, border: "1px dashed #d8dde6", borderRadius: 6, color: "#706e6b", fontSize: 13 }}>
+        <div style={{ marginBottom: 16, padding: 14, border: "1px dashed #c9c9c9", borderRadius: 6, color: "#747474", fontSize: 13 }}>
           {group.visibility === "public"
             ? "Join this group to post."
             : "You must be invited to post in this private group."}

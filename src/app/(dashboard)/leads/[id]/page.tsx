@@ -331,7 +331,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         ]}
       />
       {lead.scoreReason && (
-        <div style={{ marginTop: 12, fontSize: 12, color: "#706e6b" }}>
+        <div style={{ marginTop: 12, fontSize: 12, color: "#747474" }}>
           <strong>Score reason:</strong> {lead.scoreReason}
         </div>
       )}
@@ -633,10 +633,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           }}
         >
           <span style={{ fontWeight: 700 }}>Converted.</span>
-          <Link href={`/accounts/${converted.accountId}`} style={{ color: "#0070d2" }}>View account</Link>
-          <Link href={`/contacts/${converted.contactId}`} style={{ color: "#0070d2" }}>View contact</Link>
+          <Link href={`/accounts/${converted.accountId}`} style={{ color: "#0176d3" }}>View account</Link>
+          <Link href={`/contacts/${converted.contactId}`} style={{ color: "#0176d3" }}>View contact</Link>
           {converted.opportunityId && (
-            <Link href={`/opportunities/${converted.opportunityId}`} style={{ color: "#0070d2" }}>View opportunity</Link>
+            <Link href={`/opportunities/${converted.opportunityId}`} style={{ color: "#0176d3" }}>View opportunity</Link>
           )}
         </div>
       )}

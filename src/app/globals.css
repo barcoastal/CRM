@@ -4,7 +4,8 @@
 
 @layer base {
   html, body {
-    font-family: "Salesforce Sans", "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    /* Exact stack measured from the live SF Lightning org (SLDS 2). */
+    font-family: -apple-system, "system-ui", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     background-color: #f3f3f3;
     color: #181818;
     min-height: 100%;
@@ -42,7 +43,7 @@
 .sf-global-bar {
   height: 36px;
   background: #fff;
-  border-bottom: 1px solid #d8dde6;
+  border-bottom: 1px solid #c9c9c9;
   display: flex;
   align-items: center;
   padding: 0 16px 0 0;
@@ -78,7 +79,7 @@
   display: flex;
   align-items: center;
   background: #fff;
-  border: 1px solid #d8dde6;
+  border: 1px solid #c9c9c9;
   border-radius: 4px;
   padding: 0 8px;
   width: min(620px, 80%);
@@ -122,8 +123,8 @@
 .sf-util-btn:hover { background: #f3f2f2; }
 .sf-util-btn-chev { width: 16px; }
 
-.sf-util-icon { width: 18px; height: 18px; fill: #706e6b; }
-.sf-util-icon-small { width: 10px; height: 10px; fill: #706e6b; }
+.sf-util-icon { width: 18px; height: 18px; fill: #747474; }
+.sf-util-icon-small { width: 10px; height: 10px; fill: #747474; }
 
 .sf-avatar-btn {
   background: transparent;
@@ -150,7 +151,7 @@
   top: 36px;
   right: 0;
   background: #fff;
-  border: 1px solid #d8dde6;
+  border: 1px solid #c9c9c9;
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   min-width: 220px;
@@ -161,7 +162,7 @@
 .sf-profile-name {
   padding: 8px 12px;
   font-weight: 700;
-  border-bottom: 1px solid #d8dde6;
+  border-bottom: 1px solid #c9c9c9;
   font-size: 13px;
 }
 
@@ -174,7 +175,7 @@
   border: 0;
   cursor: pointer;
   font-size: 13px;
-  color: #080707;
+  color: #181818;
   text-decoration: none;
 }
 
@@ -186,7 +187,7 @@
   display: flex;
   gap: 12px;
   padding: 14px;
-  border-bottom: 1px solid #d8dde6;
+  border-bottom: 1px solid #c9c9c9;
 }
 
 .sf-profile-header-avatar {
@@ -206,12 +207,12 @@
 .sf-profile-header-name {
   font-size: 14px;
   font-weight: 700;
-  color: #080707;
+  color: #181818;
 }
 
 .sf-profile-header-org {
   font-size: 12px;
-  color: #706e6b;
+  color: #747474;
 }
 
 .sf-profile-header-links {
@@ -224,7 +225,7 @@
 
 .sf-profile-header-links a,
 .sf-profile-header-link-btn {
-  color: #0070d2;
+  color: #0176d3;
   background: transparent;
   border: 0;
   padding: 0;
@@ -240,12 +241,12 @@
 }
 
 .sf-profile-header-sep {
-  color: #d8dde6;
+  color: #c9c9c9;
 }
 
 .sf-profile-section {
   padding: 10px 14px;
-  border-bottom: 1px solid #d8dde6;
+  border-bottom: 1px solid #c9c9c9;
 }
 
 .sf-profile-section:last-child {
@@ -267,7 +268,7 @@
   gap: 8px;
   padding: 4px 0;
   font-size: 13px;
-  color: #080707;
+  color: #181818;
   cursor: pointer;
 }
 
@@ -278,7 +279,7 @@
 .sf-nav-bar {
   height: 40px;
   background: #fff;
-  border-bottom: 1px solid #d8dde6;
+  border-bottom: 1px solid #c9c9c9;
   display: flex;
   align-items: stretch;
   padding-left: 0;
@@ -295,7 +296,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border-right: 1px solid #d8dde6;
+  border-right: 1px solid #c9c9c9;
 }
 
 .sf-app-launcher:hover { background: #f3f2f2; }
@@ -313,7 +314,7 @@
   padding: 0 16px;
   font-size: 16px;
   font-weight: 700;
-  color: #16325c;
+  color: #181818;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -330,7 +331,7 @@
   align-items: center;
   gap: 6px;
   padding: 0 12px;
-  color: #080707;
+  color: #181818;
   text-decoration: none;
   font-size: 13px;
   border-bottom: 3px solid transparent;
@@ -339,13 +340,13 @@
 }
 
 .sf-tab:hover { background: #f3f2f2; }
-.sf-tab-active { color: #080707; font-weight: 600; border-bottom-color: #1589ee; }
-.sf-tab-chev { width: 8px; height: 8px; fill: #706e6b; }
+.sf-tab-active { color: #181818; font-weight: 600; border-bottom-color: #0176d3; }
+.sf-tab-chev { width: 8px; height: 8px; fill: #747474; }
 
 .sf-tab-edit {
   background: transparent;
   border: 0;
-  border-left: 1px solid #d8dde6;
+  border-left: 1px solid #c9c9c9;
   width: 48px;
   display: inline-flex;
   align-items: center;

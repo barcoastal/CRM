@@ -236,7 +236,7 @@ export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
           <div className="h-full flex items-center justify-center text-center">
             <div>
               <div className="text-[12px] font-semibold text-[#942b00]">Tile failed</div>
-              <div className="text-[11px] text-[#706e6b] mt-1">{data.error}</div>
+              <div className="text-[11px] text-[#747474] mt-1">{data.error}</div>
             </div>
           </div>
         ) : tile.kind === "bar" && isBar(data) ? (
@@ -248,7 +248,7 @@ export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
             kind={tile.kind}
           />
         ) : (
-          <div className="text-[12px] text-[#706e6b]">No data</div>
+          <div className="text-[12px] text-[#747474]">No data</div>
         )}
       </div>
 
@@ -256,13 +256,13 @@ export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
       {editing && (
         <div className="border-t border-[#f2f3ff] p-3 space-y-2 bg-[#fbfbff]">
           <div className="flex gap-2">
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-[#706e6b] w-12 flex items-center">
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-[#747474] w-12 flex items-center">
               Kind
             </label>
             <select
               value={tile.kind}
               onChange={(e) => changeKind(e.target.value)}
-              className="flex-1 text-[12px] rounded border border-[#d8dde6] px-2 py-1 bg-white"
+              className="flex-1 text-[12px] rounded border border-[#c9c9c9] px-2 py-1 bg-white"
             >
               {TILE_KINDS.map((k) => (
                 <option key={k.value} value={k.value}>
@@ -274,13 +274,13 @@ export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
 
           {tile.kind !== "report" ? (
             <div className="flex gap-2">
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-[#706e6b] w-12 flex items-center">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-[#747474] w-12 flex items-center">
                 Query
               </label>
               <select
                 value={tile.queryKey ?? ""}
                 onChange={(e) => onUpdate({ queryKey: e.target.value || null })}
-                className="flex-1 text-[12px] rounded border border-[#d8dde6] px-2 py-1 bg-white"
+                className="flex-1 text-[12px] rounded border border-[#c9c9c9] px-2 py-1 bg-white"
               >
                 <option value="">(select)</option>
                 {registry
@@ -296,14 +296,14 @@ export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
             </div>
           ) : (
             <div className="flex gap-2">
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-[#706e6b] w-12 flex items-center">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-[#747474] w-12 flex items-center">
                 Report
               </label>
               {reportsAvailable ? (
                 <select
                   value={tile.reportId ?? ""}
                   onChange={(e) => onUpdate({ reportId: e.target.value || null })}
-                  className="flex-1 text-[12px] rounded border border-[#d8dde6] px-2 py-1 bg-white"
+                  className="flex-1 text-[12px] rounded border border-[#c9c9c9] px-2 py-1 bg-white"
                 >
                   <option value="">(select)</option>
                   {reports?.map((r) => (
@@ -313,7 +313,7 @@ export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
                   ))}
                 </select>
               ) : (
-                <span className="flex-1 text-[11px] text-[#706e6b] italic">
+                <span className="flex-1 text-[11px] text-[#747474] italic">
                   Reports not available yet
                 </span>
               )}
@@ -321,7 +321,7 @@ export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
           )}
 
           <div className="flex items-center gap-2">
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-[#706e6b] w-12">
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-[#747474] w-12">
               Size
             </label>
             <SizeBtn onClick={() => bumpSize(-1, 0)} title="Narrower">
@@ -363,7 +363,7 @@ function SizeBtn({
       type="button"
       onClick={onClick}
       title={title}
-      className="size-6 rounded border border-[#d8dde6] bg-white flex items-center justify-center text-[#131b2e] hover:bg-[#f2f3ff]"
+      className="size-6 rounded border border-[#c9c9c9] bg-white flex items-center justify-center text-[#131b2e] hover:bg-[#f2f3ff]"
     >
       {children}
     </button>
@@ -399,7 +399,7 @@ function ScalarView({
 
 function BarChartView({ buckets }: { buckets: { label: string; value: number }[] }) {
   if (buckets.length === 0) {
-    return <div className="text-[12px] text-[#706e6b]">No data</div>;
+    return <div className="text-[12px] text-[#747474]">No data</div>;
   }
   const max = Math.max(...buckets.map((b) => b.value), 1);
   const top = buckets.slice(0, 10);

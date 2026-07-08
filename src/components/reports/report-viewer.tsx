@@ -129,7 +129,7 @@ export function ReportViewer({
           <div>
             <div className="text-[13px] font-bold text-[#131b2e]">Results</div>
             {result && (
-              <div className="text-[11px] text-[#706e6b]">
+              <div className="text-[11px] text-[#747474]">
                 {result.rowCount} row{result.rowCount === 1 ? "" : "s"}
                 {result.groups ? ` in ${result.groups.length} group${result.groups.length === 1 ? "" : "s"}` : ""}
               </div>
@@ -142,7 +142,7 @@ export function ReportViewer({
                 const val = (result.totals as Record<string, unknown>)[key];
                 return (
                   <div key={key}>
-                    <span className="text-[#706e6b]">
+                    <span className="text-[#747474]">
                       {s.field} {s.kind}:
                     </span>{" "}
                     <span className="font-bold">{formatCell(val)}</span>
@@ -160,7 +160,7 @@ export function ReportViewer({
         )}
 
         {running && !result && (
-          <div className="px-4 py-10 text-center text-[12px] text-[#706e6b]">Running report...</div>
+          <div className="px-4 py-10 text-center text-[12px] text-[#747474]">Running report...</div>
         )}
 
         {result && (
@@ -187,7 +187,7 @@ export function ReportViewer({
                             className={`size-3 transition-transform ${expanded ? "" : "-rotate-90"}`}
                           />
                           <span className="text-[12px] font-bold text-[#131b2e]">{g.key}</span>
-                          <span className="text-[11px] text-[#706e6b]">
+                          <span className="text-[11px] text-[#747474]">
                             ({(g.summary as Record<string, unknown>)._count as number} rows)
                           </span>
                         </div>
@@ -197,7 +197,7 @@ export function ReportViewer({
                             const val = (g.summary as Record<string, unknown>)[key];
                             return (
                               <div key={key}>
-                                <span className="text-[#706e6b]">
+                                <span className="text-[#747474]">
                                   {s.field} {s.kind}:
                                 </span>{" "}
                                 <span className="font-bold">{formatCell(val)}</span>

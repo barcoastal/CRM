@@ -319,8 +319,8 @@ export function DockedComposer() {
                   <button key={`${r.entity}-${r.id}`} type="button" onClick={() => pickRelated(r)} style={relatedItem}>
                     <span style={{ ...entityBadge, background: entityColor(r.entity) }}>{r.entity[0]}</span>
                     <div style={{ display: "flex", flexDirection: "column", textAlign: "left", flex: 1, overflow: "hidden" }}>
-                      <span style={{ fontSize: 13, color: "#080707", textOverflow: "ellipsis", whiteSpace: "nowrap", overflow: "hidden" }}>{r.title}</span>
-                      <span style={{ fontSize: 11, color: "#706e6b" }}>{r.subtitle}</span>
+                      <span style={{ fontSize: 13, color: "#181818", textOverflow: "ellipsis", whiteSpace: "nowrap", overflow: "hidden" }}>{r.title}</span>
+                      <span style={{ fontSize: 11, color: "#747474" }}>{r.subtitle}</span>
                     </div>
                   </button>
                 ))}
@@ -352,7 +352,7 @@ export function DockedComposer() {
 
       {/* Footer */}
       <div style={footer}>
-        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontSize: 11, color: "#706e6b" }}>
+        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontSize: 11, color: "#747474" }}>
           Draft saved
         </div>
         <div style={{ display: "flex", gap: 8, position: "relative" }}>
@@ -366,12 +366,12 @@ export function DockedComposer() {
             <div style={templateDropdown}>
               <div style={templateHeader}>Insert Template</div>
               {templates.length === 0 ? (
-                <div style={{ padding: 12, color: "#706e6b", fontSize: 12 }}>No templates</div>
+                <div style={{ padding: 12, color: "#747474", fontSize: 12 }}>No templates</div>
               ) : (
                 templates.map((t) => (
                   <button key={t.id} type="button" onClick={() => pickTemplate(t)} style={templateItem}>
-                    <span style={{ fontSize: 13, color: "#080707" }}>{t.name}</span>
-                    {t.category && <span style={{ fontSize: 11, color: "#706e6b" }}>{t.category}</span>}
+                    <span style={{ fontSize: 13, color: "#181818" }}>{t.name}</span>
+                    {t.category && <span style={{ fontSize: 11, color: "#747474" }}>{t.category}</span>}
                   </button>
                 ))
               )}
@@ -508,7 +508,7 @@ function TemplateIcon() {
 
 function entityColor(e: SearchResult["entity"]) {
   switch (e) {
-    case "Lead": return "#1589ee";
+    case "Lead": return "#0176d3";
     case "Contact": return "#04844b";
     case "Account": return "#df9f00";
     case "Opportunity": return "#cf3476";
@@ -524,7 +524,7 @@ const dockedShell: React.CSSProperties = {
   width: 480,
   height: 520,
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderBottom: "none",
   borderTopLeftRadius: 6,
   borderTopRightRadius: 6,
@@ -542,7 +542,7 @@ const dockedMinimized: React.CSSProperties = {
   bottom: 0,
   width: 320,
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderBottom: "none",
   borderTopLeftRadius: 6,
   borderTopRightRadius: 6,
@@ -559,7 +559,7 @@ const expandedShell: React.CSSProperties = {
   width: "min(960px, calc(100vw - 48px))",
   height: "calc(100vh - 56px)",
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderBottom: "none",
   borderTopLeftRadius: 6,
   borderTopRightRadius: 6,
@@ -572,7 +572,7 @@ const expandedShell: React.CSSProperties = {
 };
 
 const headerBar: React.CSSProperties = {
-  background: "#16325c",
+  background: "#181818",
   color: "#fff",
   padding: "8px 12px",
   display: "flex",
@@ -623,13 +623,13 @@ const fieldRow: React.CSSProperties = {
   borderBottom: "1px solid #ecebea",
 };
 
-const fieldLabel: React.CSSProperties = { fontSize: 12, color: "#706e6b" };
+const fieldLabel: React.CSSProperties = { fontSize: 12, color: "#747474" };
 const fieldValue: React.CSSProperties = { minWidth: 0 };
 const fieldActions: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8 };
 
 const fromValue: React.CSSProperties = {
   fontSize: 13,
-  color: "#080707",
+  color: "#181818",
   padding: "4px 0",
 };
 
@@ -641,13 +641,13 @@ const plainInput: React.CSSProperties = {
   background: "transparent",
   fontFamily: FONT,
   padding: "4px 0",
-  color: "#080707",
+  color: "#181818",
 };
 
 const linkBtn: React.CSSProperties = {
   background: "transparent",
   border: 0,
-  color: "#1589ee",
+  color: "#0176d3",
   fontSize: 12,
   cursor: "pointer",
   padding: 0,
@@ -666,8 +666,8 @@ const chip: React.CSSProperties = {
   alignItems: "center",
   gap: 4,
   background: "#ecebea",
-  border: "1px solid #d8dde6",
-  color: "#080707",
+  border: "1px solid #c9c9c9",
+  color: "#181818",
   fontSize: 12,
   padding: "2px 4px 2px 8px",
   borderRadius: 12,
@@ -679,7 +679,7 @@ const chipX: React.CSSProperties = {
   cursor: "pointer",
   fontSize: 14,
   lineHeight: 1,
-  color: "#706e6b",
+  color: "#747474",
   padding: "0 2px",
 };
 
@@ -700,7 +700,7 @@ const relatedChip: React.CSSProperties = {
   gap: 6,
   background: "#ecf6ff",
   border: "1px solid #c8e1ff",
-  color: "#0070d2",
+  color: "#0176d3",
   fontSize: 12,
   padding: "3px 4px 3px 10px",
   borderRadius: 12,
@@ -712,7 +712,7 @@ const relatedDropdown: React.CSSProperties = {
   left: 0,
   right: 0,
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
   zIndex: 10,
@@ -757,7 +757,7 @@ const toolbar: React.CSSProperties = {
 const toolbarBtn: React.CSSProperties = {
   background: "transparent",
   border: 0,
-  color: "#080707",
+  color: "#181818",
   fontSize: 13,
   cursor: "pointer",
   width: 28,
@@ -773,7 +773,7 @@ const toolbarBtn: React.CSSProperties = {
 const toolbarSep: React.CSSProperties = {
   width: 1,
   height: 16,
-  background: "#d8dde6",
+  background: "#c9c9c9",
   margin: "0 4px",
 };
 
@@ -784,7 +784,7 @@ function editor(expanded: boolean): React.CSSProperties {
     padding: "10px 4px",
     fontSize: 13,
     lineHeight: 1.5,
-    color: "#080707",
+    color: "#181818",
     outline: "none",
     fontFamily: FONT,
     overflowY: "auto",
@@ -809,14 +809,14 @@ const footerIcon: React.CSSProperties = {
   height: 30,
   borderRadius: 3,
   cursor: "pointer",
-  color: "#706e6b",
+  color: "#747474",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
 };
 
 const sendBtn: React.CSSProperties = {
-  background: "#0070d2",
+  background: "#0176d3",
   color: "#fff",
   padding: "6px 24px",
   borderRadius: 4,
@@ -832,7 +832,7 @@ const templateDropdown: React.CSSProperties = {
   left: 0,
   marginBottom: 6,
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
   width: 260,
@@ -844,7 +844,7 @@ const templateDropdown: React.CSSProperties = {
 const templateHeader: React.CSSProperties = {
   padding: "8px 10px",
   fontSize: 11,
-  color: "#706e6b",
+  color: "#747474",
   textTransform: "uppercase",
   borderBottom: "1px solid #ecebea",
   fontWeight: 600,

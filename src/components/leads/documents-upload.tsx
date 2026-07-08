@@ -80,7 +80,7 @@ export function DocumentsUpload({
           upload(e.dataTransfer.files);
         }}
         style={{
-          border: `2px dashed ${hover ? "#0070d2" : "#d8dde6"}`,
+          border: `2px dashed ${hover ? "#0176d3" : "#c9c9c9"}`,
           background: hover ? "#eef4fb" : "#fafaf9",
           padding: 32,
           borderRadius: 4,
@@ -100,29 +100,29 @@ export function DocumentsUpload({
           disabled={uploading}
           style={{
             background: "#fff",
-            border: "1px solid #d8dde6",
+            border: "1px solid #c9c9c9",
             padding: "6px 16px",
             borderRadius: 4,
             fontSize: 13,
             fontWeight: 600,
-            color: "#0070d2",
+            color: "#0176d3",
             cursor: uploading ? "wait" : "pointer",
             marginBottom: 8,
           }}
         >
           {uploading ? "Uploading…" : "Upload Files"}
         </button>
-        <div style={{ fontSize: 13, color: "#706e6b" }}>Or drop files</div>
+        <div style={{ fontSize: 13, color: "#747474" }}>Or drop files</div>
       </div>
 
       {items.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 16, fontSize: 13, color: "#706e6b" }}>
+        <div style={{ textAlign: "center", padding: 16, fontSize: 13, color: "#747474" }}>
           No files uploaded yet.
         </div>
       ) : (
         <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid #d8dde6", background: "#fafaf9" }}>
+            <tr style={{ borderBottom: "1px solid #c9c9c9", background: "#fafaf9" }}>
               <th style={th}>Name</th>
               <th style={th}>Type</th>
               <th style={th}>Size</th>
@@ -139,7 +139,7 @@ export function DocumentsUpload({
                     href={`${baseUrl}/${d.id}?view=1`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: "#0070d2" }}
+                    style={{ color: "#0176d3" }}
                   >
                     {d.name}
                   </a>
@@ -182,18 +182,18 @@ const th: React.CSSProperties = {
   padding: "8px 12px",
   fontWeight: 700,
   fontSize: 12,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.3,
 };
 
 const td: React.CSSProperties = {
   padding: "10px 12px",
-  color: "#080707",
+  color: "#181818",
 };
 
 const actionLink: React.CSSProperties = {
-  color: "#0070d2",
+  color: "#0176d3",
   fontSize: 13,
   fontWeight: 600,
   textDecoration: "none",

@@ -166,7 +166,7 @@ export function EditSourceForm({ source, webhookUrl, users, queues }: Props) {
                 <Copy className="size-4" />
               </button>
             </div>
-            <p className="text-[11px] text-[#706e6b] mt-1">POST JSON or form data with header X-API-Key.</p>
+            <p className="text-[11px] text-[#747474] mt-1">POST JSON or form data with header X-API-Key.</p>
           </div>
         </div>
 
@@ -221,7 +221,7 @@ export function EditSourceForm({ source, webhookUrl, users, queues }: Props) {
             {testOpen && (
               <div className="mt-3 space-y-2">
                 <textarea
-                  className="w-full p-3 rounded font-mono text-[12px] border border-[#d8dde6] min-h-[180px]"
+                  className="w-full p-3 rounded font-mono text-[12px] border border-[#c9c9c9] min-h-[180px]"
                   value={testPayload}
                   onChange={(e) => setTestPayload(e.target.value)}
                 />
@@ -238,7 +238,7 @@ export function EditSourceForm({ source, webhookUrl, users, queues }: Props) {
                   <button
                     type="button"
                     onClick={() => setTestOpen(false)}
-                    className="px-3 py-1.5 rounded text-[12px] font-semibold text-[#444656] border border-[#d8dde6] bg-white"
+                    className="px-3 py-1.5 rounded text-[12px] font-semibold text-[#444656] border border-[#c9c9c9] bg-white"
                   >
                     Close
                   </button>
@@ -323,7 +323,7 @@ export function EditSourceForm({ source, webhookUrl, users, queues }: Props) {
                     setRequiredFields((r) => (on ? r.filter((x) => x !== f) : [...r, f]))
                   }
                   className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
-                    on ? "bg-[#3052ff] text-white border-[#3052ff]" : "bg-white text-[#444656] border-[#d8dde6]"
+                    on ? "bg-[#3052ff] text-white border-[#3052ff]" : "bg-white text-[#444656] border-[#c9c9c9]"
                   }`}
                 >
                   {f}
@@ -344,7 +344,7 @@ export function EditSourceForm({ source, webhookUrl, users, queues }: Props) {
                     setMapping((m) => m.map((row, idx) => (idx === i ? { ...row, src: e.target.value } : row)))
                   }
                 />
-                <span className="text-[#706e6b] text-[11px]">→</span>
+                <span className="text-[#747474] text-[11px]">→</span>
                 <select
                   className="ms-input flex-1"
                   value={r.dst}
@@ -408,7 +408,7 @@ export function EditSourceForm({ source, webhookUrl, users, queues }: Props) {
           :global(.ms-input) {
             width: 100%;
             padding: 8px 10px;
-            border: 1px solid #d8dde6;
+            border: 1px solid #c9c9c9;
             border-radius: 4px;
             font-size: 13px;
             color: #131b2e;

@@ -74,10 +74,10 @@ export function Modal({
           <header
             style={{
               padding: "16px 24px",
-              borderBottom: "1px solid #d8dde6",
+              borderBottom: "1px solid #c9c9c9",
               fontSize: 18,
               fontWeight: 700,
-              color: "#080707",
+              color: "#181818",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -113,7 +113,7 @@ export function Modal({
           <footer
             style={{
               padding: 16,
-              borderTop: "1px solid #d8dde6",
+              borderTop: "1px solid #c9c9c9",
               display: "flex",
               justifyContent: "center",
               gap: 8,
@@ -143,11 +143,11 @@ export function ModalButton({
     minWidth: 80,
   };
   if (variant === "brand") {
-    Object.assign(styles, { background: "#0070d2", color: "#fff", borderColor: "#0070d2" });
+    Object.assign(styles, { background: "#0176d3", color: "#fff", borderColor: "#0176d3" });
   } else if (variant === "destructive") {
     Object.assign(styles, { background: "#c23934", color: "#fff", borderColor: "#c23934" });
   } else {
-    Object.assign(styles, { background: "#fff", color: "#0070d2", borderColor: "#d8dde6" });
+    Object.assign(styles, { background: "#fff", color: "#0176d3", borderColor: "#c9c9c9" });
   }
   return (
     <button {...rest} style={{ ...styles, ...rest.style }}>

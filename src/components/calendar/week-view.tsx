@@ -33,7 +33,7 @@ export function WeekView({ anchorISO, events }: Props) {
             <div key={d.toISOString()} style={{
               ...headCell,
               background: isToday ? "#e6f3ff" : "#fafaf9",
-              color: isToday ? "#0b5394" : "#706e6b",
+              color: isToday ? "#0b5394" : "#747474",
             }}>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>{DOW[d.getDay()]}</div>
               <div style={{ fontSize: 18, fontWeight: 700 }}>{d.getDate()}</div>
@@ -140,7 +140,7 @@ const gutter: React.CSSProperties = {
 const hourLabel: React.CSSProperties = {
   height: HOUR_HEIGHT,
   fontSize: 11,
-  color: "#706e6b",
+  color: "#747474",
   textAlign: "right",
   paddingRight: 6,
   paddingTop: 2,

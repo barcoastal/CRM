@@ -62,7 +62,7 @@ export function LeadHealthCheckCard(props: LeadHealthCheckInput) {
     <article
       style={{
         background: "#fff",
-        border: "1px solid #d8dde6",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         padding: 12,
         marginBottom: 8,

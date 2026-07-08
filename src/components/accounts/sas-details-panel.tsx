@@ -83,7 +83,7 @@ export function SasDetailsPanel({ accountId }: { accountId: string }) {
   return (
     <div style={wrap}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#080707" }}>Payment Processor (SAS)</h3>
+        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#181818" }}>Payment Processor (SAS)</h3>
         <button onClick={() => void load()} disabled={loading} style={refreshBtn}>
           {loading ? "Loading…" : "Refresh"}
         </button>
@@ -92,7 +92,7 @@ export function SasDetailsPanel({ accountId }: { accountId: string }) {
       {error && <div style={errorBox}>{error}</div>}
 
       {!loading && !error && !c && (
-        <div style={{ fontSize: 13, color: "#706e6b" }}>
+        <div style={{ fontSize: 13, color: "#747474" }}>
           {data?.linked === false
             ? "This account isn't linked to a SAS customer (no Salesforce/SAS id)."
             : "No matching SAS customer found."}
@@ -127,16 +127,16 @@ export function SasDetailsPanel({ accountId }: { accountId: string }) {
 
           {/* Draft history */}
           <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#3e3e3c", marginBottom: 6 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#444444", marginBottom: 6 }}>
               Draft History ({debits.length})
             </div>
             {debits.length === 0 ? (
-              <div style={{ fontSize: 13, color: "#706e6b" }}>No drafts on record.</div>
+              <div style={{ fontSize: 13, color: "#747474" }}>No drafts on record.</div>
             ) : (
               <div style={{ overflowX: "auto", border: "1px solid #e5e5e5", borderRadius: 4 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead>
-                    <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+                    <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
                       <th style={th}>Date</th>
                       <th style={th}>Amount</th>
                       <th style={th}>Status</th>
@@ -154,7 +154,7 @@ export function SasDetailsPanel({ accountId }: { accountId: string }) {
                           <td style={{ ...td, fontWeight: 600, color: statusColor(d.status, nsf) }}>
                             {d.status ?? "-"}
                           </td>
-                          <td style={{ ...td, color: nsf ? "#c23934" : "#3e3e3c" }}>{d.reasonmessage ?? "-"}</td>
+                          <td style={{ ...td, color: nsf ? "#c23934" : "#444444" }}>{d.reasonmessage ?? "-"}</td>
                           <td style={td}>{date(d.datecleared)}</td>
                         </tr>
                       );
@@ -173,27 +173,27 @@ export function SasDetailsPanel({ accountId }: { accountId: string }) {
 function Stat({ label, value, big }: { label: string; value: string; big?: boolean }) {
   return (
     <div>
-      <div style={{ fontSize: 10, fontWeight: 600, color: "#706e6b", textTransform: "uppercase", letterSpacing: 0.3 }}>{label}</div>
-      <div style={{ fontSize: big ? 18 : 14, fontWeight: 700, color: "#080707" }}>{value}</div>
+      <div style={{ fontSize: 10, fontWeight: 600, color: "#747474", textTransform: "uppercase", letterSpacing: 0.3 }}>{label}</div>
+      <div style={{ fontSize: big ? 18 : 14, fontWeight: 700, color: "#181818" }}>{value}</div>
     </div>
   );
 }
 
-const wrap: React.CSSProperties = { background: "#fff", border: "1px solid #dddbda", borderRadius: 4, padding: 16, marginBottom: 10 };
+const wrap: React.CSSProperties = { background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, padding: 16, marginBottom: 10 };
 const grid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 };
-const th: React.CSSProperties = { textAlign: "left", padding: "7px 10px", fontWeight: 700, fontSize: 11, color: "#3e3e3c", whiteSpace: "nowrap" };
-const td: React.CSSProperties = { padding: "7px 10px", color: "#080707", whiteSpace: "nowrap" };
-const refreshBtn: React.CSSProperties = { background: "#fff", border: "1px solid #d8dde6", padding: "4px 12px", borderRadius: 4, fontSize: 13, fontWeight: 600, color: "#0070d2", cursor: "pointer" };
+const th: React.CSSProperties = { textAlign: "left", padding: "7px 10px", fontWeight: 700, fontSize: 11, color: "#444444", whiteSpace: "nowrap" };
+const td: React.CSSProperties = { padding: "7px 10px", color: "#181818", whiteSpace: "nowrap" };
+const refreshBtn: React.CSSProperties = { background: "#fff", border: "1px solid #c9c9c9", padding: "4px 12px", borderRadius: 4, fontSize: 13, fontWeight: 600, color: "#0176d3", cursor: "pointer" };
 const errorBox: React.CSSProperties = { background: "#fdecea", border: "1px solid #f5c2c0", borderRadius: 4, padding: "8px 12px", fontSize: 13, color: "#c23934", marginBottom: 12 };
 const nsfBadge: React.CSSProperties = { background: "#c23934", color: "#fff", padding: "3px 10px", borderRadius: 12, fontSize: 12, fontWeight: 700 };
 const flagBadge: React.CSSProperties = { background: "#fe9339", color: "#fff", padding: "3px 10px", borderRadius: 12, fontSize: 12, fontWeight: 700 };
-const okBadge: React.CSSProperties = { background: "#eef4fb", color: "#0070d2", padding: "3px 10px", borderRadius: 12, fontSize: 12, fontWeight: 600 };
+const okBadge: React.CSSProperties = { background: "#eef4fb", color: "#0176d3", padding: "3px 10px", borderRadius: 12, fontSize: 12, fontWeight: 600 };
 /** Color a draft status: success green, failed/NSF red, everything else neutral. */
 function statusColor(status: string | undefined, nsf: boolean): string {
   if (nsf) return "#c23934";
   const s = (status ?? "").toLowerCase();
   if (/success|cleared|settled|posted/.test(s)) return "#2e844a";
-  return "#706e6b";
+  return "#747474";
 }
 
 function statusBadge(status?: string): React.CSSProperties {
@@ -201,7 +201,7 @@ function statusBadge(status?: string): React.CSSProperties {
   const active = s.includes("active");
   const dead = s.includes("cancel") || s.includes("closed") || s.includes("terminat");
   return {
-    background: active ? "#2e844a" : dead ? "#706e6b" : "#fe9339",
+    background: active ? "#2e844a" : dead ? "#747474" : "#fe9339",
     color: "#fff",
     padding: "3px 12px",
     borderRadius: 12,

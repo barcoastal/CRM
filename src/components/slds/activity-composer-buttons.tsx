@@ -83,7 +83,7 @@ function SplitButton({
     <div
       style={{
         display: "inline-flex",
-        border: active ? "2px solid #0070d2" : "1px solid #d8dde6",
+        border: active ? "2px solid #0176d3" : "1px solid #c9c9c9",
         borderRadius: 4,
         background: "#fff",
         overflow: "hidden",
@@ -110,14 +110,14 @@ function SplitButton({
         style={{
           background: "#fff",
           border: 0,
-          borderLeft: "1px solid #d8dde6",
+          borderLeft: "1px solid #c9c9c9",
           padding: "0 6px",
           cursor: "pointer",
           display: "inline-flex",
           alignItems: "center",
         }}
       >
-        <svg width="10" height="10" viewBox="0 0 10 10" style={{ fill: "#706e6b" }}>
+        <svg width="10" height="10" viewBox="0 0 10 10" style={{ fill: "#747474" }}>
           <path d="M5 7L0 2h10z" />
         </svg>
       </button>
@@ -127,7 +127,7 @@ function SplitButton({
 
 function EnvelopeIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" style={{ fill: "#706e6b" }}>
+    <svg width="18" height="18" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
       <path d="M2 4h20v16H2zm10 9L4 6v12h16V6z" />
     </svg>
   );

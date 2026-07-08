@@ -44,7 +44,7 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
     <div
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         boxShadow: "0 2px 2px 0 rgba(0,0,0,.05)",
         overflow: "hidden",
@@ -55,7 +55,7 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
           display: "flex",
           gap: 0,
           background: "#fff",
-          borderBottom: "1px solid #dddbda",
+          borderBottom: "1px solid #c9c9c9",
           padding: "0 12px",
           overflowX: "auto",
         }}
@@ -75,8 +75,8 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
                 padding: "10px 16px",
                 fontSize: 13,
                 fontWeight: active ? 700 : 400,
-                color: active ? "#080707" : "#3e3e3c",
-                borderBottom: active ? "3px solid #0070d2" : "3px solid transparent",
+                color: active ? "#181818" : "#444444",
+                borderBottom: active ? "3px solid #0176d3" : "3px solid transparent",
                 marginBottom: -1,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
@@ -95,8 +95,8 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
               padding: "10px 16px",
               fontSize: 13,
               fontWeight: moreActive ? 700 : 400,
-              color: moreActive ? "#080707" : "#3e3e3c",
-              borderBottom: moreActive ? "3px solid #0070d2" : "3px solid transparent",
+              color: moreActive ? "#181818" : "#444444",
+              borderBottom: moreActive ? "3px solid #0176d3" : "3px solid transparent",
               marginBottom: -1,
               cursor: "pointer",
               whiteSpace: "nowrap",
@@ -117,7 +117,7 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
                 top: "100%",
                 left: 0,
                 background: "#fff",
-                border: "1px solid #dddbda",
+                border: "1px solid #c9c9c9",
                 borderRadius: 4,
                 boxShadow: "0 2px 4px 0 rgba(0,0,0,.16)",
                 minWidth: 180,
@@ -140,7 +140,7 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
                     border: 0,
                     padding: "8px 16px",
                     fontSize: 13,
-                    color: "#080707",
+                    color: "#181818",
                     cursor: "pointer",
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f2f2")}
@@ -169,7 +169,7 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
               style={{
                 background: "transparent",
                 border: 0,
-                color: "#1589ee",
+                color: "#0176d3",
                 cursor: "pointer",
                 padding: 0,
                 fontSize: 12,

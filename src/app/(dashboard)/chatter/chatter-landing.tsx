@@ -32,9 +32,9 @@ export function ChatterLanding({ initialPosts, currentUserId, myGroups }: Props)
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ border: "1px solid #d8dde6", borderRadius: 6, background: "#fff", padding: 14 }}>
+      <div style={{ border: "1px solid #c9c9c9", borderRadius: 6, background: "#fff", padding: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-          <span style={{ fontSize: 13, color: "#3e3e3c", fontWeight: 500 }}>
+          <span style={{ fontSize: 13, color: "#444444", fontWeight: 500 }}>
             Post to:
           </span>
           {myGroups.length > 0 ? (
@@ -43,7 +43,7 @@ export function ChatterLanding({ initialPosts, currentUserId, myGroups }: Props)
               onChange={(e) => setSelectedGroupId(e.target.value)}
               style={{
                 padding: "4px 8px",
-                border: "1px solid #d8dde6",
+                border: "1px solid #c9c9c9",
                 borderRadius: 4,
                 fontSize: 13,
                 background: "#fff",
@@ -54,7 +54,7 @@ export function ChatterLanding({ initialPosts, currentUserId, myGroups }: Props)
               ))}
             </select>
           ) : (
-            <span style={{ fontSize: 12, color: "#706e6b" }}>Join a group to post.</span>
+            <span style={{ fontSize: 12, color: "#747474" }}>Join a group to post.</span>
           )}
         </div>
         {selectedGroupId && (

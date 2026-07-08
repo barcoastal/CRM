@@ -107,7 +107,7 @@ export function FilesBrowser({
   return (
     <div style={{ padding: "16px 24px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#080707", margin: 0, flex: 1 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#181818", margin: 0, flex: 1 }}>
           Files
         </h1>
         <UploadButton folderId={currentFolder?.id ?? null} buttonLabel="Upload" />
@@ -115,7 +115,7 @@ export function FilesBrowser({
           onClick={() => setNewFolderOpen(true)}
           style={{
             background: "#fff",
-            border: "1px solid #d8dde6",
+            border: "1px solid #c9c9c9",
             padding: "6px 14px",
             borderRadius: 4,
             cursor: "pointer",
@@ -139,7 +139,7 @@ export function FilesBrowser({
             alignSelf: "start",
           }}
         >
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
             Folders
           </div>
           <FolderTree
@@ -163,7 +163,7 @@ export function FilesBrowser({
                 placeholder="Search files..."
                 style={{
                   padding: "6px 10px",
-                  border: "1px solid #d8dde6",
+                  border: "1px solid #c9c9c9",
                   borderRadius: 4,
                   fontSize: 13,
                   minWidth: 220,
@@ -181,7 +181,7 @@ export function FilesBrowser({
           {/* Subfolders */}
           {folders.length > 0 && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
                 Subfolders
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
@@ -218,10 +218,10 @@ export function FilesBrowser({
                       DIR
                     </span>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#080707", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#181818", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {f.name}
                       </div>
-                      <div style={{ fontSize: 11, color: "#706e6b" }}>
+                      <div style={{ fontSize: 11, color: "#747474" }}>
                         {f._count.files} files{f._count.children ? `, ${f._count.children} subfolders` : ""}
                       </div>
                     </div>
@@ -232,11 +232,11 @@ export function FilesBrowser({
           )}
 
           {/* Documents */}
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
             Files ({docs.length})
           </div>
           {docs.length === 0 ? (
-            <div style={{ padding: "32px 16px", textAlign: "center", color: "#706e6b", fontSize: 13 }}>
+            <div style={{ padding: "32px 16px", textAlign: "center", color: "#747474", fontSize: 13 }}>
               No files here yet. Click Upload to add one.
             </div>
           ) : (
@@ -276,19 +276,19 @@ export function FilesBrowser({
                       {fileIcon(d.latestVersion?.contentType)}
                     </span>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#080707", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#181818", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {d.title}
                       </div>
-                      <div style={{ fontSize: 11, color: "#706e6b" }}>
+                      <div style={{ fontSize: 11, color: "#747474" }}>
                         {d.latestVersion ? formatBytes(d.latestVersion.byteSize) : ""}
                         {d.latestVersion ? ` · v${d.latestVersion.versionNumber}` : ""}
                       </div>
                     </div>
                   </div>
-                  <div style={{ fontSize: 11, color: "#706e6b" }}>
+                  <div style={{ fontSize: 11, color: "#747474" }}>
                     {d.owner?.name ?? "Unowned"} · {new Date(d.updatedAt).toLocaleDateString()}
                   </div>
-                  <div style={{ display: "flex", gap: 8, marginTop: 8, fontSize: 11, color: "#3e3e3c" }}>
+                  <div style={{ display: "flex", gap: 8, marginTop: 8, fontSize: 11, color: "#444444" }}>
                     {d._count.records > 0 && <span>{d._count.records} linked</span>}
                     {d._count.shares > 0 && <span>{d._count.shares} shared</span>}
                   </div>
@@ -308,8 +308,8 @@ export function FilesBrowser({
             onClick={(e) => e.stopPropagation()}
             style={{ background: "#fff", borderRadius: 4, width: "min(420px, 100%)", margin: 16 }}
           >
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid #d8dde6" }}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#080707", margin: 0 }}>New Folder</h2>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #c9c9c9" }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#181818", margin: 0 }}>New Folder</h2>
             </div>
             <div style={{ padding: 20 }}>
               <input
@@ -318,17 +318,17 @@ export function FilesBrowser({
                 onChange={(e) => setNewFolderName(e.target.value)}
                 placeholder="Folder name"
                 onKeyDown={(e) => e.key === "Enter" && createFolder()}
-                style={{ width: "100%", padding: "8px 12px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13 }}
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13 }}
               />
               {currentFolder && (
-                <p style={{ fontSize: 11, color: "#706e6b", marginTop: 8 }}>
+                <p style={{ fontSize: 11, color: "#747474", marginTop: 8 }}>
                   Inside: {currentFolder.name}
                 </p>
               )}
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
                 <button
                   onClick={() => setNewFolderOpen(false)}
-                  style={{ background: "#fff", border: "1px solid #d8dde6", padding: "6px 14px", borderRadius: 4, cursor: "pointer", fontSize: 13 }}
+                  style={{ background: "#fff", border: "1px solid #c9c9c9", padding: "6px 14px", borderRadius: 4, cursor: "pointer", fontSize: 13 }}
                 >
                   Cancel
                 </button>
@@ -375,7 +375,7 @@ function FolderTree({
             textAlign: "left",
             padding: "6px 8px",
             background: currentId === null ? "#eef2ff" : "transparent",
-            color: currentId === null ? "#3052ff" : "#3e3e3c",
+            color: currentId === null ? "#3052ff" : "#444444",
             border: 0,
             cursor: "pointer",
             borderRadius: 4,
@@ -396,7 +396,7 @@ function FolderTree({
               padding: "6px 8px",
               paddingLeft: 8 + level * 12,
               background: currentId === f.id ? "#eef2ff" : "transparent",
-              color: currentId === f.id ? "#3052ff" : "#3e3e3c",
+              color: currentId === f.id ? "#3052ff" : "#444444",
               border: 0,
               cursor: "pointer",
               borderRadius: 4,
@@ -423,7 +423,7 @@ function Breadcrumb({
 }) {
   if (!folder) {
     return (
-      <span style={{ fontSize: 13, color: "#080707", fontWeight: 600 }}>All Files</span>
+      <span style={{ fontSize: 13, color: "#181818", fontWeight: 600 }}>All Files</span>
     );
   }
   const map = new Map(allFolders.map((f) => [f.id, f]));
@@ -434,15 +434,15 @@ function Breadcrumb({
     cur = cur.parentId ? map.get(cur.parentId) : undefined;
   }
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#3e3e3c" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#444444" }}>
       <button onClick={() => onGo(null)} style={{ background: "transparent", border: 0, color: "#3052ff", cursor: "pointer", padding: 0, fontSize: 13 }}>
         All Files
       </button>
       {chain.map((c) => (
         <span key={c.id} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <span style={{ color: "#706e6b" }}>/</span>
+          <span style={{ color: "#747474" }}>/</span>
           {c.id === folder.id ? (
-            <span style={{ fontWeight: 600, color: "#080707" }}>{c.name}</span>
+            <span style={{ fontWeight: 600, color: "#181818" }}>{c.name}</span>
           ) : (
             <button onClick={() => onGo(c.id)} style={{ background: "transparent", border: 0, color: "#3052ff", cursor: "pointer", padding: 0, fontSize: 13 }}>
               {c.name}

@@ -110,7 +110,7 @@ export function PublicIntakeForm({ token, initial }: { token: string; initial: F
         style={{
           marginTop: 8,
           width: "100%",
-          background: "#0070d2",
+          background: "#0176d3",
           border: "none",
           padding: "12px",
           borderRadius: 4,
@@ -130,7 +130,7 @@ const lbl: React.CSSProperties = {
   display: "block",
   fontSize: 12,
   fontWeight: 600,
-  color: "#3e3e3c",
+  color: "#444444",
   margin: "12px 0 4px",
 };
 const inp: React.CSSProperties = {

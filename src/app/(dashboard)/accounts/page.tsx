@@ -275,7 +275,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
           <a
             key="phone"
             href={`tel:${a.phone}`}
-            style={{ color: "#1589ee", textDecoration: "none" }}
+            style={{ color: "#0176d3", textDecoration: "none" }}
           >
             {a.phone}
           </a>

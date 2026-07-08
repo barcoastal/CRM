@@ -94,7 +94,7 @@ export default async function ApprovalsLandingPage() {
           </div>
         </div>
         {pending.length === 0 ? (
-          <div className="px-5 py-10 text-center text-[13px] text-[#706e6b]">
+          <div className="px-5 py-10 text-center text-[13px] text-[#747474]">
             No requests waiting for your approval.
           </div>
         ) : (
@@ -118,7 +118,7 @@ export default async function ApprovalsLandingPage() {
                     <Link href={`/approvals/requests/${r.id}`} className="font-semibold text-[#3052ff]">
                       {r.process.name}
                     </Link>
-                    <div className="text-[12px] text-[#706e6b]">
+                    <div className="text-[12px] text-[#747474]">
                       Step: {r.currentStep?.name ?? "Unknown"}
                     </div>
                   </td>
@@ -158,7 +158,7 @@ export default async function ApprovalsLandingPage() {
           </div>
         </div>
         {submitted.length === 0 ? (
-          <div className="px-5 py-10 text-center text-[13px] text-[#706e6b]">
+          <div className="px-5 py-10 text-center text-[13px] text-[#747474]">
             You have not submitted any approval requests yet.
           </div>
         ) : (
@@ -182,7 +182,7 @@ export default async function ApprovalsLandingPage() {
                     <Link href={`/approvals/requests/${r.id}`} className="font-semibold text-[#3052ff]">
                       {r.process.name}
                     </Link>
-                    <div className="text-[12px] text-[#706e6b]">
+                    <div className="text-[12px] text-[#747474]">
                       {r.status === "PENDING" ? `Current step: ${r.currentStep?.name ?? "Unknown"}` : ""}
                     </div>
                   </td>

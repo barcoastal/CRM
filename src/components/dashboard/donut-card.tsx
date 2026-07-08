@@ -5,13 +5,13 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 // SF Manager Dashboard donut: counts by category with a legend below.
 // Colors mirror the SF chart palette (blue / dark blue / red / yellow / green).
 const DONUT_COLORS = [
-  "#1589ee",
-  "#0070d2",
-  "#16325c",
+  "#0176d3",
+  "#0176d3",
+  "#181818",
   "#c23934",
   "#ffb75d",
   "#04844b",
-  "#706e6b",
+  "#747474",
   "#5867e8",
   "#dd7a01",
   "#54698d",
@@ -43,7 +43,7 @@ export function DonutCard({
     <div
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         display: "flex",
         flexDirection: "column",
@@ -53,22 +53,22 @@ export function DonutCard({
       <header
         style={{
           padding: "8px 12px",
-          borderBottom: "1px solid #dddbda",
+          borderBottom: "1px solid #c9c9c9",
           background: "#fafaf9",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#080707" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#181818" }}>
           {title}
         </div>
         {subtitle ? (
-          <div style={{ fontSize: 11, color: "#706e6b" }}>{subtitle}</div>
+          <div style={{ fontSize: 11, color: "#747474" }}>{subtitle}</div>
         ) : null}
       </header>
       <div style={{ padding: 8, flex: 1, display: "flex", flexDirection: "column" }}>
-        <div style={{ textAlign: "center", fontSize: 11, color: "#706e6b", marginBottom: 2 }}>
+        <div style={{ textAlign: "center", fontSize: 11, color: "#747474", marginBottom: 2 }}>
           {metricLabel}
         </div>
         <div style={{ flex: 1, minHeight: 220 }}>
@@ -120,7 +120,7 @@ export function DonutCard({
           {data.slice(0, 8).map((entry, idx) => (
             <div
               key={entry.label}
-              style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#3e3e3c" }}
+              style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#444444" }}
             >
               <span
                 style={{
@@ -138,20 +138,20 @@ export function DonutCard({
       </div>
       <footer
         style={{
-          borderTop: "1px solid #dddbda",
+          borderTop: "1px solid #c9c9c9",
           padding: "6px 12px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           fontSize: 11,
-          color: "#706e6b",
+          color: "#747474",
           background: "#fafaf9",
         }}
       >
         {reportLink ? (
           <a
             href={reportLink}
-            style={{ color: "#0070d2", textDecoration: "none", fontWeight: 600 }}
+            style={{ color: "#0176d3", textDecoration: "none", fontWeight: 600 }}
           >
             View Report ({title})
           </a>

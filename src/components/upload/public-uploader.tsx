@@ -70,7 +70,7 @@ export function PublicUploader({ token }: { token: string }) {
           upload(e.dataTransfer.files);
         }}
         style={{
-          border: `2px dashed ${hover ? "#0070d2" : "#d8dde6"}`,
+          border: `2px dashed ${hover ? "#0176d3" : "#c9c9c9"}`,
           background: hover ? "#eef4fb" : "#fafaf9",
           padding: 36,
           borderRadius: 6,
@@ -88,7 +88,7 @@ export function PublicUploader({ token }: { token: string }) {
           onClick={() => ref.current?.click()}
           disabled={busy}
           style={{
-            background: "#0070d2",
+            background: "#0176d3",
             border: "none",
             padding: "10px 22px",
             borderRadius: 4,
@@ -101,7 +101,7 @@ export function PublicUploader({ token }: { token: string }) {
         >
           {busy ? "Uploading..." : "Choose files"}
         </button>
-        <div style={{ fontSize: 13, color: "#706e6b" }}>or drop them here (up to 25 MB each)</div>
+        <div style={{ fontSize: 13, color: "#747474" }}>or drop them here (up to 25 MB each)</div>
       </div>
 
       {doneCount > 0 && (
@@ -136,14 +136,14 @@ export function PublicUploader({ token }: { token: string }) {
                 fontSize: 13,
               }}
             >
-              <span style={{ color: "#080707", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span style={{ color: "#181818", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {r.name}
               </span>
               <span
                 style={{
                   flexShrink: 0,
                   color:
-                    r.status === "done" ? "#2e844a" : r.status === "error" ? "#c23934" : "#706e6b",
+                    r.status === "done" ? "#2e844a" : r.status === "error" ? "#c23934" : "#747474",
                   fontWeight: 600,
                 }}
               >

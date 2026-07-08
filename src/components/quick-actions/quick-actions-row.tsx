@@ -48,7 +48,7 @@ export function QuickActionsRow({ leadId, opportunityId, accountId, contactId, d
         onClick={() => setOpen((o) => !o)}
         style={caretBtn}
       >
-        <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#0070d2" }}>
+        <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#0176d3" }}>
           <path d="M6 9L1 4h10z" />
         </svg>
       </button>
@@ -77,7 +77,7 @@ export function QuickActionsRow({ leadId, opportunityId, accountId, contactId, d
 
 const caretBtn: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   height: 32,
   width: 32,
@@ -94,7 +94,7 @@ const menu: React.CSSProperties = {
   right: 0,
   minWidth: 240,
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
   zIndex: 100,
@@ -109,7 +109,7 @@ const menuItem: React.CSSProperties = {
   border: 0,
   padding: "8px 16px",
   fontSize: 13,
-  color: "#0070d2",
+  color: "#0176d3",
   cursor: "pointer",
   whiteSpace: "nowrap",
 };

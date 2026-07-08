@@ -120,7 +120,7 @@ function FilterDropdown({
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 180 }}>
-      <label style={{ fontSize: 11, color: "#3e3e3c", fontWeight: 600 }}>{label}</label>
+      <label style={{ fontSize: 11, color: "#444444", fontWeight: 600 }}>{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -130,7 +130,7 @@ function FilterDropdown({
           border: "1px solid #c9c9c9",
           borderRadius: 4,
           background: "#fff",
-          color: "#080707",
+          color: "#181818",
           height: 32,
         }}
       >
@@ -216,7 +216,7 @@ export function ManagerDashboard({ userName }: { userName: string }) {
       <header
         style={{
           background: "#fff",
-          border: "1px solid #dddbda",
+          border: "1px solid #c9c9c9",
           borderRadius: 4,
           padding: 12,
         }}
@@ -237,7 +237,7 @@ export function ManagerDashboard({ userName }: { userName: string }) {
                 width: 36,
                 height: 36,
                 borderRadius: 4,
-                background: "#1589ee",
+                background: "#0176d3",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -248,8 +248,8 @@ export function ManagerDashboard({ userName }: { userName: string }) {
               </svg>
             </span>
             <div>
-              <div style={{ fontSize: 11, color: "#706e6b" }}>Dashboard</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: "#080707" }}>
+              <div style={{ fontSize: 11, color: "#747474" }}>Dashboard</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "#181818" }}>
                 Manager Dashboard
               </div>
             </div>
@@ -260,7 +260,7 @@ export function ManagerDashboard({ userName }: { userName: string }) {
             </button>
           </div>
         </div>
-        <div style={{ fontSize: 12, color: "#706e6b", marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: "#747474", marginBottom: 12 }}>
           {data ? lastRefreshed : "Loading…"} Viewing as {userName}.
         </div>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -351,7 +351,7 @@ export function ManagerDashboard({ userName }: { userName: string }) {
             }}
           >
             <span>{t.subject}</span>
-            <span style={{ color: "#706e6b" }}>
+            <span style={{ color: "#747474" }}>
               {t.dueDate ? new Date(t.dueDate).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : ""}
             </span>
           </div>
@@ -373,7 +373,7 @@ export function ManagerDashboard({ userName }: { userName: string }) {
             }}
           >
             <span>{ev.subject}</span>
-            <span style={{ color: "#706e6b" }}>
+            <span style={{ color: "#747474" }}>
               {new Date(ev.startAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
             </span>
           </div>
@@ -403,9 +403,9 @@ export function ManagerDashboard({ userName }: { userName: string }) {
 function btnStyle(variant: "primary" | "ghost"): React.CSSProperties {
   if (variant === "primary") {
     return {
-      background: "#0070d2",
+      background: "#0176d3",
       color: "#fff",
-      border: "1px solid #0070d2",
+      border: "1px solid #0176d3",
       padding: "4px 12px",
       fontSize: 12,
       fontWeight: 600,
@@ -416,7 +416,7 @@ function btnStyle(variant: "primary" | "ghost"): React.CSSProperties {
   }
   return {
     background: "#fff",
-    color: "#0070d2",
+    color: "#0176d3",
     border: "1px solid #c9c9c9",
     padding: "4px 12px",
     fontSize: 12,
@@ -443,18 +443,18 @@ function TodayCard({
     <div
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
       }}
     >
       <header
         style={{
           padding: "8px 12px",
-          borderBottom: "1px solid #dddbda",
+          borderBottom: "1px solid #c9c9c9",
           background: "#fafaf9",
           fontSize: 14,
           fontWeight: 700,
-          color: "#080707",
+          color: "#181818",
         }}
       >
         {title}
@@ -466,7 +466,7 @@ function TodayCard({
           style={{
             padding: 24,
             textAlign: "center",
-            color: "#706e6b",
+            color: "#747474",
             fontSize: 12,
           }}
         >
@@ -475,17 +475,17 @@ function TodayCard({
       )}
       <footer
         style={{
-          borderTop: "1px solid #dddbda",
+          borderTop: "1px solid #c9c9c9",
           padding: "6px 12px",
           textAlign: "center",
           fontSize: 11,
-          color: "#0070d2",
+          color: "#0176d3",
           fontWeight: 600,
           background: "#fafaf9",
         }}
       >
         {viewAllHref ? (
-          <a href={viewAllHref} style={{ color: "#0070d2", textDecoration: "none" }}>
+          <a href={viewAllHref} style={{ color: "#0176d3", textDecoration: "none" }}>
             View Calendar
           </a>
         ) : (

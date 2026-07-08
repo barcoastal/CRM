@@ -52,7 +52,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const ownerDisplay = c.owner?.name ?? c.ownerGroup?.name ?? null;
   const escalatedDisplay = c.status === "ESCALATED" ? "Yes" : "No";
   const contactNode = c.contact?.fullName ? (
-    <Link key="ct" href={`/contacts/${c.contact.id}`} style={{ color: "#1589ee" }}>{c.contact.fullName}</Link>
+    <Link key="ct" href={`/contacts/${c.contact.id}`} style={{ color: "#0176d3" }}>{c.contact.fullName}</Link>
   ) : null;
 
   return (
@@ -68,7 +68,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         </>
       }
       highlights={[
-        { label: "Account", value: c.account?.name && <Link href={`/accounts/${c.account.id}`} style={{ color: "#1589ee" }}>{c.account.name}</Link> },
+        { label: "Account", value: c.account?.name && <Link href={`/accounts/${c.account.id}`} style={{ color: "#0176d3" }}>{c.account.name}</Link> },
         { label: "Contact", value: c.contact?.fullName },
         { label: "Owner", value: ownerDisplay ?? "(unassigned)" },
         { label: "Level", value: c.escalationLevel },
@@ -194,18 +194,18 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
 
           <Section title={`Case Comments (${c.comments.length})`}>
             {c.comments.length === 0 ? (
-              <div style={{ fontSize: 13, color: "#706e6b" }}>No comments yet.</div>
+              <div style={{ fontSize: 13, color: "#747474" }}>No comments yet.</div>
             ) : (
               <ul>
                 {c.comments.map((cm) => (
                   <li key={cm.id} style={{ padding: "10px 0", borderBottom: "1px solid #f3f3f3" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                       <span style={{ fontWeight: 600, fontSize: 12 }}>{cm.author?.name ?? "(system)"}</span>
-                      <span style={{ fontSize: 11, color: "#706e6b" }}>{cm.createdAt.toLocaleString()}</span>
+                      <span style={{ fontSize: 11, color: "#747474" }}>{cm.createdAt.toLocaleString()}</span>
                     </div>
                     <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>{cm.body}</div>
                     {!cm.isInternal && (
-                      <span style={{ fontSize: 11, color: "#0070d2" }}>Customer-visible</span>
+                      <span style={{ fontSize: 11, color: "#0176d3" }}>Customer-visible</span>
                     )}
                   </li>
                 ))}
@@ -219,10 +219,10 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           <Section title="Related">
             <FieldGrid
               fields={[
-                ["Account", c.account?.name ? <Link key="a" href={`/accounts/${c.account.id}`} style={{ color: "#1589ee" }}>{c.account.name}</Link> : null],
+                ["Account", c.account?.name ? <Link key="a" href={`/accounts/${c.account.id}`} style={{ color: "#0176d3" }}>{c.account.name}</Link> : null],
                 ["Contact", c.contact?.fullName ?? null],
-                ["Program Plan", c.programPlan ? <Link key="pp" href={`/program-plans/${c.programPlan.id}`} style={{ color: "#1589ee" }}>{c.programPlan.recordType.replace(/_/g, " ")}</Link> : null],
-                ["Draft", c.draft ? <Link key="d" href={`/drafts/${c.draft.id}`} style={{ color: "#1589ee" }}>${c.draft.amount.toLocaleString()} {c.draft.scheduledDate.toLocaleDateString()}</Link> : null],
+                ["Program Plan", c.programPlan ? <Link key="pp" href={`/program-plans/${c.programPlan.id}`} style={{ color: "#0176d3" }}>{c.programPlan.recordType.replace(/_/g, " ")}</Link> : null],
+                ["Draft", c.draft ? <Link key="d" href={`/drafts/${c.draft.id}`} style={{ color: "#0176d3" }}>${c.draft.amount.toLocaleString()} {c.draft.scheduledDate.toLocaleDateString()}</Link> : null],
                 ["Created By", c.createdBy?.name ?? null],
               ]}
             />

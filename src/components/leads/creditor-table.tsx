@@ -20,7 +20,7 @@ function money(n: number | null): string {
 
 export function CreditorTable({ rows }: { rows: CreditorRow[] }) {
   if (rows.length === 0) {
-    return <div className="text-[13px] text-[#706e6b]">No creditors on this lead.</div>;
+    return <div className="text-[13px] text-[#747474]">No creditors on this lead.</div>;
   }
 
   const totalDebt = rows.reduce((s, r) => s + (r.debt ?? 0), 0);
@@ -30,22 +30,22 @@ export function CreditorTable({ rows }: { rows: CreditorRow[] }) {
     <div>
       <div className="flex flex-wrap gap-6 mb-3">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#706e6b]">Total Debt</div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#747474]">Total Debt</div>
           <div className="text-[15px] font-bold text-[#131b2e]">{money(totalDebt)}</div>
         </div>
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#706e6b]">Total Weekly Payment</div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#747474]">Total Weekly Payment</div>
           <div className="text-[15px] font-bold text-[#131b2e]">{money(totalPayment)}</div>
         </div>
       </div>
 
-      <table className="w-full border-collapse border border-[#d8dde6]">
+      <table className="w-full border-collapse border border-[#c9c9c9]">
         <thead>
-          <tr className="bg-[#fafaf9] border-b border-[#d8dde6]">
+          <tr className="bg-[#fafaf9] border-b border-[#c9c9c9]">
             {["Creditor", "Debt Amount", "Payment", "Frequency"].map((h) => (
               <th
                 key={h}
-                className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-[0.3px] text-[#3e3e3c]"
+                className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-[0.3px] text-[#444444]"
               >
                 {h}
               </th>
@@ -55,15 +55,15 @@ export function CreditorTable({ rows }: { rows: CreditorRow[] }) {
         <tbody>
           {rows.map((r, i) => (
             <tr key={i} className="border-b border-[#f3f3f3]">
-              <td className="px-3 py-2 text-[13px] text-[#080707]">{r.name}</td>
-              <td className="px-3 py-2 text-[13px] text-[#080707]">{money(r.debt)}</td>
-              <td className="px-3 py-2 text-[13px] text-[#080707]">{money(r.payment)}</td>
-              <td className="px-3 py-2 text-[13px] text-[#080707]">{r.frequency || "—"}</td>
+              <td className="px-3 py-2 text-[13px] text-[#181818]">{r.name}</td>
+              <td className="px-3 py-2 text-[13px] text-[#181818]">{money(r.debt)}</td>
+              <td className="px-3 py-2 text-[13px] text-[#181818]">{money(r.payment)}</td>
+              <td className="px-3 py-2 text-[13px] text-[#181818]">{r.frequency || "—"}</td>
             </tr>
           ))}
         </tbody>
         <tfoot>
-          <tr className="bg-[#fafaf9] border-t border-[#d8dde6]">
+          <tr className="bg-[#fafaf9] border-t border-[#c9c9c9]">
             <td className="px-3 py-2 text-[13px] font-bold text-[#131b2e]">Total</td>
             <td className="px-3 py-2 text-[13px] font-bold text-[#131b2e]">{money(totalDebt)}</td>
             <td className="px-3 py-2 text-[13px] font-bold text-[#131b2e]">{money(totalPayment)}</td>

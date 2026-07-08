@@ -44,7 +44,7 @@ export default function ContractTemplatesPage() {
   return (
     <div style={{ padding: 24, maxWidth: 760 }}>
       <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Contract Templates</h1>
-      <p style={{ color: "#706e6b", fontSize: 13, marginBottom: 16 }}>
+      <p style={{ color: "#747474", fontSize: 13, marginBottom: 16 }}>
         Upload each agreement as a Word <code>.docx</code> using <code>{"{{ClientName}}"}</code> tokens and{" "}
         <code>{"{{#Schedule}}…{{/Schedule}}"}</code> / <code>{"{{#Creditors}}…{{/Creditors}}"}</code> loops. Coastal is
         always included; the processor and legal plan are chosen per deal.
@@ -61,7 +61,7 @@ export default function ContractTemplatesPage() {
               alignItems: "center",
               justifyContent: "space-between",
               gap: 12,
-              border: "1px solid #d8dde6",
+              border: "1px solid #c9c9c9",
               borderRadius: 6,
               padding: "12px 16px",
               background: r.originalName ? "#f3faf5" : "#fff",
@@ -69,7 +69,7 @@ export default function ContractTemplatesPage() {
           >
             <div>
               <div style={{ fontSize: 14, fontWeight: 600 }}>{r.label}</div>
-              <div style={{ fontSize: 12, color: "#706e6b", marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: "#747474", marginTop: 2 }}>
                 {r.originalName ? (
                   <>
                     ✓ {r.originalName}
@@ -90,7 +90,7 @@ export default function ContractTemplatesPage() {
                 style={{
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "#0070d2",
+                  color: "#0176d3",
                   cursor: busy === r.category ? "wait" : "pointer",
                 }}
               >

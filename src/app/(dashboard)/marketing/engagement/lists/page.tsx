@@ -49,7 +49,7 @@ export default async function LeadListsPage() {
           style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
         >
           <div className="mt-3 text-[15px] font-bold text-[#131b2e]">No lists yet</div>
-          <p className="text-[13px] text-[#706e6b] mt-1 max-w-md mx-auto">
+          <p className="text-[13px] text-[#747474] mt-1 max-w-md mx-auto">
             Create lists to group leads (e.g. "Hot Leads", "Trial Sign-ups") for use as Mass
             Email audiences or sequence add/remove targets.
           </p>
@@ -77,7 +77,7 @@ export default async function LeadListsPage() {
                       {l.name}
                     </Link>
                     {l.description ? (
-                      <div className="text-[12px] text-[#706e6b] truncate max-w-md">{l.description}</div>
+                      <div className="text-[12px] text-[#747474] truncate max-w-md">{l.description}</div>
                     ) : null}
                   </td>
                   <td className="px-4 py-3">
@@ -92,7 +92,7 @@ export default async function LeadListsPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-[#444656]">{l._count.members}</td>
-                  <td className="px-4 py-3 text-[#706e6b]">{l.createdBy?.name ?? "System"}</td>
+                  <td className="px-4 py-3 text-[#747474]">{l.createdBy?.name ?? "System"}</td>
                   <td className="px-4 py-3 text-right">
                     <Link
                       href={`/marketing/engagement/lists/${l.id}`}

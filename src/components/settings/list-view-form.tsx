@@ -121,15 +121,15 @@ export function ListViewForm({ entity, returnTo }: { entity: string; returnTo?: 
   return (
     <form onSubmit={submit}>
       <header style={{
-        background: "#fff", padding: "12px 20px", border: "1px solid #d8dde6",
+        background: "#fff", padding: "12px 20px", border: "1px solid #c9c9c9",
         borderRadius: 4, marginBottom: 12,
         display: "flex", alignItems: "center", gap: 12,
       }}>
         <div style={{ flex: 1 }}>
-          <Link href={returnTo ?? `/${entity.toLowerCase()}s`} style={{ fontSize: 12, color: "#1589ee", textDecoration: "none" }}>
+          <Link href={returnTo ?? `/${entity.toLowerCase()}s`} style={{ fontSize: 12, color: "#0176d3", textDecoration: "none" }}>
             ← Back
           </Link>
-          <h1 style={{ fontSize: 18, fontWeight: 700, margin: "4px 0 0", color: "#080707" }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, margin: "4px 0 0", color: "#181818" }}>
             New {entity} List View
           </h1>
         </div>
@@ -200,7 +200,7 @@ export function ListViewForm({ entity, returnTo }: { entity: string; returnTo?: 
                 placeholder={row.op === "IN" || row.op === "NOT_IN" ? "value1,value2,value3" : "value"}
               />
             ) : (
-              <span style={{ color: "#706e6b", fontSize: 12 }}>(no value needed)</span>
+              <span style={{ color: "#747474", fontSize: 12 }}>(no value needed)</span>
             )}
             <button type="button" onClick={() => removeRow(i)} className="slds-button slds-button_neutral">
               ×
@@ -217,5 +217,5 @@ export function ListViewForm({ entity, returnTo }: { entity: string; returnTo?: 
 
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "6px 10px",
-  border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, background: "#fff",
+  border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13, background: "#fff",
 };

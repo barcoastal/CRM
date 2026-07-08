@@ -543,7 +543,7 @@ const dropZone: React.CSSProperties = {
 };
 const fieldChip: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 6,
   padding: "8px 10px",
   fontFamily: "Manrope, system-ui, sans-serif",
@@ -576,7 +576,7 @@ const fieldLbl: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "8px 10px",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 6,
   fontSize: 13,
   fontFamily: "Manrope, system-ui, sans-serif",
@@ -602,7 +602,7 @@ const primaryBtn: React.CSSProperties = {
 };
 const iconBtn: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   padding: "2px 6px",
   fontSize: 11,
@@ -612,7 +612,7 @@ const iconBtn: React.CSSProperties = {
 };
 const toggleBtn: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   padding: "2px 8px",
   fontSize: 11,

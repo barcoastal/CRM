@@ -78,11 +78,11 @@ export function FlowRunsList({ flowId }: { flowId: string }) {
     return <div className="text-[11px] text-[#9d1414]">{error}</div>;
   }
   if (runs === null) {
-    return <div className="text-[11px] text-[#706e6b]">Loading runs...</div>;
+    return <div className="text-[11px] text-[#747474]">Loading runs...</div>;
   }
   if (runs.length === 0) {
     return (
-      <div className="text-[11px] text-[#706e6b]">
+      <div className="text-[11px] text-[#747474]">
         No runs yet. The flow will produce a run when a matching record fires its trigger event.
       </div>
     );
@@ -110,7 +110,7 @@ export function FlowRunsList({ flowId }: { flowId: string }) {
                 {statusPill(r.status)}
                 <span className="text-[11px] text-[#444656]">{r.entityType} {r.entityId.slice(0, 8)}</span>
               </div>
-              <div className="text-[10px] text-[#706e6b]">{formatRelative(r.startedAt)}</div>
+              <div className="text-[10px] text-[#747474]">{formatRelative(r.startedAt)}</div>
             </button>
             {isOpen ? (
               <div className="px-2 py-1.5 border-t border-[#f2f3ff] bg-[#fafaff] space-y-1.5">
@@ -118,7 +118,7 @@ export function FlowRunsList({ flowId }: { flowId: string }) {
                   <div className="text-[10px] text-[#9d1414] font-semibold">Error: {r.errorMessage}</div>
                 ) : null}
                 {trace.length === 0 ? (
-                  <div className="text-[10px] text-[#706e6b]">No steps recorded.</div>
+                  <div className="text-[10px] text-[#747474]">No steps recorded.</div>
                 ) : (
                   trace.map((step, i) => (
                     <div key={i} className="flex items-start gap-1.5 text-[10px]">
@@ -132,7 +132,7 @@ export function FlowRunsList({ flowId }: { flowId: string }) {
                               ? "#9d1414"
                               : step.status === "waited"
                               ? "#0b5cad"
-                              : "#706e6b",
+                              : "#747474",
                         }}
                       />
                       <div className="flex-1">

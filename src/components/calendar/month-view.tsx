@@ -51,7 +51,7 @@ export function MonthView({ anchorISO, events }: Props) {
             }}>
               <div style={{
                 ...dateNum,
-                color: isToday ? "#0b5394" : (inMonth ? "#080707" : "#706e6b"),
+                color: isToday ? "#0b5394" : (inMonth ? "#181818" : "#747474"),
                 fontWeight: isToday ? 700 : 500,
               }}>
                 {d.getDate()}
@@ -108,7 +108,7 @@ const headCell: React.CSSProperties = {
   padding: "8px 10px",
   fontSize: 11,
   fontWeight: 700,
-  color: "#706e6b",
+  color: "#747474",
   textTransform: "uppercase",
   letterSpacing: 0.4,
   textAlign: "left",
@@ -158,4 +158,4 @@ const ownerDot: React.CSSProperties = {
   fontWeight: 700,
   flexShrink: 0,
 };
-const moreNote: React.CSSProperties = { fontSize: 11, color: "#706e6b", padding: "0 6px" };
+const moreNote: React.CSSProperties = { fontSize: 11, color: "#747474", padding: "0 6px" };

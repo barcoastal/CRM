@@ -67,7 +67,7 @@ export default async function OfferDetailPage({ params }: { params: Promise<{ id
             />
             {o.termsNotes && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 11, color: "#706e6b", marginBottom: 4 }}>Terms / Notes</div>
+                <div style={{ fontSize: 11, color: "#747474", marginBottom: 4 }}>Terms / Notes</div>
                 <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>{o.termsNotes}</div>
               </div>
             )}
@@ -76,10 +76,10 @@ export default async function OfferDetailPage({ params }: { params: Promise<{ id
           <Section title="Related">
             <FieldGrid
               fields={[
-                ["Creditor", o.debt.creditor?.account?.name && <Link key="c" href={`/accounts/${o.debt.creditor.account.id}`} style={{ color: "#1589ee" }}>{o.debt.creditor.account.name}</Link>],
+                ["Creditor", o.debt.creditor?.account?.name && <Link key="c" href={`/accounts/${o.debt.creditor.account.id}`} style={{ color: "#0176d3" }}>{o.debt.creditor.account.name}</Link>],
                 ["Debt — Original Balance", `$${o.debt.originalBalance.toLocaleString()}`],
-                ["Opportunity", o.debt.opportunity && <Link key="op" href={`/opportunities/${o.debt.opportunity.id}`} style={{ color: "#1589ee" }}>{o.debt.opportunity.account?.name ?? o.debt.opportunity.id}</Link>],
-                ["Settlement", o.settlement && <Link key="st" href={`/settlements/${o.settlement.id}`} style={{ color: "#1589ee" }}>${o.settlement.settledAmount.toLocaleString()} ({o.settlement.status})</Link>],
+                ["Opportunity", o.debt.opportunity && <Link key="op" href={`/opportunities/${o.debt.opportunity.id}`} style={{ color: "#0176d3" }}>{o.debt.opportunity.account?.name ?? o.debt.opportunity.id}</Link>],
+                ["Settlement", o.settlement && <Link key="st" href={`/settlements/${o.settlement.id}`} style={{ color: "#0176d3" }}>${o.settlement.settledAmount.toLocaleString()} ({o.settlement.status})</Link>],
               ]}
             />
           </Section>
@@ -89,7 +89,7 @@ export default async function OfferDetailPage({ params }: { params: Promise<{ id
               {o.negotiations.map((n) => (
                 <div key={n.id} style={{ fontSize: 13, padding: "8px 0", borderBottom: "1px solid #f3f3f3" }}>
                   <strong>{n.type}</strong> by {n.negotiator.name} on {n.date.toLocaleDateString()} — {n.response}
-                  {n.notes && <div style={{ color: "#706e6b", marginTop: 4 }}>{n.notes}</div>}
+                  {n.notes && <div style={{ color: "#747474", marginTop: 4 }}>{n.notes}</div>}
                 </div>
               ))}
             </Section>

@@ -35,8 +35,8 @@ export default async function ChatterGroupsPage() {
     <div style={{ padding: "20px 24px", maxWidth: 1080, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#080707", margin: 0 }}>Chatter Groups</h1>
-          <div style={{ fontSize: 12, color: "#706e6b", marginTop: 4 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#181818", margin: 0 }}>Chatter Groups</h1>
+          <div style={{ fontSize: 12, color: "#747474", marginTop: 4 }}>
             Find your team or start a new conversation
           </div>
         </div>
@@ -89,7 +89,7 @@ function GroupCard({ g }: { g: GroupRow }) {
         flexDirection: "column",
         gap: 8,
         padding: 16,
-        border: "1px solid #d8dde6",
+        border: "1px solid #c9c9c9",
         borderRadius: 6,
         background: "#fff",
         textDecoration: "none",
@@ -98,25 +98,25 @@ function GroupCard({ g }: { g: GroupRow }) {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{
-          width: 40, height: 40, borderRadius: 6, background: "#16325c",
+          width: 40, height: 40, borderRadius: 6, background: "#181818",
           color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center",
           fontSize: 13, fontWeight: 700, flexShrink: 0,
         }}>
           {initials || "G"}
         </span>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#080707", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#181818", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {g.name}
           </div>
-          <div style={{ fontSize: 11, color: "#706e6b", marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: "#747474", marginTop: 2 }}>
             {g.visibility === "private" ? "Private group" : "Public group"}
           </div>
         </div>
       </div>
       {g.description && (
-        <div style={{ fontSize: 12, color: "#3e3e3c", lineHeight: 1.4 }}>{g.description}</div>
+        <div style={{ fontSize: 12, color: "#444444", lineHeight: 1.4 }}>{g.description}</div>
       )}
-      <div style={{ display: "flex", gap: 12, fontSize: 11, color: "#706e6b", marginTop: "auto", paddingTop: 6 }}>
+      <div style={{ display: "flex", gap: 12, fontSize: 11, color: "#747474", marginTop: "auto", paddingTop: 6 }}>
         <span>{g._count.members} members</span>
         <span>{g._count.posts} posts</span>
       </div>
@@ -127,7 +127,7 @@ function GroupCard({ g }: { g: GroupRow }) {
 const sectionH: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 700,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.4,
   marginTop: 0,
@@ -142,17 +142,17 @@ const gridStyle: React.CSSProperties = {
 
 const emptyBox: React.CSSProperties = {
   padding: 18,
-  border: "1px dashed #d8dde6",
+  border: "1px dashed #c9c9c9",
   borderRadius: 6,
-  color: "#706e6b",
+  color: "#747474",
   fontSize: 13,
 };
 
 const btnPrimary: React.CSSProperties = {
   padding: "6px 14px",
-  background: "#0070d2",
+  background: "#0176d3",
   color: "#fff",
-  border: "1px solid #0070d2",
+  border: "1px solid #0176d3",
   borderRadius: 4,
   fontSize: 13,
   fontWeight: 500,

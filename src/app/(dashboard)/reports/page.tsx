@@ -97,7 +97,7 @@ export default async function ReportsPage() {
                     <div className="text-[14px] font-bold text-[#131b2e]">
                       {meta?.pluralLabel ?? objectType}
                     </div>
-                    <div className="text-[12px] text-[#706e6b]">
+                    <div className="text-[12px] text-[#747474]">
                       {list.length} report{list.length === 1 ? "" : "s"}
                     </div>
                   </div>
@@ -126,7 +126,7 @@ export default async function ReportsPage() {
                             {r.name}
                           </Link>
                           {r.description && (
-                            <div className="text-[12px] text-[#706e6b]">{r.description}</div>
+                            <div className="text-[12px] text-[#747474]">{r.description}</div>
                           )}
                         </td>
                         <td className="px-4 py-3 text-[#444656]">

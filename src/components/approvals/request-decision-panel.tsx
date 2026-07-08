@@ -51,7 +51,7 @@ export function RequestDecisionPanel({
         style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
       >
         <div className="text-[14px] font-bold text-[#131b2e]">Decision</div>
-        <div className="text-[12px] text-[#706e6b] mt-1">
+        <div className="text-[12px] text-[#747474] mt-1">
           This request is {status.toLowerCase()}. No further action is possible.
         </div>
       </div>
@@ -65,7 +65,7 @@ export function RequestDecisionPanel({
         style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
       >
         <div className="text-[14px] font-bold text-[#131b2e]">Decision</div>
-        <div className="text-[12px] text-[#706e6b] mt-1">
+        <div className="text-[12px] text-[#747474] mt-1">
           You are not an approver for the current step.
         </div>
       </div>
@@ -83,7 +83,7 @@ export function RequestDecisionPanel({
         onChange={(e) => setComments(e.target.value)}
         rows={3}
         placeholder="Comments (required for reject)"
-        className="w-full px-3 py-2 border border-[#d8dde6] rounded text-[13px] outline-none focus:border-[#3052ff] resize-y"
+        className="w-full px-3 py-2 border border-[#c9c9c9] rounded text-[13px] outline-none focus:border-[#3052ff] resize-y"
       />
       {error && (
         <div className="text-[12px] text-[#9d1414] bg-[#fde2e2] px-3 py-2 rounded">{error}</div>

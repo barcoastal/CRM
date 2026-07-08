@@ -28,7 +28,7 @@ export function OppReportsCard({ opportunityId }: { opportunityId: string }) {
     <article
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         marginBottom: 12,
         boxShadow: "0 2px 2px 0 rgba(0,0,0,0.05)",
@@ -44,10 +44,10 @@ export function OppReportsCard({ opportunityId }: { opportunityId: string }) {
           borderBottom: "1px solid #ecebea",
         }}
       >
-        <svg width="10" height="10" viewBox="0 0 10 10" style={{ fill: "#706e6b", transform: "rotate(90deg)" }}>
+        <svg width="10" height="10" viewBox="0 0 10 10" style={{ fill: "#747474", transform: "rotate(90deg)" }}>
           <path d="M2 0l6 5-6 5z" />
         </svg>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
           Reports
         </h3>
       </header>
@@ -64,8 +64,8 @@ export function OppReportsCard({ opportunityId }: { opportunityId: string }) {
               fontSize: 12,
             }}
           >
-            <span style={{ color: "#080707" }}>{r.label}</span>
-            <Link href={r.href} style={{ color: "#0070d2", fontSize: 12 }}>
+            <span style={{ color: "#181818" }}>{r.label}</span>
+            <Link href={r.href} style={{ color: "#0176d3", fontSize: 12 }}>
               View Report
             </Link>
           </li>

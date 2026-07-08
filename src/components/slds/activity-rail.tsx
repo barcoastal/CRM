@@ -52,7 +52,7 @@ export function ActivityRail({ items }: { items: readonly ActivityItem[] }) {
     <article
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
       }}
     >
@@ -62,7 +62,7 @@ export function ActivityRail({ items }: { items: readonly ActivityItem[] }) {
           display: "flex",
           alignItems: "center",
           padding: "6px 12px",
-          borderBottom: "1px solid #dddbda",
+          borderBottom: "1px solid #c9c9c9",
           gap: 4,
           background: "#fff",
         }}
@@ -76,11 +76,11 @@ export function ActivityRail({ items }: { items: readonly ActivityItem[] }) {
               title={c.label}
               style={{
                 background: active ? "#eaf5fe" : "transparent",
-                border: active ? "1px solid #1589ee" : "1px solid transparent",
+                border: active ? "1px solid #0176d3" : "1px solid transparent",
                 padding: "4px 8px",
                 fontSize: 12,
                 fontWeight: 400,
-                color: active ? "#0176d3" : "#3e3e3c",
+                color: active ? "#0176d3" : "#444444",
                 borderRadius: 4,
                 cursor: "pointer",
                 display: "inline-flex",
@@ -103,7 +103,7 @@ export function ActivityRail({ items }: { items: readonly ActivityItem[] }) {
         style={{
           padding: "10px 12px",
           fontSize: 12,
-          color: "#706e6b",
+          color: "#747474",
           borderBottom: "1px solid #ecebea",
         }}
       >
@@ -125,15 +125,15 @@ export function ActivityRail({ items }: { items: readonly ActivityItem[] }) {
           background: "#fafaf9",
         }}
       >
-        <label style={{ display: "inline-flex", alignItems: "center", fontSize: 11, color: "#3e3e3c", gap: 6, cursor: "pointer" }}>
+        <label style={{ display: "inline-flex", alignItems: "center", fontSize: 11, color: "#444444", gap: 6, cursor: "pointer" }}>
           <input type="checkbox" style={{ margin: 0 }} />
           Only show activities with insights
         </label>
         <span style={{ marginLeft: "auto", display: "inline-flex", gap: 8, fontSize: 11, color: "#0176d3" }}>
           <button style={{ background: "transparent", border: 0, color: "#0176d3", cursor: "pointer", padding: 0, fontSize: 11 }}>Refresh</button>
-          <span style={{ color: "#dddbda" }}>·</span>
+          <span style={{ color: "#c9c9c9" }}>·</span>
           <button style={{ background: "transparent", border: 0, color: "#0176d3", cursor: "pointer", padding: 0, fontSize: 11 }}>Expand All</button>
-          <span style={{ color: "#dddbda" }}>·</span>
+          <span style={{ color: "#c9c9c9" }}>·</span>
           <button style={{ background: "transparent", border: 0, color: "#0176d3", cursor: "pointer", padding: 0, fontSize: 11 }}>View All</button>
         </span>
       </div>
@@ -141,7 +141,7 @@ export function ActivityRail({ items }: { items: readonly ActivityItem[] }) {
       {/* Upcoming & Overdue */}
       <Section title={`Upcoming & Overdue`}>
         {upcoming.length === 0 && (
-          <div style={{ padding: 16, color: "#706e6b", fontSize: 12 }}>
+          <div style={{ padding: 16, color: "#747474", fontSize: 12 }}>
             No activities to show. Get started by sending an email, logging a call, or scheduling a task.
           </div>
         )}
@@ -189,14 +189,14 @@ function Section({ title, sub, children }: { title: string; sub?: string; childr
           style={{
             transform: open ? "rotate(90deg)" : "rotate(0deg)",
             transition: "transform .15s",
-            fill: "#3e3e3c",
+            fill: "#444444",
           }}
         >
           <path d="M2 0l6 5-6 5z" />
         </svg>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#080707" }}>{title}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#181818" }}>{title}</span>
         {sub && (
-          <span style={{ marginLeft: "auto", fontSize: 11, color: "#706e6b" }}>{sub}</span>
+          <span style={{ marginLeft: "auto", fontSize: 11, color: "#747474" }}>{sub}</span>
         )}
       </button>
       {open && <div>{children}</div>}
@@ -219,12 +219,12 @@ function ActivityRow({ item }: { item: ActivityItem }) {
     >
       <ObjectIcon entity={entity} size="small" />
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 12, color: "#080707", fontWeight: 600 }}>{item.subject}</div>
+        <div style={{ fontSize: 12, color: "#181818", fontWeight: 600 }}>{item.subject}</div>
         {item.meta && (
-          <div style={{ fontSize: 11, color: "#706e6b", marginTop: 2 }}>{item.meta}</div>
+          <div style={{ fontSize: 11, color: "#747474", marginTop: 2 }}>{item.meta}</div>
         )}
       </div>
-      <div style={{ fontSize: 11, color: "#706e6b", whiteSpace: "nowrap" }}>
+      <div style={{ fontSize: 11, color: "#747474", whiteSpace: "nowrap" }}>
         {item.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
       </div>
     </div>

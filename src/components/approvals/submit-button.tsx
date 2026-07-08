@@ -21,8 +21,8 @@ interface PendingInfo {
 
 const btnBase: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
-  color: "#0070d2",
+  border: "1px solid #c9c9c9",
+  color: "#0176d3",
   padding: "4px 12px",
   borderRadius: 4,
   fontSize: 13,
@@ -178,7 +178,7 @@ export function SubmitButton({
                           display: "flex",
                           gap: 8,
                           padding: "10px 12px",
-                          border: pickedId === p.id ? "1px solid #3052ff" : "1px solid #d8dde6",
+                          border: pickedId === p.id ? "1px solid #3052ff" : "1px solid #c9c9c9",
                           borderRadius: 6,
                           cursor: "pointer",
                           background: pickedId === p.id ? "#f2f3ff" : "#fff",
@@ -193,9 +193,9 @@ export function SubmitButton({
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: "#131b2e" }}>{p.name}</div>
                           {p.description && (
-                            <div style={{ fontSize: 12, color: "#706e6b" }}>{p.description}</div>
+                            <div style={{ fontSize: 12, color: "#747474" }}>{p.description}</div>
                           )}
-                          <div style={{ fontSize: 11, color: "#706e6b", marginTop: 2 }}>
+                          <div style={{ fontSize: 11, color: "#747474", marginTop: 2 }}>
                             {p.stepCount} step{p.stepCount === 1 ? "" : "s"}
                           </div>
                         </div>
@@ -223,7 +223,7 @@ export function SubmitButton({
                   rows={3}
                   style={{
                     width: "100%",
-                    border: "1px solid #d8dde6",
+                    border: "1px solid #c9c9c9",
                     borderRadius: 4,
                     padding: "8px 12px",
                     fontSize: 13,

@@ -148,22 +148,22 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
     <div style={{ display: "grid", gridTemplateColumns: "320px minmax(0, 1fr)", gap: 12, padding: 12 }}>
       {/* Lead context — slim left sidebar */}
       <div>
-        <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 16, minHeight: 600 }}>
+        <article style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, padding: 16, minHeight: 600 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <h2 style={{ fontSize: 14, fontWeight: 700, color: "#3e3e3c", margin: 0 }}>Lead Context</h2>
-            <Link href="/dialer/floor" style={{ color: "#0070d2", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: "#444444", margin: 0 }}>Lead Context</h2>
+            <Link href="/dialer/floor" style={{ color: "#0176d3", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
               Live floor ↗
             </Link>
           </div>
-          {loadingLead && <div style={{ color: "#706e6b" }}>Loading lead…</div>}
+          {loadingLead && <div style={{ color: "#747474" }}>Loading lead…</div>}
           {!loadingLead && !lead && !currentPhone && wrapped && (
             <div style={{ color: "#2e844a", padding: 24, textAlign: "center" }}>
               <div style={{ fontWeight: 700, marginBottom: 6 }}>Disposition saved ✓</div>
-              <div style={{ color: "#706e6b" }}>Waiting for the next call…</div>
+              <div style={{ color: "#747474" }}>Waiting for the next call…</div>
             </div>
           )}
           {!loadingLead && !lead && !currentPhone && !wrapped && (
-            <div style={{ color: "#706e6b", padding: 24, textAlign: "center" }}>
+            <div style={{ color: "#747474", padding: 24, textAlign: "center" }}>
               No active call. When Five9 connects a call, the matching lead loads here automatically.
             </div>
           )}
@@ -190,14 +190,14 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8 }}>
           <button
             onClick={openFive9Window}
-            style={{ background: "#0070d2", color: "#fff", border: 0, padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            style={{ background: "#0176d3", color: "#fff", border: 0, padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
           >
             Open Five9 in its own window
           </button>
           {poppedOut && (
             <button
               onClick={useEmbeddedFive9}
-              style={{ background: "#fff", color: "#0070d2", border: "1px solid #d8dde6", padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              style={{ background: "#fff", color: "#0176d3", border: "1px solid #c9c9c9", padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
             >
               Use embedded here
             </button>
@@ -206,19 +206,19 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
         {poppedOut ? (
           <div
             style={{
-              border: "1px solid #d8dde6", borderRadius: 4, background: "#fff",
+              border: "1px solid #c9c9c9", borderRadius: 4, background: "#fff",
               height: "calc(100vh - 170px)", minHeight: 560, display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24, gap: 12, color: "#3e3e3c",
+              alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24, gap: 12, color: "#444444",
             }}
           >
             <div style={{ fontWeight: 700, fontSize: 16 }}>Five9 is running in its own window</div>
-            <div style={{ fontSize: 13, color: "#706e6b", maxWidth: 420 }}>
+            <div style={{ fontSize: 13, color: "#747474", maxWidth: 420 }}>
               Keeping the dialer in its own window stops Five9 from logging you out when a call connects.
               The matching lead still loads here automatically while you talk.
             </div>
             <button
               onClick={openFive9Window}
-              style={{ background: "#0070d2", color: "#fff", border: 0, padding: "8px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              style={{ background: "#0176d3", color: "#fff", border: 0, padding: "8px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
             >
               Reopen the Five9 window
             </button>
@@ -228,7 +228,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
             src={FIVE9_AGENT_URL}
             title="Five9 Agent Desktop"
             allow="microphone; autoplay; clipboard-read; clipboard-write"
-            style={{ width: "100%", height: "calc(100vh - 170px)", minHeight: 600, border: "1px solid #d8dde6", borderRadius: 4, background: "#fff" }}
+            style={{ width: "100%", height: "calc(100vh - 170px)", minHeight: 600, border: "1px solid #c9c9c9", borderRadius: 4, background: "#fff" }}
           />
         )}
       </div>
@@ -294,12 +294,12 @@ function QuickCreateLead({ phone, onCreated }: { phone: string; onCreated: () =>
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "6px 8px",
-    border: "1px solid #d8dde6",
+    border: "1px solid #c9c9c9",
     borderRadius: 4,
     fontSize: 13,
     marginTop: 2,
   };
-  const labelStyle: React.CSSProperties = { fontSize: 11, color: "#706e6b", fontWeight: 600 };
+  const labelStyle: React.CSSProperties = { fontSize: 11, color: "#747474", fontWeight: 600 };
 
   return (
     <div>
@@ -342,7 +342,7 @@ function QuickCreateLead({ phone, onCreated }: { phone: string; onCreated: () =>
           type="submit"
           disabled={saving}
           style={{
-            background: saving ? "#9bb8e0" : "#0070d2",
+            background: saving ? "#9bb8e0" : "#0176d3",
             color: "#fff",
             padding: "8px 16px",
             borderRadius: 4,
@@ -433,19 +433,19 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
     }
   }
 
-  const inputStyle: React.CSSProperties = { width: "100%", padding: "6px 8px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, marginTop: 2 };
-  const labelStyle: React.CSSProperties = { fontSize: 11, color: "#706e6b", fontWeight: 600 };
+  const inputStyle: React.CSSProperties = { width: "100%", padding: "6px 8px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13, marginTop: 2 };
+  const labelStyle: React.CSSProperties = { fontSize: 11, color: "#747474", fontWeight: 600 };
 
   return (
     <div>
       <div style={{ marginBottom: 8 }}>
         <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{lead.contactName || "New lead"}</h3>
-        <div style={{ color: "#706e6b", fontSize: 12 }}>
+        <div style={{ color: "#747474", fontSize: 12 }}>
           {lead.phone} · {lead.status}
         </div>
       </div>
 
-      <div style={{ fontSize: 11, color: "#0070d2", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, margin: "8px 0 6px" }}>
+      <div style={{ fontSize: 11, color: "#0176d3", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, margin: "8px 0 6px" }}>
         Verify with caller
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -478,7 +478,7 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
             onClick={save}
             disabled={saving || !dirty}
             style={{
-              background: saving || !dirty ? "#9bb8e0" : "#0070d2",
+              background: saving || !dirty ? "#9bb8e0" : "#0176d3",
               color: "#fff",
               padding: "8px 16px",
               borderRadius: 4,
@@ -495,19 +495,19 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
             onClick={() => setDispOpen(true)}
             style={{
               background: "#fff",
-              color: "#0070d2",
+              color: "#0176d3",
               padding: "8px 16px",
               borderRadius: 4,
               fontSize: 13,
               fontWeight: 600,
-              border: "1px solid #0070d2",
+              border: "1px solid #0176d3",
               cursor: "pointer",
             }}
           >
             Disposition
           </button>
           {saved && !dirty && <span style={{ color: "#2e844a", fontSize: 12, fontWeight: 600 }}>Saved ✓</span>}
-          <Link href={`/leads/${lead.id}`} target="_blank" style={{ marginLeft: "auto", color: "#0070d2", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
+          <Link href={`/leads/${lead.id}`} target="_blank" style={{ marginLeft: "auto", color: "#0176d3", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
             Open full lead ↗
           </Link>
         </div>
@@ -568,8 +568,8 @@ function Grid({ cells }: { cells: [string, string][] }) {
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 24px", fontSize: 13 }}>
       {cells.map(([k, v]) => (
         <div key={k}>
-          <div style={{ color: "#706e6b", fontSize: 11, marginBottom: 2 }}>{k}</div>
-          <div style={{ color: "#080707", fontWeight: 600 }}>{v}</div>
+          <div style={{ color: "#747474", fontSize: 11, marginBottom: 2 }}>{k}</div>
+          <div style={{ color: "#181818", fontWeight: 600 }}>{v}</div>
         </div>
       ))}
     </div>

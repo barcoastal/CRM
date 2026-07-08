@@ -90,7 +90,7 @@ export function RichEditor({
         style={{
           minHeight,
           maxHeight,
-          border: "1px solid #d8dde6",
+          border: "1px solid #c9c9c9",
           borderRadius: 4,
           background: "#fafaf9",
         }}
@@ -99,7 +99,7 @@ export function RichEditor({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", border: "1px solid #d8dde6", borderRadius: 4 }}>
+    <div style={{ display: "flex", flexDirection: "column", border: "1px solid #c9c9c9", borderRadius: 4 }}>
       <Toolbar editor={editor} mergeFields={mergeFields} disabled={disabled} />
       <div
         style={{
@@ -110,7 +110,7 @@ export function RichEditor({
           background: "#fff",
           fontSize: 13,
           lineHeight: 1.55,
-          color: "#080707",
+          color: "#181818",
         }}
         onClick={() => editor.commands.focus()}
       >
@@ -129,7 +129,7 @@ export function RichEditor({
         .rich-editor-surface h3 {
           margin: 0.5em 0 0.4em 0;
           font-weight: 700;
-          color: #080707;
+          color: #181818;
         }
         .rich-editor-surface h1 {
           font-size: 20px;
@@ -146,7 +146,7 @@ export function RichEditor({
           margin: 0 0 0.7em 0;
         }
         .rich-editor-surface a {
-          color: #0070d2;
+          color: #0176d3;
           text-decoration: underline;
         }
         .rich-editor-surface p.is-editor-empty:first-child::before {
@@ -316,7 +316,7 @@ function Btn({
       style={{
         background: active ? "#dceaff" : "transparent",
         border: 0,
-        color: "#080707",
+        color: "#181818",
         fontSize: 12,
         cursor: disabled ? "not-allowed" : "pointer",
         height: 26,
@@ -333,7 +333,7 @@ function Btn({
 }
 
 function Sep() {
-  return <div style={{ width: 1, height: 18, background: "#d8dde6", margin: "0 4px", alignSelf: "center" }} />;
+  return <div style={{ width: 1, height: 18, background: "#c9c9c9", margin: "0 4px", alignSelf: "center" }} />;
 }
 
 interface MergeFieldPickerProps {
@@ -413,7 +413,7 @@ function MergeFieldPicker({ fields, onSelect, onClose }: MergeFieldPickerProps) 
         right: 8,
         marginTop: 4,
         background: "#fff",
-        border: "1px solid #d8dde6",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
         width: 280,
@@ -430,7 +430,7 @@ function MergeFieldPicker({ fields, onSelect, onClose }: MergeFieldPickerProps) 
           placeholder="Search merge fields"
           style={{
             width: "100%",
-            border: "1px solid #d8dde6",
+            border: "1px solid #c9c9c9",
             borderRadius: 3,
             padding: "4px 8px",
             fontSize: 12,
@@ -441,7 +441,7 @@ function MergeFieldPicker({ fields, onSelect, onClose }: MergeFieldPickerProps) 
       <div>
         {filteredFlat ? (
           filteredFlat.length === 0 ? (
-            <div style={{ padding: 12, fontSize: 12, color: "#706e6b" }}>No matches</div>
+            <div style={{ padding: 12, fontSize: 12, color: "#747474" }}>No matches</div>
           ) : (
             filteredFlat.map((f) => (
               <button
@@ -450,8 +450,8 @@ function MergeFieldPicker({ fields, onSelect, onClose }: MergeFieldPickerProps) 
                 onClick={() => onSelect(f.key)}
                 style={pickerItemStyle}
               >
-                <span style={{ fontSize: 12, color: "#080707" }}>{f.label}</span>
-                <span style={{ fontSize: 11, color: "#706e6b", fontFamily: "monospace" }}>{`{{${f.key}}}`}</span>
+                <span style={{ fontSize: 12, color: "#181818" }}>{f.label}</span>
+                <span style={{ fontSize: 11, color: "#747474", fontFamily: "monospace" }}>{`{{${f.key}}}`}</span>
               </button>
             ))
           )
@@ -465,7 +465,7 @@ function MergeFieldPicker({ fields, onSelect, onClose }: MergeFieldPickerProps) 
                   textTransform: "uppercase",
                   fontWeight: 700,
                   letterSpacing: 0.4,
-                  color: "#706e6b",
+                  color: "#747474",
                   background: "#fafaf9",
                   borderBottom: "1px solid #ecebea",
                 }}
@@ -474,8 +474,8 @@ function MergeFieldPicker({ fields, onSelect, onClose }: MergeFieldPickerProps) 
               </div>
               {g.items.map((f) => (
                 <button key={f.key} type="button" onClick={() => onSelect(f.key)} style={pickerItemStyle}>
-                  <span style={{ fontSize: 12, color: "#080707" }}>{f.label}</span>
-                  <span style={{ fontSize: 11, color: "#706e6b", fontFamily: "monospace" }}>{`{{${f.key}}}`}</span>
+                  <span style={{ fontSize: 12, color: "#181818" }}>{f.label}</span>
+                  <span style={{ fontSize: 11, color: "#747474", fontFamily: "monospace" }}>{`{{${f.key}}}`}</span>
                 </button>
               ))}
             </div>

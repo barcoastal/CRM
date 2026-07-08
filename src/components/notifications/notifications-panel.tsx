@@ -185,7 +185,7 @@ export function NotificationsPanel({ onClose, onCountChange }: NotificationsPane
       <div
         style={{
           padding: "10px 14px",
-          borderBottom: "1px solid #d8dde6",
+          borderBottom: "1px solid #c9c9c9",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -216,7 +216,7 @@ export function NotificationsPanel({ onClose, onCountChange }: NotificationsPane
           style={{
             background: "transparent",
             border: 0,
-            color: unreadCount === 0 ? "#a8a8a8" : "#0070d2",
+            color: unreadCount === 0 ? "#a8a8a8" : "#0176d3",
             cursor: unreadCount === 0 ? "default" : "pointer",
             fontSize: 11,
             fontWeight: 600,
@@ -229,9 +229,9 @@ export function NotificationsPanel({ onClose, onCountChange }: NotificationsPane
 
       <div style={{ overflowY: "auto", flex: 1 }}>
         {loading && items.length === 0 ? (
-          <div style={{ padding: 18, fontSize: 12, color: "#706e6b" }}>Loading…</div>
+          <div style={{ padding: 18, fontSize: 12, color: "#747474" }}>Loading…</div>
         ) : items.length === 0 ? (
-          <div style={{ padding: 22, fontSize: 12, color: "#706e6b", textAlign: "center" }}>
+          <div style={{ padding: 22, fontSize: 12, color: "#747474", textAlign: "center" }}>
             You&apos;re all caught up.
           </div>
         ) : (
@@ -360,7 +360,7 @@ export function NotificationsPanel({ onClose, onCountChange }: NotificationsPane
       <div
         style={{
           padding: "8px 14px",
-          borderTop: "1px solid #d8dde6",
+          borderTop: "1px solid #c9c9c9",
           fontSize: 12,
           textAlign: "center",
         }}
@@ -368,7 +368,7 @@ export function NotificationsPanel({ onClose, onCountChange }: NotificationsPane
         <Link
           href="/notifications"
           onClick={onClose}
-          style={{ color: "#0070d2", fontWeight: 600, textDecoration: "none" }}
+          style={{ color: "#0176d3", fontWeight: 600, textDecoration: "none" }}
         >
           See all notifications
         </Link>

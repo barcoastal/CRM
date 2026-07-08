@@ -163,7 +163,7 @@ export function InlineEditableField({
         gap: 8,
         padding: "6px 0",
         minHeight: 30,
-        borderBottom: "1px solid #dddbda",
+        borderBottom: "1px solid #c9c9c9",
         fontSize: 12.5,
         lineHeight: 1.35,
         position: "relative",
@@ -171,7 +171,7 @@ export function InlineEditableField({
     >
       <div
         style={{
-          color: "#3e3e3c",
+          color: "#444444",
           fontWeight: 700,
           fontSize: 11,
           lineHeight: 1.35,
@@ -235,7 +235,7 @@ export function InlineEditableField({
       ) : (
         <div
           style={{
-            color: "#080707",
+            color: "#181818",
             minWidth: 0,
             wordBreak: "break-word",
             lineHeight: 1.4,
@@ -269,7 +269,7 @@ export function InlineEditableField({
               title="Cancel"
               disabled={saving}
               onClick={cancel}
-              style={btnStyle("#706e6b")}
+              style={btnStyle("#747474")}
             >
               <svg width="10" height="10" viewBox="0 0 52 52" aria-hidden="true" style={{ fill: "#fff" }}>
                 <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#close" />

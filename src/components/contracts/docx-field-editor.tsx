@@ -140,10 +140,10 @@ export function DocxFieldEditor({ category, label }: { category: string; label: 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <div>
           <h1 style={{ fontSize: 18, fontWeight: 700 }}>Edit: {label}</h1>
-          <div style={{ fontSize: 12, color: "#706e6b" }}>{status}</div>
+          <div style={{ fontSize: 12, color: "#747474" }}>{status}</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <a href="/contracts/templates" style={{ fontSize: 13, color: "#0070d2", alignSelf: "center" }}>
+          <a href="/contracts/templates" style={{ fontSize: 13, color: "#0176d3", alignSelf: "center" }}>
             ← Templates
           </a>
           <button
@@ -172,7 +172,7 @@ export function DocxFieldEditor({ category, label }: { category: string; label: 
         </div>
 
         <aside style={{ width: 260, flexShrink: 0, border: "1px solid #e6e6e6", borderRadius: 6, padding: 12, maxHeight: 700, overflowY: "auto", position: "sticky", top: 12 }}>
-          <div style={{ fontSize: 11, color: "#706e6b", marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: "#747474", marginBottom: 10 }}>
             Click in the document, then click a field to drop it in. CRM fields auto-fill from the deal when you send.
           </div>
 
@@ -219,7 +219,7 @@ function PaletteGroup({
 }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#706e6b", marginBottom: 6 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#747474", marginBottom: 6 }}>
         {title}
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{children}</div>

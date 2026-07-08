@@ -134,17 +134,17 @@ export function AppLauncher({ open, onClose }: { open: boolean; onClose: () => v
             display: "flex",
             alignItems: "center",
             padding: "16px 20px",
-            borderBottom: "1px solid #d8dde6",
+            borderBottom: "1px solid #c9c9c9",
             gap: 12,
           }}
         >
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#080707", flex: 1, margin: 0 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#181818", flex: 1, margin: 0 }}>
             App Launcher
           </h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            style={{ background: "transparent", border: 0, fontSize: 20, cursor: "pointer", color: "#706e6b" }}
+            style={{ background: "transparent", border: 0, fontSize: 20, cursor: "pointer", color: "#747474" }}
           >
             ×
           </button>
@@ -160,7 +160,7 @@ export function AppLauncher({ open, onClose }: { open: boolean; onClose: () => v
             style={{
               width: "100%",
               padding: "8px 12px",
-              border: "1px solid #d8dde6",
+              border: "1px solid #c9c9c9",
               borderRadius: 4,
               fontSize: 13,
               outline: "none",
@@ -171,7 +171,7 @@ export function AppLauncher({ open, onClose }: { open: boolean; onClose: () => v
         {/* Apps */}
         {apps.length > 0 && (
           <section style={{ padding: 20 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 12 }}>
+            <h3 style={{ fontSize: 11, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 12 }}>
               All Apps
             </h3>
             <div
@@ -203,7 +203,7 @@ export function AppLauncher({ open, onClose }: { open: boolean; onClose: () => v
                     style={{
                       width: 40,
                       height: 40,
-                      background: "#16325c",
+                      background: "#181818",
                       borderRadius: 4,
                       display: "inline-flex",
                       alignItems: "center",
@@ -216,10 +216,10 @@ export function AppLauncher({ open, onClose }: { open: boolean; onClose: () => v
                     </span>
                   </span>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#080707", marginBottom: 2 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#181818", marginBottom: 2 }}>
                       {a.label}
                     </div>
-                    <div style={{ fontSize: 11, color: "#706e6b" }}>{a.description}</div>
+                    <div style={{ fontSize: 11, color: "#747474" }}>{a.description}</div>
                   </div>
                 </Link>
               ))}
@@ -230,7 +230,7 @@ export function AppLauncher({ open, onClose }: { open: boolean; onClose: () => v
         {/* Items */}
         {items.length > 0 && (
           <section style={{ padding: 20, borderTop: "1px solid #ecebea" }}>
-            <h3 style={{ fontSize: 11, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 12 }}>
+            <h3 style={{ fontSize: 11, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 12 }}>
               All Items
             </h3>
             <div
@@ -252,7 +252,7 @@ export function AppLauncher({ open, onClose }: { open: boolean; onClose: () => v
                     padding: "8px 10px",
                     borderRadius: 4,
                     textDecoration: "none",
-                    color: "#080707",
+                    color: "#181818",
                     fontSize: 13,
                   }}
                   className="sf-item-tile"
@@ -266,7 +266,7 @@ export function AppLauncher({ open, onClose }: { open: boolean; onClose: () => v
         )}
 
         {apps.length === 0 && items.length === 0 && (
-          <div style={{ padding: 40, textAlign: "center", color: "#706e6b" }}>
+          <div style={{ padding: 40, textAlign: "center", color: "#747474" }}>
             No apps or items match &quot;{query}&quot;.
           </div>
         )}

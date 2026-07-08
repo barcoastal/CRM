@@ -138,7 +138,7 @@ export function SfListSearch({
           left: 8,
           top: "50%",
           transform: "translateY(-50%)",
-          fill: "#706e6b",
+          fill: "#747474",
         }}
       >
         <path d="M11 4a7 7 0 1 0 4.193 12.572l3.118 3.118 1.414-1.414-3.118-3.118A7 7 0 0 0 11 4zm0 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" />
@@ -158,11 +158,11 @@ export function SfListSearch({
           width: "100%",
           padding: "4px 8px 4px 26px",
           fontSize: 13,
-          border: "1px solid #dddbda",
+          border: "1px solid #c9c9c9",
           borderRadius: 4,
           outline: "none",
           background: "#fff",
-          color: "#080707",
+          color: "#181818",
         }}
       />
     </div>
@@ -446,7 +446,7 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
           position: "sticky",
           top: 0,
           zIndex: 30,
-          background: "#0070d2",
+          background: "#0176d3",
           color: "#fff",
           padding: "8px 16px",
           display: "flex",
@@ -506,10 +506,10 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
           </>
         }
       >
-        <div style={{ fontSize: 13, color: "#3e3e3c", marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: "#444444", marginBottom: 12 }}>
           Reassign {count} selected record{count === 1 ? "" : "s"} to a different owner.
         </div>
-        <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#3e3e3c", marginBottom: 4 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#444444", marginBottom: 4 }}>
           New Owner
         </label>
         <select
@@ -519,7 +519,7 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
             width: "100%",
             padding: "6px 8px",
             fontSize: 13,
-            border: "1px solid #dddbda",
+            border: "1px solid #c9c9c9",
             borderRadius: 4,
             background: "#fff",
           }}
@@ -548,10 +548,10 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
           </>
         }
       >
-        <div style={{ fontSize: 13, color: "#3e3e3c", marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: "#444444", marginBottom: 12 }}>
           Update {count} selected record{count === 1 ? "" : "s"}.
         </div>
-        <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#3e3e3c", marginBottom: 4 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#444444", marginBottom: 4 }}>
           New {config.statusLabel ?? "Status"}
         </label>
         <select
@@ -561,7 +561,7 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
             width: "100%",
             padding: "6px 8px",
             fontSize: 13,
-            border: "1px solid #dddbda",
+            border: "1px solid #c9c9c9",
             borderRadius: 4,
             background: "#fff",
           }}
@@ -588,10 +588,10 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
           </>
         }
       >
-        <div style={{ fontSize: 13, color: "#3e3e3c", marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: "#444444", marginBottom: 12 }}>
           One email per recipient. Records without an email address are skipped.
         </div>
-        <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#3e3e3c", marginBottom: 4 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#444444", marginBottom: 4 }}>
           Subject
         </label>
         <input
@@ -601,12 +601,12 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
             width: "100%",
             padding: "6px 8px",
             fontSize: 13,
-            border: "1px solid #dddbda",
+            border: "1px solid #c9c9c9",
             borderRadius: 4,
             marginBottom: 12,
           }}
         />
-        <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#3e3e3c", marginBottom: 4 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#444444", marginBottom: 4 }}>
           Message
         </label>
         <textarea
@@ -617,7 +617,7 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
             width: "100%",
             padding: "6px 8px",
             fontSize: 13,
-            border: "1px solid #dddbda",
+            border: "1px solid #c9c9c9",
             borderRadius: 4,
             resize: "vertical",
             fontFamily: "inherit",
@@ -640,7 +640,7 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
           </>
         }
       >
-        <div style={{ fontSize: 13, color: "#3e3e3c" }}>
+        <div style={{ fontSize: 13, color: "#444444" }}>
           Delete {count} row{count === 1 ? "" : "s"}? This cannot be undone.
         </div>
       </Modal>
@@ -662,7 +662,7 @@ function ToolbarBtn({
       onClick={onClick}
       style={{
         background: "#fff",
-        color: danger ? "#c23934" : "#0070d2",
+        color: danger ? "#c23934" : "#0176d3",
         border: "1px solid #fff",
         padding: "4px 12px",
         fontSize: 13,
@@ -753,7 +753,7 @@ export function SfViewPicker({
           cursor: "pointer",
           fontSize: 18,
           fontWeight: 700,
-          color: "#080707",
+          color: "#181818",
           display: "inline-flex",
           alignItems: "center",
           gap: 6,
@@ -761,7 +761,7 @@ export function SfViewPicker({
         }}
       >
         {currentLabel}
-        <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#080707" }}>
+        <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#181818" }}>
           <path d="M2 4l4 4 4-4z" />
         </svg>
       </button>
@@ -772,7 +772,7 @@ export function SfViewPicker({
             top: "100%",
             left: 0,
             background: "#fff",
-            border: "1px solid #d8dde6",
+            border: "1px solid #c9c9c9",
             borderRadius: 4,
             boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
             minWidth: 320,
@@ -792,7 +792,7 @@ export function SfViewPicker({
                 style={{
                   width: "100%",
                   padding: "6px 10px",
-                  border: "1px solid #d8dde6",
+                  border: "1px solid #c9c9c9",
                   borderRadius: 4,
                   fontSize: 13,
                   boxSizing: "border-box",
@@ -805,7 +805,7 @@ export function SfViewPicker({
               padding: "8px 16px 4px",
               fontSize: 11,
               fontWeight: 700,
-              color: "#706e6b",
+              color: "#747474",
               textTransform: "uppercase",
               letterSpacing: 0.4,
             }}
@@ -826,7 +826,7 @@ export function SfViewPicker({
                     padding: "8px 16px",
                     fontSize: 13,
                     background: active ? "#f4f6f9" : "transparent",
-                    color: "#080707",
+                    color: "#181818",
                     border: "none",
                     cursor: "pointer",
                     fontWeight: active ? 700 : 400,
@@ -843,7 +843,7 @@ export function SfViewPicker({
               );
             })}
             {filtered.length === 0 && (
-              <div style={{ padding: "8px 16px", fontSize: 13, color: "#706e6b" }}>No lists match.</div>
+              <div style={{ padding: "8px 16px", fontSize: 13, color: "#747474" }}>No lists match.</div>
             )}
           </div>
         </div>

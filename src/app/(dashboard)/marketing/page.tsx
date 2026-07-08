@@ -238,7 +238,7 @@ export default async function MarketingIndexPage() {
                   <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-semibold ${badge.bg} ${badge.text}`}>
                     {item.status}
                   </span>
-                  <div className="text-[11px] text-[#706e6b] w-16 text-right">
+                  <div className="text-[11px] text-[#747474] w-16 text-right">
                     {formatRelative(item.at)}
                   </div>
                 </Link>

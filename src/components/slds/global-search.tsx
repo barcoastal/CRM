@@ -18,7 +18,7 @@ const ENTITY_PATH: Record<SearchResult["entity"], string> = {
 };
 
 const ENTITY_COLOR: Record<SearchResult["entity"], string> = {
-  Lead: "#1589ee",
+  Lead: "#0176d3",
   Contact: "#04844b",
   Account: "#df9f00",
   Opportunity: "#cf3476",
@@ -125,7 +125,7 @@ export function GlobalSearch() {
           left: 0,
           right: 0,
           background: "#fff",
-          border: "1px solid #d8dde6",
+          border: "1px solid #c9c9c9",
           borderRadius: 4,
           boxShadow: "0 4px 16px rgba(0,0,0,0.16)",
           maxHeight: 480,
@@ -133,10 +133,10 @@ export function GlobalSearch() {
           zIndex: 9999,
         }}>
           {loading && (
-            <div style={{ padding: 12, fontSize: 13, color: "#706e6b" }}>Searching…</div>
+            <div style={{ padding: 12, fontSize: 13, color: "#747474" }}>Searching…</div>
           )}
           {!loading && results.length === 0 && q.trim().length >= 2 && (
-            <div style={{ padding: 12, fontSize: 13, color: "#706e6b" }}>No results.</div>
+            <div style={{ padding: 12, fontSize: 13, color: "#747474" }}>No results.</div>
           )}
           {!loading && results.map((r, i) => (
             <button
@@ -168,10 +168,10 @@ export function GlobalSearch() {
                 }}>
                   {r.entity}
                 </span>
-                <span style={{ fontWeight: 600, color: "#16325c" }}>{r.title}</span>
+                <span style={{ fontWeight: 600, color: "#181818" }}>{r.title}</span>
               </div>
               {r.subtitle && (
-                <div style={{ fontSize: 12, color: "#706e6b", marginTop: 2, marginLeft: 56 }}>{r.subtitle}</div>
+                <div style={{ fontSize: 12, color: "#747474", marginTop: 2, marginLeft: 56 }}>{r.subtitle}</div>
               )}
             </button>
           ))}

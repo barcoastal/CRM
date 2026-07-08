@@ -188,7 +188,7 @@ export function SendContractModal({ opportunityId, defaultSigner, recommendedAgr
                     borderRadius: 4,
                     padding: "8px 10px",
                     fontSize: 12,
-                    color: "#3e3e3c",
+                    color: "#444444",
                     marginBottom: 4,
                   }}
                 >
@@ -263,26 +263,26 @@ const closeBtn: React.CSSProperties = {
   border: 0,
   fontSize: 22,
   cursor: "pointer",
-  color: "#706e6b",
+  color: "#747474",
   lineHeight: 1,
 };
 const lbl: React.CSSProperties = {
   display: "block",
   fontSize: 12,
   fontWeight: 600,
-  color: "#3e3e3c",
+  color: "#444444",
   margin: "10px 0 4px",
 };
 const inp: React.CSSProperties = {
   width: "100%",
   padding: "6px 8px",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   fontSize: 13,
   boxSizing: "border-box",
 };
 const primaryBtn: React.CSSProperties = {
-  background: "#0070d2",
+  background: "#0176d3",
   color: "#fff",
   border: 0,
   padding: "6px 14px",
@@ -293,8 +293,8 @@ const primaryBtn: React.CSSProperties = {
 };
 const secondaryBtn: React.CSSProperties = {
   background: "#fff",
-  color: "#0070d2",
-  border: "1px solid #d8dde6",
+  color: "#0176d3",
+  border: "1px solid #c9c9c9",
   padding: "6px 14px",
   borderRadius: 4,
   fontSize: 13,

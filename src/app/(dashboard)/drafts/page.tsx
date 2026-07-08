@@ -27,7 +27,7 @@ export default async function DraftsPage() {
     {
       key: "account",
       label: "Account",
-      render: (d) => <Link href={`/accounts/${d.programPlan.account.id}`} style={{ color: "#1589ee" }}>{d.programPlan.account.name}</Link>,
+      render: (d) => <Link href={`/accounts/${d.programPlan.account.id}`} style={{ color: "#0176d3" }}>{d.programPlan.account.name}</Link>,
     },
     { key: "amount", label: "Amount", render: (d) => `$${d.amount.toLocaleString()}` },
     { key: "status", label: "Status", render: (d) => <StatusPill label={d.status} tone={draftStatusTone(d.status)} /> },

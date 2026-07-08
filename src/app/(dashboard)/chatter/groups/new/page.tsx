@@ -46,13 +46,13 @@ export default function NewChatterGroupPage() {
 
   return (
     <div style={{ padding: "20px 24px", maxWidth: 640, margin: "0 auto" }}>
-      <div style={{ marginBottom: 16, fontSize: 12, color: "#706e6b" }}>
-        <Link href="/chatter/groups" style={{ color: "#0070d2", textDecoration: "none" }}>Groups</Link>
+      <div style={{ marginBottom: 16, fontSize: 12, color: "#747474" }}>
+        <Link href="/chatter/groups" style={{ color: "#0176d3", textDecoration: "none" }}>Groups</Link>
         <span style={{ margin: "0 6px" }}>/</span>
         <span>New Group</span>
       </div>
 
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#080707", margin: 0, marginBottom: 16 }}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#181818", margin: 0, marginBottom: 16 }}>
         Create Chatter Group
       </h1>
 
@@ -60,7 +60,7 @@ export default function NewChatterGroupPage() {
         onSubmit={handleSubmit}
         style={{
           background: "#fff",
-          border: "1px solid #d8dde6",
+          border: "1px solid #c9c9c9",
           borderRadius: 6,
           padding: 20,
           display: "flex",
@@ -124,8 +124,8 @@ export default function NewChatterGroupPage() {
           <Link
             href="/chatter/groups"
             style={{
-              padding: "6px 14px", background: "#fff", color: "#0070d2",
-              border: "1px solid #d8dde6", borderRadius: 4,
+              padding: "6px 14px", background: "#fff", color: "#0176d3",
+              border: "1px solid #c9c9c9", borderRadius: 4,
               fontSize: 13, fontWeight: 500, textDecoration: "none",
             }}
           >
@@ -136,7 +136,7 @@ export default function NewChatterGroupPage() {
             disabled={submitting}
             style={{
               padding: "6px 14px",
-              background: submitting ? "#c9c7c5" : "#0070d2",
+              background: submitting ? "#c9c7c5" : "#0176d3",
               color: "#fff",
               border: 0,
               borderRadius: 4,
@@ -157,14 +157,14 @@ const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 12,
   fontWeight: 600,
-  color: "#3e3e3c",
+  color: "#444444",
   marginBottom: 4,
 };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "7px 10px",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   fontSize: 13,
   fontFamily: "inherit",

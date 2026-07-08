@@ -70,7 +70,7 @@ export function RecordFiles({
   return (
     <section style={{ background: "#fff", border: "1px solid #ecebea", borderRadius: 4, padding: 16, marginTop: 12 }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <h2 style={{ fontSize: 13, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4, margin: 0, flex: 1 }}>
+        <h2 style={{ fontSize: 13, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4, margin: 0, flex: 1 }}>
           {title} ({rows.length})
         </h2>
         <button
@@ -81,9 +81,9 @@ export function RecordFiles({
         </button>
       </div>
       {loading ? (
-        <p style={{ color: "#706e6b", fontSize: 12 }}>Loading...</p>
+        <p style={{ color: "#747474", fontSize: 12 }}>Loading...</p>
       ) : rows.length === 0 ? (
-        <p style={{ color: "#706e6b", fontSize: 12 }}>No files linked yet.</p>
+        <p style={{ color: "#747474", fontSize: 12 }}>No files linked yet.</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {rows.map((r) => (
@@ -91,7 +91,7 @@ export function RecordFiles({
               <Link href={`/files/${r.documentId}`} style={{ flex: 1, color: "#3052ff", textDecoration: "none", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {r.document.title}
               </Link>
-              <span style={{ fontSize: 11, color: "#706e6b" }}>
+              <span style={{ fontSize: 11, color: "#747474" }}>
                 {r.document.latestVersion ? formatBytes(r.document.latestVersion.byteSize) : ""}
               </span>
               <a href={`/api/files/${r.documentId}/download`} style={{ color: "#3052ff", fontSize: 11 }}>

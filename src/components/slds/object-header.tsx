@@ -29,10 +29,10 @@ export function ObjectHeader({
     <div
       style={{
         background: "#f3f3f3",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         padding: "12px 16px 0",
-        boxShadow: "0 2px 2px 0 rgba(0,0,0,0.05)",
+        boxShadow: "0 2px 2px 0 rgba(0,0,0,0.1)",
       }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
@@ -62,7 +62,7 @@ export function ObjectHeader({
                   style={{
                     display: "block",
                     fontSize: 11,
-                    color: "#3e3e3c",
+                    color: "#444444",
                     fontWeight: 400,
                     lineHeight: 1.2,
                     marginBottom: 1,
@@ -76,7 +76,7 @@ export function ObjectHeader({
                       display: "block",
                       fontSize: 18,
                       fontWeight: 700,
-                      color: "#080707",
+                      color: "#181818",
                       lineHeight: 1.3,
                     }}
                   >
@@ -89,7 +89,7 @@ export function ObjectHeader({
                   style={{
                     margin: "2px 0 0",
                     fontSize: 12,
-                    color: "#3e3e3c",
+                    color: "#444444",
                     lineHeight: 1.3,
                   }}
                 >
@@ -132,7 +132,7 @@ export function ObjectHeader({
                 key={i}
                 style={{
                   padding: "0 14px",
-                  borderLeft: i === 0 ? "none" : "1px solid #dddbda",
+                  borderLeft: i === 0 ? "none" : "1px solid #c9c9c9",
                   minWidth: 0,
                   display: "flex",
                   flexDirection: "column",
@@ -142,7 +142,7 @@ export function ObjectHeader({
                   title={h.label}
                   style={{
                     fontSize: 11,
-                    color: "#3e3e3c",
+                    color: "#444444",
                     fontWeight: 400,
                     lineHeight: 1.4,
                     marginBottom: 2,
@@ -156,7 +156,7 @@ export function ObjectHeader({
                 <div
                   style={{
                     fontSize: 13,
-                    color: "#080707",
+                    color: "#181818",
                     fontWeight: 400,
                     lineHeight: 1.3,
                     whiteSpace: "nowrap",

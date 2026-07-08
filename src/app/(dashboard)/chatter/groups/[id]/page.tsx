@@ -31,11 +31,11 @@ export default async function ChatterGroupPage({ params }: { params: Promise<{ i
   if (group.visibility === "private" && !myMember) {
     return (
       <div style={{ padding: "60px 24px", maxWidth: 640, margin: "0 auto", textAlign: "center" }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#080707" }}>Private group</h1>
-        <p style={{ color: "#706e6b", fontSize: 13 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#181818" }}>Private group</h1>
+        <p style={{ color: "#747474", fontSize: 13 }}>
           This group is private. Ask an existing member to invite you.
         </p>
-        <Link href="/chatter/groups" style={{ color: "#0070d2" }}>Back to groups</Link>
+        <Link href="/chatter/groups" style={{ color: "#0176d3" }}>Back to groups</Link>
       </div>
     );
   }

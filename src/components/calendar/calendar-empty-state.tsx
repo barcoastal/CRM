@@ -33,11 +33,11 @@ const card: React.CSSProperties = {
 const title: React.CSSProperties = {
   fontSize: 16,
   fontWeight: 700,
-  color: "#080707",
+  color: "#181818",
   marginBottom: 6,
 };
 const body: React.CSSProperties = {
   fontSize: 13,
-  color: "#706e6b",
+  color: "#747474",
   lineHeight: 1.5,
 };

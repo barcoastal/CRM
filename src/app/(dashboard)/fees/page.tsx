@@ -28,7 +28,7 @@ export default async function FeesPage() {
     {
       key: "account",
       label: "Account",
-      render: (f) => <Link href={`/accounts/${f.programPlan.account.id}`} style={{ color: "#1589ee" }}>{f.programPlan.account.name}</Link>,
+      render: (f) => <Link href={`/accounts/${f.programPlan.account.id}`} style={{ color: "#0176d3" }}>{f.programPlan.account.name}</Link>,
     },
     { key: "type", label: "Type", render: (f) => f.recordType.replace(/_/g, " ") },
     { key: "amount", label: "Amount", render: (f) => `$${f.amount.toLocaleString()}` },

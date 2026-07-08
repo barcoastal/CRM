@@ -71,14 +71,14 @@ export function ShareLinkModal({ documentId, open, onClose }: Props) {
           boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
         }}
       >
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #d8dde6", display: "flex", alignItems: "center" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#080707", flex: 1, margin: 0 }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #c9c9c9", display: "flex", alignItems: "center" }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#181818", flex: 1, margin: 0 }}>
             Create share link
           </h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            style={{ background: "transparent", border: 0, fontSize: 20, cursor: "pointer", color: "#706e6b" }}
+            style={{ background: "transparent", border: 0, fontSize: 20, cursor: "pointer", color: "#747474" }}
           >
             ×
           </button>
@@ -87,18 +87,18 @@ export function ShareLinkModal({ documentId, open, onClose }: Props) {
           {!created ? (
             <>
               <label style={{ display: "block", marginBottom: 12 }}>
-                <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3e3e3c", marginBottom: 4 }}>
+                <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#444444", marginBottom: 4 }}>
                   Expires at (optional)
                 </span>
                 <input
                   type="datetime-local"
                   value={expiresAt}
                   onChange={(e) => setExpiresAt(e.target.value)}
-                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13 }}
+                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13 }}
                 />
               </label>
               <label style={{ display: "block", marginBottom: 12 }}>
-                <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3e3e3c", marginBottom: 4 }}>
+                <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#444444", marginBottom: 4 }}>
                   Password (optional, min 4 chars)
                 </span>
                 <input
@@ -106,14 +106,14 @@ export function ShareLinkModal({ documentId, open, onClose }: Props) {
                   placeholder="Leave blank for public link"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13 }}
+                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13 }}
                 />
               </label>
               {err && <p style={{ color: "#c23934", fontSize: 12, margin: "8px 0" }}>{err}</p>}
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
                 <button
                   onClick={onClose}
-                  style={{ background: "#fff", border: "1px solid #d8dde6", padding: "6px 14px", borderRadius: 4, cursor: "pointer", fontSize: 13 }}
+                  style={{ background: "#fff", border: "1px solid #c9c9c9", padding: "6px 14px", borderRadius: 4, cursor: "pointer", fontSize: 13 }}
                 >
                   Cancel
                 </button>
@@ -128,12 +128,12 @@ export function ShareLinkModal({ documentId, open, onClose }: Props) {
             </>
           ) : (
             <>
-              <p style={{ fontSize: 13, color: "#3e3e3c", marginTop: 0 }}>Share link created. Copy the URL below.</p>
+              <p style={{ fontSize: 13, color: "#444444", marginTop: 0 }}>Share link created. Copy the URL below.</p>
               <div style={{ display: "flex", gap: 8 }}>
                 <input
                   readOnly
                   value={shareUrl ?? ""}
-                  style={{ flex: 1, padding: "8px 12px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 12, fontFamily: "monospace" }}
+                  style={{ flex: 1, padding: "8px 12px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 12, fontFamily: "monospace" }}
                   onFocus={(e) => e.currentTarget.select()}
                 />
                 <button
@@ -146,7 +146,7 @@ export function ShareLinkModal({ documentId, open, onClose }: Props) {
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
                 <button
                   onClick={onClose}
-                  style={{ background: "#fff", border: "1px solid #d8dde6", padding: "6px 14px", borderRadius: 4, cursor: "pointer", fontSize: 13 }}
+                  style={{ background: "#fff", border: "1px solid #c9c9c9", padding: "6px 14px", borderRadius: 4, cursor: "pointer", fontSize: 13 }}
                 >
                   Done
                 </button>

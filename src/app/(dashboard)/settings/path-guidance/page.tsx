@@ -96,7 +96,7 @@ export default async function PathGuidanceListPage() {
                             style={{
                               ...pill,
                               background: row.isActive ? "#2e844a" : "#ecebea",
-                              color: row.isActive ? "#fff" : "#3e3e3c",
+                              color: row.isActive ? "#fff" : "#444444",
                             }}
                           >
                             {row.isActive ? "Active" : "Inactive"}
@@ -202,7 +202,7 @@ const td: React.CSSProperties = {
 const tdSnippet: React.CSSProperties = {
   ...td,
   maxWidth: 360,
-  color: "#3e3e3c",
+  color: "#444444",
 };
 const tdRight: React.CSSProperties = {
   ...td,

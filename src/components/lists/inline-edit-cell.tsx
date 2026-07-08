@@ -178,7 +178,7 @@ export function InlineEditCell({
         <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {display ?? renderDisplay(value, config, userOpts)}
         </span>
-        {save === "saving" && <Dot color="#706e6b" />}
+        {save === "saving" && <Dot color="#747474" />}
         {save === "saved" && <Check />}
         {save === "error" && (
           <span title={errorMsg} aria-label="Save failed" style={{ color: "#c23934", fontSize: 11 }}>!</span>
@@ -206,12 +206,12 @@ export function InlineEditCell({
     width: "100%",
     padding: "2px 4px",
     fontSize: 12,
-    border: "1px solid #1589ee",
+    border: "1px solid #0176d3",
     borderRadius: 3,
     background: "#f2f3ff",
     outline: "none",
     fontFamily: "inherit",
-    color: "#080707",
+    color: "#181818",
   };
 
   if (config.type === "enum") {

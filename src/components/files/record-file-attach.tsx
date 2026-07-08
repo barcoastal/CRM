@@ -88,14 +88,14 @@ export function RecordFileAttach({ entityType, entityId, open, onClose }: Props)
         onClick={(e) => e.stopPropagation()}
         style={{ background: "#fff", borderRadius: 4, width: "min(640px, 100%)", margin: 16, maxHeight: "85vh", display: "flex", flexDirection: "column" }}
       >
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #d8dde6", display: "flex", alignItems: "center" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#080707", flex: 1, margin: 0 }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #c9c9c9", display: "flex", alignItems: "center" }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#181818", flex: 1, margin: 0 }}>
             Attach File
           </h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            style={{ background: "transparent", border: 0, fontSize: 20, cursor: "pointer", color: "#706e6b" }}
+            style={{ background: "transparent", border: 0, fontSize: 20, cursor: "pointer", color: "#747474" }}
           >
             ×
           </button>
@@ -110,7 +110,7 @@ export function RecordFileAttach({ entityType, entityId, open, onClose }: Props)
               background: "transparent",
               border: 0,
               borderBottom: tab === "upload" ? "2px solid #3052ff" : "2px solid transparent",
-              color: tab === "upload" ? "#3052ff" : "#3e3e3c",
+              color: tab === "upload" ? "#3052ff" : "#444444",
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 600,
@@ -126,7 +126,7 @@ export function RecordFileAttach({ entityType, entityId, open, onClose }: Props)
               background: "transparent",
               border: 0,
               borderBottom: tab === "library" ? "2px solid #3052ff" : "2px solid transparent",
-              color: tab === "library" ? "#3052ff" : "#3e3e3c",
+              color: tab === "library" ? "#3052ff" : "#444444",
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 600,
@@ -139,7 +139,7 @@ export function RecordFileAttach({ entityType, entityId, open, onClose }: Props)
         <div style={{ padding: 16, overflowY: "auto", flex: 1 }}>
           {tab === "upload" ? (
             <div>
-              <p style={{ fontSize: 13, color: "#3e3e3c", marginTop: 0 }}>
+              <p style={{ fontSize: 13, color: "#444444", marginTop: 0 }}>
                 Upload a file. It will be added to the central library and linked to this record.
               </p>
               <UploadButton
@@ -155,10 +155,10 @@ export function RecordFileAttach({ entityType, entityId, open, onClose }: Props)
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search the library..."
-                style={{ width: "100%", padding: "8px 12px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, marginBottom: 12 }}
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13, marginBottom: 12 }}
               />
               {results.length === 0 ? (
-                <p style={{ color: "#706e6b", fontSize: 13 }}>No files match.</p>
+                <p style={{ color: "#747474", fontSize: 13 }}>No files match.</p>
               ) : (
                 <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                   {results.map((d) => (
@@ -167,10 +167,10 @@ export function RecordFileAttach({ entityType, entityId, open, onClose }: Props)
                       style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #f7f7f7" }}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#080707", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#181818", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {d.title}
                         </div>
-                        <div style={{ fontSize: 11, color: "#706e6b" }}>
+                        <div style={{ fontSize: 11, color: "#747474" }}>
                           {d.latestVersion?.filename}
                         </div>
                       </div>

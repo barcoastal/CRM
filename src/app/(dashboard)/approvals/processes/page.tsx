@@ -81,7 +81,7 @@ export default async function ApprovalProcessesPage() {
             >
               <div className="px-5 py-4 border-b border-[#f2f3ff]">
                 <div className="text-[14px] font-bold text-[#131b2e]">{entityType}</div>
-                <div className="text-[12px] text-[#706e6b]">
+                <div className="text-[12px] text-[#747474]">
                   {list.length} process{list.length === 1 ? "" : "es"}
                 </div>
               </div>
@@ -106,7 +106,7 @@ export default async function ApprovalProcessesPage() {
                           {p.name}
                         </Link>
                         {p.description && (
-                          <div className="text-[12px] text-[#706e6b]">{p.description}</div>
+                          <div className="text-[12px] text-[#747474]">{p.description}</div>
                         )}
                       </td>
                       <td className="px-4 py-3">

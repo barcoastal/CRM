@@ -141,7 +141,7 @@ function PostbackLogRow({ log, endpointId, idx }: { log: LogRow; endpointId: str
               {log.responseStatus}
             </span>
           ) : (
-            <span className="text-[#706e6b]">--</span>
+            <span className="text-[#747474]">--</span>
           )}
         </td>
         <td className={`px-4 py-3 text-[12px] text-[#444656] ${rowBg}`}>{log.attempts}</td>
@@ -154,7 +154,7 @@ function PostbackLogRow({ log, endpointId, idx }: { log: LogRow; endpointId: str
               {log.entityType.toLowerCase()}/{log.entityId.slice(0, 8)}
             </Link>
           ) : (
-            <span className="text-[#706e6b]">--</span>
+            <span className="text-[#747474]">--</span>
           )}
         </td>
         <td className={`px-4 py-3 ${rowBg}`}>
@@ -168,13 +168,13 @@ function PostbackLogRow({ log, endpointId, idx }: { log: LogRow; endpointId: str
               <summary className="cursor-pointer text-[#3052ff] font-semibold">Request / Response</summary>
               <div className="mt-2 grid grid-cols-2 gap-3">
                 <div>
-                  <div className="text-[10px] uppercase text-[#706e6b] font-semibold mb-1">Request</div>
+                  <div className="text-[10px] uppercase text-[#747474] font-semibold mb-1">Request</div>
                   <pre className="bg-[#f8f8fb] p-2 rounded font-mono text-[10px] overflow-auto max-h-[160px]">
                     {JSON.stringify(log.requestBody, null, 2)}
                   </pre>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase text-[#706e6b] font-semibold mb-1">Response</div>
+                  <div className="text-[10px] uppercase text-[#747474] font-semibold mb-1">Response</div>
                   <pre className="bg-[#f8f8fb] p-2 rounded font-mono text-[10px] overflow-auto max-h-[160px]">
                     {log.lastError ? `Error: ${log.lastError}\n\n` : ""}
                     {log.responseBody ? JSON.stringify(log.responseBody, null, 2) : ""}

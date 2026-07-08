@@ -90,7 +90,7 @@ export function SetQuotaModal({
             borderBottom: "1px solid #ecebea",
           }}
         >
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#080707", flex: 1, margin: 0 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#181818", flex: 1, margin: 0 }}>
             Set Quota
           </h2>
           <button
@@ -101,7 +101,7 @@ export function SetQuotaModal({
               border: 0,
               fontSize: 20,
               cursor: "pointer",
-              color: "#706e6b",
+              color: "#747474",
             }}
           >
             ×
@@ -110,7 +110,7 @@ export function SetQuotaModal({
 
         <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
           <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4 }}>
               Rep
             </span>
             <select
@@ -127,7 +127,7 @@ export function SetQuotaModal({
           </label>
 
           <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4 }}>
               Period
             </span>
             <input
@@ -136,13 +136,13 @@ export function SetQuotaModal({
               placeholder="2026-06 or 2026-Q2"
               style={inp}
             />
-            <span style={{ fontSize: 11, color: "#706e6b" }}>
+            <span style={{ fontSize: 11, color: "#747474" }}>
               Use YYYY-MM for monthly, YYYY-Qn for quarterly.
             </span>
           </label>
 
           <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4 }}>
               Amount (USD)
             </span>
             <input
@@ -185,7 +185,7 @@ export function SetQuotaModal({
 
 const inp: React.CSSProperties = {
   padding: "8px 10px",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   fontSize: 13,
   outline: "none",
@@ -206,7 +206,7 @@ const btnPrimary: React.CSSProperties = {
 const btnGhost: React.CSSProperties = {
   background: "#fff",
   color: "#3052ff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   padding: "8px 16px",
   fontSize: 13,

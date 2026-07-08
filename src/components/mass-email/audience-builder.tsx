@@ -117,7 +117,7 @@ export function AudienceBuilder({ value, onChange, onCountChange }: Props) {
       <div className="grid grid-cols-2 gap-3">
         <Field label="Entity">
           <select
-            className="w-full h-9 rounded border border-[#d8dde6] px-3 text-[13px] text-[#131b2e] bg-white"
+            className="w-full h-9 rounded border border-[#c9c9c9] px-3 text-[13px] text-[#131b2e] bg-white"
             value={entityType}
             onChange={(e) => setEntityType(e.target.value as EntityType)}
           >
@@ -156,7 +156,7 @@ export function AudienceBuilder({ value, onChange, onCountChange }: Props) {
                 <input
                   type="text"
                   maxLength={2}
-                  className="w-full h-9 rounded border border-[#d8dde6] px-3 text-[13px] text-[#131b2e]"
+                  className="w-full h-9 rounded border border-[#c9c9c9] px-3 text-[13px] text-[#131b2e]"
                   placeholder="NY, FL, etc."
                   value={value.audienceFilter.filters.state ?? ""}
                   onChange={(e) => updateFilter("state", e.target.value.toUpperCase())}
@@ -167,7 +167,7 @@ export function AudienceBuilder({ value, onChange, onCountChange }: Props) {
             <Field label="Owner User ID (optional)">
               <input
                 type="text"
-                className="w-full h-9 rounded border border-[#d8dde6] px-3 text-[13px] text-[#131b2e]"
+                className="w-full h-9 rounded border border-[#c9c9c9] px-3 text-[13px] text-[#131b2e]"
                 placeholder="cuid of owner user"
                 value={value.audienceFilter.filters.ownerId ?? ""}
                 onChange={(e) => updateFilter("ownerId", e.target.value)}
@@ -180,7 +180,7 @@ export function AudienceBuilder({ value, onChange, onCountChange }: Props) {
           <Field label={`Paste ${entityType} IDs (one per line or comma separated)`}>
             <textarea
               rows={6}
-              className="w-full rounded border border-[#d8dde6] px-3 py-2 text-[13px] text-[#131b2e] font-mono"
+              className="w-full rounded border border-[#c9c9c9] px-3 py-2 text-[13px] text-[#131b2e] font-mono"
               placeholder="cuid1&#10;cuid2&#10;cuid3"
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
@@ -190,7 +190,7 @@ export function AudienceBuilder({ value, onChange, onCountChange }: Props) {
           <button
             type="button"
             onClick={applyPasted}
-            className="px-3 py-1.5 rounded border border-[#d8dde6] text-[12px] font-semibold text-[#131b2e] bg-white hover:bg-[#f2f3ff]"
+            className="px-3 py-1.5 rounded border border-[#c9c9c9] text-[12px] font-semibold text-[#131b2e] bg-white hover:bg-[#f2f3ff]"
           >
             Apply IDs
           </button>
@@ -246,7 +246,7 @@ function SelectField({
 }) {
   return (
     <select
-      className="w-full h-9 rounded border border-[#d8dde6] px-3 text-[13px] text-[#131b2e] bg-white"
+      className="w-full h-9 rounded border border-[#c9c9c9] px-3 text-[13px] text-[#131b2e] bg-white"
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >

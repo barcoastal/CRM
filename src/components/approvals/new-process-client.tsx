@@ -89,14 +89,14 @@ export function NewProcessClient({ users }: { users: UserOption[] }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Settlement over $25K"
-              className="w-full px-3 py-2 border border-[#d8dde6] rounded text-[13px] outline-none focus:border-[#3052ff]"
+              className="w-full px-3 py-2 border border-[#c9c9c9] rounded text-[13px] outline-none focus:border-[#3052ff]"
             />
           </Field>
           <Field label="Applies To">
             <select
               value={entityType}
               onChange={(e) => setEntityType(e.target.value)}
-              className="w-full px-3 py-2 border border-[#d8dde6] rounded text-[13px] outline-none focus:border-[#3052ff] bg-white"
+              className="w-full px-3 py-2 border border-[#c9c9c9] rounded text-[13px] outline-none focus:border-[#3052ff] bg-white"
             >
               {ENTITY_TYPES.map((t) => (
                 <option key={t} value={t}>
@@ -112,7 +112,7 @@ export function NewProcessClient({ users }: { users: UserOption[] }) {
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
             placeholder="When does this approval apply?"
-            className="w-full px-3 py-2 border border-[#d8dde6] rounded text-[13px] outline-none focus:border-[#3052ff] resize-y"
+            className="w-full px-3 py-2 border border-[#c9c9c9] rounded text-[13px] outline-none focus:border-[#3052ff] resize-y"
           />
         </Field>
 
@@ -171,7 +171,7 @@ function Field({
     <div>
       <div className="text-[12px] font-semibold text-[#444656] mb-1.5">{label}</div>
       {children}
-      {help && <div className="text-[11px] text-[#706e6b] mt-1">{help}</div>}
+      {help && <div className="text-[11px] text-[#747474] mt-1">{help}</div>}
     </div>
   );
 }

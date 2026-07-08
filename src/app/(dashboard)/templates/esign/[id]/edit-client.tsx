@@ -278,7 +278,7 @@ export function EditClient({ initial }: { initial: EditInitial }) {
         >
           {sendingTest ? "Sending…" : "Send test to me"}
         </button>
-        <span className="text-[12px] text-[#706e6b]">
+        <span className="text-[12px] text-[#747474]">
           Sends this template to your own email so you can try the signing flow. (CRM data fields are
           blank in a test.)
         </span>
@@ -306,14 +306,14 @@ export function EditClient({ initial }: { initial: EditInitial }) {
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 rounded border border-[#d8dde6] text-[13px] outline-none focus:border-[#3052ff]"
+              className="w-full px-3 py-2 rounded border border-[#c9c9c9] text-[13px] outline-none focus:border-[#3052ff]"
             />
           </Field>
           <Field label="Record Type">
             <select
               value={recordType}
               onChange={(e) => setRecordType(e.target.value)}
-              className="w-full px-3 py-2 rounded border border-[#d8dde6] text-[13px] bg-white outline-none focus:border-[#3052ff]"
+              className="w-full px-3 py-2 rounded border border-[#c9c9c9] text-[13px] bg-white outline-none focus:border-[#3052ff]"
             >
               {RECORD_TYPES.map((rt) => (
                 <option key={rt} value={rt}>
@@ -327,7 +327,7 @@ export function EditClient({ initial }: { initial: EditInitial }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 rounded border border-[#d8dde6] text-[13px] outline-none focus:border-[#3052ff]"
+              className="w-full px-3 py-2 rounded border border-[#c9c9c9] text-[13px] outline-none focus:border-[#3052ff]"
             />
           </Field>
           <Field label="Active">
@@ -374,9 +374,9 @@ export function EditClient({ initial }: { initial: EditInitial }) {
         subtitle="Map each AcroForm field in the PDF to a value from the merge context."
       >
         {fields === null ? (
-          <div className="text-[12px] text-[#706e6b]">Loading fields...</div>
+          <div className="text-[12px] text-[#747474]">Loading fields...</div>
         ) : fields.length === 0 ? (
-          <div className="text-[12px] text-[#706e6b]">
+          <div className="text-[12px] text-[#747474]">
             No AcroForm fields detected in this PDF. Add form fields with a PDF editor (e.g. Acrobat)
             to enable merges.
           </div>
@@ -404,7 +404,7 @@ export function EditClient({ initial }: { initial: EditInitial }) {
                       onChange={(e) =>
                         setMapping((prev) => ({ ...prev, [f]: e.target.value }))
                       }
-                      className="w-full px-2 py-1.5 rounded border border-[#d8dde6] text-[12px] bg-white outline-none focus:border-[#3052ff]"
+                      className="w-full px-2 py-1.5 rounded border border-[#c9c9c9] text-[12px] bg-white outline-none focus:border-[#3052ff]"
                     >
                       <option value="">— Unmapped —</option>
                       {grouped.map(([group, paths]) => (
@@ -527,7 +527,7 @@ function Card({
         >
           {title}
         </h2>
-        {subtitle ? <p className="text-[12px] text-[#706e6b] mt-1">{subtitle}</p> : null}
+        {subtitle ? <p className="text-[12px] text-[#747474] mt-1">{subtitle}</p> : null}
       </header>
       {children}
     </section>
@@ -625,7 +625,7 @@ function BoxList({
           <button
             type="button"
             onClick={onAdd}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded border border-[#d8dde6] text-[11px] font-semibold text-[#131b2e] hover:bg-[#f2f3ff]"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded border border-[#c9c9c9] text-[11px] font-semibold text-[#131b2e] hover:bg-[#f2f3ff]"
           >
             <Plus className="size-3" />
             Add
@@ -633,7 +633,7 @@ function BoxList({
         </div>
       </div>
       {boxes.length === 0 ? (
-        <div className="text-[12px] text-[#706e6b] italic">No {title.toLowerCase()} boxes.</div>
+        <div className="text-[12px] text-[#747474] italic">No {title.toLowerCase()} boxes.</div>
       ) : (
         <table className="w-full border-collapse text-[12px]">
           <thead>
@@ -658,7 +658,7 @@ function BoxList({
                     max={pageCount}
                     value={b.page}
                     onChange={(e) => updateBox(idx, { page: Number(e.target.value) || 1 })}
-                    className="w-16 px-2 py-1 rounded border border-[#d8dde6] text-[12px] outline-none"
+                    className="w-16 px-2 py-1 rounded border border-[#c9c9c9] text-[12px] outline-none"
                   />
                 </td>
                 <td className="px-2 py-1.5 border-b border-[#ecebea]">
@@ -666,7 +666,7 @@ function BoxList({
                     type="number"
                     value={b.x}
                     onChange={(e) => updateBox(idx, { x: Number(e.target.value) || 0 })}
-                    className="w-20 px-2 py-1 rounded border border-[#d8dde6] text-[12px] outline-none"
+                    className="w-20 px-2 py-1 rounded border border-[#c9c9c9] text-[12px] outline-none"
                   />
                 </td>
                 <td className="px-2 py-1.5 border-b border-[#ecebea]">
@@ -674,7 +674,7 @@ function BoxList({
                     type="number"
                     value={b.y}
                     onChange={(e) => updateBox(idx, { y: Number(e.target.value) || 0 })}
-                    className="w-20 px-2 py-1 rounded border border-[#d8dde6] text-[12px] outline-none"
+                    className="w-20 px-2 py-1 rounded border border-[#c9c9c9] text-[12px] outline-none"
                   />
                 </td>
                 <td className="px-2 py-1.5 border-b border-[#ecebea]">
@@ -682,7 +682,7 @@ function BoxList({
                     type="number"
                     value={b.width}
                     onChange={(e) => updateBox(idx, { width: Number(e.target.value) || 0 })}
-                    className="w-20 px-2 py-1 rounded border border-[#d8dde6] text-[12px] outline-none"
+                    className="w-20 px-2 py-1 rounded border border-[#c9c9c9] text-[12px] outline-none"
                   />
                 </td>
                 <td className="px-2 py-1.5 border-b border-[#ecebea]">
@@ -690,7 +690,7 @@ function BoxList({
                     type="number"
                     value={b.height}
                     onChange={(e) => updateBox(idx, { height: Number(e.target.value) || 0 })}
-                    className="w-20 px-2 py-1 rounded border border-[#d8dde6] text-[12px] outline-none"
+                    className="w-20 px-2 py-1 rounded border border-[#c9c9c9] text-[12px] outline-none"
                   />
                 </td>
                 <td className="px-2 py-1.5 border-b border-[#ecebea]">
@@ -698,7 +698,7 @@ function BoxList({
                     type="text"
                     value={b.label ?? ""}
                     onChange={(e) => updateBox(idx, { label: e.target.value })}
-                    className="w-full px-2 py-1 rounded border border-[#d8dde6] text-[12px] outline-none"
+                    className="w-full px-2 py-1 rounded border border-[#c9c9c9] text-[12px] outline-none"
                   />
                 </td>
                 {collectTargets ? (
@@ -706,7 +706,7 @@ function BoxList({
                     <select
                       value={b.collectTo ?? ""}
                       onChange={(e) => updateBox(idx, { collectTo: e.target.value || undefined })}
-                      className="w-full px-2 py-1 rounded border border-[#d8dde6] text-[12px] bg-white outline-none"
+                      className="w-full px-2 py-1 rounded border border-[#c9c9c9] text-[12px] bg-white outline-none"
                     >
                       <option value="">— Don&apos;t save —</option>
                       {COLLECT_TARGETS.map((t) => (

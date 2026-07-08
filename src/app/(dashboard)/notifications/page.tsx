@@ -16,7 +16,7 @@ export default async function NotificationsPage({
   const userId = session?.user?.id;
   if (!userId) {
     return (
-      <div className="p-6 text-[13px] text-[#706e6b]">Please sign in to view notifications.</div>
+      <div className="p-6 text-[13px] text-[#747474]">Please sign in to view notifications.</div>
     );
   }
   const sp = (await searchParams) ?? {};

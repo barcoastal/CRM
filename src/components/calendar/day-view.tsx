@@ -36,7 +36,7 @@ export function DayView({ anchorISO, events }: Props) {
       <div style={{
         ...headBar,
         background: isToday ? "#e6f3ff" : "#fafaf9",
-        color: isToday ? "#0b5394" : "#080707",
+        color: isToday ? "#0b5394" : "#181818",
       }}>
         {day.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
         {isToday && <span style={todayBadge}>Today</span>}
@@ -131,7 +131,7 @@ const gutter: React.CSSProperties = {
 const hourLabel: React.CSSProperties = {
   height: HOUR_HEIGHT,
   fontSize: 11,
-  color: "#706e6b",
+  color: "#747474",
   textAlign: "right",
   paddingRight: 8,
   paddingTop: 2,

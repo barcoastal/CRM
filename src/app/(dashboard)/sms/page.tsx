@@ -31,7 +31,7 @@ export default async function SmsPage() {
     {
       key: "account",
       label: "Account",
-      render: (m) => m.account ? <Link href={`/accounts/${m.account.id}`} style={{ color: "#1589ee" }}>{m.account.name}</Link> : "—",
+      render: (m) => m.account ? <Link href={`/accounts/${m.account.id}`} style={{ color: "#0176d3" }}>{m.account.name}</Link> : "—",
     },
     { key: "sent", label: "Sent", render: (m) => m.sentAt?.toLocaleString() ?? "—" },
   ];

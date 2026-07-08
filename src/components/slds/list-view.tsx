@@ -64,7 +64,7 @@ export function ListView<T extends { id: string }>({
               {views ? (
                 <ViewPicker views={views} currentName={viewName} entity={entity} />
               ) : (
-                <span className="slds-text-heading_medium" style={{ fontWeight: 700, color: "#080707" }}>
+                <span className="slds-text-heading_medium" style={{ fontWeight: 700, color: "#181818" }}>
                   {viewName}
                 </span>
               )}
@@ -109,7 +109,7 @@ export function ListView<T extends { id: string }>({
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={columns.length + (selectable ? 1 : 0)} style={{ textAlign: "center", padding: 40, color: "#706e6b" }}>
+                <td colSpan={columns.length + (selectable ? 1 : 0)} style={{ textAlign: "center", padding: 40, color: "#747474" }}>
                   No records match.
                 </td>
               </tr>
@@ -129,7 +129,7 @@ export function ListView<T extends { id: string }>({
                         {ci === 0 && href ? (
                           <Link
                             href={href}
-                            style={{ color: "#0070d2", textDecoration: "none", fontWeight: 400 }}
+                            style={{ color: "#0176d3", textDecoration: "none", fontWeight: 400 }}
                           >
                             {c.render(row)}
                           </Link>

@@ -282,7 +282,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
             <ArrowLeft className="size-3" />
             All Reports
           </Link>
-          <div className="text-[11px] text-[#706e6b] uppercase tracking-[0.4px] font-semibold">
+          <div className="text-[11px] text-[#747474] uppercase tracking-[0.4px] font-semibold">
             {metadata.pluralLabel}
           </div>
         </div>
@@ -316,7 +316,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
           <div className="px-4 py-3 border-b border-[#f2f3ff]">
             <div className="text-[13px] font-bold text-[#131b2e]">Fields</div>
             <div className="relative mt-2">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-[#706e6b]" />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-[#747474]" />
               <input
                 value={fieldSearch}
                 onChange={(e) => setFieldSearch(e.target.value)}
@@ -341,13 +341,13 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-[12px] font-semibold text-[#131b2e] truncate">{f.label}</div>
-                    <div className="text-[10px] text-[#706e6b] truncate">{f.key}</div>
+                    <div className="text-[10px] text-[#747474] truncate">{f.key}</div>
                   </div>
                 </label>
               );
             })}
             {filteredFields.length === 0 && (
-              <div className="px-4 py-3 text-[12px] text-[#706e6b]">No matching fields.</div>
+              <div className="px-4 py-3 text-[12px] text-[#747474]">No matching fields.</div>
             )}
           </div>
         </aside>
@@ -369,7 +369,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
               </button>
             </div>
             {filters.length === 0 ? (
-              <div className="text-[12px] text-[#706e6b]">
+              <div className="text-[12px] text-[#747474]">
                 No filters. All {metadata.pluralLabel.toLowerCase()} will be returned (up to {rowLimit} rows).
               </div>
             ) : (
@@ -432,7 +432,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
               <div>
                 <div className="text-[13px] font-bold text-[#131b2e]">Preview</div>
                 {result && (
-                  <div className="text-[11px] text-[#706e6b]">
+                  <div className="text-[11px] text-[#747474]">
                     {result.rowCount} row{result.rowCount === 1 ? "" : "s"}
                     {result.groups ? ` in ${result.groups.length} group${result.groups.length === 1 ? "" : "s"}` : ""}
                   </div>
@@ -446,7 +446,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
                     const label = fieldByKey.get(s.field)?.label ?? s.field;
                     return (
                       <div key={key}>
-                        <span className="text-[#706e6b]">{label} {s.kind}</span>{" "}
+                        <span className="text-[#747474]">{label} {s.kind}</span>{" "}
                         <span className="font-bold">{formatCell(val)}</span>
                       </div>
                     );
@@ -462,7 +462,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
             )}
 
             {!result && !error && (
-              <div className="px-4 py-10 text-center text-[12px] text-[#706e6b]">
+              <div className="px-4 py-10 text-center text-[12px] text-[#747474]">
                 Click Run to see results.
               </div>
             )}
@@ -491,7 +491,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
                                 className={`size-3 transition-transform ${expanded ? "" : "-rotate-90"}`}
                               />
                               <span className="text-[12px] font-bold text-[#131b2e]">{g.key}</span>
-                              <span className="text-[11px] text-[#706e6b]">
+                              <span className="text-[11px] text-[#747474]">
                                 ({(g.summary as Record<string, unknown>)._count as number} rows)
                               </span>
                             </div>
@@ -502,7 +502,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
                                 const label = fieldByKey.get(s.field)?.label ?? s.field;
                                 return (
                                   <div key={key}>
-                                    <span className="text-[#706e6b]">
+                                    <span className="text-[#747474]">
                                       {label} {s.kind}:
                                     </span>{" "}
                                     <span className="font-bold">{formatCell(val)}</span>
@@ -680,7 +680,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
               </button>
             </div>
             {summarize.length === 0 ? (
-              <div className="text-[11px] text-[#706e6b]">None</div>
+              <div className="text-[11px] text-[#747474]">None</div>
             ) : (
               <div className="space-y-2">
                 {summarize.map((s, i) => (
@@ -770,7 +770,7 @@ export function ResultsTable({ columns, rows, onSort, sortBy, sortDir }: Results
       <tbody>
         {rows.length === 0 ? (
           <tr>
-            <td colSpan={columns.length} className="px-3 py-6 text-center text-[12px] text-[#706e6b]">
+            <td colSpan={columns.length} className="px-3 py-6 text-center text-[12px] text-[#747474]">
               No rows.
             </td>
           </tr>

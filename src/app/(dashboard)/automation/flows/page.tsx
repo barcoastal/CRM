@@ -100,7 +100,7 @@ export default async function FlowsListPage() {
         >
           <Activity className="size-10 mx-auto text-[#c0c0d2]" />
           <div className="mt-3 text-[15px] font-bold text-[#131b2e]">No flows yet</div>
-          <p className="text-[13px] text-[#706e6b] mt-1 max-w-md mx-auto">
+          <p className="text-[13px] text-[#747474] mt-1 max-w-md mx-auto">
             Create your first flow to automate work without writing code. Flows fire when records are
             inserted or updated and walk through your decisions and actions step by step.
           </p>
@@ -152,7 +152,7 @@ export default async function FlowsListPage() {
                           {f.name}
                         </Link>
                         {f.description ? (
-                          <div className="text-[12px] text-[#706e6b]">{f.description}</div>
+                          <div className="text-[12px] text-[#747474]">{f.description}</div>
                         ) : null}
                       </td>
                       <td className="px-4 py-3 text-[#444656]">{f.triggerEvent}</td>
@@ -161,7 +161,7 @@ export default async function FlowsListPage() {
                       <td className="px-4 py-3 text-[#444656]">
                         {last ? `${formatRelative(last.startedAt)} (${last.status})` : "Never"}
                       </td>
-                      <td className="px-4 py-3 text-[#706e6b]">
+                      <td className="px-4 py-3 text-[#747474]">
                         {f.createdBy?.name ?? "System"}, {formatRelative(f.createdAt)}
                       </td>
                       <td className="px-4 py-3 text-right">

@@ -73,7 +73,7 @@ export default function NewEngagementSequencePage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Welcome Drip"
-            className="w-full px-3 py-2 border border-[#d8dde6] rounded text-[13px] text-[#131b2e] outline-none focus:border-[#3052ff]"
+            className="w-full px-3 py-2 border border-[#c9c9c9] rounded text-[13px] text-[#131b2e] outline-none focus:border-[#3052ff]"
             required
           />
         </div>
@@ -85,14 +85,14 @@ export default function NewEngagementSequencePage() {
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
             placeholder="What this sequence is for, what it sends, who it targets."
-            className="w-full px-3 py-2 border border-[#d8dde6] rounded text-[13px] text-[#131b2e] outline-none focus:border-[#3052ff]"
+            className="w-full px-3 py-2 border border-[#c9c9c9] rounded text-[13px] text-[#131b2e] outline-none focus:border-[#3052ff]"
           />
         </div>
 
         <div>
           <label className="block text-[12px] font-semibold text-[#444656] mb-1.5">Entity Type</label>
           <div className="text-[13px] text-[#444656]">
-            Lead <span className="text-[#706e6b]">(only Lead is wired in v1)</span>
+            Lead <span className="text-[#747474]">(only Lead is wired in v1)</span>
           </div>
         </div>
 
@@ -107,7 +107,7 @@ export default function NewEngagementSequencePage() {
           <label htmlFor="allowReEnroll" className="text-[13px] text-[#131b2e]">
             Allow re-enrollment
           </label>
-          <span className="text-[12px] text-[#706e6b]">
+          <span className="text-[12px] text-[#747474]">
             (off by default — matches Pardot behavior)
           </span>
         </div>
@@ -123,7 +123,7 @@ export default function NewEngagementSequencePage() {
           <label htmlFor="isActive" className="text-[13px] text-[#131b2e]">
             Activate now
           </label>
-          <span className="text-[12px] text-[#706e6b]">
+          <span className="text-[12px] text-[#747474]">
             (you can activate after adding steps + criteria)
           </span>
         </div>

@@ -120,10 +120,10 @@ export default async function MassEmailDetailPage({
           <div className="text-[14px] font-semibold text-[#131b2e]" style={{ fontFamily: "Manrope, sans-serif" }}>
             Recipients
           </div>
-          <div className="text-[12px] text-[#706e6b]">{messages.length} message{messages.length === 1 ? "" : "s"}</div>
+          <div className="text-[12px] text-[#747474]">{messages.length} message{messages.length === 1 ? "" : "s"}</div>
         </div>
         {messages.length === 0 ? (
-          <div className="px-6 py-10 text-center text-[13px] text-[#706e6b]">
+          <div className="px-6 py-10 text-center text-[13px] text-[#747474]">
             No messages have been generated yet.
           </div>
         ) : (
@@ -193,7 +193,7 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
       className="bg-white rounded-xl px-4 py-3"
       style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)", fontFamily: "Manrope, sans-serif" }}
     >
-      <div className="text-[11px] font-semibold text-[#706e6b] uppercase tracking-[0.5px]">{label}</div>
+      <div className="text-[11px] font-semibold text-[#747474] uppercase tracking-[0.5px]">{label}</div>
       <div className="text-[20px] font-bold text-[#131b2e] mt-1">{value}</div>
       {sub && <div className="text-[11px] text-[#3052ff] font-semibold mt-0.5">{sub}</div>}
     </div>

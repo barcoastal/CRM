@@ -37,7 +37,7 @@ const inputStyle: React.CSSProperties = {
   border: "1px solid #c9c7c5",
   borderRadius: 4,
   fontSize: 13,
-  color: "#080707",
+  color: "#181818",
   background: "#fff",
 };
 
@@ -62,7 +62,7 @@ function CalcField({
 }) {
   return (
     <div style={{ padding: "10px 0", borderBottom: "1px solid #f3f3f3" }}>
-      <div style={{ fontSize: 11, color: "#706e6b", marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 11, color: "#747474", marginBottom: 4 }}>{label}</div>
       <div style={{ position: "relative" }}>
         {prefix && (
           <span
@@ -71,7 +71,7 @@ function CalcField({
               left: 10,
               top: "50%",
               transform: "translateY(-50%)",
-              color: "#706e6b",
+              color: "#747474",
               fontSize: 13,
             }}
           >
@@ -99,7 +99,7 @@ function CalcField({
               right: 10,
               top: "50%",
               transform: "translateY(-50%)",
-              color: "#706e6b",
+              color: "#747474",
               fontSize: 13,
             }}
           >
@@ -230,7 +230,7 @@ export function PaymentCalculator({
           onClick={handleSave}
           disabled={saving}
           style={{
-            background: "#0070d2",
+            background: "#0176d3",
             color: "#fff",
             border: 0,
             padding: "8px 16px",

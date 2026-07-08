@@ -41,8 +41,8 @@ export function ResendSigningLinkButton({
 
 const btn: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
-  color: "#0070d2",
+  border: "1px solid #c9c9c9",
+  color: "#0176d3",
   padding: "5px 12px",
   borderRadius: 4,
   fontSize: 12,

@@ -53,7 +53,7 @@ export function SfDataSection({ sfDataJson, sfId, title = "All Salesforce Fields
   if (!data) {
     return (
       <Section title={title}>
-        <div style={{ fontSize: 13, color: "#706e6b", padding: 12 }}>
+        <div style={{ fontSize: 13, color: "#747474", padding: 12 }}>
           {sfId ? `No Salesforce data on file for sfId ${sfId}.` : "Record was not imported from Salesforce."}
         </div>
       </Section>
@@ -83,7 +83,7 @@ export function SfDataSection({ sfDataJson, sfId, title = "All Salesforce Fields
         ))}
       </div>
       {visible.length === 0 && (
-        <div style={{ padding: 16, fontSize: 13, color: "#706e6b" }}>No fields match “{filter}”.</div>
+        <div style={{ padding: 16, fontSize: 13, color: "#747474" }}>No fields match “{filter}”.</div>
       )}
     </Section>
   );
@@ -97,7 +97,7 @@ function FieldRow({ label, rawKey, value }: { label: string; rawKey: string; val
         borderBottom: "1px solid #f3f2f2",
         background: "#fafaf9",
         fontWeight: 500,
-        color: "#3e3e3c",
+        color: "#444444",
       }} title={rawKey}>
         {label}
       </div>
@@ -105,7 +105,7 @@ function FieldRow({ label, rawKey, value }: { label: string; rawKey: string; val
         padding: "8px 12px",
         borderBottom: "1px solid #f3f2f2",
         wordBreak: "break-word",
-        color: "#080707",
+        color: "#181818",
       }}>
         {value}
       </div>

@@ -33,7 +33,7 @@ export function Path({
         display: "flex",
         alignItems: "center",
         background: "#fff",
-        borderBottom: "1px solid #d8dde6",
+        borderBottom: "1px solid #c9c9c9",
         padding: "10px 16px",
         gap: 0,
       }}
@@ -96,8 +96,8 @@ export function Path({
         style={{
           marginLeft: 12,
           background: "#fff",
-          color: "#0070d2",
-          border: "1px solid #dddbda",
+          color: "#0176d3",
+          border: "1px solid #c9c9c9",
           padding: "0 16px",
           height: 32,
           borderRadius: 4,
@@ -110,7 +110,7 @@ export function Path({
           gap: 6,
         }}
       >
-        <svg width="14" height="14" viewBox="0 0 52 52" style={{ fill: "#0070d2" }}>
+        <svg width="14" height="14" viewBox="0 0 52 52" style={{ fill: "#0176d3" }}>
           <path d="M20.5 33.4l-7.2-7.1c-.4-.4-1-.4-1.4 0l-1.4 1.4c-.4.4-.4 1 0 1.4l9.3 9.2c.4.4 1 .4 1.4 0L42 17.5c.4-.4.4-1 0-1.4l-1.4-1.4c-.4-.4-1-.4-1.4 0L20.5 33.4z" />
         </svg>
         {actionLabel}
@@ -120,7 +120,7 @@ export function Path({
         :global(.sf-path-step) {
           transition: background .15s;
         }
-        :global(.sf-path-done) { background: #04844b; }
+        :global(.sf-path-done) { background: #3ba755; }
         :global(.sf-path-current) { background: #1b96ff; }
         :global(.sf-path-upcoming) { background: #f3f3f3; }
         :global(.sf-path-done:hover) { background: #0b683b; }

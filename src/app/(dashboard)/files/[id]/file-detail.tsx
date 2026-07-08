@@ -117,25 +117,25 @@ export function FileDetail({ doc }: { doc: DocFull }) {
     <div style={{ padding: "16px 24px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, fontSize: 12 }}>
         <Link href="/files" style={{ color: "#3052ff", textDecoration: "none" }}>Files</Link>
-        <span style={{ color: "#706e6b" }}>/</span>
+        <span style={{ color: "#747474" }}>/</span>
         {doc.folder && (
           <>
             <Link href={`/files?folderId=${doc.folder.id}`} style={{ color: "#3052ff", textDecoration: "none" }}>
               {doc.folder.name}
             </Link>
-            <span style={{ color: "#706e6b" }}>/</span>
+            <span style={{ color: "#747474" }}>/</span>
           </>
         )}
-        <span style={{ color: "#080707", fontWeight: 600 }}>{doc.title}</span>
+        <span style={{ color: "#181818", fontWeight: 600 }}>{doc.title}</span>
       </div>
 
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 20 }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#080707", margin: 0 }}>{doc.title}</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#181818", margin: 0 }}>{doc.title}</h1>
           {doc.description && (
-            <p style={{ fontSize: 13, color: "#3e3e3c", marginTop: 6 }}>{doc.description}</p>
+            <p style={{ fontSize: 13, color: "#444444", marginTop: 6 }}>{doc.description}</p>
           )}
-          <p style={{ fontSize: 12, color: "#706e6b", marginTop: 6 }}>
+          <p style={{ fontSize: 12, color: "#747474", marginTop: 6 }}>
             Owner: {doc.owner?.name ?? "Unowned"} · Created {new Date(doc.createdAt).toLocaleDateString()}
             {doc.latestVersion ? ` · v${doc.latestVersion.versionNumber} · ${formatBytes(doc.latestVersion.byteSize)}` : ""}
           </p>
@@ -144,7 +144,7 @@ export function FileDetail({ doc }: { doc: DocFull }) {
           {previewUrl && (
             <a
               href={previewUrl}
-              style={{ background: "#fff", border: "1px solid #d8dde6", padding: "6px 14px", borderRadius: 4, textDecoration: "none", color: "#3052ff", fontSize: 13, fontWeight: 600 }}
+              style={{ background: "#fff", border: "1px solid #c9c9c9", padding: "6px 14px", borderRadius: 4, textDecoration: "none", color: "#3052ff", fontSize: 13, fontWeight: 600 }}
             >
               Download
             </a>
@@ -155,13 +155,13 @@ export function FileDetail({ doc }: { doc: DocFull }) {
           />
           <button
             onClick={() => setShareOpen(true)}
-            style={{ background: "#fff", border: "1px solid #d8dde6", padding: "6px 14px", borderRadius: 4, cursor: "pointer", color: "#3052ff", fontSize: 13, fontWeight: 600 }}
+            style={{ background: "#fff", border: "1px solid #c9c9c9", padding: "6px 14px", borderRadius: 4, cursor: "pointer", color: "#3052ff", fontSize: 13, fontWeight: 600 }}
           >
             Share
           </button>
           <button
             onClick={deleteDoc}
-            style={{ background: "#fff", border: "1px solid #d8dde6", padding: "6px 14px", borderRadius: 4, cursor: "pointer", color: "#c23934", fontSize: 13, fontWeight: 600 }}
+            style={{ background: "#fff", border: "1px solid #c9c9c9", padding: "6px 14px", borderRadius: 4, cursor: "pointer", color: "#c23934", fontSize: 13, fontWeight: 600 }}
           >
             Delete
           </button>
@@ -172,18 +172,18 @@ export function FileDetail({ doc }: { doc: DocFull }) {
         {/* Preview + versions */}
         <div>
           <section style={{ background: "#fff", border: "1px solid #ecebea", borderRadius: 4, padding: 16, marginBottom: 16 }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4, margin: "0 0 12px" }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4, margin: "0 0 12px" }}>
               Preview
             </h2>
             {!doc.latestVersion ? (
-              <p style={{ color: "#706e6b", fontSize: 13 }}>No file uploaded.</p>
+              <p style={{ color: "#747474", fontSize: 13 }}>No file uploaded.</p>
             ) : isImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={previewUrl ?? ""} alt={doc.title} style={{ maxWidth: "100%", maxHeight: 480, display: "block", margin: "0 auto", borderRadius: 4 }} />
             ) : isPdf ? (
               <iframe src={previewUrl ?? ""} style={{ width: "100%", height: 600, border: "1px solid #ecebea", borderRadius: 4 }} />
             ) : (
-              <div style={{ padding: 24, textAlign: "center", color: "#706e6b", fontSize: 13, background: "#f7f7f7", borderRadius: 4 }}>
+              <div style={{ padding: 24, textAlign: "center", color: "#747474", fontSize: 13, background: "#f7f7f7", borderRadius: 4 }}>
                 <div style={{ fontSize: 24, fontWeight: 700, color: "#3052ff", marginBottom: 8 }}>FILE</div>
                 <div>{doc.latestVersion.filename}</div>
                 <div style={{ fontSize: 11, marginTop: 4 }}>{doc.latestVersion.contentType}</div>
@@ -192,17 +192,17 @@ export function FileDetail({ doc }: { doc: DocFull }) {
           </section>
 
           <section style={{ background: "#fff", border: "1px solid #ecebea", borderRadius: 4, padding: 16 }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4, margin: "0 0 12px" }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4, margin: "0 0 12px" }}>
               Version History ({doc.versions.length})
             </h2>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "#fafaf9", textAlign: "left" }}>
-                  <th style={{ padding: 8, fontWeight: 600, color: "#3e3e3c", borderBottom: "1px solid #ecebea" }}>Version</th>
-                  <th style={{ padding: 8, fontWeight: 600, color: "#3e3e3c", borderBottom: "1px solid #ecebea" }}>Filename</th>
-                  <th style={{ padding: 8, fontWeight: 600, color: "#3e3e3c", borderBottom: "1px solid #ecebea" }}>Size</th>
-                  <th style={{ padding: 8, fontWeight: 600, color: "#3e3e3c", borderBottom: "1px solid #ecebea" }}>Uploaded</th>
-                  <th style={{ padding: 8, fontWeight: 600, color: "#3e3e3c", borderBottom: "1px solid #ecebea" }}></th>
+                  <th style={{ padding: 8, fontWeight: 600, color: "#444444", borderBottom: "1px solid #ecebea" }}>Version</th>
+                  <th style={{ padding: 8, fontWeight: 600, color: "#444444", borderBottom: "1px solid #ecebea" }}>Filename</th>
+                  <th style={{ padding: 8, fontWeight: 600, color: "#444444", borderBottom: "1px solid #ecebea" }}>Size</th>
+                  <th style={{ padding: 8, fontWeight: 600, color: "#444444", borderBottom: "1px solid #ecebea" }}>Uploaded</th>
+                  <th style={{ padding: 8, fontWeight: 600, color: "#444444", borderBottom: "1px solid #ecebea" }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -229,11 +229,11 @@ export function FileDetail({ doc }: { doc: DocFull }) {
         {/* Right column — record links + share links */}
         <div>
           <section style={{ background: "#fff", border: "1px solid #ecebea", borderRadius: 4, padding: 16, marginBottom: 16 }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4, margin: "0 0 12px" }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4, margin: "0 0 12px" }}>
               Linked Records ({doc.records.length})
             </h2>
             {doc.records.length === 0 ? (
-              <p style={{ color: "#706e6b", fontSize: 12 }}>Not linked to any records yet.</p>
+              <p style={{ color: "#747474", fontSize: 12 }}>Not linked to any records yet.</p>
             ) : (
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {doc.records.map((r) => (
@@ -257,11 +257,11 @@ export function FileDetail({ doc }: { doc: DocFull }) {
           </section>
 
           <section style={{ background: "#fff", border: "1px solid #ecebea", borderRadius: 4, padding: 16 }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: "#3e3e3c", textTransform: "uppercase", letterSpacing: 0.4, margin: "0 0 12px" }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4, margin: "0 0 12px" }}>
               Share Links ({doc.shares.length})
             </h2>
             {doc.shares.length === 0 ? (
-              <p style={{ color: "#706e6b", fontSize: 12 }}>No share links yet.</p>
+              <p style={{ color: "#747474", fontSize: 12 }}>No share links yet.</p>
             ) : (
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {doc.shares.map((s) => {
@@ -270,7 +270,7 @@ export function FileDetail({ doc }: { doc: DocFull }) {
                   return (
                     <li key={s.id} style={{ padding: "8px 0", borderBottom: "1px solid #f7f7f7" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                        <span style={{ flex: 1, fontSize: 11, color: s.isRevoked || expired ? "#706e6b" : "#3e3e3c", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <span style={{ flex: 1, fontSize: 11, color: s.isRevoked || expired ? "#747474" : "#444444", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {url}
                         </span>
                         <button
@@ -280,7 +280,7 @@ export function FileDetail({ doc }: { doc: DocFull }) {
                           Copy
                         </button>
                       </div>
-                      <div style={{ fontSize: 11, color: "#706e6b", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <div style={{ fontSize: 11, color: "#747474", display: "flex", gap: 8, flexWrap: "wrap" }}>
                         {s.isRevoked && <span style={{ color: "#c23934", fontWeight: 600 }}>REVOKED</span>}
                         {expired && !s.isRevoked && <span style={{ color: "#c23934", fontWeight: 600 }}>EXPIRED</span>}
                         {s.passwordHash && <span>Password</span>}
@@ -296,7 +296,7 @@ export function FileDetail({ doc }: { doc: DocFull }) {
                         )}
                         <button
                           onClick={() => deleteShare(s.id)}
-                          style={{ background: "transparent", border: 0, color: "#706e6b", cursor: "pointer", fontSize: 11 }}
+                          style={{ background: "transparent", border: 0, color: "#747474", cursor: "pointer", fontSize: 11 }}
                         >
                           Delete
                         </button>

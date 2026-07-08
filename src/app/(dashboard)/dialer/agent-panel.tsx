@@ -355,14 +355,14 @@ export function AgentPanel() {
         onSaved={() => void refreshRecent()}
       />
     )}
-    <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 16, minHeight: 600 }}>
-      <h3 style={{ fontSize: 14, fontWeight: 700, color: "#3e3e3c", marginBottom: 16 }}>Five9 Dialer</h3>
+    <article style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, padding: 16, minHeight: 600 }}>
+      <h3 style={{ fontSize: 14, fontWeight: 700, color: "#444444", marginBottom: 16 }}>Five9 Dialer</h3>
 
-      {!creds && <div style={{ color: "#706e6b", fontSize: 13 }}>Loading…</div>}
+      {!creds && <div style={{ color: "#747474", fontSize: 13 }}>Loading…</div>}
 
       {creds && !creds.configured && !showCredForm && (
         <div>
-          <p style={{ fontSize: 13, color: "#706e6b", marginBottom: 12 }}>
+          <p style={{ fontSize: 13, color: "#747474", marginBottom: 12 }}>
             Connect your Five9 account to start dialing.
           </p>
           <button onClick={() => setShowCredForm(true)} style={btnPrimary}>
@@ -396,12 +396,12 @@ export function AgentPanel() {
           {activeCall && (
             <>
               <hr style={{ margin: "16px 0", border: 0, borderTop: "1px solid #ecebea" }} />
-              <div style={{ background: onHold ? "#fef0e8" : "#eaf5fe", border: `1px solid ${onHold ? "#fe9339" : "#1589ee"}`, borderRadius: 4, padding: 12 }}>
+              <div style={{ background: onHold ? "#fef0e8" : "#eaf5fe", border: `1px solid ${onHold ? "#fe9339" : "#0176d3"}`, borderRadius: 4, padding: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                  <div style={{ fontSize: 11, color: onHold ? "#fe9339" : "#0070d2", fontWeight: 600 }}>
+                  <div style={{ fontSize: 11, color: onHold ? "#fe9339" : "#0176d3", fontWeight: 600 }}>
                     {onHold ? "ON HOLD" : "ON CALL"}{muted ? " · MUTED" : ""}
                   </div>
-                  <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", color: "#3e3e3c", fontWeight: 600 }}>
+                  <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", color: "#444444", fontWeight: 600 }}>
                     {formatElapsed(callElapsed)}
                   </div>
                 </div>
@@ -433,7 +433,7 @@ export function AgentPanel() {
                         onClick={() => void sendDigit(d)}
                         style={{
                           padding: 10, fontSize: 16, fontWeight: 600,
-                          border: "1px solid #d8dde6", borderRadius: 4,
+                          border: "1px solid #c9c9c9", borderRadius: 4,
                           background: "#fff", cursor: "pointer",
                         }}
                       >{d}</button>
@@ -456,7 +456,7 @@ export function AgentPanel() {
                 )}
 
                 <div style={{ marginTop: 10 }}>
-                  <label style={{ fontSize: 11, color: "#706e6b", display: "block", marginBottom: 4 }}>Call notes (saved with disposition)</label>
+                  <label style={{ fontSize: 11, color: "#747474", display: "block", marginBottom: 4 }}>Call notes (saved with disposition)</label>
                   <textarea
                     value={callNotes}
                     onChange={(e) => setCallNotes(e.target.value)}
@@ -500,15 +500,15 @@ export function AgentPanel() {
           <hr style={{ margin: "16px 0", border: 0, borderTop: "1px solid #ecebea" }} />
 
           <div>
-            <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#3e3e3c" }}>Recent Calls</h4>
+            <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#444444" }}>Recent Calls</h4>
             {recentCalls.length === 0 && (
-              <div style={{ fontSize: 12, color: "#706e6b" }}>No recent calls.</div>
+              <div style={{ fontSize: 12, color: "#747474" }}>No recent calls.</div>
             )}
             {recentCalls.length > 0 && (
               <div>
                 {recentCalls.map((c) => {
                   const arrow = c.direction === "INBOUND" ? "↓" : "↑";
-                  const arrowColor = c.direction === "INBOUND" ? "#04844b" : "#0070d2";
+                  const arrowColor = c.direction === "INBOUND" ? "#04844b" : "#0176d3";
                   const name = c.lead?.contactName ?? c.lead?.businessName ?? c.phoneNumber;
                   const subtitle = c.lead ? c.phoneNumber : null;
                   const row = (
@@ -522,13 +522,13 @@ export function AgentPanel() {
                     }}>
                       <span style={{ color: arrowColor, fontWeight: 700 }}>{arrow}</span>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#080707", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
-                        <div style={{ fontSize: 11, color: "#706e6b" }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#181818", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+                        <div style={{ fontSize: 11, color: "#747474" }}>
                           {subtitle ?? c.disposition ?? c.status}
                           {subtitle && c.disposition ? ` · ${c.disposition}` : ""}
                         </div>
                       </div>
-                      <div style={{ fontSize: 11, color: "#706e6b", fontVariantNumeric: "tabular-nums" }}>
+                      <div style={{ fontSize: 11, color: "#747474", fontVariantNumeric: "tabular-nums" }}>
                         {c.duration ? `${Math.floor(c.duration / 60)}:${String(c.duration % 60).padStart(2, "0")}` : "—"}
                       </div>
                     </div>
@@ -639,8 +639,8 @@ function SessionPanel({
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <div>
-          <div style={{ fontSize: 11, color: "#706e6b" }}>Status</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: connected ? "#04844b" : "#706e6b" }}>
+          <div style={{ fontSize: 11, color: "#747474" }}>Status</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: connected ? "#04844b" : "#747474" }}>
             {connected ? state.state : "Disconnected"}
           </div>
         </div>
@@ -674,16 +674,16 @@ function formatElapsed(sec: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-const lbl: React.CSSProperties = { display: "block", fontSize: 11, color: "#706e6b", marginBottom: 4, marginTop: 12 };
+const lbl: React.CSSProperties = { display: "block", fontSize: 11, color: "#747474", marginBottom: 4, marginTop: 12 };
 const input: React.CSSProperties = {
   width: "100%",
   padding: "6px 8px",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   fontSize: 13,
 };
 const btnPrimary: React.CSSProperties = {
-  background: "#0070d2",
+  background: "#0176d3",
   color: "#fff",
   padding: "8px 16px",
   borderRadius: 4,
@@ -694,17 +694,17 @@ const btnPrimary: React.CSSProperties = {
 };
 const btnSecondary: React.CSSProperties = {
   background: "#fff",
-  color: "#0070d2",
+  color: "#0176d3",
   padding: "8px 16px",
   borderRadius: 4,
   fontSize: 13,
   fontWeight: 600,
-  border: "1px solid #0070d2",
+  border: "1px solid #0176d3",
   cursor: "pointer",
 };
 const btnLink: React.CSSProperties = {
   background: "transparent",
-  color: "#0070d2",
+  color: "#0176d3",
   fontSize: 12,
   border: 0,
   cursor: "pointer",

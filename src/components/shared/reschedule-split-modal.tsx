@@ -133,7 +133,7 @@ export function RescheduleSplitModal({
           <div style={{ ...card, overflow: "auto", maxHeight: 340 }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
               <thead>
-                <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+                <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
                   {!readOnly && <th style={th}>Actions</th>}
                   <th style={th}>Payment Date</th>
                   <th style={th}>Bank Fee</th>
@@ -155,7 +155,7 @@ export function RescheduleSplitModal({
                               { date: row.date, amount: 0, bankFee: 0, citadelFee: 0, setupFee: 0 },
                               ...rs.slice(i + 1),
                             ])}
-                            style={circBtn("#1589ee")}
+                            style={circBtn("#0176d3")}
                             aria-label="Add row"
                           >
                             +
@@ -219,7 +219,7 @@ export function RescheduleSplitModal({
 function RO({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#3e3e3c", marginBottom: 4 }}>{label}</label>
+      <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#444444", marginBottom: 4 }}>{label}</label>
       <input readOnly value={value} style={{ width: "100%", height: 32, padding: "0 8px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 13, background: "#f3f2f2" }} />
     </div>
   );
@@ -227,12 +227,12 @@ function RO({ label, value }: { label: string; value: string }) {
 
 const overlay: React.CSSProperties = { position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 60, zIndex: 9999 };
 const dialog: React.CSSProperties = { background: "#fff", borderRadius: 6, width: "min(760px, 95vw)", maxHeight: "86vh", overflow: "auto", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" };
-const dialogHeader: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #d8dde6" };
-const xBtn: React.CSSProperties = { border: 0, background: "none", fontSize: 22, cursor: "pointer", color: "#706e6b", lineHeight: 1 };
-const card: React.CSSProperties = { background: "#fff", border: "1px solid #d8dde6", borderRadius: 6 };
-const th: React.CSSProperties = { textAlign: "left", padding: "8px 10px", fontWeight: 700, fontSize: 11, color: "#3e3e3c", whiteSpace: "nowrap" };
+const dialogHeader: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #c9c9c9" };
+const xBtn: React.CSSProperties = { border: 0, background: "none", fontSize: 22, cursor: "pointer", color: "#747474", lineHeight: 1 };
+const card: React.CSSProperties = { background: "#fff", border: "1px solid #c9c9c9", borderRadius: 6 };
+const th: React.CSSProperties = { textAlign: "left", padding: "8px 10px", fontWeight: 700, fontSize: 11, color: "#444444", whiteSpace: "nowrap" };
 const td: React.CSSProperties = { padding: "6px 10px", whiteSpace: "nowrap" };
 const cellInput: React.CSSProperties = { width: "100%", height: 30, padding: "0 6px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 12, background: "#fff" };
 const circBtn = (bg: string): React.CSSProperties => ({ width: 24, height: 24, borderRadius: "50%", border: 0, background: bg, color: "#fff", cursor: "pointer", fontSize: 12, lineHeight: 1, display: "inline-flex", alignItems: "center", justifyContent: "center" });
-const btnBrand: React.CSSProperties = { background: "#0070d2", color: "#fff", border: 0, padding: "7px 16px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" };
-const btnOutline: React.CSSProperties = { background: "#fff", color: "#0070d2", border: "1px solid #d8dde6", padding: "7px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" };
+const btnBrand: React.CSSProperties = { background: "#0176d3", color: "#fff", border: 0, padding: "7px 16px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" };
+const btnOutline: React.CSSProperties = { background: "#fff", color: "#0176d3", border: "1px solid #c9c9c9", padding: "7px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" };

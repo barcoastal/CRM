@@ -30,7 +30,7 @@ export type RescheduleInitial = {
 
 const wrap: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   padding: 16,
 };
@@ -38,7 +38,7 @@ const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 11,
   fontWeight: 600,
-  color: "#3e3e3c",
+  color: "#444444",
   marginBottom: 4,
 };
 const inputStyle: React.CSSProperties = {
@@ -50,7 +50,7 @@ const inputStyle: React.CSSProperties = {
   fontSize: 13,
   background: "#fff",
 };
-const ro: React.CSSProperties = { ...inputStyle, background: "#f3f2f2", color: "#3e3e3c" };
+const ro: React.CSSProperties = { ...inputStyle, background: "#f3f2f2", color: "#444444" };
 
 function money(n: number): string {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -188,14 +188,14 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
         {splitRows && (
           <button
             onClick={() => setSplitRows(null)}
-            style={{ background: "#fff", color: "#c23934", border: "1px solid #d8dde6", padding: "7px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            style={{ background: "#fff", color: "#c23934", border: "1px solid #c9c9c9", padding: "7px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
           >
             Clear Split
           </button>
         )}
         <button
           onClick={() => setShowRecalc(true)}
-          style={{ background: "#0070d2", color: "#fff", border: 0, padding: "7px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+          style={{ background: "#0176d3", color: "#fff", border: 0, padding: "7px 18px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
         >
           Recalculate
         </button>
@@ -203,7 +203,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
           onClick={() => setRefreshKey((k) => k + 1)}
           title="Refresh"
           aria-label="Refresh"
-          style={{ background: "#fff", color: "#0070d2", border: "1px solid #d8dde6", padding: "7px 12px", borderRadius: 4, fontSize: 15, fontWeight: 700, cursor: "pointer", lineHeight: 1 }}
+          style={{ background: "#fff", color: "#0176d3", border: "1px solid #c9c9c9", padding: "7px 12px", borderRadius: 4, fontSize: 15, fontWeight: 700, cursor: "pointer", lineHeight: 1 }}
         >
           ↻
         </button>
@@ -285,7 +285,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
       <div style={{ ...wrap, overflowX: "auto", padding: 0 }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
               {[
                 "Payment Date",
                 "Weekly Draft",
@@ -307,7 +307,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
                     padding: "8px 10px",
                     fontWeight: 700,
                     fontSize: 11,
-                    color: "#3e3e3c",
+                    color: "#444444",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -365,14 +365,14 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
                   <td style={{ padding: "8px 10px" }}>{money(r.citadelFee)}</td>
                   <td style={{ padding: "8px 10px" }}>{money(r.escrowAmount)}</td>
                   <td style={{ padding: "8px 10px" }}>{money(r.runningBalance)}</td>
-                  <td style={{ padding: "8px 10px", color: isSkipped ? "#c23934" : r.status === "Completed" ? "#2e844a" : "#706e6b" }}>
+                  <td style={{ padding: "8px 10px", color: isSkipped ? "#c23934" : r.status === "Completed" ? "#2e844a" : "#747474" }}>
                     {isSkipped ? "Skipped" : r.status}
                   </td>
                   <td style={{ padding: "8px 10px", position: "relative" }}>
                     <button
                       onClick={() => setActionMenuRow((cur) => (cur === r.index ? null : r.index))}
                       aria-label="Row actions"
-                      style={{ border: "1px solid #d8dde6", background: "#fff", borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: 14, lineHeight: 1 }}
+                      style={{ border: "1px solid #c9c9c9", background: "#fff", borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: 14, lineHeight: 1 }}
                     >
                       ▾
                     </button>
@@ -384,7 +384,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
                           top: "100%",
                           zIndex: 20,
                           background: "#fff",
-                          border: "1px solid #d8dde6",
+                          border: "1px solid #c9c9c9",
                           borderRadius: 4,
                           boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                           minWidth: 120,
@@ -488,6 +488,6 @@ const menuItem: React.CSSProperties = {
   background: "none",
   padding: "8px 12px",
   fontSize: 13,
-  color: "#080707",
+  color: "#181818",
   cursor: "pointer",
 };

@@ -23,7 +23,7 @@ export function ContactSection({
     <div
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         marginBottom: 8,
         overflow: "hidden",
@@ -53,12 +53,12 @@ export function ContactSection({
           style={{
             transform: open ? "rotate(90deg)" : "rotate(0deg)",
             transition: "transform .15s",
-            fill: "#3e3e3c",
+            fill: "#444444",
           }}
         >
           <path d="M2 0l6 5-6 5z" />
         </svg>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#080707" }}>{title}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#181818" }}>{title}</span>
       </button>
       {open && <div style={{ padding: "4px 16px 12px", ...bodyStyle }}>{children}</div>}
     </div>

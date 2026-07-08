@@ -56,14 +56,14 @@ const th: React.CSSProperties = {
   padding: "8px 12px",
   fontWeight: 700,
   fontSize: 12,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.3,
 };
 
 const td: React.CSSProperties = {
   padding: "10px 12px",
-  color: "#080707",
+  color: "#181818",
   fontSize: 13,
 };
 
@@ -170,11 +170,11 @@ export function DebtInformation({
       <div style={{ marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 24 }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#706e6b" }}>Total Debt</div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#747474" }}>Total Debt</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#131b2e" }}>{fmtMoney(total)}</div>
           </div>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#706e6b" }}>Total Weekly Payment</div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#747474" }}>Total Weekly Payment</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#131b2e" }}>{fmtMoney(totalWeekly)}</div>
           </div>
         </div>
@@ -186,8 +186,8 @@ export function DebtInformation({
           }}
           style={{
             background: "#fff",
-            border: "1px solid #d8dde6",
-            color: "#0070d2",
+            border: "1px solid #c9c9c9",
+            color: "#0176d3",
             padding: "6px 14px",
             borderRadius: 4,
             fontSize: 13,
@@ -199,9 +199,9 @@ export function DebtInformation({
         </button>
       </div>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #d8dde6" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #c9c9c9" }}>
         <thead>
-          <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+          <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
             <th style={th}>Type</th>
             <th style={th}>Creditor</th>
             <th style={th}>Amount</th>
@@ -214,7 +214,7 @@ export function DebtInformation({
         <tbody>
           {items.length === 0 && !showForm && (
             <tr>
-              <td colSpan={7} style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>
+              <td colSpan={7} style={{ padding: 24, textAlign: "center", color: "#747474" }}>
                 No debt information entered yet. Click + Add Debt to start.
               </td>
             </tr>
@@ -231,7 +231,7 @@ export function DebtInformation({
                 <button
                   onClick={() => startEdit(d)}
                   title="Edit"
-                  style={{ background: "transparent", border: 0, cursor: "pointer", color: "#0070d2", marginRight: 6 }}
+                  style={{ background: "transparent", border: 0, cursor: "pointer", color: "#0176d3", marginRight: 6 }}
                 >
                   ✎
                 </button>
@@ -246,7 +246,7 @@ export function DebtInformation({
             </tr>
           ))}
           {showForm && (
-            <tr style={{ background: "#fafaf9", borderTop: "1px solid #d8dde6" }}>
+            <tr style={{ background: "#fafaf9", borderTop: "1px solid #c9c9c9" }}>
               <td style={td}>
                 <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} style={inputStyle}>
                   {TYPE_OPTIONS.map(([k, l]) => (
@@ -302,7 +302,7 @@ export function DebtInformation({
                     onClick={save}
                     disabled={saving || !form.amount}
                     style={{
-                      background: "#0070d2",
+                      background: "#0176d3",
                       color: "#fff",
                       border: 0,
                       padding: "4px 8px",
@@ -322,8 +322,8 @@ export function DebtInformation({
                     }}
                     style={{
                       background: "#fff",
-                      color: "#3e3e3c",
-                      border: "1px solid #d8dde6",
+                      color: "#444444",
+                      border: "1px solid #c9c9c9",
                       padding: "4px 8px",
                       borderRadius: 4,
                       fontSize: 11,
@@ -338,7 +338,7 @@ export function DebtInformation({
           )}
         </tbody>
         <tfoot>
-          <tr style={{ borderTop: "1px solid #d8dde6", background: "#fafaf9" }}>
+          <tr style={{ borderTop: "1px solid #c9c9c9", background: "#fafaf9" }}>
             <td style={{ ...td, fontWeight: 700 }}>Total</td>
             <td style={td} />
             <td style={{ ...td, fontWeight: 700 }}>{fmtMoney(total)}</td>

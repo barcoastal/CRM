@@ -527,7 +527,7 @@ function PicklistsTab({
                         style={{
                           ...pill,
                           background: d.isActive ? "#2e844a" : "#ecebea",
-                          color: d.isActive ? "#fff" : "#3e3e3c",
+                          color: d.isActive ? "#fff" : "#444444",
                         }}
                       >
                         {d.isActive ? "Active" : "Inactive"}
@@ -786,7 +786,7 @@ const defaultCode: React.CSSProperties = {
   background: "#f5f6f8",
   padding: "1px 6px",
   borderRadius: 4,
-  color: "#3e3e3c",
+  color: "#444444",
 };
 const indexBadge: React.CSSProperties = {
   display: "inline-block",
@@ -815,7 +815,7 @@ const pill: React.CSSProperties = {
 };
 const editBtn: React.CSSProperties = {
   background: "transparent",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 6,
   padding: "4px 10px",
   fontSize: 12,
@@ -843,7 +843,7 @@ const secondaryBtn: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 600,
   fontFamily: "Manrope, system-ui, sans-serif",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   cursor: "pointer",
 };
 const dangerBtn: React.CSSProperties = {
@@ -922,7 +922,7 @@ const modalTitle: React.CSSProperties = {
 };
 const closeBtn: React.CSSProperties = {
   background: "transparent",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 6,
   padding: "4px 10px",
   fontSize: 12,
@@ -942,7 +942,7 @@ const fieldLbl: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "8px 10px",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 6,
   fontSize: 13,
   fontFamily: "Manrope, system-ui, sans-serif",
@@ -992,7 +992,7 @@ const sectionTitle: React.CSSProperties = {
 };
 const emptyCard: React.CSSProperties = {
   background: "#fff",
-  border: "1px dashed #d8dde6",
+  border: "1px dashed #c9c9c9",
   borderRadius: 8,
   padding: 24,
   fontSize: 13,

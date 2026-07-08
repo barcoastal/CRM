@@ -31,7 +31,7 @@ export default async function ApprovalProcessDetailPage({
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.4px] font-semibold text-[#706e6b]">
+          <div className="text-[11px] uppercase tracking-[0.4px] font-semibold text-[#747474]">
             Approval Process
           </div>
           <h1

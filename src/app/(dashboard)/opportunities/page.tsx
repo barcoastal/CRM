@@ -202,7 +202,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
           <Link
             key="acct"
             href={`/accounts/${o.account.id}`}
-            style={{ color: "#1589ee", textDecoration: "none" }}
+            style={{ color: "#0176d3", textDecoration: "none" }}
             className="sf-row-link"
           >
             {accountName}
@@ -212,7 +212,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         ),
         fmtDateShort(o.updatedAt) || "—",
         phone ? (
-          <a key="phone" href={`tel:${phone}`} style={{ color: "#1589ee", textDecoration: "none" }}>
+          <a key="phone" href={`tel:${phone}`} style={{ color: "#0176d3", textDecoration: "none" }}>
             {phone}
           </a>
         ) : "—",

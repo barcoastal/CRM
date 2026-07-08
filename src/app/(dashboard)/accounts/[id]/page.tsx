@@ -158,7 +158,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const emailVal = account.email ?? acctSf("Email__c");
   const ownerName = account.owner?.name ?? acctSf("Owner_Full_Name__c") ?? acctSf("OwnerName");
   const parentAcctNode = account.parentAccount?.name
-    ? <Link href={`/accounts/${account.parentAccount.id}`} style={{ color: "#1589ee" }}>{account.parentAccount.name}</Link>
+    ? <Link href={`/accounts/${account.parentAccount.id}`} style={{ color: "#0176d3" }}>{account.parentAccount.name}</Link>
     : acctSf("Parent_Account_Name__c") ?? acctSf("ParentName") ?? acctSf("Parent_Account__c");
 
   // SF Account Details — field pairs verified against docs/sf-screenshots/sf-account-detail.png
@@ -177,7 +177,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const creditorTypeDisplay = acctSf("Creditor_Type__c");
   const accountRecordTypeDisplay = acctSf("Account_Record_Type__c") ?? account.recordType.replace(/_/g, " ");
   const primaryContactNode = account.primaryContact?.fullName ? (
-    <Link key="pc" href={`/contacts/${account.primaryContact.id}`} style={{ color: "#1589ee" }}>{account.primaryContact.fullName}</Link>
+    <Link key="pc" href={`/contacts/${account.primaryContact.id}`} style={{ color: "#0176d3" }}>{account.primaryContact.fullName}</Link>
   ) : (acctSf("Primary_Contact_Name__c") ?? acctSf("Primary_Contact__c"));
   const syncedDateTimeDisplay = acctSfDateTime("Synced_DateTime__c");
   const closerDisplay = account.opportunities[0]?.closer ?? acctSf("Closer__c");
@@ -195,7 +195,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const legalNetworkDisplay = acctSf("Legal_Network__c");
   const legalNetworkSyncStatusDisplay = acctSf("Legal_Network_Sync_Status__c");
   const billingAddressNode = (
-    <div key="ba" style={{ color: "#1589ee", whiteSpace: "pre-line" }}>
+    <div key="ba" style={{ color: "#0176d3", whiteSpace: "pre-line" }}>
       {[
         account.billingStreet ?? acctSf("BillingStreet"),
         [account.billingCity ?? acctSf("BillingCity"), account.billingState ?? acctSf("BillingState"), account.billingZip ?? acctSf("BillingPostalCode")].filter(Boolean).join(", "),
@@ -204,7 +204,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     </div>
   );
   const shippingAddressNode = (
-    <div key="sa" style={{ color: "#1589ee", whiteSpace: "pre-line" }}>
+    <div key="sa" style={{ color: "#0176d3", whiteSpace: "pre-line" }}>
       {[
         acctSf("ShippingStreet"),
         [acctSf("ShippingCity"), acctSf("ShippingState"), acctSf("ShippingPostalCode")].filter(Boolean).join(", "),
@@ -241,7 +241,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             [
               "Phone",
               phoneVal ? (
-                <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#1589ee" }}>
+                <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#0176d3" }}>
                   {phoneVal}
                   <CallButton phone={phoneVal} accountId={account.id} />
                 </span>
@@ -412,8 +412,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         {/* Description (full width) — SF renders Description as a full-row
             below the File Status pair grid. */}
         <div style={{ padding: "8px 0", display: "grid", gridTemplateColumns: "16.5% 1fr 28px", gap: 8, alignItems: "start" }}>
-          <div style={{ fontSize: 12, color: "#3e3e3c", paddingTop: 1 }}>Description</div>
-          <div style={{ fontSize: 13, color: "#080707", whiteSpace: "pre-wrap" }}>
+          <div style={{ fontSize: 12, color: "#444444", paddingTop: 1 }}>Description</div>
+          <div style={{ fontSize: 13, color: "#181818", whiteSpace: "pre-wrap" }}>
             {account.description ?? acctSf("Description") ?? ""}
           </div>
           <div />
@@ -471,7 +471,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     </Section>
   ) : (
     <Section title="Reschedule Program">
-      <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>
+      <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>
         No active opportunity. Create one first to use the payment calculator.
       </div>
     </Section>
@@ -480,11 +480,11 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const activitiesPanel = (
     <Section title={`Activities (${activity.length})`}>
       {activity.length === 0 ? (
-        <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>No activity recorded.</div>
+        <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>No activity recorded.</div>
       ) : (
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
               <th style={th}>Date</th>
               <th style={th}>Type</th>
               <th style={th}>Subject</th>
@@ -567,7 +567,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         items={account.opportunities}
         renderItem={(o) => (
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12 }}>
-            <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee" }}>{o.name ?? o.recordType.replace(/_/g, " ")}</Link>
+            <Link href={`/opportunities/${o.id}`} style={{ color: "#0176d3" }}>{o.name ?? o.recordType.replace(/_/g, " ")}</Link>
             <span>{o.stage}</span>
             <span>${(o.totalDebt ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
@@ -580,8 +580,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         items={account.cases}
         renderItem={(c) => (
           <div>
-            <Link href={`/cases/${c.id}`} style={{ color: "#1589ee" }}>{c.subject}</Link>
-            <span style={{ color: "#706e6b", marginLeft: 8 }}>· {c.status}</span>
+            <Link href={`/cases/${c.id}`} style={{ color: "#0176d3" }}>{c.subject}</Link>
+            <span style={{ color: "#747474", marginLeft: 8 }}>· {c.status}</span>
           </div>
         )}
         emptyHint="No cases."
@@ -592,8 +592,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         items={account.contacts}
         renderItem={(rel) => (
           <div>
-            <Link href={`/contacts/${rel.contact.id}`} style={{ color: "#1589ee" }}>{rel.contact.fullName}</Link>
-            <span style={{ color: "#706e6b", marginLeft: 8 }}>· {rel.role}</span>
+            <Link href={`/contacts/${rel.contact.id}`} style={{ color: "#0176d3" }}>{rel.contact.fullName}</Link>
+            <span style={{ color: "#747474", marginLeft: 8 }}>· {rel.role}</span>
           </div>
         )}
         emptyHint="No contacts."
@@ -620,7 +620,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const settlementsPanel = (
     <Section title="Settlements">
       {allDebts.length === 0 ? (
-        <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>No debt records yet.</div>
+        <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>No debt records yet.</div>
       ) : (
         <OppDebtInformation
           opportunityId={account.opportunities[0]?.id ?? ""}
@@ -643,11 +643,11 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const opportunitiesPanel = (
     <Section title={`Opportunities (${account.opportunities.length})`}>
       {account.opportunities.length === 0 ? (
-        <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>No opportunities yet.</div>
+        <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>No opportunities yet.</div>
       ) : (
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
               <th style={th}>Opportunity Name</th>
               <th style={th}>Version Status</th>
               <th style={th}>Total Debt Included</th>
@@ -658,7 +658,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             {account.opportunities.map((o) => (
               <tr key={o.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
                 <td style={td}>
-                  <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee" }}>{o.name ?? o.recordType.replace(/_/g, " ")}</Link>
+                  <Link href={`/opportunities/${o.id}`} style={{ color: "#0176d3" }}>{o.name ?? o.recordType.replace(/_/g, " ")}</Link>
                 </td>
                 <td style={td}>{o.stage}</td>
                 <td style={td}>${(o.totalDebt ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -815,10 +815,10 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             items={account.opportunities}
             renderItem={(o) => (
               <div style={{ fontSize: 12, lineHeight: 1.5 }}>
-                <Link href={`/opportunities/${o.id}`} style={{ color: "#1589ee", fontWeight: 600, fontSize: 13 }}>
+                <Link href={`/opportunities/${o.id}`} style={{ color: "#0176d3", fontWeight: 600, fontSize: 13 }}>
                   {o.name ?? o.recordType.replace(/_/g, " ")}
                 </Link>
-                <div style={{ color: "#3e3e3c", marginTop: 4 }}>
+                <div style={{ color: "#444444", marginTop: 4 }}>
                   <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0 8px" }}>
                     <span style={{ fontWeight: 700 }}>Version Status:</span>
                     <span>{o.stage}</span>
@@ -838,14 +838,14 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             items={account.contacts}
             renderItem={(rel) => (
               <div>
-                <Link href={`/contacts/${rel.contact.id}`} style={{ color: "#1589ee", fontWeight: 600 }}>
+                <Link href={`/contacts/${rel.contact.id}`} style={{ color: "#0176d3", fontWeight: 600 }}>
                   {rel.contact.fullName}
                 </Link>
                 {rel.contact.email && (
-                  <div style={{ fontSize: 11, color: "#706e6b" }}>{rel.contact.email}</div>
+                  <div style={{ fontSize: 11, color: "#747474" }}>{rel.contact.email}</div>
                 )}
                 {rel.contact.phone && (
-                  <div style={{ fontSize: 11, color: "#706e6b" }}>{rel.contact.phone}</div>
+                  <div style={{ fontSize: 11, color: "#747474" }}>{rel.contact.phone}</div>
                 )}
               </div>
             )}
@@ -868,12 +868,12 @@ const th: React.CSSProperties = {
   padding: "8px 12px",
   fontWeight: 700,
   fontSize: 12,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.3,
 };
 const td: React.CSSProperties = {
   padding: "10px 12px",
-  color: "#080707",
+  color: "#181818",
   fontSize: 13,
 };

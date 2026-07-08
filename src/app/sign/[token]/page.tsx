@@ -135,7 +135,7 @@ function TerminalView({
             Download signed copy
           </a>
         )}
-        <p style={{ marginTop: 28, fontSize: 11, color: "#706e6b" }}>
+        <p style={{ marginTop: 28, fontSize: 11, color: "#747474" }}>
           Coastal CRM e-Signature. Electronic signatures are legally binding under the U.S. ESIGN Act and UETA.
         </p>
       </div>

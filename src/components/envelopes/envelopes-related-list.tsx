@@ -22,7 +22,7 @@ export type EnvelopeRow = {
 };
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  DRAFT:     { bg: "#ecebea", color: "#3e3e3c" },
+  DRAFT:     { bg: "#ecebea", color: "#444444" },
   SENT:      { bg: "#d4ecff", color: "#0a3b6f" },
   VIEWED:    { bg: "#fff5d8", color: "#806c00" },
   SIGNED:    { bg: "#ddf5d6", color: "#0b683b" },
@@ -103,7 +103,7 @@ export function EnvelopesRelatedList({
   }
 
   return (
-    <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, marginBottom: 8 }}>
+    <article style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, marginBottom: 8 }}>
       <header
         style={{
           display: "flex",
@@ -122,8 +122,8 @@ export function EnvelopesRelatedList({
               onClick={() => setTemplateModal(true)}
               style={{
                 background: "#fff",
-                border: "1px solid #d8dde6",
-                color: "#0070d2",
+                border: "1px solid #c9c9c9",
+                color: "#0176d3",
                 padding: "4px 12px",
                 borderRadius: 4,
                 fontSize: 12,
@@ -138,8 +138,8 @@ export function EnvelopesRelatedList({
             onClick={() => setModal(true)}
             style={{
               background: "#fff",
-              border: "1px solid #d8dde6",
-              color: "#0070d2",
+              border: "1px solid #c9c9c9",
+              color: "#0176d3",
               padding: "4px 12px",
               borderRadius: 4,
               fontSize: 12,
@@ -152,11 +152,11 @@ export function EnvelopesRelatedList({
         </div>
       </header>
       {envelopes.length === 0 ? (
-        <div style={{ padding: 16, fontSize: 12, color: "#706e6b" }}>No envelopes yet.</div>
+        <div style={{ padding: 16, fontSize: 12, color: "#747474" }}>No envelopes yet.</div>
       ) : (
         <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
               <th style={th}>Document</th>
               <th style={th}>Type</th>
               <th style={th}>Signer</th>
@@ -175,7 +175,7 @@ export function EnvelopesRelatedList({
                   <td style={td}>{TYPE_LABELS[e.recordType] ?? e.recordType}</td>
                   <td style={td}>
                     <div>{e.signerName}</div>
-                    <div style={{ fontSize: 11, color: "#706e6b" }}>{e.signerEmail}</div>
+                    <div style={{ fontSize: 11, color: "#747474" }}>{e.signerEmail}</div>
                   </td>
                   <td style={td}>
                     <span
@@ -237,19 +237,19 @@ const th: React.CSSProperties = {
   padding: "8px 12px",
   fontWeight: 700,
   fontSize: 11,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.3,
 };
 const td: React.CSSProperties = {
   padding: "10px 12px",
-  color: "#080707",
+  color: "#181818",
 };
 const iconBtn: React.CSSProperties = {
   background: "transparent",
   border: 0,
   cursor: "pointer",
-  color: "#0070d2",
+  color: "#0176d3",
   fontSize: 14,
   padding: 2,
 };

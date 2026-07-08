@@ -103,7 +103,7 @@ export function DashboardClient({ initial }: { initial: DashboardData }) {
           {data.description && (
             <p className="text-[13px] text-[#444656] mt-1">{data.description}</p>
           )}
-          <div className="flex items-center gap-3 mt-2 text-[11px] text-[#706e6b]">
+          <div className="flex items-center gap-3 mt-2 text-[11px] text-[#747474]">
             <span>
               {data.isShared ? "Shared" : "Private"}
             </span>
@@ -126,7 +126,7 @@ export function DashboardClient({ initial }: { initial: DashboardData }) {
           <button
             type="button"
             onClick={() => setEditing((e) => !e)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-[13px] font-semibold border border-[#d8dde6] bg-white text-[#131b2e]"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-[13px] font-semibold border border-[#c9c9c9] bg-white text-[#131b2e]"
           >
             {editing ? <Eye className="size-4" /> : <Pencil className="size-4" />}
             {editing ? "Done" : "Edit"}

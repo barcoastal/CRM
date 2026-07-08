@@ -154,7 +154,7 @@ export function CalendarToolbar({
           <button onClick={prev} style={iconBtn} aria-label="Previous">&larr;</button>
           <button onClick={next} style={iconBtn} aria-label="Next">&rarr;</button>
         </div>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#080707", margin: 0, marginLeft: 8 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#181818", margin: 0, marginLeft: 8 }}>
           {formatRangeLabel(view, anchor)}
         </h2>
       </div>
@@ -208,7 +208,7 @@ export function CalendarToolbar({
               />
               <div style={pickerBody}>
                 {filteredUsers.length === 0 && (
-                  <div style={{ padding: "8px 12px", fontSize: 12, color: "#706e6b" }}>
+                  <div style={{ padding: "8px 12px", fontSize: 12, color: "#747474" }}>
                     No users match.
                   </div>
                 )}
@@ -224,7 +224,7 @@ export function CalendarToolbar({
                         style={{ marginRight: 8 }}
                       />
                       <span style={{ ...dot, background: c.dot }}>{initialFor(u.name)}</span>
-                      <span style={{ flex: 1, color: "#080707" }}>{u.name}</span>
+                      <span style={{ flex: 1, color: "#181818" }}>{u.name}</span>
                     </label>
                   );
                 })}
@@ -281,7 +281,7 @@ const bar: React.CSSProperties = {
   gap: 12,
 };
 const btnPrimary: React.CSSProperties = {
-  background: "#0070d2",
+  background: "#0176d3",
   color: "#fff",
   padding: "6px 14px",
   borderRadius: 4,
@@ -292,38 +292,38 @@ const btnPrimary: React.CSSProperties = {
 };
 const btnSecondary: React.CSSProperties = {
   background: "#fff",
-  color: "#0070d2",
+  color: "#0176d3",
   padding: "5px 14px",
   borderRadius: 4,
   fontSize: 13,
   fontWeight: 500,
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   cursor: "pointer",
 };
 const iconBtn: React.CSSProperties = {
   background: "#fff",
-  color: "#080707",
+  color: "#181818",
   width: 28,
   height: 28,
   borderRadius: 4,
   fontSize: 14,
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   cursor: "pointer",
 };
 const toggleGroup: React.CSSProperties = {
   display: "flex",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   overflow: "hidden",
 };
 const toggleBtn: React.CSSProperties = {
   background: "#fff",
-  color: "#0070d2",
+  color: "#0176d3",
   padding: "5px 12px",
   fontSize: 13,
   fontWeight: 500,
   border: 0,
-  borderLeft: "1px solid #d8dde6",
+  borderLeft: "1px solid #c9c9c9",
   cursor: "pointer",
 };
 const toggleActive: React.CSSProperties = {
@@ -334,18 +334,18 @@ const toggleActive: React.CSSProperties = {
 };
 const presetGroup: React.CSSProperties = {
   display: "flex",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   overflow: "hidden",
 };
 const presetBtn: React.CSSProperties = {
   background: "#fff",
-  color: "#0070d2",
+  color: "#0176d3",
   padding: "5px 12px",
   fontSize: 13,
   fontWeight: 500,
   border: 0,
-  borderLeft: "1px solid #d8dde6",
+  borderLeft: "1px solid #c9c9c9",
   cursor: "pointer",
 };
 const presetActive: React.CSSProperties = {
@@ -356,11 +356,11 @@ const presetActive: React.CSSProperties = {
 };
 const pickerToggle: React.CSSProperties = {
   background: "#fff",
-  color: "#080707",
+  color: "#181818",
   padding: "5px 12px",
   fontSize: 13,
   fontWeight: 500,
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   cursor: "pointer",
   display: "inline-flex",
@@ -373,7 +373,7 @@ const pickerPanel: React.CSSProperties = {
   top: "calc(100% + 4px)",
   right: 0,
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
   minWidth: 280,
@@ -388,7 +388,7 @@ const pickerSearch: React.CSSProperties = {
   fontSize: 13,
   outline: "none",
   background: "#fff",
-  color: "#080707",
+  color: "#181818",
 };
 const pickerBody: React.CSSProperties = {
   maxHeight: 280,

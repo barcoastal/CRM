@@ -34,7 +34,7 @@ export interface TotalPaymentsSummaryProps {
 
 const labelCellStyle: React.CSSProperties = {
   padding: "6px 0",
-  color: "#706e6b",
+  color: "#747474",
   fontSize: 12,
 };
 const valueCellStyle: React.CSSProperties = {
@@ -71,7 +71,7 @@ export function TotalPaymentsSummary(props: TotalPaymentsSummaryProps) {
     <article
       style={{
         background: "#fff",
-        border: "1px solid #d8dde6",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         marginBottom: 8,
       }}
@@ -85,10 +85,10 @@ export function TotalPaymentsSummary(props: TotalPaymentsSummaryProps) {
           borderBottom: allEmpty ? "none" : "1px solid #ecebea",
         }}
       >
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
           Total Payments Summary
         </h3>
-        {allEmpty && <span style={{ fontSize: 12, color: "#706e6b" }}>No Records Found</span>}
+        {allEmpty && <span style={{ fontSize: 12, color: "#747474" }}>No Records Found</span>}
       </header>
       {!allEmpty && (
         <table style={{ width: "100%", fontSize: 12, padding: "0 12px 8px" }}>

@@ -37,7 +37,7 @@ export function ActivityChatterRail({
     <div
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         marginBottom: 12,
         boxShadow: "0 2px 2px 0 rgba(0,0,0,0.05)",
@@ -47,7 +47,7 @@ export function ActivityChatterRail({
         style={{
           display: "flex",
           gap: 0,
-          borderBottom: "1px solid #d8dde6",
+          borderBottom: "1px solid #c9c9c9",
           padding: "0 8px",
         }}
       >
@@ -63,8 +63,8 @@ export function ActivityChatterRail({
                 padding: "10px 14px",
                 fontSize: 13,
                 fontWeight: active ? 700 : 600,
-                color: active ? "#080707" : "#3e3e3c",
-                borderBottom: active ? "3px solid #0070d2" : "3px solid transparent",
+                color: active ? "#181818" : "#444444",
+                borderBottom: active ? "3px solid #0176d3" : "3px solid transparent",
                 marginBottom: -1,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
@@ -92,11 +92,11 @@ export function ActivityChatterRail({
         ) : tab === "Chatter" ? (
           <ChatterFeed posts={chatter} />
         ) : tab === "Five9 Call Logs" ? (
-          <div style={{ padding: 24, textAlign: "center", color: "#706e6b", fontSize: 13 }}>
+          <div style={{ padding: 24, textAlign: "center", color: "#747474", fontSize: 13 }}>
             No Five9 call logs yet for this record.
           </div>
         ) : (
-          <div style={{ padding: 24, textAlign: "center", color: "#706e6b", fontSize: 13 }}>
+          <div style={{ padding: 24, textAlign: "center", color: "#747474", fontSize: 13 }}>
             No SMS messages yet.
           </div>
         )}
@@ -111,7 +111,7 @@ function ChatterFeed({ posts }: { posts: readonly ChatterPost[] }) {
     <article
       style={{
         background: "#fff",
-        border: "1px solid #d8dde6",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
       }}
     >
@@ -123,7 +123,7 @@ function ChatterFeed({ posts }: { posts: readonly ChatterPost[] }) {
           style={{
             width: "100%",
             minHeight: 56,
-            border: "1px solid #d8dde6",
+            border: "1px solid #c9c9c9",
             borderRadius: 4,
             padding: 8,
             fontSize: 13,
@@ -133,7 +133,7 @@ function ChatterFeed({ posts }: { posts: readonly ChatterPost[] }) {
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
           <button
             style={{
-              background: "#0070d2",
+              background: "#0176d3",
               color: "#fff",
               border: 0,
               padding: "6px 14px",
@@ -150,7 +150,7 @@ function ChatterFeed({ posts }: { posts: readonly ChatterPost[] }) {
       </div>
 
       {posts.length === 0 ? (
-        <div style={{ padding: 16, fontSize: 12, color: "#706e6b" }}>
+        <div style={{ padding: 16, fontSize: 12, color: "#747474" }}>
           No Chatter activity yet. Be the first to post an update.
         </div>
       ) : (
@@ -183,7 +183,7 @@ function ChatterPostView({ post }: { post: ChatterPost }) {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 700 }}>{post.authorName}</div>
-          <div style={{ fontSize: 11, color: "#706e6b" }}>
+          <div style={{ fontSize: 11, color: "#747474" }}>
             {post.createdAt.toLocaleString()}
           </div>
           <div style={{ fontSize: 13, marginTop: 6, whiteSpace: "pre-wrap" }}>{post.body}</div>

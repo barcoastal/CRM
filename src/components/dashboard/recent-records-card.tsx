@@ -14,14 +14,14 @@ export function RecentRecordsCard({ records }: { records: RecentRecord[] }) {
     <div
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
       }}
     >
       <header
         style={{
           padding: "8px 12px",
-          borderBottom: "1px solid #dddbda",
+          borderBottom: "1px solid #c9c9c9",
           background: "#fafaf9",
           display: "flex",
           alignItems: "center",
@@ -31,13 +31,13 @@ export function RecentRecordsCard({ records }: { records: RecentRecord[] }) {
         <svg width="16" height="16" viewBox="0 0 52 52" style={{ fill: "#54698d" }}>
           <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#recent" />
         </svg>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#080707" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#181818" }}>
           Recent Records
         </div>
       </header>
       <div style={{ padding: 0 }}>
         {records.length === 0 ? (
-          <div style={{ padding: 16, textAlign: "center", color: "#706e6b", fontSize: 12 }}>
+          <div style={{ padding: 16, textAlign: "center", color: "#747474", fontSize: 12 }}>
             Nothing here yet — viewed records show up below.
           </div>
         ) : (
@@ -72,12 +72,12 @@ export function RecentRecordsCard({ records }: { records: RecentRecord[] }) {
                 </span>
                 <Link
                   href={`/accounts/${r.id}`}
-                  style={{ color: "#0070d2", fontSize: 13, textDecoration: "none", flex: 1 }}
+                  style={{ color: "#0176d3", fontSize: 13, textDecoration: "none", flex: 1 }}
                 >
                   {r.name}
                 </Link>
                 {r.stage ? (
-                  <span style={{ color: "#706e6b", fontSize: 11 }}>{r.stage}</span>
+                  <span style={{ color: "#747474", fontSize: 11 }}>{r.stage}</span>
                 ) : null}
               </li>
             ))}
@@ -86,16 +86,16 @@ export function RecentRecordsCard({ records }: { records: RecentRecord[] }) {
       </div>
       <footer
         style={{
-          borderTop: "1px solid #dddbda",
+          borderTop: "1px solid #c9c9c9",
           padding: "6px 12px",
           fontSize: 11,
           textAlign: "center",
-          color: "#0070d2",
+          color: "#0176d3",
           fontWeight: 600,
           background: "#fafaf9",
         }}
       >
-        <Link href="/accounts" style={{ color: "#0070d2", textDecoration: "none" }}>
+        <Link href="/accounts" style={{ color: "#0176d3", textDecoration: "none" }}>
           View All
         </Link>
       </footer>

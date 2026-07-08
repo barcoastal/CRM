@@ -33,8 +33,8 @@ function statusIcon(status: string): { glyph: string; color: string; label: stri
   if (s.includes("DECLIN")) return { glyph: "x", color: "#c23934", label: "Declined" };
   if (s.includes("COMPLET")) return { glyph: "v", color: "#04844b", label: "Envelope Completed" };
   if (s.includes("SIGN")) return { glyph: "v", color: "#04844b", label: "Signed" };
-  if (s.includes("SENT")) return { glyph: "o", color: "#706e6b", label: "Sent" };
-  return { glyph: "o", color: "#706e6b", label: status || "Pending" };
+  if (s.includes("SENT")) return { glyph: "o", color: "#747474", label: "Sent" };
+  return { glyph: "o", color: "#747474", label: status || "Pending" };
 }
 
 function timeAgo(iso: string | null): string {
@@ -66,7 +66,7 @@ export function DocusignEnvelopeStatus({
     <article
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         marginBottom: 12,
         boxShadow: "0 2px 2px 0 rgba(0,0,0,0.05)",
@@ -83,14 +83,14 @@ export function DocusignEnvelopeStatus({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <svg width="10" height="10" viewBox="0 0 10 10" style={{ fill: "#706e6b", transform: "rotate(90deg)" }}>
+          <svg width="10" height="10" viewBox="0 0 10 10" style={{ fill: "#747474", transform: "rotate(90deg)" }}>
             <path d="M2 0l6 5-6 5z" />
           </svg>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
             DocuSign Envelope Status
           </h3>
         </div>
-        <span style={{ fontSize: 12, color: "#706e6b" }}>({envelopes.length})</span>
+        <span style={{ fontSize: 12, color: "#747474" }}>({envelopes.length})</span>
       </header>
       <ul style={{ listStyle: "none", padding: "4px 12px 4px", margin: 0 }}>
         {top.map((e) => {
@@ -131,7 +131,7 @@ export function DocusignEnvelopeStatus({
                 <div
                   style={{
                     fontWeight: 600,
-                    color: "#080707",
+                    color: "#181818",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -141,7 +141,7 @@ export function DocusignEnvelopeStatus({
                 </div>
                 <div
                   style={{
-                    color: "#706e6b",
+                    color: "#747474",
                     fontSize: 11,
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -151,7 +151,7 @@ export function DocusignEnvelopeStatus({
                   {e.templateName ?? e.documentName ?? e.signerName}
                 </div>
               </div>
-              <span style={{ color: "#706e6b", fontSize: 11, whiteSpace: "nowrap" }}>
+              <span style={{ color: "#747474", fontSize: 11, whiteSpace: "nowrap" }}>
                 {timeAgo(when)}
               </span>
             </li>
@@ -160,7 +160,7 @@ export function DocusignEnvelopeStatus({
       </ul>
       {envelopes.length > top.length && (
         <div style={{ textAlign: "center", padding: "8px 12px", borderTop: "1px solid #ecebea" }}>
-          <Link href="#envelopes" style={{ color: "#0070d2", fontSize: 12 }}>
+          <Link href="#envelopes" style={{ color: "#0176d3", fontSize: 12 }}>
             View All ({envelopes.length})
           </Link>
         </div>

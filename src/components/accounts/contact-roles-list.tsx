@@ -23,7 +23,7 @@ export function ContactRolesList({ rows }: { rows: Row[] }) {
       <article
         style={{
           background: "#fff",
-          border: "1px solid #dddbda",
+          border: "1px solid #c9c9c9",
           borderRadius: 4,
           marginBottom: 12,
           overflow: "hidden",
@@ -33,7 +33,7 @@ export function ContactRolesList({ rows }: { rows: Row[] }) {
         <header
           style={{
             background: "#fafaf9",
-            borderBottom: "1px solid #dddbda",
+            borderBottom: "1px solid #c9c9c9",
             padding: "8px 16px",
             display: "flex",
             alignItems: "center",
@@ -58,11 +58,11 @@ export function ContactRolesList({ rows }: { rows: Row[] }) {
           >
             C
           </span>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
             Contact Roles (0)
           </h3>
         </header>
-        <div style={{ padding: "12px 16px", fontSize: 12, color: "#706e6b" }}>No contact roles yet.</div>
+        <div style={{ padding: "12px 16px", fontSize: 12, color: "#747474" }}>No contact roles yet.</div>
       </article>
     );
   }
@@ -71,7 +71,7 @@ export function ContactRolesList({ rows }: { rows: Row[] }) {
     <article
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         marginBottom: 12,
         overflow: "hidden",
@@ -81,7 +81,7 @@ export function ContactRolesList({ rows }: { rows: Row[] }) {
       <header
         style={{
           background: "#fafaf9",
-          borderBottom: "1px solid #dddbda",
+          borderBottom: "1px solid #c9c9c9",
           padding: "8px 16px",
           display: "flex",
           alignItems: "center",
@@ -106,13 +106,13 @@ export function ContactRolesList({ rows }: { rows: Row[] }) {
             <path d="M26 24c5 0 9-4 9-9s-4-9-9-9-9 4-9 9 4 9 9 9zm0 4c-6 0-18 3-18 9v5h36v-5c0-6-12-9-18-9z" />
           </svg>
         </span>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
           Contact Roles ({rows.length})
         </h3>
       </header>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
-          <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+          <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
             <th style={th}>Name</th>
             <th style={th}>Title</th>
             <th style={th}>Role</th>
@@ -125,7 +125,7 @@ export function ContactRolesList({ rows }: { rows: Row[] }) {
           {rows.map((r) => (
             <tr key={r.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
               <td style={td}>
-                <Link href={`/contacts/${r.contact.id}`} style={{ color: "#1589ee", fontWeight: 600 }}>
+                <Link href={`/contacts/${r.contact.id}`} style={{ color: "#0176d3", fontWeight: 600 }}>
                   {r.contact.fullName}
                 </Link>
               </td>
@@ -134,7 +134,7 @@ export function ContactRolesList({ rows }: { rows: Row[] }) {
               <td style={td}>{r.contact.phone ?? ""}</td>
               <td style={td}>
                 {r.contact.email && (
-                  <Link href={`mailto:${r.contact.email}`} style={{ color: "#1589ee" }}>
+                  <Link href={`mailto:${r.contact.email}`} style={{ color: "#0176d3" }}>
                     {r.contact.email}
                   </Link>
                 )}
@@ -169,12 +169,12 @@ const th: React.CSSProperties = {
   padding: "8px 12px",
   fontWeight: 700,
   fontSize: 11,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.3,
 };
 const td: React.CSSProperties = {
   padding: "10px 12px",
-  color: "#080707",
+  color: "#181818",
   fontSize: 13,
 };

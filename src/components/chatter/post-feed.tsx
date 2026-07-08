@@ -75,7 +75,7 @@ export function PostFeed({ posts: initialPosts, currentUserId, onRefresh }: Prop
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {posts.length === 0 && (
-        <div style={{ padding: 32, textAlign: "center", color: "#706e6b", border: "1px dashed #d8dde6", borderRadius: 6 }}>
+        <div style={{ padding: 32, textAlign: "center", color: "#747474", border: "1px dashed #c9c9c9", borderRadius: 6 }}>
           No posts yet. Be the first to share.
         </div>
       )}
@@ -144,11 +144,11 @@ function PostCard({ post, currentUserId, onChanged }: { post: FeedPost; currentU
   const initials = post.author.name.split(" ").map((p) => p[0]).slice(0, 2).join("");
 
   return (
-    <div style={{ border: "1px solid #d8dde6", borderRadius: 6, background: "#fff", padding: 14 }}>
+    <div style={{ border: "1px solid #c9c9c9", borderRadius: 6, background: "#fff", padding: 14 }}>
       <div style={{ display: "flex", gap: 12 }}>
         <span style={{
           width: 36, height: 36, borderRadius: "50%",
-          background: "#16325c", color: "#fff",
+          background: "#181818", color: "#fff",
           display: "inline-flex", alignItems: "center", justifyContent: "center",
           fontSize: 13, fontWeight: 700, flexShrink: 0,
         }}>
@@ -156,22 +156,22 @@ function PostCard({ post, currentUserId, onChanged }: { post: FeedPost; currentU
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
-            <Link href={`/settings/users/${post.author.id}`} style={{ fontSize: 13, fontWeight: 600, color: "#080707", textDecoration: "none" }}>
+            <Link href={`/settings/users/${post.author.id}`} style={{ fontSize: 13, fontWeight: 600, color: "#181818", textDecoration: "none" }}>
               {post.author.name}
             </Link>
             {label && href && (
               <>
-                <span style={{ color: "#706e6b", fontSize: 12 }}>in</span>
-                <Link href={href} style={{ fontSize: 12, color: "#0070d2", textDecoration: "none" }}>
+                <span style={{ color: "#747474", fontSize: 12 }}>in</span>
+                <Link href={href} style={{ fontSize: 12, color: "#0176d3", textDecoration: "none" }}>
                   {label}
                 </Link>
               </>
             )}
-            <span style={{ color: "#706e6b", fontSize: 11 }}>{formatRelative(post.createdAt)}</span>
+            <span style={{ color: "#747474", fontSize: 11 }}>{formatRelative(post.createdAt)}</span>
           </div>
           <div
             className="chatter-body"
-            style={{ fontSize: 14, lineHeight: 1.5, color: "#080707", wordBreak: "break-word" }}
+            style={{ fontSize: 14, lineHeight: 1.5, color: "#181818", wordBreak: "break-word" }}
             dangerouslySetInnerHTML={{ __html: renderHtml(post.body) }}
           />
 
@@ -184,11 +184,11 @@ function PostCard({ post, currentUserId, onChanged }: { post: FeedPost; currentU
                 style={{
                   background: myReaction === emoji ? "#e0f0ff" : "transparent",
                   border: "1px solid",
-                  borderColor: myReaction === emoji ? "#0070d2" : "#d8dde6",
+                  borderColor: myReaction === emoji ? "#0176d3" : "#c9c9c9",
                   borderRadius: 12,
                   padding: "3px 10px",
                   fontSize: 11,
-                  color: myReaction === emoji ? "#0070d2" : "#3e3e3c",
+                  color: myReaction === emoji ? "#0176d3" : "#444444",
                   cursor: "pointer",
                   display: "inline-flex",
                   gap: 4,
@@ -204,7 +204,7 @@ function PostCard({ post, currentUserId, onChanged }: { post: FeedPost; currentU
               style={{
                 background: "transparent",
                 border: 0,
-                color: "#0070d2",
+                color: "#0176d3",
                 fontSize: 12,
                 cursor: "pointer",
                 padding: "3px 6px",
@@ -238,7 +238,7 @@ function ReplyRow({ post }: { post: FeedPost }) {
     <div style={{ display: "flex", gap: 8 }}>
       <span style={{
         width: 28, height: 28, borderRadius: "50%",
-        background: "#16325c", color: "#fff",
+        background: "#181818", color: "#fff",
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         fontSize: 11, fontWeight: 700, flexShrink: 0,
       }}>
@@ -246,13 +246,13 @@ function ReplyRow({ post }: { post: FeedPost }) {
       </span>
       <div style={{ minWidth: 0 }}>
         <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 2 }}>
-          <Link href={`/settings/users/${post.author.id}`} style={{ fontSize: 12, fontWeight: 600, color: "#080707", textDecoration: "none" }}>
+          <Link href={`/settings/users/${post.author.id}`} style={{ fontSize: 12, fontWeight: 600, color: "#181818", textDecoration: "none" }}>
             {post.author.name}
           </Link>
-          <span style={{ color: "#706e6b", fontSize: 11 }}>{formatRelative(post.createdAt)}</span>
+          <span style={{ color: "#747474", fontSize: 11 }}>{formatRelative(post.createdAt)}</span>
         </div>
         <div
-          style={{ fontSize: 13, lineHeight: 1.45, color: "#080707", wordBreak: "break-word" }}
+          style={{ fontSize: 13, lineHeight: 1.45, color: "#181818", wordBreak: "break-word" }}
           dangerouslySetInnerHTML={{ __html: renderHtml(post.body) }}
         />
       </div>

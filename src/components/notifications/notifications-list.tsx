@@ -188,7 +188,7 @@ export function NotificationsList({ initial, initialUnreadCount, initialKind, in
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value)}
-            className="px-2 py-1 text-[12px] rounded border border-[#d8dde6]"
+            className="px-2 py-1 text-[12px] rounded border border-[#c9c9c9]"
           >
             {KIND_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -202,7 +202,7 @@ export function NotificationsList({ initial, initialUnreadCount, initialKind, in
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="px-2 py-1 text-[12px] rounded border border-[#d8dde6]"
+            className="px-2 py-1 text-[12px] rounded border border-[#c9c9c9]"
           >
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -222,7 +222,7 @@ export function NotificationsList({ initial, initialUnreadCount, initialKind, in
       </div>
 
       {items.length === 0 ? (
-        <div className="px-5 py-12 text-center text-[13px] text-[#706e6b]">
+        <div className="px-5 py-12 text-center text-[13px] text-[#747474]">
           You&apos;re all caught up.
         </div>
       ) : (
@@ -297,7 +297,7 @@ export function NotificationsList({ initial, initialUnreadCount, initialKind, in
                 <button
                   type="button"
                   onClick={() => archiveOne(n.id)}
-                  className="text-[11px] text-[#706e6b] hover:text-[#131b2e]"
+                  className="text-[11px] text-[#747474] hover:text-[#131b2e]"
                   title="Archive"
                 >
                   Archive

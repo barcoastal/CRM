@@ -118,7 +118,7 @@ export default async function ESignTemplatesPage() {
                         year: "numeric",
                       })}
                       {t.createdBy?.name ? (
-                        <span className="text-[#706e6b]"> by {t.createdBy.name}</span>
+                        <span className="text-[#747474]"> by {t.createdBy.name}</span>
                       ) : null}
                     </td>
                   </tr>

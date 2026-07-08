@@ -58,14 +58,14 @@ const th: React.CSSProperties = {
   padding: "8px 12px",
   fontWeight: 700,
   fontSize: 12,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.3,
 };
 
 const td: React.CSSProperties = {
   padding: "10px 12px",
-  color: "#080707",
+  color: "#181818",
   fontSize: 13,
 };
 
@@ -182,12 +182,12 @@ export function OppDebtInformation({
   return (
     <div>
       <div style={{ display: "flex", gap: 24, marginBottom: 16, justifyContent: "center" }}>
-        <div style={{ background: "#fafaf9", padding: "8px 16px", borderRadius: 4, border: "1px solid #d8dde6" }}>
-          <span style={{ fontSize: 13, color: "#706e6b", marginRight: 8 }}>Total Debt:</span>
+        <div style={{ background: "#fafaf9", padding: "8px 16px", borderRadius: 4, border: "1px solid #c9c9c9" }}>
+          <span style={{ fontSize: 13, color: "#747474", marginRight: 8 }}>Total Debt:</span>
           <span style={{ fontSize: 13, fontWeight: 700 }}>{fmtMoney(totalDebt)}</span>
         </div>
-        <div style={{ background: "#fafaf9", padding: "8px 16px", borderRadius: 4, border: "1px solid #d8dde6" }}>
-          <span style={{ fontSize: 13, color: "#706e6b", marginRight: 8 }}>Total Weekly Payment:</span>
+        <div style={{ background: "#fafaf9", padding: "8px 16px", borderRadius: 4, border: "1px solid #c9c9c9" }}>
+          <span style={{ fontSize: 13, color: "#747474", marginRight: 8 }}>Total Weekly Payment:</span>
           <span style={{ fontSize: 13, fontWeight: 700 }}>{fmtMoney(totalWeeklyPayment)}</span>
         </div>
       </div>
@@ -201,8 +201,8 @@ export function OppDebtInformation({
           }}
           style={{
             background: "#fff",
-            border: "1px solid #d8dde6",
-            color: "#0070d2",
+            border: "1px solid #c9c9c9",
+            color: "#0176d3",
             padding: "6px 14px",
             borderRadius: 4,
             fontSize: 13,
@@ -214,9 +214,9 @@ export function OppDebtInformation({
         </button>
       </div>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #d8dde6" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #c9c9c9" }}>
         <thead>
-          <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+          <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
             <th style={th}>Creditor Name</th>
             <th style={th}>Type</th>
             <th style={th}>Debt Amount</th>
@@ -229,7 +229,7 @@ export function OppDebtInformation({
         <tbody>
           {items.length === 0 && !showForm && (
             <tr>
-              <td colSpan={7} style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>
+              <td colSpan={7} style={{ padding: 24, textAlign: "center", color: "#747474" }}>
                 No debts enrolled yet. Click + Add Debt to start.
               </td>
             </tr>
@@ -237,7 +237,7 @@ export function OppDebtInformation({
           {items.map((d, i) => (
             <tr key={d.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
               <td style={td}>
-                <span style={{ color: "#706e6b", marginRight: 8 }}>{i + 1}</span>
+                <span style={{ color: "#747474", marginRight: 8 }}>{i + 1}</span>
                 {d.creditorName}
               </td>
               <td style={td}>{label(TYPE_OPTIONS, d.debtType)}</td>
@@ -249,7 +249,7 @@ export function OppDebtInformation({
                 <button
                   onClick={() => startEdit(d)}
                   title="Edit"
-                  style={{ background: "transparent", border: 0, cursor: "pointer", color: "#0070d2", marginRight: 6 }}
+                  style={{ background: "transparent", border: 0, cursor: "pointer", color: "#0176d3", marginRight: 6 }}
                 >
                   ✎
                 </button>
@@ -264,7 +264,7 @@ export function OppDebtInformation({
             </tr>
           ))}
           {showForm && (
-            <tr style={{ background: "#fafaf9", borderTop: "1px solid #d8dde6" }}>
+            <tr style={{ background: "#fafaf9", borderTop: "1px solid #c9c9c9" }}>
               <td style={td}>
                 <CreditorCombobox
                   value={form.creditorName}
@@ -322,7 +322,7 @@ export function OppDebtInformation({
                     onClick={save}
                     disabled={saving || !form.creditorName || !form.debtAmount}
                     style={{
-                      background: "#0070d2",
+                      background: "#0176d3",
                       color: "#fff",
                       border: 0,
                       padding: "4px 8px",
@@ -342,8 +342,8 @@ export function OppDebtInformation({
                     }}
                     style={{
                       background: "#fff",
-                      color: "#3e3e3c",
-                      border: "1px solid #d8dde6",
+                      color: "#444444",
+                      border: "1px solid #c9c9c9",
                       padding: "4px 8px",
                       borderRadius: 4,
                       fontSize: 11,

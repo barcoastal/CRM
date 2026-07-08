@@ -30,7 +30,7 @@ export function SoftphoneStatus({ stationType }: { stationType: string | null })
       padding: 10,
       marginTop: 8,
       fontSize: 12,
-      color: "#3e3e3c",
+      color: "#444444",
     }}>
       <div style={{ fontWeight: 700, color: "#fe9339", marginBottom: 4 }}>
         Softphone mode — WebRTC bridge pending

@@ -179,7 +179,7 @@ export function NewSourceForm({ users, queues }: Props) {
                 className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
                   on
                     ? "bg-[#3052ff] text-white border-[#3052ff]"
-                    : "bg-white text-[#444656] border-[#d8dde6]"
+                    : "bg-white text-[#444656] border-[#c9c9c9]"
                 }`}
               >
                 {f}
@@ -199,7 +199,7 @@ export function NewSourceForm({ users, queues }: Props) {
                 value={r.src}
                 onChange={(e) => updateRow(i, { src: e.target.value })}
               />
-              <span className="text-[#706e6b] text-[11px]">→</span>
+              <span className="text-[#747474] text-[11px]">→</span>
               <select
                 className="ms-input flex-1"
                 value={r.dst}
@@ -235,7 +235,7 @@ export function NewSourceForm({ users, queues }: Props) {
         <button
           type="button"
           onClick={() => router.push("/marketing/sources")}
-          className="px-4 py-2 rounded text-[13px] font-semibold text-[#444656] bg-white border border-[#d8dde6]"
+          className="px-4 py-2 rounded text-[13px] font-semibold text-[#444656] bg-white border border-[#c9c9c9]"
         >
           Cancel
         </button>
@@ -254,7 +254,7 @@ export function NewSourceForm({ users, queues }: Props) {
         :global(.ms-input) {
           width: 100%;
           padding: 8px 10px;
-          border: 1px solid #d8dde6;
+          border: 1px solid #c9c9c9;
           border-radius: 4px;
           font-size: 13px;
           color: #131b2e;
@@ -288,7 +288,7 @@ function Row({
           {label}
           {required && <span className="text-[#942b00] ml-1">*</span>}
         </div>
-        {hint && <div className="text-[11px] text-[#706e6b] mt-0.5">{hint}</div>}
+        {hint && <div className="text-[11px] text-[#747474] mt-0.5">{hint}</div>}
       </div>
       <div>{children}</div>
     </div>

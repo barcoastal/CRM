@@ -103,15 +103,15 @@ export function UserForm({
   return (
     <form onSubmit={submit} onChange={() => justSaved && setJustSaved(false)}>
       <header style={{
-        background: "#fff", padding: "12px 20px", border: "1px solid #d8dde6",
+        background: "#fff", padding: "12px 20px", border: "1px solid #c9c9c9",
         borderRadius: 4, marginBottom: 12,
         display: "flex", alignItems: "center", gap: 12,
       }}>
         <div style={{ flex: 1 }}>
-          <Link href="/settings/users" style={{ fontSize: 12, color: "#1589ee", textDecoration: "none" }}>
+          <Link href="/settings/users" style={{ fontSize: 12, color: "#0176d3", textDecoration: "none" }}>
             ← Users
           </Link>
-          <h1 style={{ fontSize: 18, fontWeight: 700, margin: "4px 0 0", color: "#080707" }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, margin: "4px 0 0", color: "#181818" }}>
             {isEdit ? `Edit ${initial?.name}` : "New User"}
           </h1>
         </div>
@@ -229,7 +229,7 @@ export function UserForm({
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "6px 10px",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   fontSize: 13,
   background: "#fff",

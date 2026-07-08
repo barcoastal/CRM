@@ -50,9 +50,9 @@ export function FollowButton({ groupId, entityType, entityId, initialFollowing }
       disabled={loading}
       style={{
         padding: "5px 12px",
-        background: following ? "#fff" : "#0070d2",
-        color: following ? "#0070d2" : "#fff",
-        border: "1px solid #0070d2",
+        background: following ? "#fff" : "#0176d3",
+        color: following ? "#0176d3" : "#fff",
+        border: "1px solid #0176d3",
         borderRadius: 4,
         fontSize: 12,
         fontWeight: 500,

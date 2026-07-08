@@ -64,11 +64,11 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <Section title="Related">
             <FieldGrid
               fields={[
-                ["Account", e.account && <Link key="a" href={`/accounts/${e.account.id}`} style={{ color: "#1589ee" }}>{e.account.name}</Link>],
-                ["Contact", e.contact && <Link key="c" href={`/contacts/${e.contact.id}`} style={{ color: "#1589ee" }}>{e.contact.fullName}</Link>],
-                ["Lead", e.lead && <Link key="l" href={`/leads/${e.lead.id}`} style={{ color: "#1589ee" }}>{e.lead.contactName}</Link>],
-                ["Opportunity", e.opportunity && <Link key="o" href={`/opportunities/${e.opportunity.id}`} style={{ color: "#1589ee" }}>{e.opportunity.account?.name ?? e.opportunity.recordType}</Link>],
-                ["Case", e.case && <Link key="cs" href={`/cases/${e.case.id}`} style={{ color: "#1589ee" }}>{e.case.caseNumber}</Link>],
+                ["Account", e.account && <Link key="a" href={`/accounts/${e.account.id}`} style={{ color: "#0176d3" }}>{e.account.name}</Link>],
+                ["Contact", e.contact && <Link key="c" href={`/contacts/${e.contact.id}`} style={{ color: "#0176d3" }}>{e.contact.fullName}</Link>],
+                ["Lead", e.lead && <Link key="l" href={`/leads/${e.lead.id}`} style={{ color: "#0176d3" }}>{e.lead.contactName}</Link>],
+                ["Opportunity", e.opportunity && <Link key="o" href={`/opportunities/${e.opportunity.id}`} style={{ color: "#0176d3" }}>{e.opportunity.account?.name ?? e.opportunity.recordType}</Link>],
+                ["Case", e.case && <Link key="cs" href={`/cases/${e.case.id}`} style={{ color: "#0176d3" }}>{e.case.caseNumber}</Link>],
               ]}
             />
           </Section>

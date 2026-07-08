@@ -167,14 +167,14 @@ export function EditNavModal({
           boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
         }}
       >
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #d8dde6", display: "flex", alignItems: "center", gap: 12 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#080707", flex: 1, margin: 0 }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #c9c9c9", display: "flex", alignItems: "center", gap: 12 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#181818", flex: 1, margin: 0 }}>
             Edit App Navigation Items
           </h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            style={{ background: "transparent", border: 0, fontSize: 22, cursor: "pointer", color: "#706e6b" }}
+            style={{ background: "transparent", border: 0, fontSize: 22, cursor: "pointer", color: "#747474" }}
           >
             ×
           </button>
@@ -215,10 +215,10 @@ export function EditNavModal({
                 {t.entity ? (
                   <ObjectIcon entity={t.entity} size="x-small" />
                 ) : (
-                  <span style={{ width: 20, height: 20, background: "#dddbda", borderRadius: 2, display: "inline-block" }} />
+                  <span style={{ width: 20, height: 20, background: "#c9c9c9", borderRadius: 2, display: "inline-block" }} />
                 )}
-                <div style={{ flex: 1, fontSize: 13, color: "#080707" }}>{t.label}</div>
-                <span style={{ fontSize: 11, color: "#706e6b", marginRight: 6 }}>{i + 1}</span>
+                <div style={{ flex: 1, fontSize: 13, color: "#181818" }}>{t.label}</div>
+                <span style={{ fontSize: 11, color: "#747474", marginRight: 6 }}>{i + 1}</span>
                 <button
                   type="button"
                   aria-label="Move up"
@@ -236,7 +236,7 @@ export function EditNavModal({
           })}
         </div>
 
-        <div style={{ padding: "12px 20px", borderTop: "1px solid #d8dde6", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+        <div style={{ padding: "12px 20px", borderTop: "1px solid #c9c9c9", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
           <button
             type="button"
             onClick={resetDefault}
@@ -248,7 +248,7 @@ export function EditNavModal({
             <button
               type="button"
               onClick={onClose}
-              style={{ padding: "8px 16px", background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#444656" }}
+              style={{ padding: "8px 16px", background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#444656" }}
             >
               Cancel
             </button>

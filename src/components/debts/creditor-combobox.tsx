@@ -157,7 +157,7 @@ export function CreditorCombobox(props: CreditorComboboxProps) {
             padding: 4,
             listStyle: "none",
             background: "#fff",
-            border: "1px solid #d8dde6",
+            border: "1px solid #c9c9c9",
             borderRadius: 6,
             boxShadow: "0 6px 18px rgba(0,0,0,0.16)",
             maxHeight: maxH,
@@ -173,13 +173,13 @@ export function CreditorCombobox(props: CreditorComboboxProps) {
               style={{
                 padding: "7px 10px",
                 fontSize: 13,
-                color: "#3e3e3c",
+                color: "#444444",
                 cursor: "pointer",
                 borderBottom: matches.length ? "1px solid #f3f3f3" : undefined,
               }}
             >
               Use <strong>&ldquo;{val.trim()}&rdquo;</strong>{" "}
-              <span style={{ color: "#706e6b" }}>(not in list)</span>
+              <span style={{ color: "#747474" }}>(not in list)</span>
             </li>
           )}
           {matches.map((c, i) => (
@@ -193,7 +193,7 @@ export function CreditorCombobox(props: CreditorComboboxProps) {
               style={{
                 padding: "7px 10px",
                 fontSize: 13,
-                color: "#080707",
+                color: "#181818",
                 cursor: "pointer",
                 borderRadius: 4,
                 background: i === hi ? "#eef4fb" : "#fff",

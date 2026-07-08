@@ -175,7 +175,7 @@ export function ConvertLeadModal({
       <div onClick={(e) => e.stopPropagation()} style={modal}>
         <header style={header}>
           <span style={{ width: 24 }} />
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#080707", margin: 0, flex: 1, textAlign: "center" }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#181818", margin: 0, flex: 1, textAlign: "center" }}>
             Convert Lead
           </h2>
           <button onClick={onClose} aria-label="Close" style={closeBtn}>×</button>
@@ -310,7 +310,7 @@ export function ConvertLeadModal({
                       <option key={rt} value={rt}>{OPP_RT_LABEL[rt] ?? rt}</option>
                     ))}
                   </select>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 12, color: "#3e3e3c" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 12, color: "#444444" }}>
                     <input
                       type="checkbox"
                       checked={dontCreateOpp}
@@ -374,8 +374,8 @@ function CollapsibleSection({ title, open, onToggle, children }: { title: string
   return (
     <div style={{ borderBottom: "1px solid #ecebea" }}>
       <button onClick={onToggle} style={sectionHeader}>
-        <span style={{ display: "inline-block", transform: open ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.15s", color: "#706e6b" }}>▸</span>
-        <span style={{ fontSize: 14, fontWeight: 700, color: "#080707" }}>{title}</span>
+        <span style={{ display: "inline-block", transform: open ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.15s", color: "#747474" }}>▸</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "#181818" }}>{title}</span>
       </button>
       {open && <div style={{ padding: "8px 0 16px 24px" }}>{children}</div>}
     </div>
@@ -395,15 +395,15 @@ function TwoColumnPicker({
       <div style={{ opacity: mode === "new" ? 1 : 0.55 }}>
         <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
           <input type="radio" checked={mode === "new"} onChange={() => onModeChange("new")} />
-          <span style={{ fontSize: 13, color: "#080707", fontWeight: 600 }}>{leftLabel}</span>
+          <span style={{ fontSize: 13, color: "#181818", fontWeight: 600 }}>{leftLabel}</span>
         </label>
         {leftBody}
       </div>
-      <div style={{ alignSelf: "center", color: "#706e6b", fontSize: 12, padding: "0 8px" }}>- OR -</div>
+      <div style={{ alignSelf: "center", color: "#747474", fontSize: 12, padding: "0 8px" }}>- OR -</div>
       <div style={{ opacity: mode === "existing" ? 1 : 0.55 }}>
         <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
           <input type="radio" checked={mode === "existing"} onChange={() => onModeChange("existing")} />
-          <span style={{ fontSize: 13, color: "#080707", fontWeight: 600 }}>{rightLabel}</span>
+          <span style={{ fontSize: 13, color: "#181818", fontWeight: 600 }}>{rightLabel}</span>
         </label>
         {rightBody}
       </div>
@@ -425,7 +425,7 @@ function UserPicker({ value, label, onPick }: { value: string; label: string; on
   return (
     <div style={{ position: "relative" }}>
       <button onClick={() => setOpen((o) => !o)} style={{ ...input, textAlign: "left", display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ width: 18, height: 18, background: "#706e6b", borderRadius: "50%", color: "#fff", fontSize: 10, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>👤</span>
+        <span style={{ width: 18, height: 18, background: "#747474", borderRadius: "50%", color: "#fff", fontSize: 10, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>👤</span>
         {label || (value ? "Selected" : "Select a user")}
       </button>
       {open && (
@@ -440,11 +440,11 @@ function UserPicker({ value, label, onPick }: { value: string; label: string; on
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <label style={{ display: "block", fontSize: 12, color: "#3e3e3c", marginTop: 8, marginBottom: 2 }}>{children}</label>;
+  return <label style={{ display: "block", fontSize: 12, color: "#444444", marginTop: 8, marginBottom: 2 }}>{children}</label>;
 }
 function RequiredLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label style={{ display: "block", fontSize: 12, color: "#3e3e3c", marginTop: 8, marginBottom: 2 }}>
+    <label style={{ display: "block", fontSize: 12, color: "#444444", marginTop: 8, marginBottom: 2 }}>
       <span style={{ color: "#c23934", marginRight: 2 }}>*</span>{children}
     </label>
   );
@@ -460,7 +460,7 @@ const header: React.CSSProperties = {
   display: "flex", alignItems: "center", borderBottom: "1px solid #ecebea", padding: "12px 16px",
 };
 const closeBtn: React.CSSProperties = {
-  background: "transparent", border: 0, fontSize: 24, color: "#706e6b", cursor: "pointer", lineHeight: 1,
+  background: "transparent", border: 0, fontSize: 24, color: "#747474", cursor: "pointer", lineHeight: 1,
 };
 const body: React.CSSProperties = { padding: "12px 24px", overflowY: "auto" };
 const footer: React.CSSProperties = {
@@ -470,17 +470,17 @@ const sectionHeader: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 8, width: "100%", background: "transparent", border: 0, padding: "10px 0", cursor: "pointer", textAlign: "left",
 };
 const input: React.CSSProperties = {
-  width: "100%", padding: "6px 8px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, background: "#fff",
+  width: "100%", padding: "6px 8px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13, background: "#fff",
 };
 const cancelBtn: React.CSSProperties = {
-  background: "#fff", border: "1px solid #d8dde6", color: "#0070d2", padding: "0 16px", height: 32, borderRadius: 4, fontSize: 13, cursor: "pointer",
+  background: "#fff", border: "1px solid #c9c9c9", color: "#0176d3", padding: "0 16px", height: 32, borderRadius: 4, fontSize: 13, cursor: "pointer",
 };
 const primaryBtn: React.CSSProperties = {
-  background: "#0070d2", border: "1px solid #0070d2", color: "#fff", padding: "0 16px", height: 32, borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer",
+  background: "#0176d3", border: "1px solid #0176d3", color: "#fff", padding: "0 16px", height: 32, borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer",
 };
 const suggestionBox: React.CSSProperties = {
-  marginTop: 4, border: "1px solid #d8dde6", borderRadius: 4, background: "#fff", maxHeight: 160, overflowY: "auto", boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+  marginTop: 4, border: "1px solid #c9c9c9", borderRadius: 4, background: "#fff", maxHeight: 160, overflowY: "auto", boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
 };
 const suggestionItem: React.CSSProperties = {
-  display: "block", width: "100%", textAlign: "left", background: "transparent", border: 0, padding: "8px 12px", fontSize: 13, color: "#080707", cursor: "pointer",
+  display: "block", width: "100%", textAlign: "left", background: "transparent", border: 0, padding: "8px 12px", fontSize: 13, color: "#181818", cursor: "pointer",
 };

@@ -39,7 +39,7 @@ export default async function ProgramPlanDetailPage({ params }: { params: Promis
       recordTitle={`${p.account.name} — ${p.recordType.replace(/_/g, " ")}`}
       recordSubtitle={<StatusPill label={p.status} tone={programPlanStatusTone(p.status)} />}
       highlights={[
-        { label: "Account", value: <Link href={`/accounts/${p.account.id}`} style={{ color: "#1589ee" }}>{p.account.name}</Link> },
+        { label: "Account", value: <Link href={`/accounts/${p.account.id}`} style={{ color: "#0176d3" }}>{p.account.name}</Link> },
         { label: "Monthly", value: `$${p.monthlyAmount.toLocaleString()}` },
         { label: "Term", value: `${p.termMonths}mo` },
         { label: "Total Debt", value: p.totalEnrolledDebt ? `$${p.totalEnrolledDebt.toLocaleString()}` : null },
@@ -53,7 +53,7 @@ export default async function ProgramPlanDetailPage({ params }: { params: Promis
           <Section title="Program Plan Information">
             <FieldGrid
               fields={[
-                ["Account", <Link key="a" href={`/accounts/${p.account.id}`} style={{ color: "#1589ee" }}>{p.account.name}</Link>],
+                ["Account", <Link key="a" href={`/accounts/${p.account.id}`} style={{ color: "#0176d3" }}>{p.account.name}</Link>],
                 ["Product", p.recordType.replace(/_/g, " ")],
                 ["Status", <StatusPill key="s" label={p.status} tone={programPlanStatusTone(p.status)} />],
                 ["Start Date", p.startDate.toLocaleDateString()],
@@ -110,7 +110,7 @@ export default async function ProgramPlanDetailPage({ params }: { params: Promis
                 <tbody>
                   {p.drafts.map((d) => (
                     <tr key={d.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                      <td style={td}><Link href={`/drafts/${d.id}`} style={{ color: "#1589ee" }}>{d.scheduledDate.toLocaleDateString()}</Link></td>
+                      <td style={td}><Link href={`/drafts/${d.id}`} style={{ color: "#0176d3" }}>{d.scheduledDate.toLocaleDateString()}</Link></td>
                       <td style={{ ...td, textAlign: "right" }}>${d.amount.toLocaleString()}</td>
                       <td style={td}><StatusPill label={d.status} tone={draftStatusTone(d.status)} /></td>
                       <td style={td}>{d.attemptNumber}/{d.maxAttempts}</td>
@@ -162,5 +162,5 @@ export default async function ProgramPlanDetailPage({ params }: { params: Promis
   );
 }
 
-const th: React.CSSProperties = { textAlign: "left", padding: "8px 4px", fontSize: 11, color: "#3e3e3c", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4 };
+const th: React.CSSProperties = { textAlign: "left", padding: "8px 4px", fontSize: 11, color: "#444444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4 };
 const td: React.CSSProperties = { padding: "8px 4px", verticalAlign: "middle" };

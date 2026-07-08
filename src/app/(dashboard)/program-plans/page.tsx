@@ -32,7 +32,7 @@ export default async function ProgramPlansPage() {
     {
       key: "account",
       label: "Account",
-      render: (p) => <Link href={`/accounts/${p.account.id}`} style={{ color: "#1589ee" }}>{p.account.name}</Link>,
+      render: (p) => <Link href={`/accounts/${p.account.id}`} style={{ color: "#0176d3" }}>{p.account.name}</Link>,
     },
     { key: "product", label: "Product", render: (p) => p.recordType.replace(/_/g, " ") },
     { key: "status", label: "Status", render: (p) => <StatusPill label={p.status} tone={programPlanStatusTone(p.status)} /> },

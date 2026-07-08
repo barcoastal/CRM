@@ -26,7 +26,7 @@ export default async function AuditLogPage() {
     {
       key: "id",
       label: "Record",
-      render: (a) => <code style={{ fontSize: 11, color: "#706e6b" }}>{a.entityId.slice(0, 12)}…</code>,
+      render: (a) => <code style={{ fontSize: 11, color: "#747474" }}>{a.entityId.slice(0, 12)}…</code>,
     },
   ];
   return (

@@ -78,8 +78,8 @@ export function RequestDocumentsButton({
       {open && (
         <div style={overlay} onClick={() => !busy && setOpen(false)}>
           <div style={modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: "0 0 4px", fontSize: 16, color: "#080707" }}>{copy.title}</h2>
-            <p style={{ margin: "0 0 16px", fontSize: 13, color: "#706e6b" }}>{copy.blurb}</p>
+            <h2 style={{ margin: "0 0 4px", fontSize: 16, color: "#181818" }}>{copy.title}</h2>
+            <p style={{ margin: "0 0 16px", fontSize: 13, color: "#747474" }}>{copy.blurb}</p>
 
             <label style={label}>Recipient email</label>
             <input value={email} onChange={(e) => setEmail(e.target.value)} style={input} type="email" />
@@ -110,7 +110,7 @@ export function RequestDocumentsButton({
               >
                 <div>{result.text}</div>
                 {result.url && (
-                  <div style={{ marginTop: 6, wordBreak: "break-all", color: "#0070d2" }}>{result.url}</div>
+                  <div style={{ marginTop: 6, wordBreak: "break-all", color: "#0176d3" }}>{result.url}</div>
                 )}
               </div>
             )}
@@ -131,7 +131,7 @@ export function RequestDocumentsButton({
 }
 
 const btn: React.CSSProperties = {
-  background: "#0070d2",
+  background: "#0176d3",
   border: "none",
   padding: "6px 16px",
   borderRadius: 4,
@@ -142,12 +142,12 @@ const btn: React.CSSProperties = {
 };
 const btnGhost: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   padding: "6px 16px",
   borderRadius: 4,
   fontSize: 13,
   fontWeight: 600,
-  color: "#3e3e3c",
+  color: "#444444",
   cursor: "pointer",
 };
 const overlay: React.CSSProperties = {
@@ -172,7 +172,7 @@ const label: React.CSSProperties = {
   display: "block",
   fontSize: 11,
   fontWeight: 600,
-  color: "#3e3e3c",
+  color: "#444444",
   margin: "0 0 4px",
 };
 const input: React.CSSProperties = {

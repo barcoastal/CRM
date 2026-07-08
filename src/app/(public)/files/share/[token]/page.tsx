@@ -46,10 +46,10 @@ export default async function SharePage({ params }: PageProps) {
     return (
       <div style={pageWrap}>
         <div style={card}>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: "#080707", marginTop: 0 }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: "#181818", marginTop: 0 }}>
             Link unavailable
           </h1>
-          <p style={{ fontSize: 14, color: "#3e3e3c" }}>
+          <p style={{ fontSize: 14, color: "#444444" }}>
             {revoked ? "This share link has been revoked." : "This share link has expired."}
           </p>
         </div>
@@ -78,15 +78,15 @@ export default async function SharePage({ params }: PageProps) {
             FILE
           </span>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <h1 style={{ fontSize: 18, fontWeight: 700, color: "#080707", margin: 0 }}>{title}</h1>
-            <p style={{ fontSize: 12, color: "#706e6b", margin: "4px 0 0" }}>
+            <h1 style={{ fontSize: 18, fontWeight: 700, color: "#181818", margin: 0 }}>{title}</h1>
+            <p style={{ fontSize: 12, color: "#747474", margin: "4px 0 0" }}>
               {filename}
               {sizeLabel ? ` · ${sizeLabel}` : ""}
             </p>
           </div>
         </div>
         {description && (
-          <p style={{ fontSize: 13, color: "#3e3e3c", margin: "0 0 16px" }}>{description}</p>
+          <p style={{ fontSize: 13, color: "#444444", margin: "0 0 16px" }}>{description}</p>
         )}
         <SharePageClient
           token={token}
@@ -94,7 +94,7 @@ export default async function SharePage({ params }: PageProps) {
           filename={filename}
         />
       </div>
-      <p style={{ marginTop: 16, fontSize: 11, color: "#706e6b" }}>Powered by Coastal CRM</p>
+      <p style={{ marginTop: 16, fontSize: 11, color: "#747474" }}>Powered by Coastal CRM</p>
     </div>
   );
 }
@@ -112,7 +112,7 @@ const pageWrap: React.CSSProperties = {
 
 const card: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   padding: 24,
   width: "min(520px, 100%)",

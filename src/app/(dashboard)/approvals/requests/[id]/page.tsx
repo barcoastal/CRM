@@ -80,7 +80,7 @@ export default async function ApprovalRequestDetailPage({
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.4px] font-semibold text-[#706e6b]">
+          <div className="text-[11px] uppercase tracking-[0.4px] font-semibold text-[#747474]">
             Approval Request
           </div>
           <h1
@@ -112,7 +112,7 @@ export default async function ApprovalRequestDetailPage({
           >
             <div className="px-5 py-4 border-b border-[#f2f3ff]">
               <div className="text-[14px] font-bold text-[#131b2e]">Approval Path</div>
-              <div className="text-[12px] text-[#706e6b]">
+              <div className="text-[12px] text-[#747474]">
                 {request.process.steps.length} step{request.process.steps.length === 1 ? "" : "s"} total
               </div>
             </div>
@@ -132,14 +132,14 @@ export default async function ApprovalRequestDetailPage({
                           ? { background: "linear-gradient(135deg, #0034e4, #3052ff)", color: "#fff" }
                           : isPast
                           ? { background: "#e0f5e9", color: "#0d6b3b" }
-                          : { background: "#ecebea", color: "#706e6b" }
+                          : { background: "#ecebea", color: "#747474" }
                       }
                     >
                       {idx + 1}
                     </span>
                     <div className="flex-1">
                       <div className="text-[13px] font-semibold text-[#131b2e]">{step.name}</div>
-                      <div className="text-[12px] text-[#706e6b]">
+                      <div className="text-[12px] text-[#747474]">
                         {step.useSubmitterManager
                           ? "Routes to submitter's manager"
                           : step.approverUserIds.length > 0
@@ -178,7 +178,7 @@ export default async function ApprovalRequestDetailPage({
                     <div className="text-[13px] text-[#131b2e]">
                       <span className="font-semibold">{a.actor?.name ?? "System"}</span>
                       {a.step?.name && (
-                        <span className="text-[#706e6b]"> on {a.step.name}</span>
+                        <span className="text-[#747474]"> on {a.step.name}</span>
                       )}
                     </div>
                     {a.comments && (
@@ -187,7 +187,7 @@ export default async function ApprovalRequestDetailPage({
                       </div>
                     )}
                   </div>
-                  <div className="text-[11px] text-[#706e6b] whitespace-nowrap">
+                  <div className="text-[11px] text-[#747474] whitespace-nowrap">
                     {new Date(a.createdAt).toLocaleString()}
                   </div>
                 </div>
@@ -201,19 +201,19 @@ export default async function ApprovalRequestDetailPage({
           >
             <div className="px-5 py-4 border-b border-[#f2f3ff]">
               <div className="text-[14px] font-bold text-[#131b2e]">Record Snapshot</div>
-              <div className="text-[12px] text-[#706e6b]">
+              <div className="text-[12px] text-[#747474]">
                 Values captured at submission time.
               </div>
             </div>
             <div className="divide-y divide-[#f2f3ff]">
               {snapshotEntries.length === 0 && (
-                <div className="px-5 py-6 text-[13px] text-[#706e6b] text-center">
+                <div className="px-5 py-6 text-[13px] text-[#747474] text-center">
                   No snapshot data.
                 </div>
               )}
               {snapshotEntries.map(([k, v]) => (
                 <div key={k} className="px-5 py-2 flex items-start gap-3 text-[13px]">
-                  <div className="w-44 text-[#706e6b] font-semibold text-[12px]">{k}</div>
+                  <div className="w-44 text-[#747474] font-semibold text-[12px]">{k}</div>
                   <div className="flex-1 text-[#131b2e] break-all">
                     {v === null || v === undefined ? "-" : String(typeof v === "object" ? JSON.stringify(v) : v).slice(0, 200)}
                   </div>
@@ -269,7 +269,7 @@ export default async function ApprovalRequestDetailPage({
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2 text-[13px]">
-      <div className="w-24 text-[12px] font-semibold text-[#706e6b]">{label}</div>
+      <div className="w-24 text-[12px] font-semibold text-[#747474]">{label}</div>
       <div className="flex-1 text-[#131b2e]">{children}</div>
     </div>
   );

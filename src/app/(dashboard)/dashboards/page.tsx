@@ -116,7 +116,7 @@ export default async function DashboardsIndexPage() {
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-[12px] text-[#444656]">
-                    {d.description ?? <span className="text-[#706e6b]">--</span>}
+                    {d.description ?? <span className="text-[#747474]">--</span>}
                   </td>
                   <td className="px-4 py-3 text-[12px] text-[#131b2e] font-semibold">
                     {d._count.tiles}

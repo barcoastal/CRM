@@ -17,8 +17,8 @@ import { SubmitButton as SubmitForApprovalButton } from "@/components/approvals/
 
 const btn: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
-  color: "#0070d2",
+  border: "1px solid #c9c9c9",
+  color: "#0176d3",
   padding: "0 12px",
   height: 32,
   borderRadius: 4,
@@ -29,9 +29,9 @@ const btn: React.CSSProperties = {
 
 const primaryBtn: React.CSSProperties = {
   ...btn,
-  background: "#0070d2",
+  background: "#0176d3",
   color: "#fff",
-  borderColor: "#0070d2",
+  borderColor: "#0176d3",
 };
 
 export function OppHeaderButtons({

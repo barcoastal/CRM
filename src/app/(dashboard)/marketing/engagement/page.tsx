@@ -82,7 +82,7 @@ export default async function EngagementListPage() {
         >
           <Activity className="size-10 mx-auto text-[#c0c0d2]" />
           <div className="mt-3 text-[15px] font-bold text-[#131b2e]">No sequences yet</div>
-          <p className="text-[13px] text-[#706e6b] mt-1 max-w-md mx-auto">
+          <p className="text-[13px] text-[#747474] mt-1 max-w-md mx-auto">
             Build a drip email program. Define entry criteria, add steps (send, wait, branch),
             and let the cron auto-enroll matching leads.
           </p>
@@ -118,7 +118,7 @@ export default async function EngagementListPage() {
                       {s.name}
                     </Link>
                     {s.description ? (
-                      <div className="text-[12px] text-[#706e6b] truncate max-w-md">{s.description}</div>
+                      <div className="text-[12px] text-[#747474] truncate max-w-md">{s.description}</div>
                     ) : null}
                   </td>
                   <td className="px-4 py-3">{activeBadge(s.isActive)}</td>
@@ -126,7 +126,7 @@ export default async function EngagementListPage() {
                   <td className="px-4 py-3 text-[#444656]">{s.totalEnrolled}</td>
                   <td className="px-4 py-3 text-[#444656]">{s.totalCompleted}</td>
                   <td className="px-4 py-3 text-[#444656]">{s.totalExited}</td>
-                  <td className="px-4 py-3 text-[#706e6b]">{formatRelative(s.updatedAt)}</td>
+                  <td className="px-4 py-3 text-[#747474]">{formatRelative(s.updatedAt)}</td>
                   <td className="px-4 py-3 text-right">
                     <Link
                       href={`/marketing/engagement/${s.id}`}

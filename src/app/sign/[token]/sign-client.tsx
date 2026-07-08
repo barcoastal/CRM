@@ -176,24 +176,24 @@ export function SignClient({
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 30, height: 30, borderRadius: 4, background: "#3052ff", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 14 }}>C</div>
           <div>
-            <div style={{ fontSize: 11, color: "#706e6b", textTransform: "uppercase", letterSpacing: 0.4 }}>{templateName}</div>
+            <div style={{ fontSize: 11, color: "#747474", textTransform: "uppercase", letterSpacing: 0.4 }}>{templateName}</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#131b2e" }}>{documentName}</div>
           </div>
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ fontSize: 12, color: "#444656", textAlign: "right" }}>
           <div>{signerName}</div>
-          <div style={{ color: "#706e6b" }}>{signerEmail}</div>
+          <div style={{ color: "#747474" }}>{signerEmail}</div>
         </div>
         <div style={{ position: "relative" }}>
           <button
             onClick={() => setActionsOpen((o) => !o)}
-            style={{ padding: "8px 14px", background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#444656" }}
+            style={{ padding: "8px 14px", background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer", color: "#444656" }}
           >
             Other Actions ▼
           </button>
           {actionsOpen && (
-            <div style={{ position: "absolute", right: 0, top: 36, background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, minWidth: 200, boxShadow: "0 4px 16px rgba(0,0,0,0.08)", zIndex: 10 }}>
+            <div style={{ position: "absolute", right: 0, top: 36, background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, minWidth: 200, boxShadow: "0 4px 16px rgba(0,0,0,0.08)", zIndex: 10 }}>
               <button
                 onClick={() => { setDeclineOpen(true); setActionsOpen(false); }}
                 style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 14px", background: "transparent", border: 0, fontSize: 13, color: "#942b00", cursor: "pointer" }}
@@ -272,7 +272,7 @@ export function SignClient({
             <Section label={`Fill in (${textBoxes.length})`}>
               {textBoxes.map((b, i) => (
                 <div key={`text-${i}`} style={{ marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, color: "#706e6b", marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, color: "#747474", marginBottom: 4 }}>
                     {b.label?.trim() ? b.label : `Field (page ${b.page})`}
                   </div>
                   <input
@@ -280,7 +280,7 @@ export function SignClient({
                     value={textValues[String(i)] ?? ""}
                     onChange={(e) => setTextValues((d) => ({ ...d, [String(i)]: e.target.value }))}
                     placeholder={b.label?.trim() ? b.label : "Type here"}
-                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, color: "#131b2e" }}
+                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13, color: "#131b2e" }}
                   />
                 </div>
               ))}
@@ -309,12 +309,12 @@ export function SignClient({
             <Section label={`Date (${dateBoxes.length})`}>
               {dateBoxes.map((b, i) => (
                 <div key={`date-${i}`} style={{ marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, color: "#706e6b", marginBottom: 4 }}>{b.label ?? `Date (page ${b.page})`}</div>
+                  <div style={{ fontSize: 11, color: "#747474", marginBottom: 4 }}>{b.label ?? `Date (page ${b.page})`}</div>
                   <input
                     type="date"
                     value={dateValues[String(i)] ?? todayStr()}
                     onChange={(e) => setDateValues((d) => ({ ...d, [String(i)]: e.target.value }))}
-                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, color: "#131b2e" }}
+                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13, color: "#131b2e" }}
                   />
                 </div>
               ))}
@@ -334,7 +334,7 @@ export function SignClient({
               style={{
                 width: "100%",
                 padding: "12px 24px",
-                background: allBoxesReady && !submitting ? "linear-gradient(135deg, #0034e4, #3052ff)" : "#d8dde6",
+                background: allBoxesReady && !submitting ? "linear-gradient(135deg, #0034e4, #3052ff)" : "#c9c9c9",
                 color: "#fff",
                 border: 0,
                 borderRadius: 4,
@@ -345,7 +345,7 @@ export function SignClient({
             >
               {submitting ? "Signing..." : "Finish & Sign"}
             </button>
-            <p style={{ fontSize: 10, color: "#706e6b", textAlign: "center", marginTop: 8 }}>
+            <p style={{ fontSize: 10, color: "#747474", textAlign: "center", marginTop: 8 }}>
               By clicking Finish & Sign you agree your electronic signature is legally binding under the U.S. ESIGN Act and UETA.
             </p>
           </div>
@@ -387,7 +387,7 @@ export function SignClient({
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 10, color: "#706e6b", textTransform: "uppercase", letterSpacing: 0.4, fontWeight: 700, marginBottom: 8 }}>
+      <div style={{ fontSize: 10, color: "#747474", textTransform: "uppercase", letterSpacing: 0.4, fontWeight: 700, marginBottom: 8 }}>
         {label}
       </div>
       {children}
@@ -425,7 +425,7 @@ function FieldCard({
         gap: 10,
       }}
     >
-      <div style={{ width: 60, height: 30, background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+      <div style={{ width: 60, height: 30, background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         {previewSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={previewSrc} alt="" style={{ maxWidth: "100%", maxHeight: "100%" }} />
@@ -560,20 +560,20 @@ function AdoptModal({
           <h2 style={{ fontSize: 16, fontWeight: 700, color: "#131b2e", margin: 0 }}>
             Adopt your {kind === "signature" ? "signature" : "initials"}
           </h2>
-          <p style={{ fontSize: 12, color: "#706e6b", margin: "4px 0 0" }}>
+          <p style={{ fontSize: 12, color: "#747474", margin: "4px 0 0" }}>
             This {kind === "signature" ? "signature" : "initial set"} will be applied to every {kind === "signature" ? "signature" : "initial"} field in the document.
           </p>
         </div>
 
         <div style={{ padding: 20 }}>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 11, color: "#706e6b", textTransform: "uppercase", letterSpacing: 0.4, fontWeight: 700, display: "block", marginBottom: 4 }}>
+            <label style={{ fontSize: 11, color: "#747474", textTransform: "uppercase", letterSpacing: 0.4, fontWeight: 700, display: "block", marginBottom: 4 }}>
               Full Name
             </label>
             <input
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              style={{ width: "100%", padding: "8px 10px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 14 }}
+              style={{ width: "100%", padding: "8px 10px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 14 }}
             />
           </div>
 
@@ -609,14 +609,14 @@ function AdoptModal({
                     style={{
                       padding: 16,
                       background: "#fff",
-                      border: styleId === f.id ? "2px solid #3052ff" : "1px solid #d8dde6",
+                      border: styleId === f.id ? "2px solid #3052ff" : "1px solid #c9c9c9",
                       borderRadius: 4,
                       cursor: "pointer",
                       textAlign: "center",
                       minHeight: 70,
                     }}
                   >
-                    <div style={{ fontSize: 10, color: "#706e6b", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 4 }}>
+                    <div style={{ fontSize: 10, color: "#747474", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 4 }}>
                       {f.label}
                     </div>
                     <div style={{ fontFamily: f.family, fontSize: kind === "initial" ? 32 : 22, color: "#0a1a3d", fontStyle: "italic" }}>
@@ -634,20 +634,20 @@ function AdoptModal({
                 onPointerMove={onMove}
                 onPointerUp={onUp}
                 onPointerLeave={onUp}
-                style={{ width: "100%", height: 180, border: "1px solid #d8dde6", borderRadius: 4, touchAction: "none", background: "#fff" }}
+                style={{ width: "100%", height: 180, border: "1px solid #c9c9c9", borderRadius: 4, touchAction: "none", background: "#fff" }}
               />
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
                 <button onClick={clearCanvas} style={{ background: "transparent", border: 0, color: "#3052ff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                   Clear
                 </button>
-                <span style={{ fontSize: 11, color: "#706e6b" }}>{hasInk ? "Ready" : "Draw above"}</span>
+                <span style={{ fontSize: 11, color: "#747474" }}>{hasInk ? "Ready" : "Draw above"}</span>
               </div>
             </div>
           )}
         </div>
 
         <div style={{ padding: "12px 20px", borderTop: "1px solid #e6e6e6", display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <button onClick={onCancel} style={{ padding: "8px 16px", background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#444656" }}>
+          <button onClick={onCancel} style={{ padding: "8px 16px", background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#444656" }}>
             Cancel
           </button>
           <button
@@ -655,7 +655,7 @@ function AdoptModal({
             disabled={tab === "draw" && !hasInk}
             style={{
               padding: "8px 20px",
-              background: (tab === "draw" && !hasInk) ? "#d8dde6" : "linear-gradient(135deg, #0034e4, #3052ff)",
+              background: (tab === "draw" && !hasInk) ? "#c9c9c9" : "linear-gradient(135deg, #0034e4, #3052ff)",
               color: "#fff",
               border: 0,
               borderRadius: 4,
@@ -694,16 +694,16 @@ function DeclineModal({
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Reason for declining..."
-          style={{ width: "100%", minHeight: 100, padding: 10, border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, color: "#131b2e", resize: "vertical" }}
+          style={{ width: "100%", minHeight: 100, padding: 10, border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13, color: "#131b2e", resize: "vertical" }}
         />
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-          <button onClick={onCancel} style={{ padding: "8px 16px", background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#444656" }}>
+          <button onClick={onCancel} style={{ padding: "8px 16px", background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#444656" }}>
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={!reason.trim()}
-            style={{ padding: "8px 20px", background: reason.trim() ? "#942b00" : "#d8dde6", color: "#fff", border: 0, borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: reason.trim() ? "pointer" : "not-allowed" }}
+            style={{ padding: "8px 20px", background: reason.trim() ? "#942b00" : "#c9c9c9", color: "#fff", border: 0, borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: reason.trim() ? "pointer" : "not-allowed" }}
           >
             Decline
           </button>

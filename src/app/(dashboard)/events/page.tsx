@@ -323,9 +323,9 @@ async function EventsListView() {
       key: "related",
       label: "Related",
       render: (e) =>
-        e.account ? <Link href={`/accounts/${e.account.id}`} style={{ color: "#1589ee" }}>{e.account.name}</Link> :
-        e.lead ? <Link href={`/leads/${e.lead.id}`} style={{ color: "#1589ee" }}>{e.lead.contactName}</Link> :
-        e.contact ? <Link href={`/contacts/${e.contact.id}`} style={{ color: "#1589ee" }}>{e.contact.fullName}</Link> : "-",
+        e.account ? <Link href={`/accounts/${e.account.id}`} style={{ color: "#0176d3" }}>{e.account.name}</Link> :
+        e.lead ? <Link href={`/leads/${e.lead.id}`} style={{ color: "#0176d3" }}>{e.lead.contactName}</Link> :
+        e.contact ? <Link href={`/contacts/${e.contact.id}`} style={{ color: "#0176d3" }}>{e.contact.fullName}</Link> : "-",
     },
     { key: "owner", label: "Owner", render: (e) => e.owner?.name ?? "-" },
   ];
@@ -333,7 +333,7 @@ async function EventsListView() {
   return (
     <div>
       <div style={{ padding: "8px 16px", background: "#fff", borderBottom: "1px solid #ecebea", display: "flex", justifyContent: "flex-end" }}>
-        <a href="/events" style={{ color: "#0070d2", fontSize: 13, textDecoration: "none" }}>Back to calendar</a>
+        <a href="/events" style={{ color: "#0176d3", fontSize: 13, textDecoration: "none" }}>Back to calendar</a>
       </div>
       <ListView
         entity="Event"

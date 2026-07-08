@@ -86,7 +86,7 @@ export function InboxClient({
     const original = selected.bodyHtml ?? (selected.bodyText ? `<pre>${escapeHtml(selected.bodyText)}</pre>` : "");
     const quoted = `
 <br/><br/>
-<div style="border-left:2px solid #d8dde6;padding-left:10px;color:#54698d;font-size:12px;">
+<div style="border-left:2px solid #c9c9c9;padding-left:10px;color:#54698d;font-size:12px;">
   <div><strong>From:</strong> ${escapeHtml(selected.fromAddress)}</div>
   <div><strong>Date:</strong> ${escapeHtml(new Date(selected.sentAt).toLocaleString())}</div>
   <div><strong>Subject:</strong> ${escapeHtml(selected.subject)}</div>
@@ -152,9 +152,9 @@ export function InboxClient({
                 href={`/emails?folder=${f.key}`}
                 style={{ ...folderRow, ...(active ? folderRowActive : {}) }}
               >
-                <span style={{ color: active ? "#1589ee" : "#54698d", display: "inline-flex" }}>{f.icon}</span>
+                <span style={{ color: active ? "#0176d3" : "#54698d", display: "inline-flex" }}>{f.icon}</span>
                 <span style={{ flex: 1 }}>{f.label}</span>
-                <span style={{ color: active ? "#1589ee" : "#706e6b", fontSize: 12 }}>{counts[f.key]}</span>
+                <span style={{ color: active ? "#0176d3" : "#747474", fontSize: 12 }}>{counts[f.key]}</span>
               </Link>
             );
           })}
@@ -227,20 +227,20 @@ function ReadingPaneContent({
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={readSubject}>{detail.subject || "(no subject)"}</div>
             <div style={readMeta}>
-              <span style={{ color: "#706e6b" }}>From:</span> <span style={{ color: "#080707" }}>{detail.fromAddress}</span>
+              <span style={{ color: "#747474" }}>From:</span> <span style={{ color: "#181818" }}>{detail.fromAddress}</span>
             </div>
             <div style={readMeta}>
-              <span style={{ color: "#706e6b" }}>To:</span> <span style={{ color: "#080707" }}>{detail.toAddresses}</span>
+              <span style={{ color: "#747474" }}>To:</span> <span style={{ color: "#181818" }}>{detail.toAddresses}</span>
             </div>
             {detail.cc && (
               <div style={readMeta}>
-                <span style={{ color: "#706e6b" }}>Cc:</span> <span style={{ color: "#080707" }}>{detail.cc}</span>
+                <span style={{ color: "#747474" }}>Cc:</span> <span style={{ color: "#181818" }}>{detail.cc}</span>
               </div>
             )}
-            <div style={{ ...readMeta, color: "#706e6b" }}>{new Date(detail.sentAt).toLocaleString()}</div>
+            <div style={{ ...readMeta, color: "#747474" }}>{new Date(detail.sentAt).toLocaleString()}</div>
             {(detail.accountName || detail.leadName || detail.contactName) && (
               <div style={{ marginTop: 8, fontSize: 12 }}>
-                <span style={{ color: "#706e6b" }}>Related: </span>
+                <span style={{ color: "#747474" }}>Related: </span>
                 {detail.accountName && detail.accountId && (
                   <Link href={`/accounts/${detail.accountId}`} style={readLink}>{detail.accountName}</Link>
                 )}
@@ -264,9 +264,9 @@ function ReadingPaneContent({
         {detail.bodyHtml ? (
           <div dangerouslySetInnerHTML={{ __html: detail.bodyHtml }} />
         ) : detail.bodyText ? (
-          <pre style={{ whiteSpace: "pre-wrap", fontFamily: FONT, fontSize: 13, color: "#080707", margin: 0 }}>{detail.bodyText}</pre>
+          <pre style={{ whiteSpace: "pre-wrap", fontFamily: FONT, fontSize: 13, color: "#181818", margin: 0 }}>{detail.bodyText}</pre>
         ) : (
-          <div style={{ color: "#706e6b", fontSize: 13 }}>(empty)</div>
+          <div style={{ color: "#747474", fontSize: 13 }}>(empty)</div>
         )}
       </div>
     </div>
@@ -346,7 +346,7 @@ const shell: React.CSSProperties = {
   gap: 0,
   height: "calc(100vh - 100px)",
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   fontFamily: FONT,
   overflow: "hidden",
@@ -354,7 +354,7 @@ const shell: React.CSSProperties = {
 
 const sidebar: React.CSSProperties = {
   background: "#fafaf9",
-  borderRight: "1px solid #d8dde6",
+  borderRight: "1px solid #c9c9c9",
   padding: 12,
   display: "flex",
   flexDirection: "column",
@@ -362,7 +362,7 @@ const sidebar: React.CSSProperties = {
 };
 
 const composeBtn: React.CSSProperties = {
-  background: "#0070d2",
+  background: "#0176d3",
   color: "#fff",
   border: 0,
   borderRadius: 4,
@@ -384,7 +384,7 @@ const folderRow: React.CSSProperties = {
   gap: 8,
   padding: "8px 10px",
   fontSize: 13,
-  color: "#080707",
+  color: "#181818",
   textDecoration: "none",
   borderRadius: 4,
   cursor: "pointer",
@@ -392,12 +392,12 @@ const folderRow: React.CSSProperties = {
 
 const folderRowActive: React.CSSProperties = {
   background: "#ecf6ff",
-  color: "#0070d2",
+  color: "#0176d3",
   fontWeight: 600,
 };
 
 const listPane: React.CSSProperties = {
-  borderRight: "1px solid #d8dde6",
+  borderRight: "1px solid #c9c9c9",
   display: "flex",
   flexDirection: "column",
   background: "#fff",
@@ -410,8 +410,8 @@ const listHeader: React.CSSProperties = {
   padding: "8px 12px",
   fontSize: 11,
   textTransform: "uppercase",
-  color: "#706e6b",
-  borderBottom: "1px solid #d8dde6",
+  color: "#747474",
+  borderBottom: "1px solid #c9c9c9",
   background: "#fafaf9",
   fontWeight: 600,
   letterSpacing: 0.4,
@@ -442,7 +442,7 @@ const rowBtn: React.CSSProperties = {
 
 const rowSelected: React.CSSProperties = {
   background: "#ecf6ff",
-  borderLeft: "3px solid #1589ee",
+  borderLeft: "3px solid #0176d3",
   paddingLeft: 9,
 };
 
@@ -450,14 +450,14 @@ const rowFrom: React.CSSProperties = { minWidth: 0, overflow: "hidden" };
 const rowFromName: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 600,
-  color: "#080707",
+  color: "#181818",
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
 };
 const rowMeta: React.CSSProperties = {
   fontSize: 11,
-  color: "#706e6b",
+  color: "#747474",
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
@@ -466,14 +466,14 @@ const rowMeta: React.CSSProperties = {
 const rowSubject: React.CSSProperties = { minWidth: 0, overflow: "hidden" };
 const rowSubjectLine: React.CSSProperties = {
   fontSize: 13,
-  color: "#080707",
+  color: "#181818",
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
 };
 const rowStatus: React.CSSProperties = {
   fontSize: 10,
-  color: "#706e6b",
+  color: "#747474",
   textTransform: "uppercase",
   letterSpacing: 0.3,
   marginTop: 2,
@@ -481,7 +481,7 @@ const rowStatus: React.CSSProperties = {
 
 const rowDate: React.CSSProperties = {
   fontSize: 12,
-  color: "#706e6b",
+  color: "#747474",
   textAlign: "right",
   whiteSpace: "nowrap",
 };
@@ -496,32 +496,32 @@ const readingPane: React.CSSProperties = {
 
 const readHeader: React.CSSProperties = {
   padding: "16px 20px",
-  borderBottom: "1px solid #d8dde6",
+  borderBottom: "1px solid #c9c9c9",
 };
 
 const readSubject: React.CSSProperties = {
   fontSize: 18,
   fontWeight: 700,
-  color: "#080707",
+  color: "#181818",
   marginBottom: 8,
 };
 
 const readMeta: React.CSSProperties = {
   fontSize: 12,
-  color: "#080707",
+  color: "#181818",
   marginBottom: 2,
 };
 
 const readLink: React.CSSProperties = {
-  color: "#1589ee",
+  color: "#0176d3",
   textDecoration: "none",
   marginRight: 8,
 };
 
 const readAction: React.CSSProperties = {
   background: "#fff",
-  color: "#0070d2",
-  border: "1px solid #d8dde6",
+  color: "#0176d3",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   padding: "4px 10px",
   fontSize: 12,
@@ -534,12 +534,12 @@ const readBody: React.CSSProperties = {
   overflowY: "auto",
   padding: "16px 20px",
   fontSize: 13,
-  color: "#080707",
+  color: "#181818",
 };
 
 const emptyState: React.CSSProperties = {
   padding: 40,
   textAlign: "center",
-  color: "#706e6b",
+  color: "#747474",
   fontSize: 13,
 };

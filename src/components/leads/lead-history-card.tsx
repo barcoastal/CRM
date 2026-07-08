@@ -37,7 +37,7 @@ export function LeadHistoryCard({
           <div style={cell}>{new Date(h.changedAt).toLocaleString()}</div>
           <div style={cell}>{h.changedBy?.name ?? "System"}</div>
           <div style={cell}>{prettifyFieldName(h.field)}</div>
-          <div style={{ ...cell, color: "#706e6b" }}>{display(h.oldValue)}</div>
+          <div style={{ ...cell, color: "#747474" }}>{display(h.oldValue)}</div>
           <div style={cell}>{display(h.newValue)}</div>
         </div>
       )}
@@ -69,7 +69,7 @@ const grid: React.CSSProperties = {
 
 const cell: React.CSSProperties = {
   fontSize: 12,
-  color: "#080707",
+  color: "#181818",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",

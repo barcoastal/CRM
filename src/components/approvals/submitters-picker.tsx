@@ -62,7 +62,7 @@ export function SubmittersPicker({
           </span>
         ))}
         {selectedUsers.length === 0 && (
-          <span className="text-[12px] text-[#706e6b] italic">Anyone can submit.</span>
+          <span className="text-[12px] text-[#747474] italic">Anyone can submit.</span>
         )}
       </div>
       <div className="relative">
@@ -74,11 +74,11 @@ export function SubmittersPicker({
           }}
           onFocus={() => setOpen(true)}
           placeholder="Add user by name or email..."
-          className="w-full px-3 py-1.5 border border-[#d8dde6] rounded text-[13px] outline-none focus:border-[#3052ff]"
+          className="w-full px-3 py-1.5 border border-[#c9c9c9] rounded text-[13px] outline-none focus:border-[#3052ff]"
         />
         {open && matches.length > 0 && (
           <div
-            className="absolute left-0 right-0 top-full mt-1 bg-white border border-[#d8dde6] rounded shadow-lg z-10 max-h-60 overflow-y-auto"
+            className="absolute left-0 right-0 top-full mt-1 bg-white border border-[#c9c9c9] rounded shadow-lg z-10 max-h-60 overflow-y-auto"
           >
             {matches.map((u) => (
               <button
@@ -89,7 +89,7 @@ export function SubmittersPicker({
               >
                 <Plus className="size-3 text-[#3052ff]" />
                 <span className="font-semibold text-[#131b2e]">{u.name}</span>
-                <span className="text-[12px] text-[#706e6b]">{u.email}</span>
+                <span className="text-[12px] text-[#747474]">{u.email}</span>
               </button>
             ))}
           </div>

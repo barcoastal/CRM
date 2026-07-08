@@ -332,7 +332,7 @@ export function PdfBoxPlacer({
             Placing {KIND[tool].label} — click the document
           </span>
         ) : (
-          <span className="text-[12px] text-[#706e6b]">{total} box{total === 1 ? "" : "es"} placed</span>
+          <span className="text-[12px] text-[#747474]">{total} box{total === 1 ? "" : "es"} placed</span>
         )}
       </div>
 
@@ -341,7 +341,7 @@ export function PdfBoxPlacer({
           Couldn’t render the PDF: {error}
         </div>
       ) : null}
-      {loading ? <div className="text-[12px] text-[#706e6b]">Loading document…</div> : null}
+      {loading ? <div className="text-[12px] text-[#747474]">Loading document…</div> : null}
 
       {/* Pages */}
       <div ref={containerRef} className="space-y-4">
@@ -350,10 +350,10 @@ export function PdfBoxPlacer({
           const cssH = meta.heightPts * scale;
           return (
             <div key={i} className="mx-auto" style={{ width: cssW }}>
-              <div className="text-[11px] text-[#706e6b] mb-1">Page {i + 1}</div>
+              <div className="text-[11px] text-[#747474] mb-1">Page {i + 1}</div>
               <div
                 onClick={(e) => onPageClick(i, e)}
-                className="relative shadow-sm border border-[#d8dde6]"
+                className="relative shadow-sm border border-[#c9c9c9]"
                 style={{ width: cssW, height: cssH, cursor: tool ? "crosshair" : "default", background: "#fff" }}
               >
                 <canvas

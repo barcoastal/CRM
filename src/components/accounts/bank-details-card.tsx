@@ -18,7 +18,7 @@ const label: React.CSSProperties = {
   display: "block",
   fontSize: 11,
   fontWeight: 600,
-  color: "#3e3e3c",
+  color: "#444444",
   marginBottom: 4,
 };
 
@@ -68,7 +68,7 @@ export function BankDetailsCard({
     <article
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         marginBottom: 12,
         overflow: "hidden",
@@ -78,7 +78,7 @@ export function BankDetailsCard({
       <header
         style={{
           background: "#fafaf9",
-          borderBottom: "1px solid #dddbda",
+          borderBottom: "1px solid #c9c9c9",
           padding: "8px 16px",
           display: "flex",
           alignItems: "center",
@@ -103,7 +103,7 @@ export function BankDetailsCard({
             <path d="M26 4L4 14v3h44v-3L26 4zM6 19v23h6V19H6zm10 0v23h6V19h-6zm10 0v23h6V19h-6zm10 0v23h6V19h-6zM4 44v4h44v-4H4z" />
           </svg>
         </span>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
           Bank Details
         </h3>
       </header>
@@ -151,8 +151,8 @@ export function BankDetailsCard({
             disabled={saving}
             style={{
               background: "#fff",
-              color: "#0070d2",
-              border: "1px solid #dddbda",
+              color: "#0176d3",
+              border: "1px solid #c9c9c9",
               padding: "0 16px",
               height: 28,
               borderRadius: 4,

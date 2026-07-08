@@ -204,12 +204,12 @@ export function NewMassEmailWizard({
             </div>
             <div
               className="text-[12px] font-semibold"
-              style={{ color: step >= s.id ? "#131b2e" : "#706e6b" }}
+              style={{ color: step >= s.id ? "#131b2e" : "#747474" }}
             >
               {s.label}
             </div>
             {idx < STEPS.length - 1 && (
-              <div className="w-8 h-px" style={{ background: "#d8dde6" }} />
+              <div className="w-8 h-px" style={{ background: "#c9c9c9" }} />
             )}
           </div>
         ))}
@@ -236,7 +236,7 @@ export function NewMassEmailWizard({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="May 2026 reactivation outreach"
-                className="w-full h-9 rounded border border-[#d8dde6] px-3 text-[13px] text-[#131b2e]"
+                className="w-full h-9 rounded border border-[#c9c9c9] px-3 text-[13px] text-[#131b2e]"
               />
             </div>
             <div>
@@ -246,7 +246,7 @@ export function NewMassEmailWizard({
               <select
                 value={templateId}
                 onChange={(e) => setTemplateId(e.target.value)}
-                className="w-full h-9 rounded border border-[#d8dde6] px-3 text-[13px] text-[#131b2e] bg-white"
+                className="w-full h-9 rounded border border-[#c9c9c9] px-3 text-[13px] text-[#131b2e] bg-white"
               >
                 {templates.length === 0 && <option value="">No templates yet</option>}
                 {templates.map((t) => (
@@ -264,7 +264,7 @@ export function NewMassEmailWizard({
               <select
                 value={fromUserId}
                 onChange={(e) => setFromUserId(e.target.value)}
-                className="w-full h-9 rounded border border-[#d8dde6] px-3 text-[13px] text-[#131b2e] bg-white"
+                className="w-full h-9 rounded border border-[#c9c9c9] px-3 text-[13px] text-[#131b2e] bg-white"
               >
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
@@ -298,7 +298,7 @@ export function NewMassEmailWizard({
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="px-4 py-2 rounded border border-[#d8dde6] text-[13px] font-semibold text-[#131b2e] bg-white hover:bg-[#f2f3ff]"
+                className="px-4 py-2 rounded border border-[#c9c9c9] text-[13px] font-semibold text-[#131b2e] bg-white hover:bg-[#f2f3ff]"
               >
                 Back
               </button>
@@ -327,7 +327,7 @@ export function NewMassEmailWizard({
             </div>
 
             {previewLoading ? (
-              <div className="text-[13px] text-[#706e6b]">Loading preview...</div>
+              <div className="text-[13px] text-[#747474]">Loading preview...</div>
             ) : (
               <PreviewPane
                 subject={previewSubject}
@@ -341,7 +341,7 @@ export function NewMassEmailWizard({
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="px-4 py-2 rounded border border-[#d8dde6] text-[13px] font-semibold text-[#131b2e] bg-white hover:bg-[#f2f3ff]"
+                className="px-4 py-2 rounded border border-[#c9c9c9] text-[13px] font-semibold text-[#131b2e] bg-white hover:bg-[#f2f3ff]"
               >
                 Back
               </button>
@@ -404,7 +404,7 @@ function ConfirmModal({
             type="button"
             onClick={onCancel}
             disabled={sending}
-            className="px-4 py-2 rounded border border-[#d8dde6] text-[13px] font-semibold text-[#131b2e] bg-white hover:bg-[#f2f3ff]"
+            className="px-4 py-2 rounded border border-[#c9c9c9] text-[13px] font-semibold text-[#131b2e] bg-white hover:bg-[#f2f3ff]"
           >
             Cancel
           </button>

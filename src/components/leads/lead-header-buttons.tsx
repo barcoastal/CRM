@@ -11,12 +11,12 @@ import {
   type LeadStatusV2,
 } from "@/lib/sf-canonical";
 
-// SF Lightning header button — white pill with #d8dde6 border, blue text.
+// SF Lightning header button — white pill with #c9c9c9 border, blue text.
 // Matches the Convert / Edit / Delete strip on the SF Lead detail page.
 const btn: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
-  color: "#0070d2",
+  border: "1px solid #c9c9c9",
+  color: "#0176d3",
   padding: "0 12px",
   height: 32,
   borderRadius: 4,

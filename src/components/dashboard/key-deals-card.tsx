@@ -28,14 +28,14 @@ export function KeyDealsCard({ deals }: { deals: KeyDeal[] }) {
     <div
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
       }}
     >
       <header
         style={{
           padding: "8px 12px",
-          borderBottom: "1px solid #dddbda",
+          borderBottom: "1px solid #c9c9c9",
           background: "#fafaf9",
           display: "flex",
           alignItems: "center",
@@ -45,12 +45,12 @@ export function KeyDealsCard({ deals }: { deals: KeyDeal[] }) {
         <svg width="16" height="16" viewBox="0 0 52 52" style={{ fill: "#fcb95b" }}>
           <use xlinkHref="/slds/icons/standard-sprite/svg/symbols.svg#opportunity" />
         </svg>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#080707" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#181818" }}>
           Key Deals — Recent Opportunities
         </div>
       </header>
       {deals.length === 0 ? (
-        <div style={{ padding: 16, textAlign: "center", color: "#706e6b", fontSize: 12 }}>
+        <div style={{ padding: 16, textAlign: "center", color: "#747474", fontSize: 12 }}>
           No recent opportunities yet.
         </div>
       ) : (
@@ -72,7 +72,7 @@ export function KeyDealsCard({ deals }: { deals: KeyDeal[] }) {
                   <Link
                     href={`/opportunities/${d.id}`}
                     style={{
-                      color: "#0070d2",
+                      color: "#0176d3",
                       fontSize: 13,
                       fontWeight: 600,
                       textDecoration: "none",
@@ -84,14 +84,14 @@ export function KeyDealsCard({ deals }: { deals: KeyDeal[] }) {
                   >
                     {d.name || d.account?.name || "(no name)"}
                   </Link>
-                  <div style={{ fontSize: 11, color: "#706e6b", marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: "#747474", marginTop: 2 }}>
                     {d.account?.name ?? "—"} · {d.assignedTo?.name ?? "Unassigned"} · {d.stage}
                   </div>
                 </div>
                 <div
                   style={{
                     fontSize: 13,
-                    color: "#080707",
+                    color: "#181818",
                     fontWeight: 600,
                     whiteSpace: "nowrap",
                     alignSelf: "center",
@@ -106,16 +106,16 @@ export function KeyDealsCard({ deals }: { deals: KeyDeal[] }) {
       )}
       <footer
         style={{
-          borderTop: "1px solid #dddbda",
+          borderTop: "1px solid #c9c9c9",
           padding: "6px 12px",
           fontSize: 11,
           textAlign: "center",
-          color: "#0070d2",
+          color: "#0176d3",
           fontWeight: 600,
           background: "#fafaf9",
         }}
       >
-        <Link href="/opportunities" style={{ color: "#0070d2", textDecoration: "none" }}>
+        <Link href="/opportunities" style={{ color: "#0176d3", textDecoration: "none" }}>
           View All Key Deals
         </Link>
       </footer>

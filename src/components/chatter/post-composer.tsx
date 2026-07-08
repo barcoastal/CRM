@@ -186,7 +186,7 @@ export function PostComposer({
   }
 
   return (
-    <div style={{ position: "relative", border: "1px solid #d8dde6", borderRadius: 6, background: "#fff" }}>
+    <div style={{ position: "relative", border: "1px solid #c9c9c9", borderRadius: 6, background: "#fff" }}>
       <textarea
         ref={taRef}
         value={body}
@@ -216,7 +216,7 @@ export function PostComposer({
           borderRadius: "0 0 6px 6px",
         }}
       >
-        <div style={{ fontSize: 11, color: "#706e6b" }}>
+        <div style={{ fontSize: 11, color: "#747474" }}>
           Type @ to mention a teammate
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -226,7 +226,7 @@ export function PostComposer({
             disabled={submitting || !body.trim()}
             style={{
               padding: "6px 14px",
-              background: submitting || !body.trim() ? "#c9c7c5" : "#0070d2",
+              background: submitting || !body.trim() ? "#c9c7c5" : "#0176d3",
               color: "#fff",
               border: 0,
               borderRadius: 4,
@@ -248,7 +248,7 @@ export function PostComposer({
             left: 10,
             zIndex: 50,
             background: "#fff",
-            border: "1px solid #d8dde6",
+            border: "1px solid #c9c9c9",
             borderRadius: 4,
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
             minWidth: 260,
@@ -274,15 +274,15 @@ export function PostComposer({
             >
               <span style={{
                 width: 28, height: 28, borderRadius: "50%",
-                background: "#16325c", color: "#fff",
+                background: "#181818", color: "#fff",
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
                 fontSize: 11, fontWeight: 700, flexShrink: 0,
               }}>
                 {u.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
               </span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, color: "#080707", fontWeight: 500 }}>{u.name}</div>
-                <div style={{ fontSize: 11, color: "#706e6b" }}>{u.email}</div>
+                <div style={{ fontSize: 13, color: "#181818", fontWeight: 500 }}>{u.name}</div>
+                <div style={{ fontSize: 11, color: "#747474" }}>{u.email}</div>
               </div>
             </button>
           ))}

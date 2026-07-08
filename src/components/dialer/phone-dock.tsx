@@ -112,7 +112,7 @@ export function PhoneDock() {
         onClick={() => setOpen(true)}
         style={{
           position: "fixed", bottom: 16, right: 16, zIndex: 5000,
-          background: "#0070d2", color: "#fff", border: "none", borderRadius: 24,
+          background: "#0176d3", color: "#fff", border: "none", borderRadius: 24,
           padding: "10px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
           boxShadow: "0 2px 10px rgba(0,0,0,0.22)", display: "inline-flex", alignItems: "center", gap: 8,
         }}
@@ -129,7 +129,7 @@ export function PhoneDock() {
     <div
       style={{
         position: "fixed", bottom: 0, right: 16, zIndex: 5000, width: dockWidth,
-        background: "#fff", border: "1px solid #d8dde6", borderBottom: "none",
+        background: "#fff", border: "1px solid #c9c9c9", borderBottom: "none",
         borderRadius: "8px 8px 0 0", overflow: "hidden",
         boxShadow: "0 -2px 18px rgba(0,0,0,0.18)",
       }}

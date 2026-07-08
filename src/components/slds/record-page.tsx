@@ -96,7 +96,7 @@ export function HeaderActions({
         ),
       )}
       <button className="slds-button slds-button_icon slds-button_icon-border-filled" title="More">
-        <svg width="14" height="14" viewBox="0 0 14 14" style={{ fill: "#080707" }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" style={{ fill: "#181818" }}>
           <circle cx="2" cy="7" r="1.5" /><circle cx="7" cy="7" r="1.5" /><circle cx="12" cy="7" r="1.5" />
         </svg>
       </button>
@@ -119,7 +119,7 @@ export function StatusPill({
     warning: { bg: "#fe9339", color: "#fff" },
     danger: { bg: "#ba0517", color: "#fff" },
     info: { bg: "#0176d3", color: "#fff" },
-    neutral: { bg: "#ecebea", color: "#3e3e3c" },
+    neutral: { bg: "#ecebea", color: "#444444" },
   };
   const c = colors[tone];
   return (

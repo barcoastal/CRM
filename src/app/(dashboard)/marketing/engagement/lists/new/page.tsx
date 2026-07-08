@@ -66,7 +66,7 @@ export default function NewLeadListPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Hot Leads"
-            className="w-full px-3 py-2 border border-[#d8dde6] rounded text-[13px] outline-none focus:border-[#3052ff]"
+            className="w-full px-3 py-2 border border-[#c9c9c9] rounded text-[13px] outline-none focus:border-[#3052ff]"
             required
           />
         </div>
@@ -76,7 +76,7 @@ export default function NewLeadListPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border border-[#d8dde6] rounded text-[13px] outline-none focus:border-[#3052ff]"
+            className="w-full px-3 py-2 border border-[#c9c9c9] rounded text-[13px] outline-none focus:border-[#3052ff]"
           />
         </div>
 

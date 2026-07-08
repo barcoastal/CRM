@@ -60,7 +60,7 @@ export function ViewPicker({
         style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           background: "transparent", border: 0,
-          fontSize: 18, fontWeight: 700, color: "#080707",
+          fontSize: 18, fontWeight: 700, color: "#181818",
           cursor: "pointer", padding: 0,
         }}
       >
@@ -74,19 +74,19 @@ export function ViewPicker({
         <div
           style={{
             position: "absolute", top: 30, left: 0,
-            background: "#fff", border: "1px solid #d8dde6",
+            background: "#fff", border: "1px solid #c9c9c9",
             borderRadius: 4, boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
             minWidth: 280, maxHeight: 480, overflowY: "auto",
             zIndex: 9000,
           }}
         >
           <div style={{ padding: "8px 12px", borderBottom: "1px solid #ecebea", display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 11, color: "#3e3e3c", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, flex: 1 }}>
+            <span style={{ fontSize: 11, color: "#444444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, flex: 1 }}>
               List Views
             </span>
             <Link
               href={`/settings/list-views/new?entity=${entity}&returnTo=${encodeURIComponent(window.location.pathname)}`}
-              style={{ fontSize: 12, color: "#1589ee", textDecoration: "none" }}
+              style={{ fontSize: 12, color: "#0176d3", textDecoration: "none" }}
               onClick={() => setOpen(false)}
             >
               + New
@@ -95,7 +95,7 @@ export function ViewPicker({
 
           {pinned.length > 0 && (
             <>
-              <div style={{ padding: "4px 12px", fontSize: 11, color: "#706e6b" }}>Pinned</div>
+              <div style={{ padding: "4px 12px", fontSize: 11, color: "#747474" }}>Pinned</div>
               {pinned.map((v) => (
                 <ViewRow key={v.id} view={v} active={params.get("view") === v.developerName} onClick={() => pickView(v.developerName)} />
               ))}
@@ -105,7 +105,7 @@ export function ViewPicker({
 
           {recent.length > 0 && (
             <>
-              <div style={{ padding: "4px 12px", fontSize: 11, color: "#706e6b" }}>All Views</div>
+              <div style={{ padding: "4px 12px", fontSize: 11, color: "#747474" }}>All Views</div>
               {recent.map((v) => (
                 <ViewRow key={v.id} view={v} active={params.get("view") === v.developerName} onClick={() => pickView(v.developerName)} />
               ))}
@@ -113,7 +113,7 @@ export function ViewPicker({
           )}
 
           {views.length === 0 && (
-            <div style={{ padding: 16, fontSize: 12, color: "#706e6b" }}>
+            <div style={{ padding: 16, fontSize: 12, color: "#747474" }}>
               No saved views. Click + New to create one.
             </div>
           )}
@@ -134,16 +134,16 @@ function ViewRow({
         width: "100%", padding: "8px 12px",
         background: active ? "#f3f9fe" : "transparent",
         border: 0, cursor: "pointer", textAlign: "left",
-        fontSize: 13, color: "#080707",
+        fontSize: 13, color: "#181818",
       }}
       className="sf-view-row"
     >
       <span style={{ flex: 1 }}>{view.name}</span>
       {view.isSystem && (
-        <span style={{ fontSize: 10, color: "#706e6b" }}>System</span>
+        <span style={{ fontSize: 10, color: "#747474" }}>System</span>
       )}
       {active && (
-        <svg width="14" height="14" viewBox="0 0 14 14" style={{ fill: "#1589ee", flexShrink: 0 }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" style={{ fill: "#0176d3", flexShrink: 0 }}>
           <path d="M5 10.5L2 7.5l1-1L5 8.5 11 2.5l1 1z" />
         </svg>
       )}

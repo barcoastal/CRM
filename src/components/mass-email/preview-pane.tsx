@@ -27,13 +27,13 @@ export function PreviewPane({
 
   return (
     <div className="space-y-3" style={{ fontFamily: "Manrope, sans-serif" }}>
-      <div className="rounded border border-[#d8dde6] bg-white px-3 py-2 text-[12px] text-[#131b2e]">
+      <div className="rounded border border-[#c9c9c9] bg-white px-3 py-2 text-[12px] text-[#131b2e]">
         <div>
-          <span className="text-[#706e6b]">To:</span>{" "}
+          <span className="text-[#747474]">To:</span>{" "}
           <span className="font-semibold">{recipientEmail ?? "first matching recipient"}</span>
         </div>
         <div>
-          <span className="text-[#706e6b]">Subject:</span>{" "}
+          <span className="text-[#747474]">Subject:</span>{" "}
           <span className="font-semibold">{subject || "(no subject)"}</span>
         </div>
       </div>
@@ -44,7 +44,7 @@ export function PreviewPane({
         style={{
           width: "100%",
           height: 480,
-          border: "1px solid #d8dde6",
+          border: "1px solid #c9c9c9",
           borderRadius: 6,
           background: "white",
         }}

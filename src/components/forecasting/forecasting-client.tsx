@@ -114,8 +114,8 @@ export function ForecastingClient({
       {/* Top bar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, gap: 12, flexWrap: "wrap" }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#080707", margin: 0 }}>Forecasting</h1>
-          <div style={{ fontSize: 13, color: "#706e6b", marginTop: 4 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#181818", margin: 0 }}>Forecasting</h1>
+          <div style={{ fontSize: 13, color: "#747474", marginTop: 4 }}>
             Pipeline by category for {periodLabel}
             {forUserId && includeTeam ? `, ${currentUserName} and team` : ""}
             {forUserId && !includeTeam ? `, ${currentUserName}` : ""}
@@ -125,7 +125,7 @@ export function ForecastingClient({
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           {/* Period kind toggle */}
-          <div style={{ display: "inline-flex", border: "1px solid #d8dde6", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ display: "inline-flex", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden" }}>
             {(["month", "quarter"] as const).map((k) => (
               <button
                 key={k}
@@ -192,10 +192,10 @@ export function ForecastingClient({
       >
         {FORECAST_CATEGORIES.map((c) => (
           <div key={c} style={{ ...card, padding: 16, borderLeft: `4px solid ${CATEGORY_COLOR[c]}` }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#706e6b", textTransform: "uppercase", letterSpacing: 0.4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#747474", textTransform: "uppercase", letterSpacing: 0.4 }}>
               {CATEGORY_LABEL[c]}
             </div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: "#080707", marginTop: 6 }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: "#181818", marginTop: 6 }}>
               {fmtMoney(summary.totals[c])}
             </div>
           </div>
@@ -206,10 +206,10 @@ export function ForecastingClient({
       <div style={{ ...card, padding: 16, marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 12, flexWrap: "wrap" }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#080707" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#181818" }}>
               Quota Attainment, {periodLabel}
             </div>
-            <div style={{ fontSize: 11, color: "#706e6b", marginTop: 2 }}>
+            <div style={{ fontSize: 11, color: "#747474", marginTop: 2 }}>
               {summary.totalQuota > 0
                 ? `${fmtMoney(summary.totals.CLOSED)} of ${fmtMoney(summary.totalQuota)} closed`
                 : "No quota set for this period"}
@@ -217,7 +217,7 @@ export function ForecastingClient({
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {summary.totalQuota > 0 ? (
-              <div style={{ fontSize: 20, fontWeight: 700, color: quotaPct >= 100 ? "#1a7d37" : "#080707" }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: quotaPct >= 100 ? "#1a7d37" : "#181818" }}>
                 {quotaPct.toFixed(1)}%
               </div>
             ) : (
@@ -251,16 +251,16 @@ export function ForecastingClient({
       {/* Rollup table */}
       <div style={{ ...card, padding: 0, marginBottom: 20, overflowX: "auto" }}>
         <div style={{ padding: "14px 16px", borderBottom: "1px solid #ecebea", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#080707" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#181818" }}>
             Rollup by Rep
           </div>
-          <div style={{ fontSize: 11, color: "#706e6b" }}>
+          <div style={{ fontSize: 11, color: "#747474" }}>
             {rows.length} {rows.length === 1 ? "rep" : "reps"}, {summary.totalCount} opps
           </div>
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
-            <tr style={{ background: "#fafaf9", color: "#3e3e3c", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.4 }}>
+            <tr style={{ background: "#fafaf9", color: "#444444", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.4 }}>
               <th style={th}>Rep</th>
               {FORECAST_CATEGORIES.map((c) => (
                 <th key={c} style={{ ...th, textAlign: "right", color: CATEGORY_COLOR[c] }}>
@@ -275,7 +275,7 @@ export function ForecastingClient({
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={9} style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>
+                <td colSpan={9} style={{ padding: 24, textAlign: "center", color: "#747474" }}>
                   No opportunities in this period.
                 </td>
               </tr>
@@ -289,15 +289,15 @@ export function ForecastingClient({
                   >
                     {r.userName}
                   </button>
-                  <div style={{ fontSize: 11, color: "#706e6b" }}>{r.count} opps</div>
+                  <div style={{ fontSize: 11, color: "#747474" }}>{r.count} opps</div>
                 </td>
                 {FORECAST_CATEGORIES.map((c) => (
-                  <td key={c} style={{ ...td, textAlign: "right", color: r.amounts[c] > 0 ? "#080707" : "#a8a8a8" }}>
+                  <td key={c} style={{ ...td, textAlign: "right", color: r.amounts[c] > 0 ? "#181818" : "#a8a8a8" }}>
                     {fmtMoney(r.amounts[c])}
                   </td>
                 ))}
                 <td style={{ ...td, textAlign: "right", fontWeight: 700 }}>{fmtMoney(r.total)}</td>
-                <td style={{ ...td, textAlign: "right", color: "#706e6b" }}>
+                <td style={{ ...td, textAlign: "right", color: "#747474" }}>
                   {r.quota != null ? fmtMoney(r.quota) : "—"}
                 </td>
                 <td style={{ ...td, textAlign: "right", fontWeight: 600, color: attainmentColor(r.attainment) }}>
@@ -312,21 +312,21 @@ export function ForecastingClient({
       {/* Pipeline change waterfall */}
       <div style={{ ...card, padding: 0 }}>
         <div style={{ padding: "14px 16px", borderBottom: "1px solid #ecebea" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#080707" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#181818" }}>
             Top Pipeline Changes
           </div>
-          <div style={{ fontSize: 11, color: "#706e6b", marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: "#747474", marginTop: 2 }}>
             Largest Commit and Best Case opportunities in {periodLabel}. Override the category inline.
           </div>
         </div>
         {topOpps.length === 0 ? (
-          <div style={{ padding: 24, textAlign: "center", color: "#706e6b", fontSize: 13 }}>
+          <div style={{ padding: 24, textAlign: "center", color: "#747474", fontSize: 13 }}>
             No Commit or Best Case opps for this period.
           </div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ background: "#fafaf9", color: "#3e3e3c", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.4 }}>
+              <tr style={{ background: "#fafaf9", color: "#444444", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.4 }}>
                 <th style={th}>Opportunity</th>
                 <th style={th}>Owner</th>
                 <th style={{ ...th, textAlign: "right" }}>Amount</th>
@@ -343,10 +343,10 @@ export function ForecastingClient({
                       {o.name || `Opportunity ${o.id.slice(-6)}`}
                     </Link>
                   </td>
-                  <td style={{ ...td, color: "#706e6b" }}>{o.ownerName}</td>
+                  <td style={{ ...td, color: "#747474" }}>{o.ownerName}</td>
                   <td style={{ ...td, textAlign: "right", fontWeight: 700 }}>{fmtMoney(o.amount)}</td>
-                  <td style={{ ...td, color: "#706e6b" }}>{o.closeDate || "—"}</td>
-                  <td style={{ ...td, color: "#706e6b", fontSize: 12 }}>{o.stage}</td>
+                  <td style={{ ...td, color: "#747474" }}>{o.closeDate || "—"}</td>
+                  <td style={{ ...td, color: "#747474", fontSize: 12 }}>{o.stage}</td>
                   <td style={td}>
                     <CategoryPicker opportunityId={o.id} value={o.category} size="sm" />
                   </td>
@@ -391,18 +391,18 @@ const card: React.CSSProperties = {
 
 const inp: React.CSSProperties = {
   padding: "6px 10px",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   fontSize: 12,
   outline: "none",
   background: "#fff",
-  color: "#080707",
+  color: "#181818",
   cursor: "pointer",
 };
 
 const navBtn: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   padding: "6px 10px",
   fontSize: 12,

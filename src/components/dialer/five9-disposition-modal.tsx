@@ -67,7 +67,7 @@ export function Five9DispositionModal({ open, callId, leadId, phone, initialNote
       <div style={modal}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #ecebea" }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Log call disposition</h2>
-          <div style={{ color: "#706e6b", fontSize: 13, marginTop: 4 }}>{phone}</div>
+          <div style={{ color: "#747474", fontSize: 13, marginTop: 4 }}>{phone}</div>
         </div>
 
         <div style={{ padding: 20 }}>
@@ -79,7 +79,7 @@ export function Five9DispositionModal({ open, callId, leadId, phone, initialNote
             style={input}
           />
 
-          <div style={{ maxHeight: 320, overflowY: "auto", border: "1px solid #d8dde6", borderRadius: 4, marginTop: 8 }}>
+          <div style={{ maxHeight: 320, overflowY: "auto", border: "1px solid #c9c9c9", borderRadius: 4, marginTop: 8 }}>
             {visibleMapped.map((five9Name) => {
               const crm = FIVE9_TO_CRM_DISPOSITION[five9Name];
               const isSelected = selected === five9Name;
@@ -109,7 +109,7 @@ export function Five9DispositionModal({ open, callId, leadId, phone, initialNote
               );
             })}
             {visibleMapped.length === 0 && (
-              <div style={{ padding: 12, fontSize: 13, color: "#706e6b" }}>No matches.</div>
+              <div style={{ padding: 12, fontSize: 13, color: "#747474" }}>No matches.</div>
             )}
           </div>
 
@@ -150,17 +150,17 @@ const modal: React.CSSProperties = {
   flexDirection: "column",
   overflow: "hidden",
 };
-const lbl: React.CSSProperties = { display: "block", fontSize: 11, color: "#706e6b", marginBottom: 4, marginTop: 4 };
+const lbl: React.CSSProperties = { display: "block", fontSize: 11, color: "#747474", marginBottom: 4, marginTop: 4 };
 const input: React.CSSProperties = {
   width: "100%",
   padding: "6px 8px",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   fontSize: 13,
   boxSizing: "border-box",
 };
 const btnPrimary: React.CSSProperties = {
-  background: "#0070d2",
+  background: "#0176d3",
   color: "#fff",
   padding: "8px 16px",
   borderRadius: 4,
@@ -171,11 +171,11 @@ const btnPrimary: React.CSSProperties = {
 };
 const btnSecondary: React.CSSProperties = {
   background: "#fff",
-  color: "#0070d2",
+  color: "#0176d3",
   padding: "8px 16px",
   borderRadius: 4,
   fontSize: 13,
   fontWeight: 600,
-  border: "1px solid #0070d2",
+  border: "1px solid #0176d3",
   cursor: "pointer",
 };

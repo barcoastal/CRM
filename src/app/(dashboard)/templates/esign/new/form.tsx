@@ -65,7 +65,7 @@ export function NewTemplateForm() {
         </label>
         <div className="flex items-center gap-3">
           <label
-            className="inline-flex items-center gap-2 px-4 py-2 rounded border border-[#d8dde6] text-[13px] font-semibold text-[#131b2e] cursor-pointer hover:bg-[#f2f3ff]"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded border border-[#c9c9c9] text-[13px] font-semibold text-[#131b2e] cursor-pointer hover:bg-[#f2f3ff]"
           >
             <Upload className="size-4" />
             Choose file
@@ -79,13 +79,13 @@ export function NewTemplateForm() {
           {file ? (
             <span className="text-[13px] text-[#444656]">
               <span className="font-semibold text-[#131b2e]">{file.name}</span>{" "}
-              <span className="text-[#706e6b]">({fmtBytes(file.size)})</span>
+              <span className="text-[#747474]">({fmtBytes(file.size)})</span>
             </span>
           ) : (
-            <span className="text-[12px] text-[#706e6b]">No file selected.</span>
+            <span className="text-[12px] text-[#747474]">No file selected.</span>
           )}
         </div>
-        <p className="text-[12px] text-[#706e6b] mt-1.5">
+        <p className="text-[12px] text-[#747474] mt-1.5">
           Accepts PDF or Word (.docx, .doc). Word files are converted to PDF on upload.
         </p>
       </div>
@@ -98,7 +98,7 @@ export function NewTemplateForm() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Engagement Agreement"
-          className="w-full px-3 py-2 rounded border border-[#d8dde6] text-[13px] outline-none focus:border-[#3052ff]"
+          className="w-full px-3 py-2 rounded border border-[#c9c9c9] text-[13px] outline-none focus:border-[#3052ff]"
         />
       </div>
 
@@ -109,7 +109,7 @@ export function NewTemplateForm() {
         <select
           value={recordType}
           onChange={(e) => setRecordType(e.target.value)}
-          className="w-full px-3 py-2 rounded border border-[#d8dde6] text-[13px] bg-white outline-none focus:border-[#3052ff]"
+          className="w-full px-3 py-2 rounded border border-[#c9c9c9] text-[13px] bg-white outline-none focus:border-[#3052ff]"
         >
           {RECORD_TYPES.map((rt) => (
             <option key={rt} value={rt}>
@@ -128,7 +128,7 @@ export function NewTemplateForm() {
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
           placeholder="Optional: when to use this template, who signs it, etc."
-          className="w-full px-3 py-2 rounded border border-[#d8dde6] text-[13px] outline-none focus:border-[#3052ff]"
+          className="w-full px-3 py-2 rounded border border-[#c9c9c9] text-[13px] outline-none focus:border-[#3052ff]"
         />
       </div>
 
@@ -150,7 +150,7 @@ export function NewTemplateForm() {
         <button
           type="button"
           onClick={() => history.back()}
-          className="px-4 py-2.5 rounded text-[13px] font-semibold text-[#444656] border border-[#d8dde6] hover:bg-[#f2f3ff]"
+          className="px-4 py-2.5 rounded text-[13px] font-semibold text-[#444656] border border-[#c9c9c9] hover:bg-[#f2f3ff]"
         >
           Cancel
         </button>

@@ -79,7 +79,7 @@ export function ComposeEmailButton({
 }
 
 const btnPrimary: React.CSSProperties = {
-  background: "#0070d2",
+  background: "#0176d3",
   color: "#fff",
   padding: "8px 16px",
   borderRadius: 4,
@@ -90,11 +90,11 @@ const btnPrimary: React.CSSProperties = {
 };
 const btnGhost: React.CSSProperties = {
   background: "#fff",
-  color: "#0070d2",
+  color: "#0176d3",
   padding: "4px 10px",
   borderRadius: 4,
   fontSize: 12,
   fontWeight: 600,
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   cursor: "pointer",
 };

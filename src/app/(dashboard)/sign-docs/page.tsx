@@ -192,7 +192,7 @@ export default async function SignDocsHubPage() {
                       </td>
                       <td className="px-4 py-3 text-[12px] text-[#444656]">
                         <div className="font-semibold text-[#131b2e]">{env.signerName}</div>
-                        <div className="text-[11px] text-[#706e6b]">{env.signerEmail}</div>
+                        <div className="text-[11px] text-[#747474]">{env.signerEmail}</div>
                       </td>
                       <td className="px-4 py-3 text-[12px]">
                         {linkedHref ? (
@@ -200,7 +200,7 @@ export default async function SignDocsHubPage() {
                             {linkedLabel || linkedHref}
                           </Link>
                         ) : (
-                          <span className="text-[#706e6b]">--</span>
+                          <span className="text-[#747474]">--</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -287,7 +287,7 @@ export default async function SignDocsHubPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-semibold text-[#131b2e] truncate">{t.name}</div>
-                      <div className="text-[11px] text-[#706e6b]">
+                      <div className="text-[11px] text-[#747474]">
                         {t.recordType} · {t.pageCount} page{t.pageCount === 1 ? "" : "s"}
                       </div>
                     </div>
@@ -324,7 +324,7 @@ export default async function SignDocsHubPage() {
                     {ev.envelope.signerName} ({ev.envelope.signerEmail}){ev.details ? ` · ${ev.details}` : ""}
                   </div>
                 </div>
-                <div className="text-[11px] text-[#706e6b]">{formatRelative(ev.createdAt)}</div>
+                <div className="text-[11px] text-[#747474]">{formatRelative(ev.createdAt)}</div>
               </Link>
             ))}
           </div>
@@ -364,7 +364,7 @@ function StatCard({
         </div>
       </div>
       <div className="text-[14px] font-bold text-[#131b2e]">{label}</div>
-      <div className="text-[11px] text-[#706e6b] mt-0.5">{sub}</div>
+      <div className="text-[11px] text-[#747474] mt-0.5">{sub}</div>
     </Link>
   );
 }
@@ -377,10 +377,10 @@ function EventDot({ type }: { type: string }) {
     COMPLETED: "#1a7d37",
     DECLINED: "#942b00",
     VOIDED: "#942b00",
-    CREATED: "#706e6b",
+    CREATED: "#747474",
     REMINDER_SENT: "#3052ff",
   };
-  const color = colorMap[type] ?? "#706e6b";
+  const color = colorMap[type] ?? "#747474";
   return (
     <span
       className="size-2 rounded-full"

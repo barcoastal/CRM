@@ -44,33 +44,33 @@ export default function ResetPasswordPage() {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f3f3f3" }}>
       <form onSubmit={submit} style={{ background: "#fff", padding: 32, borderRadius: 8, width: 380, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Set your password</h1>
-        <p style={{ color: "#706e6b", fontSize: 13, marginBottom: 20 }}>
+        <p style={{ color: "#747474", fontSize: 13, marginBottom: 20 }}>
           You're using a temporary password. Pick a new one to continue.
         </p>
 
-        <label style={{ display: "block", fontSize: 11, color: "#706e6b", marginBottom: 4 }}>New password</label>
+        <label style={{ display: "block", fontSize: 11, color: "#747474", marginBottom: 4 }}>New password</label>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           autoFocus
-          style={{ width: "100%", padding: "8px 12px", border: "1px solid #d8dde6", borderRadius: 4, marginBottom: 12, boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "8px 12px", border: "1px solid #c9c9c9", borderRadius: 4, marginBottom: 12, boxSizing: "border-box" }}
         />
 
-        <label style={{ display: "block", fontSize: 11, color: "#706e6b", marginBottom: 4 }}>Confirm password</label>
+        <label style={{ display: "block", fontSize: 11, color: "#747474", marginBottom: 4 }}>Confirm password</label>
         <input
           type="password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           required
-          style={{ width: "100%", padding: "8px 12px", border: "1px solid #d8dde6", borderRadius: 4, marginBottom: 16, boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "8px 12px", border: "1px solid #c9c9c9", borderRadius: 4, marginBottom: 16, boxSizing: "border-box" }}
         />
 
         <button
           type="submit"
           disabled={busy}
-          style={{ width: "100%", background: "#0070d2", color: "#fff", padding: "10px", borderRadius: 4, fontWeight: 600, border: 0, cursor: busy ? "wait" : "pointer", fontSize: 14 }}
+          style={{ width: "100%", background: "#0176d3", color: "#fff", padding: "10px", borderRadius: 4, fontWeight: 600, border: 0, cursor: busy ? "wait" : "pointer", fontSize: 14 }}
         >
           {busy ? "Saving…" : "Set Password"}
         </button>

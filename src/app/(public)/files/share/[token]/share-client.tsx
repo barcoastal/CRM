@@ -48,7 +48,7 @@ export function SharePageClient({
     <div>
       {passwordProtected && (
         <label style={{ display: "block", marginBottom: 12 }}>
-          <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3e3e3c", marginBottom: 4 }}>
+          <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#444444", marginBottom: 4 }}>
             Password
           </span>
           <input
@@ -57,7 +57,7 @@ export function SharePageClient({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter password to access"
-            style={{ width: "100%", padding: "8px 12px", border: "1px solid #d8dde6", borderRadius: 4, fontSize: 13 }}
+            style={{ width: "100%", padding: "8px 12px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13 }}
             onKeyDown={(e) => e.key === "Enter" && download()}
           />
         </label>

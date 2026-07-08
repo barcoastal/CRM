@@ -446,7 +446,7 @@ function FlowEditorInner({ initial }: { initial: InitialFlow }) {
                 onClick={() => setTab(t)}
                 className="flex-1 px-2 py-2 text-[11px] uppercase tracking-[0.4px] font-bold"
                 style={{
-                  color: tab === t ? "#3052ff" : "#706e6b",
+                  color: tab === t ? "#3052ff" : "#747474",
                   background: tab === t ? "#f2f3ff" : "transparent",
                   borderBottom: tab === t ? "2px solid #3052ff" : "2px solid transparent",
                 }}
@@ -465,7 +465,7 @@ function FlowEditorInner({ initial }: { initial: InitialFlow }) {
                   onDelete={deleteSelected}
                 />
               ) : (
-                <div className="text-[12px] text-[#706e6b]">
+                <div className="text-[12px] text-[#747474]">
                   Select a node on the canvas to edit its config. Drag from a node handle to connect.
                   Decision nodes have two output handles (True / False).
                 </div>
@@ -538,7 +538,7 @@ function FlowEditorInner({ initial }: { initial: InitialFlow }) {
                     onChange={(e) => setEntryCriteriaJson(e.target.value)}
                     className="w-full px-2 py-1.5 text-[11px] font-mono border border-[#e0dfe6] rounded"
                   />
-                  <div className="text-[10px] text-[#706e6b] mt-1">
+                  <div className="text-[10px] text-[#747474] mt-1">
                     Shape: {"{ kind: 'and' | 'or', conditions: [{ field, operator, value }] }"}
                   </div>
                 </div>
@@ -546,7 +546,7 @@ function FlowEditorInner({ initial }: { initial: InitialFlow }) {
             ) : null}
             {tab === "test" ? (
               <div className="space-y-3">
-                <div className="text-[11px] text-[#706e6b]">
+                <div className="text-[11px] text-[#747474]">
                   Dry run the flow against a sample record. No side effects.
                 </div>
                 <div>
@@ -599,7 +599,7 @@ function NodeInspector({
   return (
     <div className="space-y-3">
       <div>
-        <div className="text-[10px] uppercase tracking-[0.4px] font-bold text-[#706e6b]">{NODE_LABELS[kind]}</div>
+        <div className="text-[10px] uppercase tracking-[0.4px] font-bold text-[#747474]">{NODE_LABELS[kind]}</div>
         <input
           value={node.data.label}
           onChange={(e) => onLabelChange(e.target.value)}
@@ -623,7 +623,7 @@ function NodeInspector({
             }}
             className="w-full px-2 py-1.5 text-[11px] font-mono border border-[#e0dfe6] rounded"
           />
-          <div className="text-[10px] text-[#706e6b] mt-1">
+          <div className="text-[10px] text-[#747474] mt-1">
             True branch follows the green handle; false follows the red.
           </div>
         </div>
@@ -645,7 +645,7 @@ function NodeInspector({
             }}
             className="w-full px-2 py-1.5 text-[11px] font-mono border border-[#e0dfe6] rounded"
           />
-          <div className="text-[10px] text-[#706e6b] mt-1">
+          <div className="text-[10px] text-[#747474] mt-1">
             Use {"{{record.field}}"} to reference the current record.
           </div>
         </div>
@@ -718,7 +718,7 @@ function NodeInspector({
               onChange={(e) => onConfigChange({ toFieldPath: e.target.value })}
               className="w-full px-2 py-1.5 text-[12px] border border-[#e0dfe6] rounded"
             />
-            <div className="text-[10px] text-[#706e6b] mt-1">e.g. email, owner.email</div>
+            <div className="text-[10px] text-[#747474] mt-1">e.g. email, owner.email</div>
           </div>
         </>
       ) : null}
@@ -770,7 +770,7 @@ function NodeInspector({
         </>
       ) : null}
       {kind === "start" || kind === "end" ? (
-        <div className="text-[11px] text-[#706e6b]">
+        <div className="text-[11px] text-[#747474]">
           {NODE_LABELS[kind]} nodes have no config.
         </div>
       ) : null}

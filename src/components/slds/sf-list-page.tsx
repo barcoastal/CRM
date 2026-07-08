@@ -148,7 +148,7 @@ export function SfListPage(props: SfListPageProps) {
         <div
           style={{
             background: "#fff",
-            border: "1px solid #dddbda",
+            border: "1px solid #c9c9c9",
             borderTop: "none",
             overflowX: "auto",
           }}
@@ -180,8 +180,8 @@ export function SfListPage(props: SfListPageProps) {
                   style={{
                     padding: "0 6px",
                     background: "#fafaf9",
-                    borderBottom: "1px solid #dddbda",
-                    borderRight: "1px solid #dddbda",
+                    borderBottom: "1px solid #c9c9c9",
+                    borderRight: "1px solid #c9c9c9",
                     textAlign: "center",
                   }}
                 >
@@ -191,11 +191,11 @@ export function SfListPage(props: SfListPageProps) {
                   scope="col"
                   style={{
                     background: "#fafaf9",
-                    borderBottom: "1px solid #dddbda",
-                    borderRight: "1px solid #dddbda",
+                    borderBottom: "1px solid #c9c9c9",
+                    borderRight: "1px solid #c9c9c9",
                     padding: "6px 8px",
                     textAlign: "left",
-                    color: "#3e3e3c",
+                    color: "#444444",
                     fontSize: 11,
                     fontWeight: 700,
                   }}
@@ -216,7 +216,7 @@ export function SfListPage(props: SfListPageProps) {
                         alignItems: "center",
                         gap: 4,
                         padding: "6px 8px",
-                        color: "#080707",
+                        color: "#181818",
                         fontSize: 12,
                         fontWeight: 700,
                         textDecoration: "none",
@@ -244,8 +244,8 @@ export function SfListPage(props: SfListPageProps) {
                       scope="col"
                       style={{
                         background: "#fafaf9",
-                        borderBottom: "1px solid #dddbda",
-                        borderRight: "1px solid #dddbda",
+                        borderBottom: "1px solid #c9c9c9",
+                        borderRight: "1px solid #c9c9c9",
                         padding: 0,
                         textAlign: c.align === "right" ? "right" : "left",
                       }}
@@ -273,7 +273,7 @@ export function SfListPage(props: SfListPageProps) {
                   scope="col"
                   style={{
                     background: "#fafaf9",
-                    borderBottom: "1px solid #dddbda",
+                    borderBottom: "1px solid #c9c9c9",
                   }}
                 />
               </tr>
@@ -286,7 +286,7 @@ export function SfListPage(props: SfListPageProps) {
                     style={{
                       textAlign: "center",
                       padding: 48,
-                      color: "#706e6b",
+                      color: "#747474",
                       fontSize: 13,
                     }}
                   >
@@ -312,7 +312,7 @@ export function SfListPage(props: SfListPageProps) {
                     style={{
                       padding: "6px 8px",
                       fontSize: 12,
-                      color: "#3e3e3c",
+                      color: "#444444",
                       borderBottom: "1px solid #f3f2f2",
                       borderRight: "1px solid #f3f2f2",
                     }}
@@ -328,7 +328,7 @@ export function SfListPage(props: SfListPageProps) {
                         style={{
                           padding: "6px 8px",
                           fontSize: 12,
-                          color: "#080707",
+                          color: "#181818",
                           borderBottom: "1px solid #f3f2f2",
                           borderRight: "1px solid #f3f2f2",
                           textAlign: c.align === "right" ? "right" : "left",
@@ -347,7 +347,7 @@ export function SfListPage(props: SfListPageProps) {
                             <Link
                               href={row.href}
                               style={{
-                                color: "#1589ee",
+                                color: "#0176d3",
                                 textDecoration: "none",
                               }}
                               className="sf-row-link"
@@ -386,10 +386,10 @@ export function SfListPage(props: SfListPageProps) {
               gap: 12,
               padding: "10px 16px",
               background: "#fff",
-              border: "1px solid #dddbda",
+              border: "1px solid #c9c9c9",
               borderTop: "none",
               fontSize: 13,
-              color: "#3e3e3c",
+              color: "#444444",
             }}
           >
             <span>
@@ -444,7 +444,7 @@ function Header({
     <div
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderBottom: "none",
         padding: "10px 16px 6px",
       }}
@@ -480,7 +480,7 @@ function Header({
             </svg>
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: 12, color: "#3e3e3c", lineHeight: 1.2 }}>
+            <div style={{ fontSize: 12, color: "#444444", lineHeight: 1.2 }}>
               {title}
             </div>
             {views && views.length > 0 ? (
@@ -490,7 +490,7 @@ function Header({
                 style={{
                   fontSize: 18,
                   fontWeight: 700,
-                  color: "#080707",
+                  color: "#181818",
                   lineHeight: 1.2,
                   display: "inline-flex",
                   alignItems: "center",
@@ -498,14 +498,14 @@ function Header({
                 }}
               >
                 {subtitle}
-                <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#080707" }}>
+                <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#181818" }}>
                   <path d="M2 4l4 4 4-4z" />
                 </svg>
               </div>
             )}
-            <div style={{ marginTop: 2, fontSize: 12, color: "#3e3e3c" }}>
+            <div style={{ marginTop: 2, fontSize: 12, color: "#444444" }}>
               {count} item{count === 1 ? "" : "s"}
-              <span style={{ color: "#706e6b" }}> · Updated a few seconds ago</span>
+              <span style={{ color: "#747474" }}> · Updated a few seconds ago</span>
             </div>
           </div>
         </div>
@@ -515,7 +515,7 @@ function Header({
             display: "flex",
             gap: 0,
             flexShrink: 0,
-            border: "1px solid #dddbda",
+            border: "1px solid #c9c9c9",
             borderRadius: 4,
             overflow: "hidden",
           }}
@@ -528,12 +528,12 @@ function Header({
                   alignItems: "center",
                   padding: "6px 12px",
                   background: "#fff",
-                  color: "#0070d2",
+                  color: "#0176d3",
                   fontSize: 13,
                   fontWeight: 400,
                   cursor: "pointer",
                   borderRight:
-                    i < actions.length - 1 ? "1px solid #dddbda" : "none",
+                    i < actions.length - 1 ? "1px solid #c9c9c9" : "none",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -572,35 +572,35 @@ function Header({
           initialValue={searchQuery}
         />
         <IconBtn ariaLabel="List controls">
-          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#706e6b" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
             <circle cx="12" cy="12" r="3" />
             <path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2l-.3-2.4h-4l-.3 2.4a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2l.3 2.4h4l.3-2.4a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5A7 7 0 0 0 19 12z" />
           </svg>
         </IconBtn>
         <IconBtn ariaLabel="Choose view">
-          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#706e6b" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
             <rect x="3" y="4" width="18" height="3" />
             <rect x="3" y="10" width="18" height="3" />
             <rect x="3" y="16" width="18" height="3" />
           </svg>
         </IconBtn>
         <IconBtn ariaLabel="Refresh">
-          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#706e6b" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
             <path d="M17.65 6.35A8 8 0 0 0 4 12h2a6 6 0 0 1 10.24-4.24L13 11h7V4l-2.35 2.35z" />
           </svg>
         </IconBtn>
         <IconBtn ariaLabel="Sort">
-          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#706e6b" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
             <path d="M7 4l-4 5h3v11h2V9h3L7 4zm10 16l4-5h-3V4h-2v11h-3l4 5z" />
           </svg>
         </IconBtn>
         <IconBtn ariaLabel="Edit list">
-          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#706e6b" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
             <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
           </svg>
         </IconBtn>
         <IconBtn ariaLabel="Filters">
-          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#706e6b" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46" />
           </svg>
         </IconBtn>
@@ -626,7 +626,7 @@ function IconBtn({
         justifyContent: "center",
         width: 28,
         height: 28,
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         background: "#fff",
         borderRadius: 4,
         cursor: "pointer",
@@ -639,8 +639,8 @@ function IconBtn({
 }
 
 function SortIcon({ dir }: { dir: "asc" | "desc" | null }) {
-  const upColor = dir === "asc" ? "#0070d2" : "#aeaeae";
-  const downColor = dir === "desc" ? "#0070d2" : "#aeaeae";
+  const upColor = dir === "asc" ? "#0176d3" : "#aeaeae";
+  const downColor = dir === "desc" ? "#0176d3" : "#aeaeae";
   return (
     <svg
       width="8"
@@ -661,7 +661,7 @@ function DownChev() {
       width="10"
       height="10"
       viewBox="0 0 12 12"
-      style={{ fill: "#706e6b", flexShrink: 0 }}
+      style={{ fill: "#747474", flexShrink: 0 }}
       aria-hidden="true"
     >
       <path d="M2 4l4 4 4-4z" />
@@ -678,7 +678,7 @@ function PagerLink({ href, disabled, label }: { href: string; disabled: boolean;
     display: "inline-flex",
     alignItems: "center",
     padding: "5px 12px",
-    border: "1px solid #dddbda",
+    border: "1px solid #c9c9c9",
     borderRadius: 4,
     fontSize: 13,
     fontWeight: 600,
@@ -688,7 +688,7 @@ function PagerLink({ href, disabled, label }: { href: string; disabled: boolean;
     return <span style={{ ...style, color: "#c9c7c5", background: "#f3f3f3", cursor: "not-allowed" }}>{label}</span>;
   }
   return (
-    <Link href={href} style={{ ...style, color: "#0070d2", background: "#fff" }}>
+    <Link href={href} style={{ ...style, color: "#0176d3", background: "#fff" }}>
       {label}
     </Link>
   );

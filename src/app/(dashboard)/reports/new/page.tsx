@@ -70,7 +70,7 @@ export default async function NewReportPickerPage() {
                     {meta.pluralLabel}
                   </div>
                   <p className="text-[12px] text-[#444656] mt-1">{meta.description}</p>
-                  <div className="text-[11px] text-[#706e6b] mt-2 uppercase tracking-[0.4px] font-semibold">
+                  <div className="text-[11px] text-[#747474] mt-2 uppercase tracking-[0.4px] font-semibold">
                     {meta.fields.length} fields available
                   </div>
                 </div>

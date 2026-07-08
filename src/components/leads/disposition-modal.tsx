@@ -12,7 +12,7 @@ const inputStyle: React.CSSProperties = {
   border: "1px solid #c9c7c5",
   borderRadius: 4,
   fontSize: 13,
-  color: "#080707",
+  color: "#181818",
   background: "#fff",
 };
 
@@ -20,7 +20,7 @@ const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 13,
   fontWeight: 400,
-  color: "#3e3e3c",
+  color: "#444444",
   marginBottom: 4,
 };
 

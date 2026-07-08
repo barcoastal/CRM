@@ -76,10 +76,10 @@ export function CategoryPicker({
         style={{
           fontSize: small ? 11 : 13,
           padding: small ? "2px 4px" : "4px 8px",
-          border: "1px solid #d8dde6",
+          border: "1px solid #c9c9c9",
           borderRadius: 4,
           background: "#fff",
-          color: "#080707",
+          color: "#181818",
           fontWeight: 600,
           cursor: pending ? "wait" : "pointer",
           minWidth: small ? 90 : 110,
@@ -111,7 +111,7 @@ export function CategoryBadge({ value }: { value: ForecastCategory }) {
         padding: "2px 8px",
         borderRadius: 12,
         background: "#f3f2f2",
-        color: "#080707",
+        color: "#181818",
         border: `1px solid ${CATEGORY_COLOR[value]}`,
       }}
     >

@@ -125,13 +125,13 @@ export default async function SourceDetailPage({
                         {l.leadId.slice(0, 8)}
                       </Link>
                     ) : (
-                      <span className="text-[#706e6b]">--</span>
+                      <span className="text-[#747474]">--</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-[12px] text-[#942b00] truncate max-w-[300px]">
                     {l.errorMessage ?? ""}
                   </td>
-                  <td className="px-4 py-3 text-[12px] text-[#706e6b] font-mono">{l.ip ?? ""}</td>
+                  <td className="px-4 py-3 text-[12px] text-[#747474] font-mono">{l.ip ?? ""}</td>
                 </tr>
               ))}
             </tbody>

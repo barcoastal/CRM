@@ -74,12 +74,12 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
           <Section title="Related">
             <FieldGrid
               fields={[
-                ["Account", t.account?.name && <Link key="a" href={`/accounts/${t.account.id}`} style={{ color: "#1589ee" }}>{t.account.name}</Link>],
-                ["Opportunity", t.opportunity && <Link key="o" href={`/opportunities/${t.opportunity.id}`} style={{ color: "#1589ee" }}>{t.opportunity.account?.name ?? t.opportunity.recordType}</Link>],
-                ["Lead", t.lead && <Link key="l" href={`/leads/${t.lead.id}`} style={{ color: "#1589ee" }}>{t.lead.contactName}</Link>],
-                ["Contact", t.contact && <Link key="c" href={`/contacts/${t.contact.id}`} style={{ color: "#1589ee" }}>{t.contact.fullName}</Link>],
-                ["Case", t.case && <Link key="cs" href={`/cases/${t.case.id}`} style={{ color: "#1589ee" }}>{t.case.caseNumber}: {t.case.subject}</Link>],
-                ["Program Plan", t.programPlan && <Link key="pp" href={`/program-plans/${t.programPlan.id}`} style={{ color: "#1589ee" }}>{t.programPlan.recordType}</Link>],
+                ["Account", t.account?.name && <Link key="a" href={`/accounts/${t.account.id}`} style={{ color: "#0176d3" }}>{t.account.name}</Link>],
+                ["Opportunity", t.opportunity && <Link key="o" href={`/opportunities/${t.opportunity.id}`} style={{ color: "#0176d3" }}>{t.opportunity.account?.name ?? t.opportunity.recordType}</Link>],
+                ["Lead", t.lead && <Link key="l" href={`/leads/${t.lead.id}`} style={{ color: "#0176d3" }}>{t.lead.contactName}</Link>],
+                ["Contact", t.contact && <Link key="c" href={`/contacts/${t.contact.id}`} style={{ color: "#0176d3" }}>{t.contact.fullName}</Link>],
+                ["Case", t.case && <Link key="cs" href={`/cases/${t.case.id}`} style={{ color: "#0176d3" }}>{t.case.caseNumber}: {t.case.subject}</Link>],
+                ["Program Plan", t.programPlan && <Link key="pp" href={`/program-plans/${t.programPlan.id}`} style={{ color: "#0176d3" }}>{t.programPlan.recordType}</Link>],
                 ["Debt", t.debt?.creditorName],
                 ["Call", t.call && `${t.call.phoneNumber} (${t.call.disposition ?? t.call.status})`],
               ]}

@@ -80,9 +80,9 @@ export default async function SettingsPage() {
 
   return (
     <div>
-      <header style={{ background: "#fff", padding: "16px 24px", border: "1px solid #d8dde6", borderRadius: 4, marginBottom: 16 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#080707", margin: 0 }}>Setup</h1>
-        <p style={{ fontSize: 13, color: "#706e6b", marginTop: 4 }}>
+      <header style={{ background: "#fff", padding: "16px 24px", border: "1px solid #c9c9c9", borderRadius: 4, marginBottom: 16 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#181818", margin: 0 }}>Setup</h1>
+        <p style={{ fontSize: 13, color: "#747474", marginTop: 4 }}>
           Logged in as <strong>{session.user?.name}</strong> ({session.user?.email})
         </p>
       </header>
@@ -91,7 +91,7 @@ export default async function SettingsPage() {
         <section key={sec.section} style={{ marginBottom: 24 }}>
           <h2 style={{
             fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4,
-            color: "#3e3e3c", margin: "0 0 8px 4px",
+            color: "#444444", margin: "0 0 8px 4px",
           }}>
             {sec.section}
           </h2>
@@ -104,8 +104,8 @@ export default async function SettingsPage() {
                 key={c.href}
                 href={c.href}
                 style={{
-                  background: "#fff", border: "1px solid #d8dde6", borderRadius: 4,
-                  padding: 14, textDecoration: "none", color: "#080707",
+                  background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4,
+                  padding: 14, textDecoration: "none", color: "#181818",
                   display: "block",
                 }}
                 className="sf-setup-card"
@@ -114,13 +114,13 @@ export default async function SettingsPage() {
                   <span style={{ fontSize: 14, fontWeight: 700 }}>{c.title}</span>
                   {c.count !== undefined && (
                     <span style={{
-                      background: "#ecebea", color: "#3e3e3c",
+                      background: "#ecebea", color: "#444444",
                       padding: "2px 8px", borderRadius: 12,
                       fontSize: 11, fontWeight: 600,
                     }}>{c.count}</span>
                   )}
                 </div>
-                <p style={{ fontSize: 12, color: "#706e6b", margin: 0 }}>{c.description}</p>
+                <p style={{ fontSize: 12, color: "#747474", margin: 0 }}>{c.description}</p>
               </Link>
             ))}
           </div>

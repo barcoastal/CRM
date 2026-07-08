@@ -34,7 +34,7 @@ const label: React.CSSProperties = {
   display: "block",
   fontSize: 11,
   fontWeight: 600,
-  color: "#3e3e3c",
+  color: "#444444",
   marginBottom: 4,
 };
 
@@ -131,7 +131,7 @@ export function NewEnvelopeModal({
             toAddresses: signerEmail,
             subject: `Action required: please sign — ${documentName}`,
             bodyText: `Hi ${signerName},\n\nYou have a document waiting for your signature:\n\n${documentName}\n\nClick to review and sign:\n${sendData.signingUrl}\n\nThanks,\nCoastal Debt`,
-            bodyHtml: `<p>Hi ${signerName},</p><p>You have a document waiting for your signature:</p><p><strong>${documentName}</strong></p><p><a href="${sendData.signingUrl}" style="display:inline-block;background:#0070d2;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;font-weight:600">Review & Sign</a></p><p>Or paste this link into your browser:<br><code>${sendData.signingUrl}</code></p><p>Thanks,<br>Coastal Debt</p>`,
+            bodyHtml: `<p>Hi ${signerName},</p><p>You have a document waiting for your signature:</p><p><strong>${documentName}</strong></p><p><a href="${sendData.signingUrl}" style="display:inline-block;background:#0176d3;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;font-weight:600">Review & Sign</a></p><p>Or paste this link into your browser:<br><code>${sendData.signingUrl}</code></p><p>Thanks,<br>Coastal Debt</p>`,
             opportunityId: opportunityId ?? null,
             accountId: accountId ?? null,
             leadId: leadId ?? null,
@@ -191,12 +191,12 @@ export function NewEnvelopeModal({
               }}
               style={{
                 background: "#fff",
-                border: "1px solid #d8dde6",
+                border: "1px solid #c9c9c9",
                 padding: "0 12px",
                 borderRadius: 4,
                 fontSize: 12,
                 fontWeight: 600,
-                color: "#0070d2",
+                color: "#0176d3",
                 cursor: "pointer",
               }}
             >

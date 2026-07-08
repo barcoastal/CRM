@@ -82,7 +82,7 @@ export function LeadRelated({
         emptyHint="No open activities"
         renderItem={(a) => (
           <div style={{ display: "grid", gridTemplateColumns: "80px 2fr 1fr 1fr 1fr", gap: 12 }}>
-            <div style={{ color: "#706e6b" }}>{a.kind}</div>
+            <div style={{ color: "#747474" }}>{a.kind}</div>
             <div>{a.subject}</div>
             <div>{a.status ?? "-"}</div>
             <div>{a.dueDate ? new Date(a.dueDate).toLocaleDateString() : "-"}</div>
@@ -98,7 +98,7 @@ export function LeadRelated({
         emptyHint="No past activities"
         renderItem={(h) => (
           <div style={{ display: "grid", gridTemplateColumns: "80px 2fr 1fr 1fr", gap: 12 }}>
-            <div style={{ color: "#706e6b" }}>{h.kind}</div>
+            <div style={{ color: "#747474" }}>{h.kind}</div>
             <div>{h.subject}</div>
             <div>{h.outcome ?? "-"}</div>
             <div>{new Date(h.completedAt).toLocaleString()}</div>
@@ -114,19 +114,19 @@ export function LeadRelated({
         renderItem={(o) => (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
             <div>
-              <div style={{ fontSize: 11, color: "#706e6b" }}>Application Log Name</div>
+              <div style={{ fontSize: 11, color: "#747474" }}>Application Log Name</div>
               <div>{o.name}</div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "#706e6b" }}>Statement</div>
+              <div style={{ fontSize: 11, color: "#747474" }}>Statement</div>
               <div>{o.statement ?? "—"}</div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "#706e6b" }}>Exception Message</div>
+              <div style={{ fontSize: 11, color: "#747474" }}>Exception Message</div>
               <div>{o.exceptionMessage ?? "—"}</div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "#706e6b" }}>Log Type</div>
+              <div style={{ fontSize: 11, color: "#747474" }}>Log Type</div>
               <div>{o.logType ?? "—"}</div>
             </div>
           </div>
@@ -141,7 +141,7 @@ export function LeadRelated({
         renderItem={(f) => (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span>{f.name}</span>
-            <span style={{ color: "#706e6b" }}>{f.type}</span>
+            <span style={{ color: "#747474" }}>{f.type}</span>
           </div>
         )}
       />
@@ -154,7 +154,7 @@ export function LeadRelated({
         renderItem={(n) => (
           <div>
             <div style={{ fontWeight: 700 }}>{n.title}</div>
-            {n.body && <div style={{ color: "#3e3e3c" }}>{n.body}</div>}
+            {n.body && <div style={{ color: "#444444" }}>{n.body}</div>}
           </div>
         )}
       />

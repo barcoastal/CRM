@@ -136,18 +136,18 @@ const wrap: React.CSSProperties = {
 
 const cardStyle: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   overflow: "hidden",
 };
 
 const headerBar: React.CSSProperties = {
   background: "#f3f3f3",
-  borderBottom: "1px solid #d8dde6",
+  borderBottom: "1px solid #c9c9c9",
   padding: "8px 12px",
   fontSize: 12,
   fontWeight: 700,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.4,
 };
@@ -191,7 +191,7 @@ const iconDot: React.CSSProperties = {
   height: 16,
   borderRadius: 999,
   background: "#ecebea",
-  color: "#706e6b",
+  color: "#747474",
   flexShrink: 0,
   marginTop: 2,
 };
@@ -202,7 +202,7 @@ const checkSvg = (
   </svg>
 );
 const dotSvg = (
-  <svg width="6" height="6" viewBox="0 0 6 6" style={{ fill: "#706e6b" }}>
+  <svg width="6" height="6" viewBox="0 0 6 6" style={{ fill: "#747474" }}>
     <circle cx="3" cy="3" r="3" />
   </svg>
 );
@@ -210,14 +210,14 @@ const dotSvg = (
 const fieldLabelStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 700,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.4,
   lineHeight: 1.4,
 };
 const fieldValueStyle: React.CSSProperties = {
   fontSize: 13,
-  color: "#080707",
+  color: "#181818",
   lineHeight: 1.4,
   overflow: "hidden",
   textOverflow: "ellipsis",
@@ -225,11 +225,11 @@ const fieldValueStyle: React.CSSProperties = {
 };
 const emptyText: React.CSSProperties = {
   fontSize: 13,
-  color: "#706e6b",
+  color: "#747474",
   lineHeight: 1.5,
 };
 const addLinkStyle: React.CSSProperties = {
-  color: "#1589ee",
+  color: "#0176d3",
   textDecoration: "none",
   marginLeft: 4,
 };

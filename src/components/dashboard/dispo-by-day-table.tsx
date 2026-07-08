@@ -34,7 +34,7 @@ export function DispoByDayTable({
     <div
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         display: "flex",
         flexDirection: "column",
@@ -44,11 +44,11 @@ export function DispoByDayTable({
       <header
         style={{
           padding: "8px 12px",
-          borderBottom: "1px solid #dddbda",
+          borderBottom: "1px solid #c9c9c9",
           background: "#fafaf9",
         }}
       >
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#080707" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#181818" }}>
           {title}
         </div>
       </header>
@@ -62,8 +62,8 @@ export function DispoByDayTable({
                   style={{
                     textAlign: h === "Record Count" ? "right" : "left",
                     padding: "6px 8px",
-                    borderBottom: "1px solid #dddbda",
-                    color: "#3e3e3c",
+                    borderBottom: "1px solid #c9c9c9",
+                    color: "#444444",
                     fontWeight: 600,
                     background: "#fafaf9",
                   }}
@@ -87,7 +87,7 @@ export function DispoByDayTable({
                     style={{
                       padding: "5px 8px",
                       borderBottom: "1px solid #eaeaea",
-                      color: idx === 0 ? "#080707" : "#706e6b",
+                      color: idx === 0 ? "#181818" : "#747474",
                     }}
                   >
                     {idx === 0 ? day : ""}
@@ -96,7 +96,7 @@ export function DispoByDayTable({
                     style={{
                       padding: "5px 8px",
                       borderBottom: "1px solid #eaeaea",
-                      color: row.isSubtotal ? "#080707" : "#0070d2",
+                      color: row.isSubtotal ? "#181818" : "#0176d3",
                     }}
                   >
                     {row.status}
@@ -106,7 +106,7 @@ export function DispoByDayTable({
                       padding: "5px 8px",
                       borderBottom: "1px solid #eaeaea",
                       textAlign: "right",
-                      color: "#080707",
+                      color: "#181818",
                     }}
                   >
                     {row.count.toLocaleString()}
@@ -118,7 +118,7 @@ export function DispoByDayTable({
               <tr>
                 <td
                   colSpan={3}
-                  style={{ padding: 16, textAlign: "center", color: "#706e6b" }}
+                  style={{ padding: 16, textAlign: "center", color: "#747474" }}
                 >
                   No data in selected range
                 </td>
@@ -129,20 +129,20 @@ export function DispoByDayTable({
       </div>
       <footer
         style={{
-          borderTop: "1px solid #dddbda",
+          borderTop: "1px solid #c9c9c9",
           padding: "6px 12px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           fontSize: 11,
-          color: "#706e6b",
+          color: "#747474",
           background: "#fafaf9",
         }}
       >
         {reportLink ? (
           <a
             href={reportLink}
-            style={{ color: "#0070d2", textDecoration: "none", fontWeight: 600 }}
+            style={{ color: "#0176d3", textDecoration: "none", fontWeight: 600 }}
           >
             View Report ({title})
           </a>

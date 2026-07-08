@@ -149,7 +149,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
           <Link
             key="acct"
             href={`/accounts/${c.primaryAccount.id}`}
-            style={{ color: "#1589ee", textDecoration: "none" }}
+            style={{ color: "#0176d3", textDecoration: "none" }}
             className="sf-row-link"
           >
             {c.primaryAccount.name}
@@ -162,7 +162,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
           <a
             key="phone"
             href={`tel:${c.phone}`}
-            style={{ color: "#1589ee", textDecoration: "none" }}
+            style={{ color: "#0176d3", textDecoration: "none" }}
           >
             {c.phone}
           </a>
@@ -173,7 +173,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
           <a
             key="email"
             href={`mailto:${c.email}`}
-            style={{ color: "#1589ee", textDecoration: "none" }}
+            style={{ color: "#0176d3", textDecoration: "none" }}
           >
             {c.email}
           </a>

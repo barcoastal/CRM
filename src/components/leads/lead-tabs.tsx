@@ -27,13 +27,13 @@ const TABS: LeadTabKey[] = [
 export function LeadTabs({ panels }: { panels: Record<LeadTabKey, ReactNode> }) {
   const [tab, setTab] = useState<LeadTabKey>("Details");
   return (
-    <div style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4 }}>
+    <div style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4 }}>
       <div
         style={{
           display: "flex",
           gap: 0,
           background: "#fff",
-          borderBottom: "1px solid #d8dde6",
+          borderBottom: "1px solid #c9c9c9",
           padding: "0 8px",
           overflowX: "auto",
         }}
@@ -50,8 +50,8 @@ export function LeadTabs({ panels }: { panels: Record<LeadTabKey, ReactNode> }) 
                 padding: "12px 14px 10px",
                 fontSize: 13,
                 fontWeight: active ? 700 : 400,
-                color: active ? "#080707" : "#3e3e3c",
-                borderBottom: active ? "3px solid #0070d2" : "3px solid transparent",
+                color: active ? "#181818" : "#444444",
+                borderBottom: active ? "3px solid #0176d3" : "3px solid transparent",
                 marginBottom: -1,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
@@ -78,7 +78,7 @@ export function LeadTabs({ panels }: { panels: Record<LeadTabKey, ReactNode> }) 
               style={{
                 background: "transparent",
                 border: 0,
-                color: "#1589ee",
+                color: "#0176d3",
                 cursor: "pointer",
                 padding: 0,
                 fontSize: 12,

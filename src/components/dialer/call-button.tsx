@@ -59,9 +59,9 @@ export function CallButton({
     borderRadius: 4,
     fontSize: size === "sm" ? 12 : 13,
     fontWeight: 600,
-    border: variant === "primary" ? 0 : "1px solid #d8dde6",
-    background: variant === "primary" ? "#0070d2" : "#fff",
-    color: variant === "primary" ? "#fff" : "#0070d2",
+    border: variant === "primary" ? 0 : "1px solid #c9c9c9",
+    background: variant === "primary" ? "#0176d3" : "#fff",
+    color: variant === "primary" ? "#fff" : "#0176d3",
     cursor: busy || !phone ? "not-allowed" : "pointer",
     opacity: busy || !phone ? 0.5 : 1,
   };

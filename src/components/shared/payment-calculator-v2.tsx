@@ -23,7 +23,7 @@ const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 11,
   fontWeight: 600,
-  color: "#3e3e3c",
+  color: "#444444",
   marginBottom: 4,
 };
 
@@ -117,7 +117,7 @@ export function PaymentCalculatorV2({
       <div
         style={{
           background: "#fafaf9",
-          border: "1px solid #d8dde6",
+          border: "1px solid #c9c9c9",
           borderRadius: 4,
           padding: "12px 16px",
           display: "flex",
@@ -138,7 +138,7 @@ export function PaymentCalculatorV2({
           <button
             onClick={calculate}
             style={{
-              background: "#0070d2",
+              background: "#0176d3",
               color: "#fff",
               border: 0,
               padding: "6px 18px",
@@ -157,8 +157,8 @@ export function PaymentCalculatorV2({
             }}
             style={{
               background: "#fff",
-              color: "#0070d2",
-              border: "1px solid #d8dde6",
+              color: "#0176d3",
+              border: "1px solid #c9c9c9",
               padding: "6px 14px",
               borderRadius: 4,
               fontSize: 13,
@@ -172,7 +172,7 @@ export function PaymentCalculatorV2({
       </div>
 
       {/* Form fields — 7-column grid in 2 rows, matching SF */}
-      <div style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 16, marginBottom: 12 }}>
+      <div style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, padding: 16, marginBottom: 12 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 12, marginBottom: 12 }}>
           <NumField label="Total Debt" v={totalDebt} on={setTotalDebt} prefix="$" />
           <SelectField
@@ -277,7 +277,7 @@ export function PaymentCalculatorV2({
               onClick={save}
               disabled={saving}
               style={{
-                background: "#0070d2",
+                background: "#0176d3",
                 color: "#fff",
                 border: 0,
                 padding: "8px 18px",
@@ -294,10 +294,10 @@ export function PaymentCalculatorV2({
       </div>
 
       {/* Schedule table — 6 columns, sortable headers, matching SF exactly */}
-      <div style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, overflow: "auto", maxHeight: 600 }}>
+      <div style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "auto", maxHeight: 600 }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, tableLayout: "fixed" }}>
           <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6", position: "sticky", top: 0, zIndex: 1 }}>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9", position: "sticky", top: 0, zIndex: 1 }}>
               {[
                 "Weekly Payment Amount",
                 "Setup Fee",
@@ -310,7 +310,7 @@ export function PaymentCalculatorV2({
                   key={h}
                   style={{
                     ...th,
-                    borderRight: i < arr.length - 1 ? "1px solid #d8dde6" : "none",
+                    borderRight: i < arr.length - 1 ? "1px solid #c9c9c9" : "none",
                   }}
                 >
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -365,7 +365,7 @@ function NumField({
       <label style={labelStyle}>{label}</label>
       <div style={{ position: "relative" }}>
         {prefix && (
-          <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "#706e6b", fontSize: 12 }}>
+          <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "#747474", fontSize: 12 }}>
             {prefix}
           </span>
         )}
@@ -421,14 +421,14 @@ const th: React.CSSProperties = {
   padding: "10px 12px",
   fontWeight: 700,
   fontSize: 11,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.3,
   whiteSpace: "nowrap",
 };
 const td: React.CSSProperties = {
   padding: "10px 12px",
-  color: "#080707",
+  color: "#181818",
   whiteSpace: "nowrap",
 };
 

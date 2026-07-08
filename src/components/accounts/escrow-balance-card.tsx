@@ -38,7 +38,7 @@ export function EscrowBalanceCard({
     <article
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         marginBottom: 12,
         overflow: "hidden",
@@ -48,7 +48,7 @@ export function EscrowBalanceCard({
       <header
         style={{
           background: "#fafaf9",
-          borderBottom: "1px solid #dddbda",
+          borderBottom: "1px solid #c9c9c9",
           padding: "8px 16px",
           display: "flex",
           alignItems: "center",
@@ -65,7 +65,7 @@ export function EscrowBalanceCard({
               justifyContent: "center",
               width: 20,
               height: 20,
-              background: "#1589ee",
+              background: "#0176d3",
               color: "#fff",
               borderRadius: 3,
               flexShrink: 0,
@@ -75,7 +75,7 @@ export function EscrowBalanceCard({
               <path d="M30.4 26.5l-7.3-2c-1.3-.4-2.2-1.6-2.2-3 0-1.7 1.4-3.1 3.1-3.1H29c1.3 0 2.5.4 3.4 1.2.7.6 1.7.5 2.3-.1l1.4-1.4c.7-.7.6-1.8-.1-2.4-1.8-1.6-4.2-2.6-6.7-2.8V10c0-1.1-.9-2-2-2h-2.6c-1.1 0-2 .9-2 2v2.8c-4.4.3-7.9 4-7.8 8.4.1 3.8 2.9 7.1 6.6 8.1l6.9 1.9c1.3.4 2.2 1.6 2.2 3 0 1.7-1.4 3.1-3.1 3.1H23c-1.3 0-2.5-.4-3.4-1.2-.7-.6-1.7-.5-2.3.1L16 37.6c-.7.7-.6 1.8.1 2.4 1.8 1.6 4.2 2.6 6.7 2.8V46c0 1.1.9 2 2 2H27c1.1 0 2-.9 2-2v-2.8c4.4-.3 7.9-4 7.8-8.4 0-3.8-2.7-7.2-6.4-8.3z" />
             </svg>
           </span>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
             Escrow Balance
           </h3>
         </div>
@@ -88,7 +88,7 @@ export function EscrowBalanceCard({
               background: "transparent",
               border: 0,
               cursor: refreshing ? "wait" : "pointer",
-              color: "#706e6b",
+              color: "#747474",
               fontSize: 14,
               padding: 2,
               display: "inline-flex",
@@ -110,7 +110,7 @@ export function EscrowBalanceCard({
           ${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
         {pulledAt && (
-          <div style={{ fontSize: 11, color: "#706e6b", marginTop: 6 }}>
+          <div style={{ fontSize: 11, color: "#747474", marginTop: 6 }}>
             (Pulled on: {pulledAt.toLocaleString()})
           </div>
         )}

@@ -22,13 +22,13 @@ function shell(children: React.ReactNode) {
           width: "100%",
           maxWidth: 560,
           background: "#fff",
-          border: "1px solid #dddbda",
+          border: "1px solid #c9c9c9",
           borderRadius: 8,
           padding: 32,
         }}
       >
         {children}
-        <p style={{ textAlign: "center", marginTop: 24, fontSize: 11, color: "#706e6b" }}>
+        <p style={{ textAlign: "center", marginTop: 24, fontSize: 11, color: "#747474" }}>
           Coastal Debt Resolve
         </p>
       </div>
@@ -47,7 +47,7 @@ export default async function UploadPage({ params }: { params: Promise<{ token: 
     return shell(
       <>
         <h1 style={{ margin: "0 0 8px", fontSize: 20 }}>Link not found</h1>
-        <p style={{ margin: 0, fontSize: 14, color: "#3e3e3c" }}>
+        <p style={{ margin: 0, fontSize: 14, color: "#444444" }}>
           This upload link is not valid. Please contact your representative for a new one.
         </p>
       </>,
@@ -59,7 +59,7 @@ export default async function UploadPage({ params }: { params: Promise<{ token: 
     return shell(
       <>
         <h1 style={{ margin: "0 0 8px", fontSize: 20 }}>This link has expired</h1>
-        <p style={{ margin: 0, fontSize: 14, color: "#3e3e3c" }}>
+        <p style={{ margin: 0, fontSize: 14, color: "#444444" }}>
           For security, this upload link is no longer active. Please contact your representative for
           a new one.
         </p>
@@ -70,8 +70,8 @@ export default async function UploadPage({ params }: { params: Promise<{ token: 
   const first = (req.recipientName ?? "").split(" ")[0];
   return shell(
     <>
-      <h1 style={{ margin: "0 0 8px", fontSize: 20, color: "#080707" }}>Upload your documents</h1>
-      <p style={{ margin: "0 0 20px", fontSize: 14, lineHeight: 1.5, color: "#3e3e3c" }}>
+      <h1 style={{ margin: "0 0 8px", fontSize: 20, color: "#181818" }}>Upload your documents</h1>
+      <p style={{ margin: "0 0 20px", fontSize: 14, lineHeight: 1.5, color: "#444444" }}>
         {first ? `Hi ${first}, ` : ""}drop your files below or choose them from your device. You can
         upload as many as you need. We will be notified automatically once they come in.
       </p>

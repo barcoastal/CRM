@@ -284,7 +284,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     opp.lead?.businessName ??
     (opp.account ? "Unnamed Account" : null);
   const accountLink = accountDisplayName && opp.account?.id ? (
-    <Link href={`/accounts/${opp.account.id}`} style={{ color: "#1589ee" }}>
+    <Link href={`/accounts/${opp.account.id}`} style={{ color: "#0176d3" }}>
       {accountDisplayName}
     </Link>
   ) : (
@@ -389,14 +389,14 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             // Row 9: Phone | Timezone
             [
               "Phone",
-              phoneDisplay ? <span key="ph" style={{ color: "#1589ee" }}>{phoneDisplay}</span> : null,
+              phoneDisplay ? <span key="ph" style={{ color: "#0176d3" }}>{phoneDisplay}</span> : null,
               { fieldKey: "oppPhone", type: "phone", rawValue: opp.oppPhone ?? phoneDisplay ?? null },
             ],
             E("Timezone", timezoneDisplay, "timezone"),
             // Row 10: Email | Total Debt
             [
               "Email",
-              emailDisplay ? <a key="em" href={`mailto:${emailDisplay}`} style={{ color: "#1589ee" }}>{emailDisplay}</a> : null,
+              emailDisplay ? <a key="em" href={`mailto:${emailDisplay}`} style={{ color: "#0176d3" }}>{emailDisplay}</a> : null,
               { fieldKey: "oppEmail", type: "email", rawValue: opp.oppEmail ?? emailDisplay ?? null },
             ],
             ["Total Debt", oppSfDollar("Total_Debt__c") ?? totalDebtDisplay],
@@ -571,8 +571,8 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       />
       {/* Description Information — OneColumn, single Description field. */}
       <div style={{ padding: "8px 0", display: "grid", gridTemplateColumns: "16.5% 1fr 28px", gap: 8, alignItems: "start" }}>
-        <div style={{ fontSize: 12, color: "#3e3e3c", paddingTop: 1 }}>Description</div>
-        <div style={{ fontSize: 13, color: "#080707", whiteSpace: "pre-wrap" }}>
+        <div style={{ fontSize: 12, color: "#444444", paddingTop: 1 }}>Description</div>
+        <div style={{ fontSize: 13, color: "#181818", whiteSpace: "pre-wrap" }}>
           {opp.notes ?? oppSf("Description") ?? ""}
         </div>
         <div />
@@ -588,15 +588,15 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
   const activitiesPanel = (
     <Section title={`Activities (${activity.length})`}>
-      <div style={{ fontSize: 12, color: "#706e6b", marginBottom: 8 }}>
+      <div style={{ fontSize: 12, color: "#747474", marginBottom: 8 }}>
         Includes calls, emails, SMS and tasks from both the Opportunity and originating Lead.
       </div>
       {activity.length === 0 ? (
-        <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>No activity recorded.</div>
+        <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>No activity recorded.</div>
       ) : (
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
               <th style={th}>Date</th>
               <th style={th}>Type</th>
               <th style={th}>Subject</th>
@@ -702,7 +702,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       {opp.debts.some((d) => d.settlement) ? (
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
               <th style={th}>Creditor</th>
               <th style={th}>Settled Amount</th>
               <th style={th}>Savings %</th>
@@ -725,7 +725,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           </tbody>
         </table>
       ) : (
-        <div style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>No settlements yet.</div>
+        <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>No settlements yet.</div>
       )}
     </Section>
   );
@@ -793,7 +793,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         emptyHint="No program plan yet."
         renderItem={(p) => (
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
-            <Link href={`/program-plans/${p.id}`} style={{ color: "#1589ee" }}>
+            <Link href={`/program-plans/${p.id}`} style={{ color: "#0176d3" }}>
               {p.recordType.replace(/_/g, " ")}
             </Link>
             <span>${p.monthlyAmount.toLocaleString()} / mo</span>
@@ -827,7 +827,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         fields={[
           ["Lead Source", opp.lead?.source],
           ["Originating Lead", opp.lead?.id ? (
-            <Link href={`/leads/${opp.lead.id}`} style={{ color: "#1589ee" }}>
+            <Link href={`/leads/${opp.lead.id}`} style={{ color: "#0176d3" }}>
               {opp.lead.contactName}
             </Link>
           ) : null],
@@ -957,7 +957,7 @@ function ContactRolesCard({
     <article
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         marginBottom: 12,
         boxShadow: "0 2px 2px 0 rgba(0,0,0,0.05)",
@@ -973,26 +973,26 @@ function ContactRolesCard({
           borderBottom: "1px solid #ecebea",
         }}
       >
-        <svg width="10" height="10" viewBox="0 0 10 10" style={{ fill: "#706e6b", transform: "rotate(90deg)" }}>
+        <svg width="10" height="10" viewBox="0 0 10 10" style={{ fill: "#747474", transform: "rotate(90deg)" }}>
           <path d="M2 0l6 5-6 5z" />
         </svg>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
           Contact Roles (1)
         </h3>
       </header>
       <div style={{ padding: "8px 12px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0" }}>
-          <Link href={`/contacts/${primary.id}`} style={{ color: "#0070d2" }}>
+          <Link href={`/contacts/${primary.id}`} style={{ color: "#0176d3" }}>
             {primary.fullName}
           </Link>
-          <span style={{ color: "#3e3e3c" }}>Primary</span>
+          <span style={{ color: "#444444" }}>Primary</span>
         </div>
       </div>
       {accountId && (
         <div style={{ textAlign: "center", padding: "8px 12px", borderTop: "1px solid #ecebea" }}>
           <Link
             href={`/accounts/${accountId}`}
-            style={{ color: "#0070d2", fontSize: 12 }}
+            style={{ color: "#0176d3", fontSize: 12 }}
           >
             View All
           </Link>
@@ -1007,12 +1007,12 @@ const th: React.CSSProperties = {
   padding: "8px 12px",
   fontWeight: 700,
   fontSize: 12,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.3,
 };
 const td: React.CSSProperties = {
   padding: "10px 12px",
-  color: "#080707",
+  color: "#181818",
   fontSize: 13,
 };

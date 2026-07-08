@@ -184,9 +184,9 @@ export function CallTranscriber() {
   }, [enabled]);
 
   return (
-    <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4, padding: 16, marginTop: 12 }}>
+    <article style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, padding: 16, marginTop: 12 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 700, color: "#3e3e3c", margin: 0 }}>Call Transcript</h2>
+        <h2 style={{ fontSize: 14, fontWeight: 700, color: "#444444", margin: 0 }}>Call Transcript</h2>
         {enabled && (
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: recording ? "#c23934" : "#2e844a", fontWeight: 700 }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: recording ? "#c23934" : "#2e844a", display: "inline-block" }} />
@@ -200,17 +200,17 @@ export function CallTranscriber() {
           <button
             type="button"
             onClick={enable}
-            style={{ background: "#0070d2", color: "#fff", padding: "8px 16px", borderRadius: 4, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer" }}
+            style={{ background: "#0176d3", color: "#fff", padding: "8px 16px", borderRadius: 4, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer" }}
           >
             Enable live transcription
           </button>
-          <div style={{ fontSize: 11, color: "#706e6b", marginTop: 8 }}>
+          <div style={{ fontSize: 11, color: "#747474", marginTop: 8 }}>
             You will be asked to share this tab with audio (for the customer side) and your microphone (for your side). One time per session.
           </div>
         </div>
       )}
 
-      {status && <div style={{ fontSize: 12, color: "#3e3e3c", marginTop: enabled ? 0 : 8 }}>{status}</div>}
+      {status && <div style={{ fontSize: 12, color: "#444444", marginTop: enabled ? 0 : 8 }}>{status}</div>}
       {micOnly && enabled && (
         <div style={{ fontSize: 11, color: "#b06700", marginTop: 4 }}>
           Tip: re-enable and choose &quot;This Tab&quot; with &quot;Share tab audio&quot; checked to capture the customer too.
@@ -225,7 +225,7 @@ export function CallTranscriber() {
               {last.summary}
             </div>
           )}
-          <div style={{ fontSize: 12, color: "#3e3e3c", whiteSpace: "pre-wrap", maxHeight: 220, overflowY: "auto", lineHeight: 1.5 }}>
+          <div style={{ fontSize: 12, color: "#444444", whiteSpace: "pre-wrap", maxHeight: 220, overflowY: "auto", lineHeight: 1.5 }}>
             {last.transcript || "(no speech detected)"}
           </div>
         </div>

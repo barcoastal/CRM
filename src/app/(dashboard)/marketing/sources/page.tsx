@@ -115,7 +115,7 @@ export default async function MarketingSourcesPage() {
         </table>
       </div>
 
-      <div className="text-[12px] text-[#706e6b] flex items-center gap-1.5">
+      <div className="text-[12px] text-[#747474] flex items-center gap-1.5">
         <Copy className="size-3.5" />
         Click any source to copy its webhook URL and API key.
       </div>

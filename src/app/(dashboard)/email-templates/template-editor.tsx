@@ -182,7 +182,7 @@ export function TemplateEditor({ mode, templateId, initial, attachments: initial
   );
 
   return (
-    <div className="space-y-4 rounded-md border border-[#d8dde6] bg-white p-5 text-[13px] text-[#080707]">
+    <div className="space-y-4 rounded-md border border-[#c9c9c9] bg-white p-5 text-[13px] text-[#181818]">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <Field label="Name" required>
           <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
@@ -242,18 +242,18 @@ export function TemplateEditor({ mode, templateId, initial, attachments: initial
           {attachments.length === 0 ? (
             <div
               style={{
-                border: "1px dashed #d8dde6",
+                border: "1px dashed #c9c9c9",
                 borderRadius: 4,
                 padding: 16,
                 fontSize: 12,
-                color: "#706e6b",
+                color: "#747474",
                 textAlign: "center",
               }}
             >
               No attachments. Files added here will be sent with every email that uses this template.
             </div>
           ) : (
-            <div style={{ border: "1px solid #d8dde6", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden" }}>
               {attachments.map((a) => (
                 <div
                   key={a.id}
@@ -270,12 +270,12 @@ export function TemplateEditor({ mode, templateId, initial, attachments: initial
                     href={`/api/email-templates/${templateId}/attachments/${a.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: "#0070d2", textDecoration: "none", fontWeight: 600 }}
+                    style={{ color: "#0176d3", textDecoration: "none", fontWeight: 600 }}
                   >
                     {a.filename}
                   </a>
-                  <span style={{ color: "#706e6b" }}>{formatBytes(a.byteSize)}</span>
-                  <span style={{ color: "#706e6b" }}>{a.contentType}</span>
+                  <span style={{ color: "#747474" }}>{formatBytes(a.byteSize)}</span>
+                  <span style={{ color: "#747474" }}>{a.contentType}</span>
                   <button
                     type="button"
                     onClick={() => onDeleteAttachment(a.id)}
@@ -303,7 +303,7 @@ export function TemplateEditor({ mode, templateId, initial, attachments: initial
           onClick={onSave}
           disabled={busy}
           style={{
-            background: "#0070d2",
+            background: "#0176d3",
             color: "#fff",
             padding: "8px 20px",
             borderRadius: 4,
@@ -346,7 +346,7 @@ function Field({
 const labelStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 600,
-  color: "#3e3e3c",
+  color: "#444444",
   marginBottom: 4,
   textTransform: "uppercase",
   letterSpacing: 0.3,
@@ -356,11 +356,11 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   height: 32,
   padding: "0 8px",
-  border: "1px solid #d8dde6",
+  border: "1px solid #c9c9c9",
   borderRadius: 4,
   fontSize: 13,
   outline: "none",
-  color: "#080707",
+  color: "#181818",
 };
 
 function uploadBtn(uploading: boolean): React.CSSProperties {
@@ -369,12 +369,12 @@ function uploadBtn(uploading: boolean): React.CSSProperties {
     alignItems: "center",
     gap: 6,
     background: "#fff",
-    border: "1px solid #d8dde6",
+    border: "1px solid #c9c9c9",
     padding: "5px 12px",
     borderRadius: 4,
     fontSize: 12,
     fontWeight: 600,
-    color: "#0070d2",
+    color: "#0176d3",
     cursor: uploading ? "not-allowed" : "pointer",
     opacity: uploading ? 0.6 : 1,
   };

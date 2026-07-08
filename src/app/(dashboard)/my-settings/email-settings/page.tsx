@@ -5,7 +5,7 @@ export default function Page() {
     <>
       <MsTitleBar title="My Email Settings" />
       <div style={{ padding: 24 }}>
-        <p style={{ color: "#706e6b" }}>Coming soon.</p>
+        <p style={{ color: "#747474" }}>Coming soon.</p>
       </div>
     </>
   );

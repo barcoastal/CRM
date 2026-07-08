@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 const STATUSES = ["DRAFT", "SENT", "VIEWED", "SIGNED", "COMPLETED", "VOIDED", "DECLINED"];
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  DRAFT: { bg: "#ecebea", color: "#3e3e3c" },
+  DRAFT: { bg: "#ecebea", color: "#444444" },
   SENT: { bg: "#d4ecff", color: "#0a3b6f" },
   VIEWED: { bg: "#fff5d8", color: "#806c00" },
   SIGNED: { bg: "#ddf5d6", color: "#0b683b" },
@@ -59,7 +59,7 @@ export default async function EnvelopesListPage({
     <div style={{ padding: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
-          <div style={{ fontSize: 12, color: "#706e6b" }}>E-Sign</div>
+          <div style={{ fontSize: 12, color: "#747474" }}>E-Sign</div>
           <h1 style={{ margin: 0, fontSize: 20 }}>Envelopes ({envelopes.length})</h1>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -76,7 +76,7 @@ export default async function EnvelopesListPage({
 
       {templates.length > 0 && (
         <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 11, color: "#706e6b", alignSelf: "center" }}>TEMPLATE:</span>
+          <span style={{ fontSize: 11, color: "#747474", alignSelf: "center" }}>TEMPLATE:</span>
           <Link href={`/envelopes${status ? `?status=${status}` : ""}`} style={chip(!templateId)}>Any</Link>
           {templates.map((t) => {
             const params = new URLSearchParams();
@@ -91,10 +91,10 @@ export default async function EnvelopesListPage({
         </div>
       )}
 
-      <article style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 4 }}>
+      <article style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4 }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #d8dde6" }}>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
               <th style={th}>Document</th>
               <th style={th}>Signer</th>
               <th style={th}>Status</th>
@@ -105,7 +105,7 @@ export default async function EnvelopesListPage({
           <tbody>
             {envelopes.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ padding: 24, textAlign: "center", color: "#706e6b" }}>No envelopes.</td>
+                <td colSpan={5} style={{ padding: 24, textAlign: "center", color: "#747474" }}>No envelopes.</td>
               </tr>
             ) : (
               envelopes.map((e) => {
@@ -113,16 +113,16 @@ export default async function EnvelopesListPage({
                 return (
                   <tr key={e.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
                     <td style={td}>
-                      <Link href={`/envelopes/${e.id}`} style={{ color: "#0070d2" }}>
+                      <Link href={`/envelopes/${e.id}`} style={{ color: "#0176d3" }}>
                         {e.documentName}
                       </Link>
                       {e.templateName && (
-                        <div style={{ fontSize: 11, color: "#706e6b" }}>{e.templateName}</div>
+                        <div style={{ fontSize: 11, color: "#747474" }}>{e.templateName}</div>
                       )}
                     </td>
                     <td style={td}>
                       <div>{e.signerName}</div>
-                      <div style={{ fontSize: 11, color: "#706e6b" }}>{e.signerEmail}</div>
+                      <div style={{ fontSize: 11, color: "#747474" }}>{e.signerEmail}</div>
                     </td>
                     <td style={td}>
                       <span style={{
@@ -139,11 +139,11 @@ export default async function EnvelopesListPage({
                     <td style={td}>{e.sentAt ? new Date(e.sentAt).toLocaleDateString() : ""}</td>
                     <td style={td}>
                       {e.opportunity ? (
-                        <Link href={`/opportunities/${e.opportunity.id}`} style={{ color: "#0070d2" }}>
+                        <Link href={`/opportunities/${e.opportunity.id}`} style={{ color: "#0176d3" }}>
                           {e.opportunity.name ?? e.opportunity.account?.name ?? e.opportunity.id.slice(-6)}
                         </Link>
                       ) : (
-                        <span style={{ color: "#706e6b" }}>--</span>
+                        <span style={{ color: "#747474" }}>--</span>
                       )}
                     </td>
                   </tr>
@@ -162,15 +162,15 @@ const th: React.CSSProperties = {
   padding: "8px 12px",
   fontWeight: 700,
   fontSize: 11,
-  color: "#3e3e3c",
+  color: "#444444",
   textTransform: "uppercase",
   letterSpacing: 0.3,
 };
-const td: React.CSSProperties = { padding: "10px 12px", color: "#080707" };
+const td: React.CSSProperties = { padding: "10px 12px", color: "#181818" };
 const btnStyle: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
-  color: "#0070d2",
+  border: "1px solid #c9c9c9",
+  color: "#0176d3",
   padding: "4px 12px",
   borderRadius: 4,
   fontSize: 13,
@@ -184,8 +184,8 @@ function chip(active: boolean): React.CSSProperties {
     fontSize: 12,
     fontWeight: 600,
     textDecoration: "none",
-    background: active ? "#0070d2" : "#fff",
-    color: active ? "#fff" : "#3e3e3c",
-    border: `1px solid ${active ? "#0070d2" : "#d8dde6"}`,
+    background: active ? "#0176d3" : "#fff",
+    color: active ? "#fff" : "#444444",
+    border: `1px solid ${active ? "#0176d3" : "#c9c9c9"}`,
   };
 }

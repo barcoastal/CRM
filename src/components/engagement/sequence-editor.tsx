@@ -155,19 +155,19 @@ export function EngagementEditor(props: {
                 Paused
               </span>
             )}
-            <span className="text-[12px] text-[#706e6b]">
+            <span className="text-[12px] text-[#747474]">
               Entity: <span className="font-semibold">{seq.entityType}</span>
             </span>
             {seq.allowReEnroll ? (
-              <span className="text-[12px] text-[#706e6b]">Re-enroll allowed</span>
+              <span className="text-[12px] text-[#747474]">Re-enroll allowed</span>
             ) : (
-              <span className="text-[12px] text-[#706e6b]">Once per lead</span>
+              <span className="text-[12px] text-[#747474]">Once per lead</span>
             )}
           </div>
           {seq.description ? (
             <p className="text-[13px] text-[#444656]">{seq.description}</p>
           ) : (
-            <p className="text-[13px] text-[#706e6b] italic">No description</p>
+            <p className="text-[13px] text-[#747474] italic">No description</p>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -352,7 +352,7 @@ function StepsTab(props: {
   return (
     <div className="space-y-3">
       {props.seq.steps.length === 0 ? (
-        <div className="text-center py-10 text-[13px] text-[#706e6b]">
+        <div className="text-center py-10 text-[13px] text-[#747474]">
           No steps yet. Click <strong>Add Step</strong> below to begin.
         </div>
       ) : (
@@ -380,7 +380,7 @@ function StepsTab(props: {
           <select
             value={newKind}
             onChange={(e) => setNewKind(e.target.value as StepKind)}
-            className="px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+            className="px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
           >
             {STEP_KINDS.map((k) => (
               <option key={k} value={k}>
@@ -388,7 +388,7 @@ function StepsTab(props: {
               </option>
             ))}
           </select>
-          <span className="text-[12px] text-[#706e6b] flex-1">
+          <span className="text-[12px] text-[#747474] flex-1">
             {STEP_KIND_DESCRIPTIONS[newKind]}
           </span>
           <button
@@ -472,7 +472,7 @@ function StepCard(props: {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] uppercase tracking-[0.4px] font-semibold text-[#706e6b]">
+              <span className="text-[11px] uppercase tracking-[0.4px] font-semibold text-[#747474]">
                 {STEP_KIND_LABELS[props.step.kind as StepKind] ?? props.step.kind}
               </span>
             </div>
@@ -567,7 +567,7 @@ function StepInspector(props: {
             <select
               value={templateId}
               onChange={(e) => set("templateId", e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+              className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
             >
               <option value="">Pick a template</option>
               {props.templates.map((t) => (
@@ -581,7 +581,7 @@ function StepInspector(props: {
             <select
               value={fromUserId}
               onChange={(e) => set("fromUserId", e.target.value || undefined)}
-              className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+              className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
             >
               <option value="">Default From address</option>
               {props.users.map((u) => (
@@ -603,7 +603,7 @@ function StepInspector(props: {
               min={0}
               value={Number(props.config.days ?? 0)}
               onChange={(e) => set("days", Number(e.target.value))}
-              className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+              className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
             />
           </FieldShell>
           <FieldShell label="Hours">
@@ -612,7 +612,7 @@ function StepInspector(props: {
               min={0}
               value={Number(props.config.hours ?? 0)}
               onChange={(e) => set("hours", Number(e.target.value))}
-              className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+              className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
             />
           </FieldShell>
         </div>
@@ -629,9 +629,9 @@ function StepInspector(props: {
               max={props.totalSteps}
               value={Number(props.config.yesGoToStepOrder ?? 0)}
               onChange={(e) => set("yesGoToStepOrder", Number(e.target.value))}
-              className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+              className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
             />
-            <div className="text-[11px] text-[#706e6b] mt-1">0 = end sequence</div>
+            <div className="text-[11px] text-[#747474] mt-1">0 = end sequence</div>
           </FieldShell>
           <FieldShell label="If no, go to step #">
             <input
@@ -640,9 +640,9 @@ function StepInspector(props: {
               max={props.totalSteps}
               value={Number(props.config.noGoToStepOrder ?? 0)}
               onChange={(e) => set("noGoToStepOrder", Number(e.target.value))}
-              className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+              className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
             />
-            <div className="text-[11px] text-[#706e6b] mt-1">0 = end sequence</div>
+            <div className="text-[11px] text-[#747474] mt-1">0 = end sequence</div>
           </FieldShell>
           <FieldShell label="Wait before evaluating (hours)">
             <input
@@ -651,7 +651,7 @@ function StepInspector(props: {
               max={336}
               value={Number(props.config.waitHours ?? 24)}
               onChange={(e) => set("waitHours", Number(e.target.value))}
-              className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+              className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
             />
           </FieldShell>
         </div>
@@ -664,7 +664,7 @@ function StepInspector(props: {
             type="number"
             value={Number(props.config.delta ?? 0)}
             onChange={(e) => set("delta", Number(e.target.value))}
-            className="w-32 px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+            className="w-32 px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
           />
         </FieldShell>
       );
@@ -676,7 +676,7 @@ function StepInspector(props: {
           <select
             value={String(props.config.listId ?? "")}
             onChange={(e) => set("listId", e.target.value)}
-            className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+            className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
           >
             <option value="">Pick a list</option>
             {props.lists.map((l) => (
@@ -695,7 +695,7 @@ function StepInspector(props: {
             <input
               value={String(props.config.subject ?? "")}
               onChange={(e) => set("subject", e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+              className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
             />
           </FieldShell>
           <FieldShell label="Due in (days)">
@@ -704,14 +704,14 @@ function StepInspector(props: {
               min={0}
               value={Number(props.config.dueOffsetDays ?? 0)}
               onChange={(e) => set("dueOffsetDays", Number(e.target.value))}
-              className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+              className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
             />
           </FieldShell>
           <FieldShell label="Owner (optional)">
             <select
               value={String(props.config.ownerUserId ?? "")}
               onChange={(e) => set("ownerUserId", e.target.value || undefined)}
-              className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+              className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
             >
               <option value="">Unassigned</option>
               {props.users.map((u) => (
@@ -726,7 +726,7 @@ function StepInspector(props: {
     }
     case "exit":
       return (
-        <div className="text-[12px] text-[#706e6b]">
+        <div className="text-[12px] text-[#747474]">
           When reached, the enrollment is marked EXITED and no further steps run.
         </div>
       );
@@ -796,7 +796,7 @@ function SettingsTab(props: { seq: Seq; onChange: (s: Seq) => void }) {
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+          className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
         />
       </FieldShell>
       <FieldShell label="Description">
@@ -804,7 +804,7 @@ function SettingsTab(props: { seq: Seq; onChange: (s: Seq) => void }) {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          className="w-full px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+          className="w-full px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
         />
       </FieldShell>
 
@@ -827,7 +827,7 @@ function SettingsTab(props: { seq: Seq; onChange: (s: Seq) => void }) {
             min={1}
             value={maxEnrollsPerTick}
             onChange={(e) => setMaxEnrollsPerTick(Number(e.target.value))}
-            className="w-32 px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+            className="w-32 px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
           />
         </FieldShell>
       </div>
@@ -836,7 +836,7 @@ function SettingsTab(props: { seq: Seq; onChange: (s: Seq) => void }) {
         <div className="text-[12px] font-semibold text-[#444656] uppercase tracking-[0.4px] mb-2">
           Entry Criteria
         </div>
-        <p className="text-[12px] text-[#706e6b] mb-3">
+        <p className="text-[12px] text-[#747474] mb-3">
           Leads matching these conditions get auto-enrolled by the cron. Leave empty to
           require manual enrollment only.
         </p>
@@ -888,7 +888,7 @@ function ConditionBuilder(props: { cond: Cond; onChange: (c: Cond) => void }) {
         <select
           value={props.cond.kind}
           onChange={(e) => props.onChange({ ...props.cond, kind: e.target.value as "and" | "or" })}
-          className="px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+          className="px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
         >
           <option value="and">All conditions must match (AND)</option>
           <option value="or">Any condition matches (OR)</option>
@@ -902,7 +902,7 @@ function ConditionBuilder(props: { cond: Cond; onChange: (c: Cond) => void }) {
             <select
               value={c.field}
               onChange={(e) => update(i, { field: e.target.value })}
-              className="px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px] min-w-[180px]"
+              className="px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px] min-w-[180px]"
             >
               {LEAD_FIELDS.map((f) => (
                 <option key={f.key} value={f.key}>
@@ -913,7 +913,7 @@ function ConditionBuilder(props: { cond: Cond; onChange: (c: Cond) => void }) {
             <select
               value={c.operator}
               onChange={(e) => update(i, { operator: e.target.value })}
-              className="px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+              className="px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
             >
               {OPERATORS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -926,7 +926,7 @@ function ConditionBuilder(props: { cond: Cond; onChange: (c: Cond) => void }) {
                 value={String(c.value ?? "")}
                 onChange={(e) => update(i, { value: e.target.value })}
                 placeholder="value"
-                className="flex-1 px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+                className="flex-1 px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
               />
             )}
             <button
@@ -1016,7 +1016,7 @@ function EnrollmentsTab({ seqId }: { seqId: string }) {
             setPage(1);
             setStatus(e.target.value);
           }}
-          className="px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px]"
+          className="px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px]"
         >
           <option value="">All statuses</option>
           <option value="ACTIVE">Active</option>
@@ -1024,13 +1024,13 @@ function EnrollmentsTab({ seqId }: { seqId: string }) {
           <option value="COMPLETED">Completed</option>
           <option value="EXITED">Exited</option>
         </select>
-        <div className="text-[12px] text-[#706e6b]">{total} total</div>
+        <div className="text-[12px] text-[#747474]">{total} total</div>
         <div className="flex-1" />
         <input
           value={manualLeadId}
           onChange={(e) => setManualLeadId(e.target.value)}
           placeholder="Lead ID (cuid)"
-          className="px-2.5 py-1.5 border border-[#d8dde6] rounded text-[13px] w-56"
+          className="px-2.5 py-1.5 border border-[#c9c9c9] rounded text-[13px] w-56"
         />
         <button
           onClick={manualEnroll}
@@ -1042,9 +1042,9 @@ function EnrollmentsTab({ seqId }: { seqId: string }) {
       </div>
 
       {loading ? (
-        <div className="text-[13px] text-[#706e6b]">Loading...</div>
+        <div className="text-[13px] text-[#747474]">Loading...</div>
       ) : items.length === 0 ? (
-        <div className="text-[13px] text-[#706e6b] py-6 text-center">No enrollments yet.</div>
+        <div className="text-[13px] text-[#747474] py-6 text-center">No enrollments yet.</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
@@ -1067,17 +1067,17 @@ function EnrollmentsTab({ seqId }: { seqId: string }) {
                     <div className="font-semibold text-[#131b2e]">
                       {e.lead?.businessName ?? e.entityId}
                     </div>
-                    <div className="text-[11px] text-[#706e6b]">
+                    <div className="text-[11px] text-[#747474]">
                       {e.lead?.contactName} · {e.lead?.email ?? "(no email)"}
                     </div>
                   </td>
                   <td className="px-3 py-2">{e.status}</td>
                   <td className="px-3 py-2">{e.currentStepOrder + 1}</td>
-                  <td className="px-3 py-2 text-[#706e6b]">{new Date(e.enteredAt).toLocaleString()}</td>
-                  <td className="px-3 py-2 text-[#706e6b]">
+                  <td className="px-3 py-2 text-[#747474]">{new Date(e.enteredAt).toLocaleString()}</td>
+                  <td className="px-3 py-2 text-[#747474]">
                     {e.nextActionAt ? new Date(e.nextActionAt).toLocaleString() : "-"}
                   </td>
-                  <td className="px-3 py-2 text-[#706e6b]">
+                  <td className="px-3 py-2 text-[#747474]">
                     {e.finishedAt ? new Date(e.finishedAt).toLocaleString() : "-"}
                   </td>
                 </tr>
@@ -1096,7 +1096,7 @@ function EnrollmentsTab({ seqId }: { seqId: string }) {
           >
             Prev
           </button>
-          <div className="text-[12px] text-[#706e6b]">
+          <div className="text-[12px] text-[#747474]">
             Page {page} of {Math.ceil(total / 50)}
           </div>
           <button
@@ -1141,9 +1141,9 @@ function HistoryTab({ seqId }: { seqId: string }) {
     })();
   }, []);
 
-  if (loading) return <div className="text-[13px] text-[#706e6b]">Loading...</div>;
+  if (loading) return <div className="text-[13px] text-[#747474]">Loading...</div>;
   if (items.length === 0)
-    return <div className="text-[13px] text-[#706e6b] py-6 text-center">No history yet.</div>;
+    return <div className="text-[13px] text-[#747474] py-6 text-center">No history yet.</div>;
 
   return (
     <div className="space-y-2">
@@ -1153,9 +1153,9 @@ function HistoryTab({ seqId }: { seqId: string }) {
           <div className="flex-1 min-w-0">
             <div className="text-[13px] text-[#131b2e]">
               <span className="font-semibold">{h.label}</span>{" "}
-              <span className="text-[12px] text-[#706e6b]">({h.kind})</span>
+              <span className="text-[12px] text-[#747474]">({h.kind})</span>
             </div>
-            <div className="text-[11px] text-[#706e6b]">
+            <div className="text-[11px] text-[#747474]">
               Lead {h.leadId.slice(0, 10)}... · step {h.stepOrder + 1} ·{" "}
               {new Date(h.at).toLocaleString()}
             </div>

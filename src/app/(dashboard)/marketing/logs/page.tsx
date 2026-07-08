@@ -37,7 +37,7 @@ export default async function MarketingLogsPage({ searchParams }: { searchParams
         </p>
       </div>
 
-      <div className="flex gap-1 border-b border-[#d8dde6]">
+      <div className="flex gap-1 border-b border-[#c9c9c9]">
         <TabLink active={view === "inbound"} href="/marketing/logs?view=inbound">
           Inbound
         </TabLink>
@@ -116,7 +116,7 @@ function InboundTable({ rows }: { rows: InboundRow[] }) {
                   {l.leadId.slice(0, 8)}
                 </Link>
               ) : (
-                <span className="text-[#706e6b]">--</span>
+                <span className="text-[#747474]">--</span>
               )}
             </td>
             <td className="px-4 py-3 text-[11px] text-[#942b00] truncate max-w-[300px]">{l.errorMessage ?? ""}</td>
@@ -194,7 +194,7 @@ function OutboundTable({ rows }: { rows: OutboundRow[] }) {
               </span>
             </td>
             <td className="px-4 py-3 text-[12px] font-mono">
-              {l.responseStatus ?? <span className="text-[#706e6b]">--</span>}
+              {l.responseStatus ?? <span className="text-[#747474]">--</span>}
             </td>
             <td className="px-4 py-3 text-[12px] text-[#444656]">{l.attempts}</td>
             <td className="px-4 py-3">

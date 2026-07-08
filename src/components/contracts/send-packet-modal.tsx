@@ -68,7 +68,7 @@ export function SendPacketModal({
       <div style={panel} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700 }}>Send Contract Packet</h2>
-          <button onClick={onClose} style={{ border: 0, background: "none", fontSize: 18, cursor: "pointer", color: "#706e6b" }}>
+          <button onClick={onClose} style={{ border: 0, background: "none", fontSize: 18, cursor: "pointer", color: "#747474" }}>
             ×
           </button>
         </div>
@@ -87,7 +87,7 @@ export function SendPacketModal({
               </div>
             )}
             <div style={{ marginBottom: 4, fontWeight: 600 }}>Signing link:</div>
-            <a href={result.signingUrl} target="_blank" rel="noreferrer" style={{ color: "#0070d2", wordBreak: "break-all" }}>
+            <a href={result.signingUrl} target="_blank" rel="noreferrer" style={{ color: "#0176d3", wordBreak: "break-all" }}>
               {result.signingUrl}
             </a>
             <div style={{ marginTop: 16, textAlign: "right" }}>
@@ -96,7 +96,7 @@ export function SendPacketModal({
           </div>
         ) : (
           <>
-            <p style={{ fontSize: 12, color: "#706e6b", marginBottom: 12 }}>
+            <p style={{ fontSize: 12, color: "#747474", marginBottom: 12 }}>
               Auto-routes <strong>Coastal + processor (SAS/RAM) + legal (Citadel/Victory)</strong>, fills every field from
               this deal&apos;s calculator, merges into one PDF, and emails the signer a single link to sign all agreements
               at once.
@@ -153,8 +153,8 @@ const input: React.CSSProperties = {
 };
 const btn: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #d8dde6",
-  color: "#0070d2",
+  border: "1px solid #c9c9c9",
+  color: "#0176d3",
   padding: "7px 14px",
   borderRadius: 4,
   fontSize: 13,

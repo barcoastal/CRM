@@ -30,7 +30,7 @@ export function AccountTeamCard({
     <article
       style={{
         background: "#fff",
-        border: "1px solid #dddbda",
+        border: "1px solid #c9c9c9",
         borderRadius: 4,
         marginBottom: 12,
         overflow: "hidden",
@@ -40,7 +40,7 @@ export function AccountTeamCard({
       <header
         style={{
           background: "#fafaf9",
-          borderBottom: "1px solid #dddbda",
+          borderBottom: "1px solid #c9c9c9",
           padding: "8px 16px",
           display: "flex",
           alignItems: "center",
@@ -55,7 +55,7 @@ export function AccountTeamCard({
             justifyContent: "center",
             width: 20,
             height: 20,
-            background: "#0070d2",
+            background: "#0176d3",
             color: "#fff",
             borderRadius: 3,
             flexShrink: 0,
@@ -65,13 +65,13 @@ export function AccountTeamCard({
             <path d="M26 24c5 0 9-4 9-9s-4-9-9-9-9 4-9 9 4 9 9 9zm0 4c-6 0-18 3-18 9v5h36v-5c0-6-12-9-18-9z" />
           </svg>
         </span>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#080707", margin: 0 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
           Account Team
         </h3>
       </header>
       <div style={{ padding: "8px 16px" }}>
         {all.length === 0 ? (
-          <div style={{ fontSize: 12, color: "#706e6b" }}>No team members yet.</div>
+          <div style={{ fontSize: 12, color: "#747474" }}>No team members yet.</div>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {all.map((m, i) => (
@@ -85,12 +85,12 @@ export function AccountTeamCard({
                   gap: 2,
                 }}
               >
-                <span style={{ fontSize: 11, fontWeight: 400, color: "#3e3e3c" }}>
+                <span style={{ fontSize: 11, fontWeight: 400, color: "#444444" }}>
                   {m.role}
                 </span>
-                <span style={{ fontSize: 13, color: "#080707", fontWeight: 600 }}>{m.name}</span>
+                <span style={{ fontSize: 13, color: "#181818", fontWeight: 600 }}>{m.name}</span>
                 {m.email && (
-                  <Link href={`mailto:${m.email}`} style={{ fontSize: 12, color: "#1589ee" }}>
+                  <Link href={`mailto:${m.email}`} style={{ fontSize: 12, color: "#0176d3" }}>
                     {m.email}
                   </Link>
                 )}
