@@ -52,16 +52,52 @@ export async function POST(
   };
 
   // Save the address + contact onto the Account (only overwrite when provided).
+  // This is THE storage the contract packet reads (buildContractData pulls
+  // ClientAddress/City/State/Zip from Account billing fields).
+  const data: Record<string, string> = {};
+  if (info.street) data.billingStreet = info.street;
+  if (info.city) data.billingCity = info.city;
+  if (info.state) data.billingState = info.state;
+  if (info.zip) data.billingZip = info.zip;
+  if (info.phone) data.phone = info.phone;
+  if (info.email) data.email = info.email;
+
   if (req.accountId) {
-    const data: Record<string, string> = {};
-    if (info.street) data.billingStreet = info.street;
-    if (info.city) data.billingCity = info.city;
-    if (info.state) data.billingState = info.state;
-    if (info.zip) data.billingZip = info.zip;
-    if (info.phone) data.phone = info.phone;
-    if (info.email) data.email = info.email;
     if (Object.keys(data).length) {
       await prisma.account.update({ where: { id: req.accountId }, data }).catch(() => undefined);
+    }
+  } else if (req.opportunityId && Object.keys(data).length) {
+    // Lead-based deal with no Account yet: create the Client account from the
+    // submitted info and link it to the opportunity, so contracts (and the SF
+    // parity screens) have a real billing address to pull.
+    const opp = await prisma.opportunity.findUnique({
+      where: { id: req.opportunityId },
+      select: {
+        id: true,
+        accountId: true,
+        name: true,
+        lead: { select: { businessName: true, contactName: true } },
+      },
+    });
+    if (opp) {
+      if (opp.accountId) {
+        await prisma.account.update({ where: { id: opp.accountId }, data }).catch(() => undefined);
+      } else {
+        const acctName =
+          opp.lead?.businessName?.trim() ||
+          req.recipientName?.trim() ||
+          opp.lead?.contactName?.trim() ||
+          opp.name ||
+          "New Client";
+        const acct = await prisma.account
+          .create({ data: { name: acctName, recordType: "CLIENT", ...data } })
+          .catch(() => null);
+        if (acct) {
+          await prisma.opportunity
+            .update({ where: { id: opp.id }, data: { accountId: acct.id } })
+            .catch(() => undefined);
+        }
+      }
     }
   }
 
