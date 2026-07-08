@@ -18,6 +18,7 @@ import { buildContractData } from "@/lib/contracts/merge-data";
 import { fillPacketToPdf } from "@/lib/contracts/docx-merge";
 import { planPacket, loadPacketTemplates } from "@/lib/contracts/routing";
 import { prepareAnchoredPacket } from "@/lib/contracts/anchors";
+import { advanceOppStage } from "@/lib/opportunity-stage";
 
 export async function POST(request: NextRequest) {
   const r = await requireAuthOrRespond("Opportunity.Edit");
@@ -112,6 +113,10 @@ export async function POST(request: NextRequest) {
       { envelopeId: envelope.id, eventType: "SENT", details: `To ${signerEmail}` },
     ],
   });
+
+  // SF flow parity: sending the contract moves the deal to "Contract Sent"
+  // (forward-only; never regresses a further-along deal).
+  await advanceOppStage(opp.id, "Contract Sent", session.userId);
 
   const defaultFrom = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
   const fromAddress = sender?.email ? `${sender.name ?? sender.email} <${sender.email}>` : defaultFrom;

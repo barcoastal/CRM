@@ -30,6 +30,7 @@ import { readTemplatePdf, saveEnvelopePdf } from "@/lib/esign/storage";
 import { buildMergeContextForOpportunity, fillAcroForm, stampDataBoxes } from "@/lib/esign/merge";
 import { renderSignRequestHtml, sendESignEmail } from "@/lib/esign/send-email";
 import { RECORD_TYPES } from "@/lib/esign/merge-paths";
+import { advanceOppStage } from "@/lib/opportunity-stage";
 
 export async function POST(request: NextRequest) {
   const r = await requireAuthOrRespond("Opportunity.Edit");
@@ -136,6 +137,9 @@ export async function POST(request: NextRequest) {
       { envelopeId: envelope.id, eventType: "SENT", details: `To ${signerEmail}` },
     ],
   });
+
+  // SF flow parity: sending the contract moves the deal to "Contract Sent".
+  await advanceOppStage(opp.id, "Contract Sent", session.userId);
 
   // Send signer email. Send-as-user pattern matches /api/emails/compose.
   const defaultFrom = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";

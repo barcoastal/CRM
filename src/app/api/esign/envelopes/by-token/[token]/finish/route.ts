@@ -26,6 +26,7 @@ import { readEnvelopePdf, signedDir, ensureESignDirs } from "@/lib/esign/storage
 import { renderSignedCopyHtml, renderSenderNotificationHtml, sendESignEmail } from "@/lib/esign/send-email";
 import { notify } from "@/lib/notifications/notify";
 import { collectTarget } from "@/lib/esign/collect-targets";
+import { advanceOppStage } from "@/lib/opportunity-stage";
 
 type Box = {
   page: number;
@@ -314,6 +315,18 @@ export async function POST(
       },
     }),
   ]);
+
+  // SF flow parity: completed signature moves the deal to "Contract Signed"
+  // (forward-only) and stamps First Contract Signed Date if not already set.
+  if (envelope.opportunityId) {
+    await advanceOppStage(envelope.opportunityId, "Contract Signed", null);
+    await prisma.opportunity
+      .updateMany({
+        where: { id: envelope.opportunityId, firstContractSignedDateOpp: null },
+        data: { firstContractSignedDateOpp: now },
+      })
+      .catch(() => undefined);
+  }
 
   // In-app notification to the envelope sender. The signer is external so
   // actorId stays null. Fire-and-forget; never throws.
