@@ -799,8 +799,12 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       }
       rail={
         <>
-          {/* SF rail order (verified live) — Escrow Balance, Bank Details first;
-              our Health Check + related cards follow. */}
+          {/* SF Debt Settlement app rail order (verified live):
+              Health Check Results, Escrow Balance, Bank Details. */}
+          <HealthCheckCard
+            welcomeCallCompleted={account.welcomeCallCompleted}
+            firstPaymentReceived={account.firstPaymentReceived}
+          />
           <EscrowBalanceCard
             accountId={account.id}
             balance={account.escrowBalance}
@@ -815,10 +819,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
               bankAccountNumber: account.bankAccountNumber,
               bankAccountType: account.bankAccountType,
             }}
-          />
-          <HealthCheckCard
-            welcomeCallCompleted={account.welcomeCallCompleted}
-            firstPaymentReceived={account.firstPaymentReceived}
           />
           <RelatedList
             entity="Opportunity"

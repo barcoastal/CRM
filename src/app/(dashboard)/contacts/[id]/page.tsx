@@ -412,9 +412,10 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     </>
   );
 
-  // SF Lightning puts Related as the FIRST tab on the Contact record page.
+  // SF Debt Settlement app: related lists live under Details (collapsed
+  // section), not in a Related tab.
   const relatedPanel = (
-    <ContactSection title="Related Records" defaultOpen>
+    <ContactSection title="Related Records" defaultOpen={false}>
       <RelatedList
         entity="Opportunity"
         title="Opportunities as Primary Contact"
@@ -492,7 +493,12 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     </details>
   );
 
-  const detailsFooter = allSfFooter;
+  const detailsFooter = (
+    <>
+      {relatedPanel}
+      {allSfFooter}
+    </>
+  );
 
   return (
     <RecordPage
@@ -526,7 +532,6 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       details={
         <ContactTabs
           panels={{
-            Related: relatedPanel,
             Details: detailsPanel,
             Marketing: marketingPanel,
           }}

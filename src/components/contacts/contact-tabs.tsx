@@ -2,10 +2,11 @@
 
 import { useState, type ReactNode } from "react";
 
-export type ContactTabKey = "Related" | "Details" | "Marketing";
+export type ContactTabKey = "Details" | "Marketing";
 
-// SF Lightning Contact record page: Related is the FIRST (default) tab.
-const TABS: ContactTabKey[] = ["Related", "Details", "Marketing"];
+// SF Debt Settlement app Contact record page: Details | Marketing (verified
+// against the live app - no Related tab; related lists live under Details).
+const TABS: ContactTabKey[] = ["Details", "Marketing"];
 
 // Same card + tab-strip chrome as the Lead/Opp/Account record pages so all
 // four record types share one look.
@@ -16,7 +17,7 @@ export function ContactTabs({
   panels: Record<ContactTabKey, ReactNode>;
   detailsFooter?: ReactNode;
 }) {
-  const [tab, setTab] = useState<ContactTabKey>("Related");
+  const [tab, setTab] = useState<ContactTabKey>("Details");
   return (
     <div style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4 }}>
       <div

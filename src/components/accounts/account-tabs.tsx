@@ -16,33 +16,33 @@ export type AccountTabKey =
   | "Marketing"
   | "All SF Fields";
 
-// SF Lightning Account record page tab order (verified against the live org):
-// Related | Details | Opportunities, Related is the default tab. Our extra
-// CRM tabs follow, with the least-used ones in the More overflow.
+// SF Debt Settlement app Account record page tab order (verified against the
+// live app screenshot): Details | Payment Calculator | Activities | Documents
+// | Related Records | Payment Summaries | More. Details is the default.
 // "All SF Fields" is intentionally NOT in the tab strip; it's reachable via
 // a footer link on the Details tab.
 const PRIMARY_TABS: AccountTabKey[] = [
-  "Related Records",
   "Details",
-  "Opportunities",
   "Payment Calculator",
   "Activities",
   "Documents",
+  "Related Records",
+  "Payment Summaries",
 ];
 const MORE_TABS: AccountTabKey[] = [
-  "Payment Summaries",
   "Settlements",
+  "Opportunities",
   "Contacts",
   "Team",
   "Marketing",
 ];
 const TABS: AccountTabKey[] = [...PRIMARY_TABS, ...MORE_TABS];
 
-// SF labels the tab "Related".
-const TAB_LABEL: Partial<Record<AccountTabKey, string>> = { "Related Records": "Related" };
+// SF's Debt Settlement app labels this tab "Related Records" verbatim.
+const TAB_LABEL: Partial<Record<AccountTabKey, string>> = {};
 
 export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNode> }) {
-  const [tab, setTab] = useState<AccountTabKey>("Related Records");
+  const [tab, setTab] = useState<AccountTabKey>("Details");
   const [moreOpen, setMoreOpen] = useState(false);
   const moreActive = MORE_TABS.includes(tab);
   return (
