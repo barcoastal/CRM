@@ -23,7 +23,7 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
     include: {
       account: true,
       primaryContact: true,
-      lead: { select: { contactName: true } },
+      lead: { select: { contactName: true, businessName: true, state: true } },
       debts: true,
       paymentCalculations: { orderBy: { savedAt: "desc" }, take: 1 },
     },
@@ -99,10 +99,10 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
 
   const now = new Date();
   return {
-    ClientName: acct?.name ?? "",
+    ClientName: acct?.name?.trim() || opp.lead?.businessName?.trim() || "",
     ClientAddress: acct?.billingStreet ?? "",
     ClientCity: acct?.billingCity ?? "",
-    ClientState: acct?.billingState ?? "",
+    ClientState: acct?.billingState?.trim() || opp.lead?.state?.trim() || "",
     ClientZip: acct?.billingZip ?? "",
     ClientCounty: "", // no county field on Account yet
     ClientPhone: acct?.phone ?? opp.primaryContact?.phone ?? "",
@@ -111,7 +111,7 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
     ContactFirstName: opp.primaryContact?.firstName ?? "",
     ContactLastName: opp.primaryContact?.lastName ?? "",
     ContactTitle: opp.primaryContact?.title ?? "",
-    ProgramState: acct?.billingState ?? "",
+    ProgramState: acct?.billingState?.trim() || opp.lead?.state?.trim() || "",
     TotalDebt: usd(totalDebt),
     ProgramLength: String(term),
     FirstPaymentDate: mdY(firstPaymentDate),
