@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { DispositionModal } from "@/components/leads/disposition-modal";
 import { QuickActionsRow } from "@/components/quick-actions/quick-actions-row";
 import { SendContractModal } from "@/components/esign/send-contract-modal";
+import { SendPacketModal } from "@/components/contracts/send-packet-modal";
 import { OPP_STAGES, OPP_STAGE_TO_SUB_DISPOSITIONS } from "@/lib/sf-canonical";
 import { CategoryPicker } from "@/components/forecasting/category-picker";
 import {
@@ -56,6 +57,7 @@ export function OppHeaderButtons({
   const router = useRouter();
   const [modal, setModal] = useState(false);
   const [contractModal, setContractModal] = useState(false);
+  const [packetModal, setPacketModal] = useState(false);
 
   async function updateOpp() {
     router.push(`/opportunities/${opportunityId}/edit`);
@@ -71,6 +73,9 @@ export function OppHeaderButtons({
       <QuickActionsRow opportunityId={opportunityId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
       <CategoryPicker opportunityId={opportunityId} value={initialCategory} size="sm" />
       <SubmitForApprovalButton entityType="Opportunity" entityId={opportunityId} />
+      <button style={{ ...primaryBtn, background: "#2e844a", borderColor: "#2e844a" }} onClick={() => setPacketModal(true)}>
+        Send Packet
+      </button>
       <button style={primaryBtn} onClick={() => setContractModal(true)}>
         Send Contract
       </button>
@@ -97,6 +102,12 @@ export function OppHeaderButtons({
         recommendedAgreement={recommendedAgreement}
         open={contractModal}
         onClose={() => setContractModal(false)}
+      />
+      <SendPacketModal
+        opportunityId={opportunityId}
+        defaultSigner={{ name: defaultSignerName ?? null, email: defaultEmail ?? null }}
+        open={packetModal}
+        onClose={() => setPacketModal(false)}
       />
     </>
   );
