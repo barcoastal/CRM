@@ -20,7 +20,13 @@ function mdY(d: Date): string {
 export async function buildContractData(opportunityId: string): Promise<MergeData> {
   const opp = await prisma.opportunity.findUnique({
     where: { id: opportunityId },
-    include: { account: true, primaryContact: true, debts: true, paymentCalculations: { orderBy: { savedAt: "desc" }, take: 1 } },
+    include: {
+      account: true,
+      primaryContact: true,
+      lead: { select: { contactName: true } },
+      debts: true,
+      paymentCalculations: { orderBy: { savedAt: "desc" }, take: 1 },
+    },
   });
   if (!opp) throw new Error("Opportunity not found");
   const acct = opp.account;
@@ -101,7 +107,7 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
     ClientCounty: "", // no county field on Account yet
     ClientPhone: acct?.phone ?? opp.primaryContact?.phone ?? "",
     ClientEmail: acct?.email ?? opp.primaryContact?.email ?? "",
-    ClientSignerName: opp.primaryContact?.fullName ?? acct?.name ?? "",
+    ClientSignerName: opp.lead?.contactName?.trim() || opp.primaryContact?.fullName?.trim() || acct?.name || "",
     ContactFirstName: opp.primaryContact?.firstName ?? "",
     ContactLastName: opp.primaryContact?.lastName ?? "",
     ContactTitle: opp.primaryContact?.title ?? "",
