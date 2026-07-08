@@ -87,30 +87,55 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
   const dispensationFee = totalDebt * (programFeePct / 100);
   const totalWithFees = sched.rows.reduce((s, r) => s + r.weeklyDraftAmount, 0);
 
+  // Column totals for the schedule footer row (exact sums of the draft rows).
+  const sum = (pick: (r: (typeof sched.rows)[number]) => number) => sched.rows.reduce((s, r) => s + pick(r), 0);
+  const first = sched.rows[0];
+
+  const now = new Date();
   return {
     ClientName: acct?.name ?? "",
     ClientAddress: acct?.billingStreet ?? "",
     ClientCity: acct?.billingCity ?? "",
     ClientState: acct?.billingState ?? "",
     ClientZip: acct?.billingZip ?? "",
+    ClientCounty: "", // no county field on Account yet
     ClientPhone: acct?.phone ?? opp.primaryContact?.phone ?? "",
     ClientEmail: acct?.email ?? opp.primaryContact?.email ?? "",
+    ClientSignerName: opp.primaryContact?.fullName ?? acct?.name ?? "",
+    ContactFirstName: opp.primaryContact?.firstName ?? "",
+    ContactLastName: opp.primaryContact?.lastName ?? "",
+    ContactTitle: opp.primaryContact?.title ?? "",
+    ProgramState: acct?.billingState ?? "",
     TotalDebt: usd(totalDebt),
     ProgramLength: String(term),
     FirstPaymentDate: mdY(firstPaymentDate),
-    FirstPaymentAmount: usd(sched.rows[0]?.weeklyDraftAmount ?? 0),
+    FirstPaymentAmount: usd(first?.weeklyDraftAmount ?? 0),
+    FirstRetainerSetupFee: usd((first?.retainerFee ?? 0) + (first?.setupFee ?? 0)),
     RetainerAmount: usd(t.retainerAmount),
+    ProgramFeeAmount: usd(dispensationFee),
     DispensationFee: usd(dispensationFee),
     SettlementPercent: String(settlementPct),
     ProgramFeePercent: String(programFeePct),
     RetainerPercent: String(retainerPct),
+    TotalFeePercent: String(programFeePct + retainerPct),
     SetupFee: usd(t.setupFee),
     ServiceFee: usd(serviceFeeVal),
     TotalWithFees: usd(totalWithFees),
     EstimatedSavings: usd(Math.round((totalDebt - totalWithFees) * 100) / 100),
     WeeklyPayment: usd(sched.rows[1]?.weeklyDraftAmount ?? t.weeklyDraftAmount),
     ProcessorName: acct?.paymentProcessor ?? "SAS",
-    TodayDate: mdY(new Date()),
+    // Schedule column totals (footer row of the payment table).
+    TotalRetainerFee: usd(sum((r) => r.retainerFee)),
+    TotalProgramFee: usd(sum((r) => r.programFee)),
+    TotalSetupFee: usd(sum((r) => r.setupFee)),
+    TotalServiceFee: usd(sum((r) => r.serviceFee)),
+    TotalBankFee: usd(sum((r) => r.bankFee)),
+    TotalLegalPlanFee: usd(sum((r) => r.citadelFee)),
+    TotalEscrowAmount: usd(sum((r) => r.escrowAmount)),
+    CurrentDay: String(now.getDate()),
+    CurrentMonth: now.toLocaleString("en-US", { month: "long" }),
+    CurrentYear: String(now.getFullYear()),
+    TodayDate: mdY(now),
     Creditors,
     Schedule,
     DebitSchedule,
