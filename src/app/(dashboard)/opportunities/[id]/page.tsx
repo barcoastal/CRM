@@ -33,16 +33,36 @@ import { RecordFiles } from "@/components/files/record-files";
  * the path (SF treats them as off-path terminal states; the path renders the
  * happy-path sequence only).
  */
+// SF Lightning Path for the Opportunity (verified against the live org's
+// OpportunityStage picklist + the record page): ... Contract Sent -> Contract
+// Signed -> Closed Won First Payment Pending -> "Closed" terminal chevron
+// (Lightning collapses the closed stages into one final "Closed" step).
 const PATH_HAPPY: readonly string[] = [
   "Working Opportunity",
   "Waiting for Agreements",
   "Agreements Received",
   "Ready To Close",
   "Contract Sent",
+  "Contract Signed",
   "Closed Won First Payment Pending",
-  "Closed Won - First Payment Completed",
+  "Closed",
 ] as const;
 const PATH = PATH_HAPPY.map((s) => ({ label: s }));
+// Stage options for the inline Stage select — real SF stage names (the path's
+// terminal "Closed" chevron is a display grouping, not a pickable stage).
+const STAGE_OPTIONS: readonly string[] = [
+  "Working Opportunity",
+  "Waiting for Agreements",
+  "Agreements Received",
+  "Ready To Close",
+  "Contract Sent",
+  "Contract Signed",
+  "Archived",
+  "Archived - Finalized",
+  "Closed Won First Payment Pending",
+  "Closed Won - First Payment Completed",
+  "Closed Lost",
+] as const;
 
 // Display labels for opportunity stages — DB enum upper-snake maps to the
 // SF titlecase label visible on sf-opp-kenya.png ("Working Opportunity").
@@ -77,8 +97,10 @@ function oppPathIndex(stage: string): number {
   // Off-path terminal states: pin to nearest milestone so the path still
   // renders meaningfully (Archived → Contract Sent, Closed Lost → Working).
   const s = (stage ?? "").toUpperCase();
-  if (s.includes("CLOSED") && s.includes("WON") && s.includes("COMPLETED")) return 6;
-  if (s.includes("CLOSED") && s.includes("WON")) return 5;
+  if (s.includes("CLOSED") && s.includes("WON") && s.includes("COMPLETED")) return 7;
+  if (s.includes("CLOSED") && s.includes("LOST")) return 7;
+  if (s.includes("CLOSED") && s.includes("WON")) return 6;
+  if (s.includes("CONTRACT") && s.includes("SIGNED")) return 5;
   if (s.includes("CONTRACT") && s.includes("SENT")) return 4;
   if (s.includes("READY")) return 3;
   if (s.includes("AGREEMENT")) return 2;
@@ -380,7 +402,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             [
               "Stage",
               <StatusPill key="s" label={formatStage(opp.stage)} tone={opportunityStageTone(opp.stage)} />,
-              { fieldKey: "stage", type: "select", rawValue: opp.stage, options: PATH_HAPPY.map((s) => ({ label: s, value: s })) },
+              { fieldKey: "stage", type: "select", rawValue: opp.stage, options: STAGE_OPTIONS.map((s) => ({ label: s, value: s })) },
             ],
             // Row 5: Type | Last Disposition
             ["Type", opp.recordType.replace(/_/g, " ")],
@@ -859,8 +881,10 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           </>
         }
         highlights={[
-          // SF Lightning highlights row: Account Name | Lead Id | Opportunity Owner | Version.
+          // SF Lightning highlights row (verified against the live record):
+          // Account Name | Current Total Debt | Lead Id | Opportunity Owner | Version.
           { label: "Account Name", value: accountLink },
+          { label: "Current Total Debt", value: `$${totalDebtVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
           { label: "Lead Id", value: sfLeadIdDisplay },
           { label: "Opportunity Owner", value: ownerDisplay },
           { label: "Version", value: oppSf("Version_Status__c") ?? String(opp.version ?? "1.0") },

@@ -188,14 +188,16 @@ export const DISPOSITION_TASK_STATUSES = [
   "Deferred",
 ] as const;
 
-/** SF Opportunity stages (9 stages — matches the path on opp detail) */
+/** SF Opportunity stages — verified against the live org's OpportunityStage picklist. */
 export const OPP_STAGES = [
   "Working Opportunity",
   "Waiting for Agreements",
   "Agreements Received",
   "Ready To Close",
   "Contract Sent",
+  "Contract Signed",
   "Archived",
+  "Archived - Finalized",
   "Closed Won First Payment Pending",
   "Closed Won - First Payment Completed",
   "Closed Lost",
@@ -302,6 +304,23 @@ export const OPP_STAGE_TO_SUB_DISPOSITIONS: Record<OppStage, string[]> = {
     "Didn't Register",
     "Opportunity Reshuffled",
   ],
+  "Contract Signed": [
+    "Appointment",
+    "Callback",
+    "Call Transferred from Fronter",
+    "Left VM",
+    "No Answer",
+    "No Answer-5up",
+    "Phone not in use",
+    "VM Full",
+    "Wrong Number",
+    "SMS sent",
+    "Notes",
+    "Stage Change",
+    "Left Review",
+    "Didn't Register",
+    "Opportunity Reshuffled",
+  ],
   "Archived": [
     "Bad State",
     "Can't afford the program",
@@ -319,6 +338,10 @@ export const OPP_STAGE_TO_SUB_DISPOSITIONS: Record<OppStage, string[]> = {
     "Payments are sustainable",
     "Stopped Answering",
     "Stage Change",
+  ],
+  "Archived - Finalized": [
+    "Stage Change",
+    "Notes",
   ],
   "Closed Won First Payment Pending": [
     "First Payment Pending",
