@@ -62,9 +62,10 @@ export async function POST(request: NextRequest) {
     prepared = await prepareAnchoredPacket(merged);
     pageCount = (await PDFDocument.load(prepared.pdf)).getPageCount();
   } catch (e) {
+    // Surface the real reason (e.g. "Missing template(s): PROCESSOR_SAS, ...").
     return NextResponse.json(
-      { error: "Failed to build packet", details: e instanceof Error ? e.message : String(e) },
-      { status: 500 },
+      { error: e instanceof Error ? e.message : "Failed to build packet" },
+      { status: 400 },
     );
   }
 

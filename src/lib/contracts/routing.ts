@@ -5,7 +5,7 @@
  */
 import { prisma } from "@/lib/prisma";
 import { resolveAgreement } from "@/lib/creditor-agreements";
-import { readTemplate, type ContractCategory } from "./templates";
+import { CATEGORIES, readTemplate, type ContractCategory } from "./templates";
 
 export interface PacketPlan {
   categories: ContractCategory[];
@@ -43,9 +43,13 @@ export async function loadPacketTemplates(
   const loaded = await Promise.all(
     plan.categories.map(async (category) => ({ category, buffer: await readTemplate(category) })),
   );
-  const missing = loaded.filter((t) => !t.buffer).map((t) => t.category);
+  const missing = loaded
+    .filter((t) => !t.buffer)
+    .map((t) => CATEGORIES.find((c) => c.key === t.category)?.label ?? t.category);
   if (missing.length) {
-    throw new Error(`Missing template(s): ${missing.join(", ")}. Upload them under Contract Templates.`);
+    throw new Error(
+      `This deal routes to ${plan.processor} + ${plan.legal}, but these templates are not uploaded yet: ${missing.join(", ")}. Upload them under Contract Templates.`,
+    );
   }
   return loaded.map((t) => ({ category: t.category, buffer: t.buffer as Buffer, name: `${t.category}.docx` }));
 }
