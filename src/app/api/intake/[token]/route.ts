@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendESignEmail } from "@/lib/esign/send-email";
 import { appBaseUrl } from "@/lib/document-request";
+import { normalizeUsState } from "@/lib/us-states";
 
 // Public (no-login) endpoint for INFO requests. The token is the only secret.
 
@@ -44,7 +45,8 @@ export async function POST(
   const info = {
     street: str(b.street),
     city: str(b.city),
-    state: str(b.state, 40),
+    // US-only: store the 2-letter state code ("Hawaii"/"hi" -> "HI").
+    state: normalizeUsState(str(b.state, 40)) || str(b.state, 2).toUpperCase(),
     zip: str(b.zip, 20),
     phone: str(b.phone, 40),
     email: str(b.email, 200),

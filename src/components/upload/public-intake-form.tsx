@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { US_STATES, isValidUsZip } from "@/lib/us-states";
 
 type Fields = {
   street: string;
@@ -17,10 +18,15 @@ export function PublicIntakeForm({ token, initial }: { token: string; initial: F
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setF((p) => ({ ...p, [k]: e.target.value }));
 
   async function submit() {
+    // US-only validation (all clients are US businesses).
+    if (f.zip.trim() && !isValidUsZip(f.zip)) {
+      setError("Please enter a valid US ZIP code (e.g. 33309).");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -72,7 +78,14 @@ export function PublicIntakeForm({ token, initial }: { token: string; initial: F
         </div>
         <div>
           <label style={lbl}>State</label>
-          <input value={f.state} onChange={set("state")} style={inp} placeholder="NY" />
+          <select value={f.state} onChange={set("state")} style={{ ...inp, background: "#fff" }}>
+            <option value="">Select…</option>
+            {US_STATES.map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label style={lbl}>ZIP</label>
