@@ -9,12 +9,13 @@ import {
 } from "@/lib/reschedule-schedule";
 import { RescheduleRecalculateModal } from "./reschedule-recalculate-modal";
 import { RescheduleSplitModal, computeSplit, type SplitRow, type SplitParams } from "./reschedule-split-modal";
+import { splitDraft, MAX_DRAFT_AMOUNT } from "@/lib/payments/draft-engine";
 
 // Program lengths (months) that qualify for the "Extra Bonus" badge. Mirrors the
 // SF Qualified_For_Bonus_Program_Length__c custom setting; edit as needed.
 const BONUS_PROGRAM_LENGTHS = [6, 7, 8, 9, 10, 11, 12];
 
-type DisplayRow = RescheduleRow & { _child?: boolean };
+type DisplayRow = RescheduleRow & { _child?: boolean; _tenkPart?: number; _tenkOf?: number };
 
 export type RescheduleInitial = {
   totalDebt?: number;
@@ -182,6 +183,51 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
     return rows;
   }, [displayRows, rowEdits, extraRows, skipped]);
 
+  // $10K rule (see docs/superpowers/specs/2026-07-09-flexible-payments-design.md):
+  // any draft over $10,000 renders as consecutive business-day children.
+  // Weekly fees (service/bank/legal) ride the first child. Rows being edited
+  // or skipped stay logical (unexpanded).
+  const tenKRows: DisplayRow[] = useMemo(() => {
+    const out: DisplayRow[] = [];
+    for (const r of finalRows) {
+      if (r.weeklyDraftAmount <= MAX_DRAFT_AMOUNT || skipped.has(r.index) || editingRow === r.index) {
+        out.push(r);
+        continue;
+      }
+      const kids = splitDraft(
+        {
+          date: r.date,
+          amount: r.weeklyDraftAmount,
+          feeRetainer: r.retainerFee,
+          feeProgram: r.programFee,
+          feeSetup: r.setupFee,
+          feeService: r.serviceFee,
+          feeBank: r.bankFee,
+          feeLegal: r.citadelFee,
+          escrowAmount: r.escrowAmount,
+        },
+        `tenk-${r.index}`,
+      );
+      kids.forEach((k, i) => {
+        out.push({
+          ...r,
+          date: k.date,
+          weeklyDraftAmount: k.amount,
+          retainerFee: k.feeRetainer,
+          programFee: k.feeProgram,
+          setupFee: k.feeSetup,
+          serviceFee: k.feeService,
+          bankFee: k.feeBank,
+          citadelFee: k.feeLegal,
+          escrowAmount: k.escrowAmount,
+          _tenkPart: i + 1,
+          _tenkOf: kids.length,
+        });
+      });
+    }
+    return out;
+  }, [finalRows, skipped, editingRow]);
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8 }}>
@@ -317,18 +363,19 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
             </tr>
           </thead>
           <tbody>
-            {finalRows.map((r) => {
+            {tenKRows.map((r) => {
               const isSkipped = skipped.has(r.index);
               const isEditing = editingRow === r.index;
               const ed = rowEdits[r.index];
               const dateVal = ed?.date ?? r.date.toISOString().slice(0, 10);
               const amtVal = ed?.amount ?? r.weeklyDraftAmount;
+              const isTenkChild = (r._tenkPart ?? 1) > 1;
               return (
                 <tr
-                  key={r.index}
+                  key={`${r.index}-${r._tenkPart ?? 0}`}
                   style={{
                     borderBottom: "1px solid #f3f3f3",
-                    background: isSkipped ? "#f3f2f2" : r._child ? "#d6ecf7" : undefined,
+                    background: isSkipped ? "#f3f2f2" : r._child ? "#d6ecf7" : r._tenkPart ? "#fff6e8" : undefined,
                     opacity: isSkipped ? 0.55 : 1,
                   }}
                 >
@@ -341,7 +388,14 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
                         style={{ height: 28, padding: "0 6px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 12 }}
                       />
                     ) : (
-                      r.date.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
+                      <>
+                        {r.date.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
+                        {r._tenkPart && (
+                          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: "#8a4b00", background: "#ffe8c2", borderRadius: 8, padding: "1px 6px" }}>
+                            {r._tenkPart}/{r._tenkOf} daily
+                          </span>
+                        )}
+                      </>
                     )}
                   </td>
                   <td style={{ padding: "8px 10px", textDecoration: isSkipped ? "line-through" : undefined }}>
@@ -369,6 +423,7 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
                     {isSkipped ? "Skipped" : r.status}
                   </td>
                   <td style={{ padding: "8px 10px", position: "relative" }}>
+                    {isTenkChild ? null : (
                     <button
                       onClick={() => setActionMenuRow((cur) => (cur === r.index ? null : r.index))}
                       aria-label="Row actions"
@@ -376,7 +431,8 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
                     >
                       ▾
                     </button>
-                    {actionMenuRow === r.index && (
+                    )}
+                    {actionMenuRow === r.index && !isTenkChild && (
                       <div
                         style={{
                           position: "absolute",
