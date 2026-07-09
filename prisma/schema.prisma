@@ -1385,12 +1385,30 @@ model Draft {
   debitSchedule   DebitSchedule? @relation(fields: [debitScheduleId], references: [id])
   scheduledDate   DateTime
   amount          Float
-  status          String         @default("SCHEDULED") // SCHEDULED | PROCESSING | SUCCESS | FAILED | RETRYING | CANCELLED
+  status          String         @default("SCHEDULED") // SCHEDULED | PROCESSING | SUCCESS | FAILED | RETRYING | CANCELLED | SKIPPED
   attemptNumber   Int            @default(1)
   maxAttempts     Int            @default(3)
   parentDraftId   String?
   parentDraft     Draft?         @relation("DraftRetries", fields: [parentDraftId], references: [id])
   retries         Draft[]        @relation("DraftRetries")
+
+  // ---- Flexible payments engine (docs/superpowers/specs/2026-07-09-flexible-payments-design.md) ----
+  // Per-draft fee breakdown (also feeds processor payloads + payment summaries).
+  feeRetainer  Float @default(0)
+  feeProgram   Float @default(0)
+  feeSetup     Float @default(0)
+  feeService   Float @default(0) // charged once per week - first split child only
+  feeBank      Float @default(0)
+  feeLegal     Float @default(0) // Citadel/Victory
+  escrowAmount Float @default(0)
+  // $10K split grouping: children of one logical payment share a splitGroupId.
+  splitGroupId String?
+  splitIndex   Int?
+  // SCHEDULED = generated from the plan; MANUAL = ad-hoc "charge now".
+  kind String @default("SCHEDULED")
+  // Merchant sync queue: mutations mark PENDING; the processor client drains.
+  processorSyncStatus String    @default("NOT_SYNCED") // NOT_SYNCED | PENDING | SYNCED | FAILED
+  skippedAt           DateTime?
 
   // Processor data
   processorReference String?
