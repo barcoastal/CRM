@@ -170,6 +170,8 @@ export async function drainSasQueue(opts?: { programPlanId?: string }): Promise<
   const drafts = (await prisma.draft.findMany({
     where: {
       processorSyncStatus: "PENDING",
+      // RAM-enrolled accounts drain through ram-outbound instead.
+      programPlan: { account: { externalRamId: null } },
       ...(opts?.programPlanId ? { programPlanId: opts.programPlanId } : {}),
     },
     include: { programPlan: { include: { account: { select: { id: true, sfId: true, externalSasId: true } } } } },

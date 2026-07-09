@@ -118,6 +118,14 @@ async function ramCall(bodyElement: string, methodHeader: string, innerXml: stri
   return xml;
 }
 
+/** Transport for the outbound draft sync (ram-outbound.ts). */
+export const ramTransport = {
+  call: ramCall,
+  session: () => getSessionId(),
+  escape: escapeXml,
+  extract: extractAll,
+};
+
 async function getSessionId(): Promise<string> {
   if (cachedSession && cachedSession.expiresAt > Date.now()) return cachedSession.sessionId;
   const { apiKey } = await getCreds();

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
-import { drainSasQueue, sasOutboundMode } from "@/lib/payment-processors/sas-outbound";
+import { drainProcessorQueues } from "@/lib/payment-processors/outbound";
+import { sasOutboundMode } from "@/lib/payment-processors/sas-outbound";
+import { ramOutboundMode } from "@/lib/payment-processors/ram-outbound";
 
 /**
  * Outbound processor push - drains drafts with processorSyncStatus=PENDING.
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest) {
   if (!(await authorized(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const programPlanId = new URL(request.url).searchParams.get("programPlanId") ?? undefined;
   try {
-    const result = await drainSasQueue({ programPlanId });
+    const result = await drainProcessorQueues({ programPlanId });
     return NextResponse.json(result);
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Drain failed" }, { status: 500 });
@@ -37,5 +39,5 @@ export async function GET(request: NextRequest) {
     prisma.draft.count({ where: { processorSyncStatus: "PENDING" } }),
     prisma.processorSyncLog.findMany({ orderBy: { createdAt: "desc" }, take: 20 }),
   ]);
-  return NextResponse.json({ mode: sasOutboundMode(), pendingDrafts: pending, recentLogs: logs });
+  return NextResponse.json({ sasMode: sasOutboundMode(), ramMode: ramOutboundMode(), pendingDrafts: pending, recentLogs: logs });
 }

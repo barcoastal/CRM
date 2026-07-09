@@ -13,8 +13,8 @@ const PENDING_STATUSES = ["SCHEDULED", "RETRYING"];
  * UI never waits on SAS. Test mode just journals the payload (DRY_RUN).
  */
 function kickProcessorSync(programPlanId: string): void {
-  void import("@/lib/payment-processors/sas-outbound")
-    .then(({ drainSasQueue }) => drainSasQueue({ programPlanId }))
+  void import("@/lib/payment-processors/outbound")
+    .then(({ drainProcessorQueues }) => drainProcessorQueues({ programPlanId }))
     .catch((e) => console.error("[processor-sync] drain failed:", e instanceof Error ? e.message : e));
 }
 
