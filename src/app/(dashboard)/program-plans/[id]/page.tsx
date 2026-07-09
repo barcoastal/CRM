@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { RecordPage, HeaderActions, StatusPill } from "@/components/slds/record-page";
+import { DraftsTable } from "@/components/program-plans/drafts-table";
 import { Section, FieldGrid } from "@/components/slds/section";
 import { programPlanStatusTone, draftStatusTone, genericTone } from "@/lib/slds/status-tones";
 
@@ -95,32 +96,28 @@ export default async function ProgramPlanDetailPage({ params }: { params: Promis
             </Section>
           )}
 
-          {p.drafts.length > 0 && (
-            <Section title={`Drafts (${p.drafts.length})`}>
-              <table style={{ width: "100%", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #ecebea" }}>
-                    <th style={th}>Scheduled</th>
-                    <th style={{ ...th, textAlign: "right" }}>Amount</th>
-                    <th style={th}>Status</th>
-                    <th style={th}>Attempt</th>
-                    <th style={th}>Return Code</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {p.drafts.map((d) => (
-                    <tr key={d.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                      <td style={td}><Link href={`/drafts/${d.id}`} style={{ color: "#0176d3" }}>{d.scheduledDate.toLocaleDateString()}</Link></td>
-                      <td style={{ ...td, textAlign: "right" }}>${d.amount.toLocaleString()}</td>
-                      <td style={td}><StatusPill label={d.status} tone={draftStatusTone(d.status)} /></td>
-                      <td style={td}>{d.attemptNumber}/{d.maxAttempts}</td>
-                      <td style={td}>{d.returnCode ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Section>
-          )}
+          <Section title={`Drafts (${p.drafts.length})`}>
+            {/* Flexible payments: Skip / Edit amount / Charge Now (spec
+                2026-07-09-flexible-payments-design.md). */}
+            <DraftsTable
+              programPlanId={p.id}
+              drafts={[...p.drafts]
+                .sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime())
+                .map((d) => ({
+                  id: d.id,
+                  scheduledDate: d.scheduledDate.toISOString(),
+                  amount: d.amount,
+                  status: d.status,
+                  attemptNumber: d.attemptNumber,
+                  maxAttempts: d.maxAttempts,
+                  returnCode: d.returnCode,
+                  kind: d.kind,
+                  splitGroupId: d.splitGroupId,
+                  splitIndex: d.splitIndex,
+                  processorSyncStatus: d.processorSyncStatus,
+                }))}
+            />
+          </Section>
 
           {p.fees.length > 0 && (
             <Section title={`Fees (${p.fees.length})`} defaultOpen={false}>
