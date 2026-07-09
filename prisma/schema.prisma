@@ -448,6 +448,8 @@ model Account {
 
   @@index([recordType])
   @@index([stage])
+  @@index([parentAccountId])
+  @@index([primaryContactId])
 }
 
 // ============ DNC / SUPPRESSION LIST (replaces SF SuppressionList + Five9 DNC sync) ============
@@ -726,6 +728,7 @@ model Contact {
   emails                EmailMessage[]           @relation("ContactEmails")
   sms                   SmsMessage[]             @relation("ContactSms")
   cases                 Case[]                   @relation("ContactCases")
+  @@index([primaryAccountId])
 }
 
 model AccountContactRelation {
@@ -739,6 +742,7 @@ model AccountContactRelation {
   createdAt DateTime @default(now())
 
   @@unique([accountId, contactId])
+  @@index([contactId])
 }
 
 model Creditor {
@@ -843,6 +847,7 @@ model Lead {
 
   @@index([recordType])
   @@index([convertedAccountId])
+  @@index([convertedContactId])
 }
 
 // Browser-captured call audio transcribed by Deepgram (post-call). Recorded in
@@ -1101,6 +1106,7 @@ model Opportunity {
 
   @@index([recordType])
   @@index([accountId])
+  @@index([primaryContactId])
 }
 
 // ============ OPPORTUNITY HISTORY (SF Opportunity Field History parity) ============
@@ -1296,6 +1302,7 @@ model DocumentRequest {
 
   @@index([opportunityId])
   @@index([token])
+  @@index([accountId])
 }
 
 // ============ PHASE 3: DEBT OPERATIONS ============
@@ -1712,6 +1719,7 @@ model Case {
   @@index([ownerGroupId])
   @@index([accountId])
   @@index([recordType])
+  @@index([contactId])
 }
 
 model CaseComment {
@@ -1789,6 +1797,7 @@ model EmailMessage {
   @@index([caseId])
   @@index([massEmailId])
   @@index([trackingId])
+  @@index([contactId])
 }
 
 model MassEmail {
@@ -1854,6 +1863,7 @@ model SmsMessage {
   @@index([status])
   @@index([accountId])
   @@index([leadId])
+  @@index([contactId])
 }
 
 model EmailTemplate {
