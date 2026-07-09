@@ -36,7 +36,11 @@ const SOQL: Record<string, string> = {
   // first payment). The full row is also stored as the sfDataJson snapshot so
   // every acctSf() fallback on the account page stays fresh.
   account: `SELECT Id, Name, Phone, Website, Industry, AnnualRevenue, NumberOfEmployees, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry, BillingCounty__c, OwnerId, ParentId, Primary_Contact__c, Client_Status__c, Legal_Status__c, Legal_Network__c, Sync_Status__c, Synced_DateTime__c, Bank_Account_Sync_Status__c, Bank_Name__c, Bank_Routing_Number__c, Bank_Account_Number__c, Bank_Account_Type__c, IsChecking__c, Fee_Paid_In_Full__c, Escrow_Balance__c, Escrow_Balance_Pulled_Date_Time__c, Total_Debt__c, Program_Start_Date__c, Program_End_Date__c, Program_Completion_Stage__c, External_RAM_Id__c, External_SAS_Id__c, External_Citadel_Id__c, Client_Number__c, Lead_Number__c, First_Contract_Signed_Date__c, First_Draft_Date__c, First_Payment_Completed_Date__c, Completed_Draft_Count__c, EIN_Number_Tax_Id__c, SSN__c, Closer__c, Closer_FIrst_Name__c, Collection_Agency__c, Qualified_Financial__c, HIGH_UCC_RISK__c, Status__c, Sub_Disposition__c, Owner_Full_Name__c, Primary_Contact_Name__c, Last_Call__c, Last_Email__c, Last_SMS__c, Last_Contacted_DateTime__c, AccountSource, RecordTypeId, CreatedDate, LastModifiedDate FROM Account`,
-  opportunity: `SELECT Id, Name, StageName, Amount, CloseDate, AccountId, OwnerId, Description, LeadSource, Probability FROM Opportunity`,
+  // Opportunity: identity + the operational fields the record page reads via
+  // oppSf() - the full row is snapshotted into sfDataJson. NOTE: SF "Amount"
+  // is NOT the debt; Total_Debt__c is (mapping Amount->totalDebt once showed
+  // $290 instead of $408K).
+  opportunity: `SELECT Id, Name, StageName, Amount, CloseDate, AccountId, OwnerId, Description, LeadSource, Probability, ExpectedRevenue, IsPrivate, NextStep, CampaignId, RecordTypeId, Total_Debt__c, Current_Total_Debt__c, Lead_Id__c, Phone_Formula__c, Formatted_Phone__c, Phone__c, Email_Formula__c, Email__c, Last_Disposition__c, Last_Disposition_DateTime__c, Lead_Source_Category__c, Preferred_method_of_Contact__c, Timezone__c, Legal_Plan_Required__c, Secured_Party__c, Current_Weekly_Payment__c, Current_Monthly_Payment__c, Weekly_Payment_To_Debt_Ratio__c, Preferred_Language__c, Dialer_Group__c, First_Draft_Date__c, First_Contract_Signed_Date__c, Version_Status__c, Fronter__c, Closer__c, Sub_Disposition__c, Business_Start_Date__c, HIGH_UCC_RISK__c, Call_ASAP__c, Addendum_Required__c, Welcome_Call_Scheduled__c, Type_of_Business__c, Processor_Info__c, Active_Opportunity__c, Verified_Phone_Number__c, Qualified_Financial_Formula__c, First_Payment_Completed__c, First_Payment_Completed_Date__c, Legal_Network__c, Affiliate__c, Last_Contacted_DateTime__c, CreatedDate, LastModifiedDate FROM Opportunity`,
   lead: `SELECT Id, FirstName, LastName, Company, Email, Phone, Status, LeadSource, Industry, AnnualRevenue, OwnerId, IsConverted, ConvertedDate FROM Lead`,
 };
 
@@ -297,6 +301,13 @@ async function migrateOpportunities(headers: string[], rl: readline.Interface): 
   for (const a of accounts) if (a.sfId) accountMap.set(a.sfId, a.id);
   console.log(`[${new Date().toISOString()}] ${accountMap.size} accounts loaded.`);
 
+  // Guard: refuse a stale/partial export (would null-overwrite good data).
+  const requiredOpp = ["Total_Debt__c", "Current_Weekly_Payment__c", "Last_Disposition__c", "Version_Status__c"];
+  const missingOpp = requiredOpp.filter((h) => idx(h) === -1);
+  if (missingOpp.length) {
+    throw new Error(`Opportunity CSV missing operational columns (${missingOpp.join(", ")}) - refusing to import. Delete the CSV and re-export.`);
+  }
+  const col = (h: string): number => idx(h);
   const users = await loadUserMap();
   let batch: Array<Record<string, unknown>> = [];
   let count = 0;
@@ -332,15 +343,36 @@ async function migrateOpportunities(headers: string[], rl: readline.Interface): 
     const sfAccountId = cells[I.AccountId];
     const accountId = sfAccountId ? accountMap.get(sfAccountId) : null;
     if (!accountId) { skipped++; continue; }
+    // Lossless snapshot for oppSf() reads on the record page.
+    const sfData: Record<string, string> = {};
+    headers.forEach((h, i) => {
+      const v = cells[i];
+      if (v !== undefined && v !== "") sfData[h] = v;
+    });
+    const g = (h: string): string => { const i = col(h); return i >= 0 ? cells[i] ?? "" : ""; };
+    const num = (v: string): number | null => (v !== "" && !Number.isNaN(Number(v)) ? Number(v) : null);
+
     batch.push({
       sfId,
       accountId,
       name: cells[I.Name] || "Unnamed Opp",
       stage: cells[I.StageName] || "Working Opportunity",
-      totalDebt: cells[I.Amount] ? Number(cells[I.Amount]) : null,
+      // SF Amount is a separate money field; the DEBT lives in Total_Debt__c.
+      amount: cells[I.Amount] ? Number(cells[I.Amount]) : null,
+      totalDebt: num(g("Total_Debt__c")),
+      currentTotalDebt: num(g("Current_Total_Debt__c")) ?? num(g("Total_Debt__c")),
+      probability: num(g("Probability")),
+      currentWeeklyPayment: num(g("Current_Weekly_Payment__c")),
+      currentMonthlyPayment: num(g("Current_Monthly_Payment__c")),
+      weeklyPaymentToDebtRatio: num(g("Weekly_Payment_To_Debt_Ratio__c")),
+      sfLeadIdText: g("Lead_Id__c") || null,
       expectedCloseDate: cells[I.CloseDate] ? new Date(cells[I.CloseDate]) : null,
+      firstDraftDate: g("First_Draft_Date__c") ? new Date(g("First_Draft_Date__c")) : null,
+      firstContractSignedDateOpp: g("First_Contract_Signed_Date__c") ? new Date(g("First_Contract_Signed_Date__c")) : null,
+      lastContactedAt: g("Last_Contacted_DateTime__c") ? new Date(g("Last_Contacted_DateTime__c")) : null,
       notes: cells[I.Description] || null,
       assignedToId: users.get(cells[I.OwnerId]) ?? null,
+      sfDataJson: JSON.stringify(sfData),
     });
     if (batch.length >= 50) await flush();
   }
