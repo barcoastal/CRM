@@ -48,23 +48,30 @@ const SOQL: Record<string, string> = {
 
 const CSV_PATH = `/tmp/sf-${ENTITY}.csv`;
 
-function exportFromSF(): void {
+async function exportFromSF(): Promise<void> {
   console.log(`[${new Date().toISOString()}] Exporting ${ENTITY} from Salesforce (bulk API)…`);
-  const result = spawnSync(
-    "sf",
-    [
-      "data", "export", "bulk",
-      "--target-org", "coastal",
-      "--query", SOQL[ENTITY],
-      "--result-format", "csv",
-      "--output-file", CSV_PATH,
-      "--wait", "120",
-    ],
-    { stdio: "inherit" },
-  );
-  if (result.status !== 0) {
-    console.error("SF export failed");
-    process.exit(1);
+  if (process.env.SF_AUTH_URL) {
+    // Containerized path (Railway): direct Bulk API 2.0 REST - no sf CLI.
+    const { bulkQueryToCsv } = await import("../src/lib/sf-sync/bulk-export");
+    await bulkQueryToCsv(SOQL[ENTITY], CSV_PATH);
+  } else {
+    // Local path: authenticated sf CLI.
+    const result = spawnSync(
+      "sf",
+      [
+        "data", "export", "bulk",
+        "--target-org", "coastal",
+        "--query", SOQL[ENTITY],
+        "--result-format", "csv",
+        "--output-file", CSV_PATH,
+        "--wait", "120",
+      ],
+      { stdio: "inherit" },
+    );
+    if (result.status !== 0) {
+      console.error("SF export failed");
+      process.exit(1);
+    }
   }
   const size = fs.statSync(CSV_PATH).size;
   console.log(`[${new Date().toISOString()}] CSV written: ${(size / 1024 / 1024).toFixed(1)} MB`);
@@ -453,7 +460,7 @@ async function main() {
   // the import mapped columns missing from an old export to null and wiped
   // operational fields across all accounts. Fresh export or nothing.
   if (fs.existsSync(CSV_PATH)) fs.unlinkSync(CSV_PATH);
-  exportFromSF();
+  await exportFromSF();
 
   const stream = fs.createReadStream(CSV_PATH);
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
