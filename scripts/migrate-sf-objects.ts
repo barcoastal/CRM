@@ -18,7 +18,6 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import readline from "node:readline";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 20 });
 const prisma = new PrismaClient({ adapter, log: ["warn", "error"] });
@@ -77,22 +76,46 @@ async function exportFromSF(): Promise<void> {
   console.log(`[${new Date().toISOString()}] CSV written: ${(size / 1024 / 1024).toFixed(1)} MB`);
 }
 
-function parseLine(line: string): string[] {
-  const out: string[] = [];
+/**
+ * Streaming RFC-4180 CSV record reader. Handles quoted fields containing
+ * commas, escaped quotes ("") AND NEWLINES - the line-based parser this
+ * replaces split records at embedded newlines (long-text SF fields like
+ * Description), which polluted the DB with garbage rows.
+ */
+export async function* csvRecords(path: string): AsyncGenerator<string[]> {
+  const stream = fs.createReadStream(path, { encoding: "utf8", highWaterMark: 1 << 20 });
   let cur = "";
+  let fields: string[] = [];
   let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (inQuotes) {
-      if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-      else if (c === '"') inQuotes = false;
-      else cur += c;
-    } else if (c === ",") { out.push(cur); cur = ""; }
-    else if (c === '"') inQuotes = true;
-    else cur += c;
+  let pendingQuote = false;
+
+  for await (const chunk of stream as AsyncIterable<string>) {
+    for (let i = 0; i < chunk.length; i++) {
+      const c = chunk[i];
+      if (pendingQuote) {
+        pendingQuote = false;
+        if (c === '"') { cur += '"'; continue; } // escaped quote
+        inQuotes = false; // closing quote; fall through to handle c normally
+      }
+      if (inQuotes) {
+        if (c === '"') pendingQuote = true;
+        else cur += c;
+        continue;
+      }
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { fields.push(cur); cur = ""; }
+      else if (c === "\n") {
+        fields.push(cur);
+        cur = "";
+        if (fields.length > 1 || fields[0] !== "") yield fields;
+        fields = [];
+      } else if (c !== "\r") cur += c;
+    }
   }
-  out.push(cur);
-  return out;
+  if (cur !== "" || fields.length > 0) {
+    fields.push(cur);
+    if (fields.length > 1 || fields[0] !== "") yield fields;
+  }
 }
 
 /** SF user 18-char Id -> CRM user.id (User.sfId populated by backfill-user-sfid.ts). */
@@ -123,7 +146,7 @@ async function loadContactMap(): Promise<Map<string, string>> {
   return m;
 }
 
-async function migrateContacts(headers: string[], rl: readline.Interface): Promise<void> {
+async function migrateContacts(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
   const idx = (h: string) => headers.indexOf(h);
   const I = {
     Id: idx("Id"), FirstName: idx("FirstName"), LastName: idx("LastName"),
@@ -157,11 +180,9 @@ async function migrateContacts(headers: string[], rl: readline.Interface): Promi
     if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] Contact: ${count} imported`);
   }
 
-  for await (const line of rl) {
-    if (!line.trim()) continue;
-    const cells = parseLine(line);
+  for await (const cells of records) {
     const sfId = cells[I.Id];
-    if (!sfId) continue;
+    if (!sfId || !/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue; // skip malformed rows
     const firstName = cells[I.FirstName] || "";
     const lastName = cells[I.LastName] || "Unknown";
     batch.push({
@@ -184,7 +205,7 @@ async function migrateContacts(headers: string[], rl: readline.Interface): Promi
   console.log(`[${new Date().toISOString()}] DONE Contact: ${count} total`);
 }
 
-async function migrateAccounts(headers: string[], rl: readline.Interface): Promise<void> {
+async function migrateAccounts(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
   const idx = (h: string) => headers.indexOf(h);
   // Guard: if the CSV lacks the operational columns (stale/partial export),
   // ABORT - importing would overwrite good data with nulls.
@@ -236,11 +257,9 @@ async function migrateAccounts(headers: string[], rl: readline.Interface): Promi
   const accounts = await loadAccountMap();
   const contacts = await loadContactMap();
 
-  for await (const line of rl) {
-    if (!line.trim()) continue;
-    const cells = parseLine(line);
+  for await (const cells of records) {
     const sfId = cells[I.Id];
-    if (!sfId) continue;
+    if (!sfId || !/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue; // skip malformed rows
 
     // Lossless snapshot of the whole selected row.
     const sfData: Record<string, string> = {};
@@ -297,7 +316,7 @@ async function migrateAccounts(headers: string[], rl: readline.Interface): Promi
   console.log(`[${new Date().toISOString()}] DONE Account: ${count} total`);
 }
 
-async function migrateOpportunities(headers: string[], rl: readline.Interface): Promise<void> {
+async function migrateOpportunities(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
   const idx = (h: string) => headers.indexOf(h);
   const I = {
     Id: idx("Id"), Name: idx("Name"), StageName: idx("StageName"), Amount: idx("Amount"),
@@ -344,11 +363,9 @@ async function migrateOpportunities(headers: string[], rl: readline.Interface): 
     if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] Opportunity: ${count} imported, ${skipped} skipped`);
   }
 
-  for await (const line of rl) {
-    if (!line.trim()) continue;
-    const cells = parseLine(line);
+  for await (const cells of records) {
     const sfId = cells[I.Id];
-    if (!sfId) continue;
+    if (!sfId || !/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue; // skip malformed rows
     const sfAccountId = cells[I.AccountId];
     const accountId = sfAccountId ? accountMap.get(sfAccountId) : null;
     if (!accountId) { skipped++; continue; }
@@ -389,7 +406,7 @@ async function migrateOpportunities(headers: string[], rl: readline.Interface): 
   console.log(`[${new Date().toISOString()}] DONE Opportunity: ${count} total, ${skipped} skipped (no matching Account)`);
 }
 
-async function migrateLeads(headers: string[], rl: readline.Interface): Promise<void> {
+async function migrateLeads(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
   const idx = (h: string) => headers.indexOf(h);
   const I = {
     Id: idx("Id"), FirstName: idx("FirstName"), LastName: idx("LastName"), Company: idx("Company"),
@@ -429,11 +446,9 @@ async function migrateLeads(headers: string[], rl: readline.Interface): Promise<
     if (count % 50000 < 100) console.log(`[${new Date().toISOString()}] Lead: ${count} imported`);
   }
 
-  for await (const line of rl) {
-    if (!line.trim()) continue;
-    const cells = parseLine(line);
+  for await (const cells of records) {
     const sfId = cells[I.Id];
-    if (!sfId) continue;
+    if (!sfId || !/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue; // skip malformed rows
     const firstName = cells[I.FirstName] || "";
     const lastName = cells[I.LastName] || "Unknown";
     batch.push({
@@ -462,24 +477,21 @@ async function main() {
   if (fs.existsSync(CSV_PATH)) fs.unlinkSync(CSV_PATH);
   await exportFromSF();
 
-  const stream = fs.createReadStream(CSV_PATH);
-  const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
-  const iter = rl[Symbol.asyncIterator]();
-  const first = await iter.next();
+  const gen = csvRecords(CSV_PATH);
+  const first = await gen.next();
   if (first.done) {
     console.error("Empty CSV");
     process.exit(1);
   }
-  const headers = parseLine(first.value as string);
+  const headers = first.value;
   console.log(`Headers: ${headers.join(", ")}`);
 
-  // wrap remainder as async iterable
-  const rest: AsyncIterable<string> = { [Symbol.asyncIterator]: () => iter };
+  const rest: AsyncIterable<string[]> = { [Symbol.asyncIterator]: () => gen };
 
-  if (ENTITY === "contact") await migrateContacts(headers, rest as readline.Interface);
-  if (ENTITY === "account") await migrateAccounts(headers, rest as readline.Interface);
-  if (ENTITY === "opportunity") await migrateOpportunities(headers, rest as readline.Interface);
-  if (ENTITY === "lead") await migrateLeads(headers, rest as readline.Interface);
+  if (ENTITY === "contact") await migrateContacts(headers, rest);
+  if (ENTITY === "account") await migrateAccounts(headers, rest);
+  if (ENTITY === "opportunity") await migrateOpportunities(headers, rest);
+  if (ENTITY === "lead") await migrateLeads(headers, rest);
 
   await prisma.$disconnect();
 }
