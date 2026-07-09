@@ -9,6 +9,7 @@ import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activit
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { RelatedList } from "@/components/slds/related-list";
 import { AccountTabs } from "@/components/accounts/account-tabs";
+import { DraftsTable } from "@/components/program-plans/drafts-table";
 import { AccountHeaderButtons } from "@/components/accounts/account-header-buttons";
 import { BankDetailsCard } from "@/components/accounts/bank-details-card";
 import { HealthCheckCard } from "@/components/accounts/health-check-card";
@@ -51,7 +52,10 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         orderBy: { createdAt: "desc" },
       },
       parentAccount: { select: { id: true, name: true } },
-      programPlans: { orderBy: { startDate: "desc" } },
+      programPlans: {
+        orderBy: { startDate: "desc" },
+        include: { drafts: { orderBy: { scheduledDate: "asc" }, take: 100 } },
+      },
       documents: { include: { uploadedBy: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" } },
       tasks: { orderBy: { createdAt: "desc" }, take: 50 },
       events: { orderBy: { startAt: "desc" }, take: 30 },
@@ -496,6 +500,50 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     </Section>
   );
 
+  // Live payment schedule with the flexible-payments actions (skip, edit
+  // amount, charge now) - same table as the program-plan page, so the whole
+  // schedule is workable without leaving the account.
+  const paymentsPanel = (
+    <>
+      {account.programPlans.length === 0 ? (
+        <Section title="Payments">
+          <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>
+            No program plan yet. Send and sign a contract to create one.
+          </div>
+        </Section>
+      ) : (
+        account.programPlans.map((plan) => (
+          <Section
+            key={plan.id}
+            title={`Payments — ${plan.recordType.replace(/_/g, " ")} (${plan.status}) · $${plan.monthlyAmount.toLocaleString()}/mo × ${plan.termMonths}mo`}
+          >
+            <div style={{ marginBottom: 8, fontSize: 12 }}>
+              <Link href={`/program-plans/${plan.id}`} style={{ color: "#0176d3" }}>
+                Open Program Plan
+              </Link>
+            </div>
+            <DraftsTable
+              programPlanId={plan.id}
+              drafts={plan.drafts.map((d) => ({
+                id: d.id,
+                scheduledDate: d.scheduledDate.toISOString(),
+                amount: d.amount,
+                status: d.status,
+                attemptNumber: d.attemptNumber,
+                maxAttempts: d.maxAttempts,
+                returnCode: d.returnCode,
+                kind: d.kind,
+                splitGroupId: d.splitGroupId,
+                splitIndex: d.splitIndex,
+                processorSyncStatus: d.processorSyncStatus,
+              }))}
+            />
+          </Section>
+        ))
+      )}
+    </>
+  );
+
   const activitiesPanel = (
     <Section title={`Activities (${activity.length})`}>
       {activity.length === 0 ? (
@@ -793,6 +841,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         <AccountTabs
           panels={{
             Details: detailsPanel,
+            Payments: paymentsPanel,
             "Payment Calculator": calcPanel,
             Activities: activitiesPanel,
             Documents: documentsPanel,

@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 
 export type AccountTabKey =
   | "Details"
+  | "Payments"
   | "Payment Calculator"
   | "Activities"
   | "Documents"
@@ -23,6 +24,7 @@ export type AccountTabKey =
 // a footer link on the Details tab.
 const PRIMARY_TABS: AccountTabKey[] = [
   "Details",
+  "Payments",
   "Payment Calculator",
   "Activities",
   "Documents",
