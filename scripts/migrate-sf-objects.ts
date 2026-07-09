@@ -35,7 +35,7 @@ const SOQL: Record<string, string> = {
   // read (client status, program dates, processor ids, bank, escrow snapshot,
   // first payment). The full row is also stored as the sfDataJson snapshot so
   // every acctSf() fallback on the account page stays fresh.
-  account: `SELECT Id, Name, Phone, Website, Industry, AnnualRevenue, NumberOfEmployees, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry, BillingCounty__c, OwnerId, ParentId, Client_Status__c, Legal_Status__c, Legal_Network__c, Sync_Status__c, Synced_DateTime__c, Bank_Account_Sync_Status__c, Bank_Name__c, Bank_Routing_Number__c, Bank_Account_Number__c, Bank_Account_Type__c, IsChecking__c, Fee_Paid_In_Full__c, Escrow_Balance__c, Escrow_Balance_Pulled_Date_Time__c, Total_Debt__c, Program_Start_Date__c, Program_End_Date__c, Program_Completion_Stage__c, External_RAM_Id__c, External_SAS_Id__c, External_Citadel_Id__c, Client_Number__c, Lead_Number__c, First_Contract_Signed_Date__c, First_Draft_Date__c, First_Payment_Completed_Date__c, Completed_Draft_Count__c, EIN_Number_Tax_Id__c, SSN__c, Closer__c, Closer_FIrst_Name__c, Collection_Agency__c, Qualified_Financial__c, HIGH_UCC_RISK__c, Status__c, Sub_Disposition__c, Owner_Full_Name__c, Primary_Contact_Name__c, Last_Call__c, Last_Email__c, Last_SMS__c, Last_Contacted_DateTime__c, AccountSource, RecordTypeId, CreatedDate, LastModifiedDate FROM Account`,
+  account: `SELECT Id, Name, Phone, Website, Industry, AnnualRevenue, NumberOfEmployees, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry, BillingCounty__c, OwnerId, ParentId, Primary_Contact__c, Client_Status__c, Legal_Status__c, Legal_Network__c, Sync_Status__c, Synced_DateTime__c, Bank_Account_Sync_Status__c, Bank_Name__c, Bank_Routing_Number__c, Bank_Account_Number__c, Bank_Account_Type__c, IsChecking__c, Fee_Paid_In_Full__c, Escrow_Balance__c, Escrow_Balance_Pulled_Date_Time__c, Total_Debt__c, Program_Start_Date__c, Program_End_Date__c, Program_Completion_Stage__c, External_RAM_Id__c, External_SAS_Id__c, External_Citadel_Id__c, Client_Number__c, Lead_Number__c, First_Contract_Signed_Date__c, First_Draft_Date__c, First_Payment_Completed_Date__c, Completed_Draft_Count__c, EIN_Number_Tax_Id__c, SSN__c, Closer__c, Closer_FIrst_Name__c, Collection_Agency__c, Qualified_Financial__c, HIGH_UCC_RISK__c, Status__c, Sub_Disposition__c, Owner_Full_Name__c, Primary_Contact_Name__c, Last_Call__c, Last_Email__c, Last_SMS__c, Last_Contacted_DateTime__c, AccountSource, RecordTypeId, CreatedDate, LastModifiedDate FROM Account`,
   opportunity: `SELECT Id, Name, StageName, Amount, CloseDate, AccountId, OwnerId, Description, LeadSource, Probability FROM Opportunity`,
   lead: `SELECT Id, FirstName, LastName, Company, Email, Phone, Status, LeadSource, Industry, AnnualRevenue, OwnerId, IsConverted, ConvertedDate FROM Lead`,
 };
@@ -82,13 +82,32 @@ function parseLine(line: string): string[] {
   return out;
 }
 
-async function userMap(): Promise<Map<string, string>> {
-  // SF user 18-char Id → CRM user.id (best effort by stored sfId if we had it,
-  // OR by email. Imported users have email; we map by email.)
-  const users = await prisma.user.findMany({ select: { id: true, email: true } });
-  // We can't map SF ownerId → CRM user without storing the SF id on the user.
-  // For now, return empty — owners come in as null. Future: import users with sfId.
-  return new Map();
+/** SF user 18-char Id -> CRM user.id (User.sfId populated by backfill-user-sfid.ts). */
+async function loadUserMap(): Promise<Map<string, string>> {
+  const users = await prisma.user.findMany({
+    where: { sfId: { not: null } },
+    select: { id: true, sfId: true },
+  });
+  const m = new Map<string, string>();
+  for (const u of users) if (u.sfId) m.set(u.sfId, u.id);
+  console.log(`[${new Date().toISOString()}] ${m.size} users mapped (sfId -> id)`);
+  return m;
+}
+
+/** SF account Id -> CRM account.id (for parent/primary-account links). */
+async function loadAccountMap(): Promise<Map<string, string>> {
+  const rows = await prisma.account.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
+  const m = new Map<string, string>();
+  for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
+  return m;
+}
+
+/** SF contact Id -> CRM contact.id (for account primary-contact links). */
+async function loadContactMap(): Promise<Map<string, string>> {
+  const rows = await prisma.contact.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
+  const m = new Map<string, string>();
+  for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
+  return m;
 }
 
 async function migrateContacts(headers: string[], rl: readline.Interface): Promise<void> {
@@ -97,8 +116,11 @@ async function migrateContacts(headers: string[], rl: readline.Interface): Promi
     Id: idx("Id"), FirstName: idx("FirstName"), LastName: idx("LastName"),
     Email: idx("Email"), Phone: idx("Phone"), MobilePhone: idx("MobilePhone"),
     Title: idx("Title"), Birthdate: idx("Birthdate"),
+    AccountId: idx("AccountId"), OwnerId: idx("OwnerId"),
   };
-  let batch: Array<{ sfId: string; firstName: string; lastName: string; fullName: string; email?: string | null; phone?: string | null; mobilePhone?: string | null; title?: string | null; birthdate?: Date | null; isActive: boolean }> = [];
+  const users = await loadUserMap();
+  const accounts = await loadAccountMap();
+  let batch: Array<Record<string, unknown>> = [];
   let count = 0;
 
   async function flush() {
@@ -106,9 +128,9 @@ async function migrateContacts(headers: string[], rl: readline.Interface): Promi
     const results = await Promise.allSettled(
       batch.map((c) =>
         prisma.contact.upsert({
-          where: { sfId: c.sfId },
+          where: { sfId: c.sfId as string },
           update: c,
-          create: c,
+          create: c as never,
         }),
       ),
     );
@@ -140,6 +162,8 @@ async function migrateContacts(headers: string[], rl: readline.Interface): Promi
       title: cells[I.Title] || null,
       birthdate: cells[I.Birthdate] ? new Date(cells[I.Birthdate]) : null,
       isActive: true,
+      ownerId: users.get(cells[I.OwnerId]) ?? null,
+      primaryAccountId: accounts.get(cells[I.AccountId]) ?? null,
     });
     if (batch.length >= 50) await flush();
   }
@@ -194,6 +218,11 @@ async function migrateAccounts(headers: string[], rl: readline.Interface): Promi
   const n = (v: string): number | null => (v !== "" && !Number.isNaN(Number(v)) ? Number(v) : null);
   const b = (v: string): boolean => v.toLowerCase() === "true";
 
+  // Relationship maps: SF ids -> CRM ids for owner / parent / primary contact.
+  const users = await loadUserMap();
+  const accounts = await loadAccountMap();
+  const contacts = await loadContactMap();
+
   for await (const line of rl) {
     if (!line.trim()) continue;
     const cells = parseLine(line);
@@ -242,6 +271,11 @@ async function migrateAccounts(headers: string[], rl: readline.Interface): Promi
       highUccRisk: b(col("HIGH_UCC_RISK__c", cells)),
       // SF Health Check "First Payment Received" = this date being set.
       firstPaymentReceived: !!col("First_Payment_Completed_Date__c", cells),
+      // Relationships (SF ids resolved to CRM ids; unresolved stay null and
+      // converge on the next nightly run).
+      ownerId: users.get(col("OwnerId", cells)) ?? null,
+      parentAccountId: accounts.get(col("ParentId", cells)) ?? null,
+      primaryContactId: contacts.get(col("Primary_Contact__c", cells)) ?? null,
       sfDataJson: JSON.stringify(sfData),
     });
     if (batch.length >= 50) await flush();
@@ -255,6 +289,7 @@ async function migrateOpportunities(headers: string[], rl: readline.Interface): 
   const I = {
     Id: idx("Id"), Name: idx("Name"), StageName: idx("StageName"), Amount: idx("Amount"),
     CloseDate: idx("CloseDate"), AccountId: idx("AccountId"), Description: idx("Description"),
+    OwnerId: idx("OwnerId"),
   };
   console.log(`[${new Date().toISOString()}] Loading account map…`);
   const accountMap = new Map<string, string>();
@@ -262,23 +297,31 @@ async function migrateOpportunities(headers: string[], rl: readline.Interface): 
   for (const a of accounts) if (a.sfId) accountMap.set(a.sfId, a.id);
   console.log(`[${new Date().toISOString()}] ${accountMap.size} accounts loaded.`);
 
-  let batch: Array<{ sfId: string; accountId: string; name: string; stage: string; totalDebt: number | null; expectedCloseDate: Date | null; notes: string | null }> = [];
+  const users = await loadUserMap();
+  let batch: Array<Record<string, unknown>> = [];
   let count = 0;
   let skipped = 0;
 
   async function flush() {
     if (batch.length === 0) return;
-    try {
-      const res = await prisma.opportunity.createMany({
-        data: batch,
-        skipDuplicates: true,
-      });
-      count += res.count;
-    } catch (e: unknown) {
-      console.error(`[${new Date().toISOString()}] batch fail:`, e instanceof Error ? e.message : "fail");
+    // UPSERT (not createMany/skipDuplicates) so stage/amount/owner changes in
+    // SF refresh existing CRM deals nightly, not just brand-new ones.
+    const results = await Promise.allSettled(
+      batch.map((o) =>
+        prisma.opportunity.upsert({
+          where: { sfId: o.sfId as string },
+          update: o,
+          create: o as never,
+        }),
+      ),
+    );
+    const failures = results.filter((r) => r.status === "rejected");
+    if (failures.length > 0) {
+      console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} opp upserts failed:`, (failures[0] as PromiseRejectedResult).reason?.message);
     }
+    count += batch.length;
     batch = [];
-    if (count % 5000 < 1000) console.log(`[${new Date().toISOString()}] Opportunity: ${count} imported, ${skipped} skipped`);
+    if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] Opportunity: ${count} imported, ${skipped} skipped`);
   }
 
   for await (const line of rl) {
@@ -297,8 +340,9 @@ async function migrateOpportunities(headers: string[], rl: readline.Interface): 
       totalDebt: cells[I.Amount] ? Number(cells[I.Amount]) : null,
       expectedCloseDate: cells[I.CloseDate] ? new Date(cells[I.CloseDate]) : null,
       notes: cells[I.Description] || null,
+      assignedToId: users.get(cells[I.OwnerId]) ?? null,
     });
-    if (batch.length >= 1000) await flush();
+    if (batch.length >= 50) await flush();
   }
   await flush();
   console.log(`[${new Date().toISOString()}] DONE Opportunity: ${count} total, ${skipped} skipped (no matching Account)`);
@@ -310,24 +354,32 @@ async function migrateLeads(headers: string[], rl: readline.Interface): Promise<
     Id: idx("Id"), FirstName: idx("FirstName"), LastName: idx("LastName"), Company: idx("Company"),
     Email: idx("Email"), Phone: idx("Phone"), Status: idx("Status"), LeadSource: idx("LeadSource"),
     Industry: idx("Industry"), AnnualRevenue: idx("AnnualRevenue"), IsConverted: idx("IsConverted"),
-    ConvertedDate: idx("ConvertedDate"),
+    ConvertedDate: idx("ConvertedDate"), OwnerId: idx("OwnerId"),
   };
+  const users = await loadUserMap();
   let batch: Array<Record<string, unknown>> = [];
   let count = 0;
 
   async function flush() {
     if (batch.length === 0) return;
-    try {
-      const res = await prisma.lead.createMany({
-        data: batch as never[],
-        skipDuplicates: true,
-      });
-      count += res.count;
-    } catch (e: unknown) {
-      console.error(`[${new Date().toISOString()}] lead batch fail:`, e instanceof Error ? e.message : "fail");
+    // Upsert so status/owner changes in SF refresh existing leads (slow on the
+    // full 600K table - runs on the mini overnight).
+    const results = await Promise.allSettled(
+      batch.map((l) =>
+        prisma.lead.upsert({
+          where: { sfId: l.sfId as string },
+          update: l,
+          create: l as never,
+        }),
+      ),
+    );
+    const failures = results.filter((r) => r.status === "rejected");
+    if (failures.length > 0) {
+      console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} lead upserts failed:`, (failures[0] as PromiseRejectedResult).reason?.message);
     }
+    count += batch.length;
     batch = [];
-    if (count % 50000 < 1000) console.log(`[${new Date().toISOString()}] Lead: ${count} imported`);
+    if (count % 50000 < 100) console.log(`[${new Date().toISOString()}] Lead: ${count} imported`);
   }
 
   for await (const line of rl) {
@@ -347,8 +399,9 @@ async function migrateLeads(headers: string[], rl: readline.Interface): Promise<
       source: cells[I.LeadSource] || null,
       industry: cells[I.Industry] || null,
       annualRevenue: cells[I.AnnualRevenue] ? Number(cells[I.AnnualRevenue]) : null,
+      assignedToId: users.get(cells[I.OwnerId]) ?? null,
     });
-    if (batch.length >= 1000) await flush();
+    if (batch.length >= 50) await flush();
   }
   await flush();
   console.log(`[${new Date().toISOString()}] DONE Lead: ${count} total`);
