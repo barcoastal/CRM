@@ -1340,6 +1340,9 @@ model ProgramPlan {
   signedDocumentUrl String?
   notes             String?
 
+  // SAS debit-schedule id returned by SetDebitSchedule (SF: Debit_Schedule_Id__c)
+  externalDebitScheduleId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1410,6 +1413,10 @@ model Draft {
   processorSyncStatus String    @default("NOT_SYNCED") // NOT_SYNCED | PENDING | SYNCED | FAILED
   skippedAt           DateTime?
 
+  // Processor-side draft ids (SF: External_SAS_Id__c / External_RAM_Id__c)
+  externalSasId String?
+  externalRamId String?
+
   // Processor data
   processorReference String?
   returnCode         String? // ACH return code (R01, R02, etc.) when failed
@@ -1427,6 +1434,23 @@ model Draft {
   @@index([debitScheduleId])
   @@index([status])
   @@index([scheduledDate])
+}
+
+// Every outbound processor call (or test-mode dry run) is journaled here so we
+// can audit exactly what was (or would be) sent before flipping live.
+model ProcessorSyncLog {
+  id        String   @id @default(cuid())
+  provider  String // SAS | RAM
+  method    String // SetDebitSchedule | AddDebits | UpdateDebits | CancelDebits
+  mode      String // TEST | LIVE
+  status    String // DRY_RUN | SUCCESS | FAILED
+  payload   Json
+  response  Json?
+  error     String?
+  draftIds  String[]
+  createdAt DateTime @default(now())
+
+  @@index([provider, createdAt])
 }
 
 model Offer {

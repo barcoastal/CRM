@@ -122,6 +122,26 @@ async function sasCall<T = unknown>(method: string, body: Record<string, unknown
 }
 
 /**
+ * Raw call returning the full SAS envelope (Success, Message, ProcessData,
+ * ID). Used by the outbound draft sync, which needs schedule-level ids and
+ * per-line results rather than just ProcessData rows.
+ */
+export async function sasRawCall(method: string, body: unknown): Promise<SasResponse & { ID?: string | number }> {
+  const { endpoint, apiKey, companyKey, securityKey } = await getCreds();
+  const url = `${endpoint}${endpoint.includes("?") ? "&" : "?"}APIKey=${encodeURIComponent(apiKey)}&CompanyKey=${encodeURIComponent(companyKey)}&Method=${encodeURIComponent(method)}`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (securityKey) headers["X-SecurityKey"] = securityKey;
+  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`SAS ${method} HTTP ${res.status}: ${text.slice(0, 300)}`);
+  try {
+    return JSON.parse(text) as SasResponse & { ID?: string | number };
+  } catch {
+    throw new Error(`SAS ${method} returned non-JSON: ${text.slice(0, 300)}`);
+  }
+}
+
+/**
  * Raw probe of an arbitrary SAS method — returns the full envelope (Success,
  * Message, Records, and the parsed ProcessData) so we can discover the real
  * response shapes before building features. Admin/diagnostic use only.

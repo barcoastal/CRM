@@ -8,6 +8,16 @@ import { planSkip, planAmountEdit, splitDraft, toBusinessDay, nextBusinessDay, M
 
 const PENDING_STATUSES = ["SCHEDULED", "RETRYING"];
 
+/**
+ * Kick the outbound processor push after a mutation - fire-and-forget so the
+ * UI never waits on SAS. Test mode just journals the payload (DRY_RUN).
+ */
+function kickProcessorSync(programPlanId: string): void {
+  void import("@/lib/payment-processors/sas-outbound")
+    .then(({ drainSasQueue }) => drainSasQueue({ programPlanId }))
+    .catch((e) => console.error("[processor-sync] drain failed:", e instanceof Error ? e.message : e));
+}
+
 async function pendingDrafts(programPlanId: string) {
   return prisma.draft.findMany({
     where: { programPlanId, status: { in: PENDING_STATUSES } },
@@ -41,6 +51,7 @@ export async function skipDraft(draftId: string, periodDays = 7): Promise<{ shif
       }),
     ),
   ]);
+  kickProcessorSync(draft.programPlanId);
   return { shiftedCount: shifted.length };
 }
 
@@ -142,6 +153,7 @@ export async function editDraftAmount(draftId: string, newAmount: number): Promi
       }
     }
   }
+  kickProcessorSync(draft.programPlanId);
   return { rebalanced: updates.filter(Boolean).length, split };
 }
 
@@ -189,5 +201,6 @@ export async function manualCharge(
       }),
     ),
   );
+  kickProcessorSync(programPlanId);
   return { draftIds: created.map((d) => d.id) };
 }
