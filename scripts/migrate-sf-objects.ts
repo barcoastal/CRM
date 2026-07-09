@@ -31,7 +31,11 @@ if (!ENTITY || !["contact", "account", "opportunity", "lead"].includes(ENTITY)) 
 
 const SOQL: Record<string, string> = {
   contact: `SELECT Id, FirstName, LastName, Email, Phone, MobilePhone, Title, Birthdate, AccountId, OwnerId FROM Contact`,
-  account: `SELECT Id, Name, Phone, Website, Industry, AnnualRevenue, NumberOfEmployees, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry, OwnerId, ParentId FROM Account`,
+  // Account: identity fields + the OPERATIONAL fields the record page + contracts
+  // read (client status, program dates, processor ids, bank, escrow snapshot,
+  // first payment). The full row is also stored as the sfDataJson snapshot so
+  // every acctSf() fallback on the account page stays fresh.
+  account: `SELECT Id, Name, Phone, Website, Industry, AnnualRevenue, NumberOfEmployees, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry, BillingCounty__c, OwnerId, ParentId, Client_Status__c, Legal_Status__c, Legal_Network__c, Sync_Status__c, Synced_DateTime__c, Bank_Account_Sync_Status__c, Bank_Name__c, Bank_Routing_Number__c, Bank_Account_Number__c, Bank_Account_Type__c, IsChecking__c, Fee_Paid_In_Full__c, Escrow_Balance__c, Escrow_Balance_Pulled_Date_Time__c, Total_Debt__c, Program_Start_Date__c, Program_End_Date__c, Program_Completion_Stage__c, External_RAM_Id__c, External_SAS_Id__c, External_Citadel_Id__c, Client_Number__c, Lead_Number__c, First_Contract_Signed_Date__c, First_Draft_Date__c, First_Payment_Completed_Date__c, Completed_Draft_Count__c, EIN_Number_Tax_Id__c, SSN__c, Closer__c, Closer_FIrst_Name__c, Collection_Agency__c, Qualified_Financial__c, HIGH_UCC_RISK__c, Status__c, Sub_Disposition__c, Owner_Full_Name__c, Primary_Contact_Name__c, Last_Call__c, Last_Email__c, Last_SMS__c, Last_Contacted_DateTime__c, AccountSource, RecordTypeId, CreatedDate, LastModifiedDate FROM Account`,
   opportunity: `SELECT Id, Name, StageName, Amount, CloseDate, AccountId, OwnerId, Description, LeadSource, Probability FROM Opportunity`,
   lead: `SELECT Id, FirstName, LastName, Company, Email, Phone, Status, LeadSource, Industry, AnnualRevenue, OwnerId, IsConverted, ConvertedDate FROM Lead`,
 };
@@ -173,11 +177,29 @@ async function migrateAccounts(headers: string[], rl: readline.Interface): Promi
     if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] Account: ${count} imported`);
   }
 
+  // Column index for every selected field so the full row can be snapshotted
+  // into sfDataJson (keeps acctSf() reads on the account page fresh).
+  const col = (h: string, cells: string[]): string => {
+    const i = idx(h);
+    return i >= 0 ? cells[i] ?? "" : "";
+  };
+  const d = (v: string): Date | null => (v ? new Date(v) : null);
+  const n = (v: string): number | null => (v !== "" && !Number.isNaN(Number(v)) ? Number(v) : null);
+  const b = (v: string): boolean => v.toLowerCase() === "true";
+
   for await (const line of rl) {
     if (!line.trim()) continue;
     const cells = parseLine(line);
     const sfId = cells[I.Id];
     if (!sfId) continue;
+
+    // Lossless snapshot of the whole selected row.
+    const sfData: Record<string, string> = {};
+    headers.forEach((h, i) => {
+      const v = cells[i];
+      if (v !== undefined && v !== "") sfData[h] = v;
+    });
+
     batch.push({
       sfId,
       name: cells[I.Name] || "Unnamed Account",
@@ -191,6 +213,29 @@ async function migrateAccounts(headers: string[], rl: readline.Interface): Promi
       billingState: cells[I.BillingState] || null,
       billingZip: cells[I.BillingPostalCode] || null,
       billingCountry: cells[I.BillingCountry] || "US",
+      // Operational fields (SF is source of truth while both systems run).
+      clientStatus: col("Client_Status__c", cells) || "Active",
+      legalStatus: col("Legal_Status__c", cells) || null,
+      bankAccountSyncStatus: col("Bank_Account_Sync_Status__c", cells) || null,
+      bankName: col("Bank_Name__c", cells) || null,
+      bankRoutingNumber: col("Bank_Routing_Number__c", cells) || null,
+      bankAccountNumber: col("Bank_Account_Number__c", cells) || null,
+      bankAccountType: col("Bank_Account_Type__c", cells) || null,
+      feePaidInFull: b(col("Fee_Paid_In_Full__c", cells)),
+      // escrowBalance column is non-nullable (default 0) - fall back to 0.
+      escrowBalance: n(col("Escrow_Balance__c", cells)) ?? 0,
+      escrowPulledAt: d(col("Escrow_Balance_Pulled_Date_Time__c", cells)),
+      currentTotalDebt: n(col("Total_Debt__c", cells)),
+      programStartDate: d(col("Program_Start_Date__c", cells)),
+      programEndDate: d(col("Program_End_Date__c", cells)),
+      externalRamId: col("External_RAM_Id__c", cells) || null,
+      externalSasId: col("External_SAS_Id__c", cells) || null,
+      ein: col("EIN_Number_Tax_Id__c", cells) || null,
+      collectionAgency: col("Collection_Agency__c", cells) || null,
+      highUccRisk: b(col("HIGH_UCC_RISK__c", cells)),
+      // SF Health Check "First Payment Received" = this date being set.
+      firstPaymentReceived: !!col("First_Payment_Completed_Date__c", cells),
+      sfDataJson: JSON.stringify(sfData),
     });
     if (batch.length >= 50) await flush();
   }

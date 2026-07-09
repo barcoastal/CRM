@@ -154,6 +154,17 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     return String(v);
   };
 
+  // SF HealthCheckerAccount parity: "Welcome Call completed" = a COMPLETED
+  // task on the account whose subject contains "Welcome Call Completed".
+  const welcomeCallTask = await prisma.task.count({
+    where: {
+      accountId: account.id,
+      status: "COMPLETED",
+      subject: { contains: "Welcome Call Completed", mode: "insensitive" },
+    },
+  });
+  const welcomeCallDone = account.welcomeCallCompleted || welcomeCallTask > 0;
+
   const phoneVal = account.phone ?? acctSf("Phone");
   const emailVal = account.email ?? acctSf("Email__c");
   const ownerName = account.owner?.name ?? acctSf("Owner_Full_Name__c") ?? acctSf("OwnerName");
@@ -802,8 +813,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           {/* SF Debt Settlement app rail order (verified live):
               Health Check Results, Escrow Balance, Bank Details. */}
           <HealthCheckCard
-            welcomeCallCompleted={account.welcomeCallCompleted}
-            firstPaymentReceived={account.firstPaymentReceived}
+            welcomeCallCompleted={welcomeCallDone}
+            firstPaymentReceived={account.firstPaymentReceived || !!acctSf("First_Payment_Completed_Date__c")}
           />
           <EscrowBalanceCard
             accountId={account.id}

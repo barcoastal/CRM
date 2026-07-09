@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+
+// Auto-refresh the escrow pull when the stored value is older than this.
+// SF pulls the balance live on page load; this matches that behavior without
+// hammering the processor API on every navigation.
+const STALE_MS = 60 * 60 * 1000; // 1 hour
 
 export function EscrowBalanceCard({
   accountId,
@@ -17,16 +22,17 @@ export function EscrowBalanceCard({
 }) {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const autoTried = useRef(false);
 
-  async function refresh() {
+  async function refresh(silent = false) {
     if (!accountId) return;
     setRefreshing(true);
     try {
       const res = await fetch(`/api/accounts/${accountId}/refresh-escrow`, { method: "POST" });
       if (res.ok) {
-        toast.success("Escrow refreshed");
+        if (!silent) toast.success("Escrow refreshed");
         router.refresh();
-      } else {
+      } else if (!silent) {
         const { error } = await res.json().catch(() => ({ error: "Refresh failed" }));
         toast.error(error ?? "Refresh failed");
       }
@@ -34,6 +40,17 @@ export function EscrowBalanceCard({
       setRefreshing(false);
     }
   }
+
+  // SF parity: pull a fresh balance when the page opens with a stale value.
+  useEffect(() => {
+    if (autoTried.current || !accountId) return;
+    const age = pulledAt ? Date.now() - new Date(pulledAt).getTime() : Infinity;
+    if (age > STALE_MS) {
+      autoTried.current = true;
+      void refresh(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountId, pulledAt]);
   return (
     <article
       style={{
@@ -81,7 +98,7 @@ export function EscrowBalanceCard({
         </div>
         {accountId && (
           <button
-            onClick={refresh}
+            onClick={() => refresh()}
             disabled={refreshing}
             title="Pull live balance from payment processor"
             style={{
