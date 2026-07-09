@@ -149,6 +149,13 @@ async function migrateContacts(headers: string[], rl: readline.Interface): Promi
 
 async function migrateAccounts(headers: string[], rl: readline.Interface): Promise<void> {
   const idx = (h: string) => headers.indexOf(h);
+  // Guard: if the CSV lacks the operational columns (stale/partial export),
+  // ABORT - importing would overwrite good data with nulls.
+  const required = ["Client_Status__c", "External_RAM_Id__c", "Program_Start_Date__c", "Escrow_Balance__c", "Bank_Name__c"];
+  const missing = required.filter((h) => idx(h) === -1);
+  if (missing.length) {
+    throw new Error(`Account CSV missing operational columns (${missing.join(", ")}) - refusing to import. Delete ${CSV_PATH} and re-export.`);
+  }
   const I = {
     Id: idx("Id"), Name: idx("Name"), Phone: idx("Phone"), Website: idx("Website"),
     Industry: idx("Industry"), AnnualRevenue: idx("AnnualRevenue"), NumberOfEmployees: idx("NumberOfEmployees"),
@@ -348,11 +355,11 @@ async function migrateLeads(headers: string[], rl: readline.Interface): Promise<
 }
 
 async function main() {
-  if (!fs.existsSync(CSV_PATH)) {
-    exportFromSF();
-  } else {
-    console.log(`[${new Date().toISOString()}] Reusing existing ${CSV_PATH} (delete to re-export)`);
-  }
+  // ALWAYS re-export. Reusing a stale CSV once caused a mass null-overwrite:
+  // the import mapped columns missing from an old export to null and wiped
+  // operational fields across all accounts. Fresh export or nothing.
+  if (fs.existsSync(CSV_PATH)) fs.unlinkSync(CSV_PATH);
+  exportFromSF();
 
   const stream = fs.createReadStream(CSV_PATH);
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
