@@ -462,7 +462,8 @@ async function migrateLeads(headers: string[], records: AsyncIterable<string[]>)
       email: cells[I.Email] || null,
       phone: cells[I.Phone] || "0000000000",
       status: cells[I.Status] || "New",
-      source: cells[I.LeadSource] || null,
+      // source is NOT NULL (default OTHER) - null here kills the whole upsert.
+      source: cells[I.LeadSource] || "OTHER",
       industry: cells[I.Industry] || null,
       annualRevenue: cells[I.AnnualRevenue] ? Number(cells[I.AnnualRevenue]) : null,
       assignedToId: users.get(cells[I.OwnerId]) ?? null,
