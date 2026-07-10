@@ -9,7 +9,7 @@ import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activit
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { RelatedList } from "@/components/slds/related-list";
 import { AccountTabs } from "@/components/accounts/account-tabs";
-import { DraftsTable } from "@/components/program-plans/drafts-table";
+import { LivePaymentGrid } from "@/components/program-plans/live-payment-grid";
 import { AccountHeaderButtons } from "@/components/accounts/account-header-buttons";
 import { BankDetailsCard } from "@/components/accounts/bank-details-card";
 import { HealthCheckCard } from "@/components/accounts/health-check-card";
@@ -478,70 +478,62 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     account.programPlans[0]?.termMonths ||
     (Number.isFinite(sfTerm) && sfTerm > 0 ? sfTerm : 0) ||
     6;
-  const calcPanel = activeOpp ? (
-    <Section title="Reschedule Program">
-      <RescheduleCalculator
-        initial={{
-          totalDebt: activeOpp.totalDebt ?? totalDebt,
-          termMonths: reschedTermMonths,
-          noOfDebts: activeOpp._count?.debts ?? activeOpp.debts.length,
-          currentWeeklyPayment: activeOpp.currentWeeklyPayment ?? 0,
-          firstPaymentDate: (account.programPlans[0]?.firstDraftDate ?? account.programStartDate)
-            ? (account.programPlans[0]?.firstDraftDate ?? account.programStartDate)!.toISOString().slice(0, 10)
-            : new Date().toISOString().slice(0, 10),
-        }}
-      />
-    </Section>
+  // SF model: once a program plan exists, the calculator tab IS the live
+  // payment management grid (real drafts, fee split, running balance,
+  // skip/edit/charge). The projection calculator stays available below it.
+  const livePlan = account.programPlans.find((p) => p.drafts.length > 0);
+  const projectionCalc = activeOpp ? (
+    <RescheduleCalculator
+      initial={{
+        totalDebt: activeOpp.totalDebt ?? totalDebt,
+        termMonths: reschedTermMonths,
+        noOfDebts: activeOpp._count?.debts ?? activeOpp.debts.length,
+        currentWeeklyPayment: activeOpp.currentWeeklyPayment ?? 0,
+        firstPaymentDate: (account.programPlans[0]?.firstDraftDate ?? account.programStartDate)
+          ? (account.programPlans[0]?.firstDraftDate ?? account.programStartDate)!.toISOString().slice(0, 10)
+          : new Date().toISOString().slice(0, 10),
+      }}
+    />
   ) : (
-    <Section title="Reschedule Program">
-      <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>
-        No active opportunity. Create one first to use the payment calculator.
-      </div>
-    </Section>
+    <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>
+      No active opportunity. Create one first to use the payment calculator.
+    </div>
   );
-
-  // Live payment schedule with the flexible-payments actions (skip, edit
-  // amount, charge now) - same table as the program-plan page, so the whole
-  // schedule is workable without leaving the account.
-  const paymentsPanel = (
+  const calcPanel = livePlan ? (
     <>
-      {account.programPlans.length === 0 ? (
-        <Section title="Payments">
-          <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>
-            No program plan yet. Send and sign a contract to create one.
-          </div>
-        </Section>
-      ) : (
-        account.programPlans.map((plan) => (
-          <Section
-            key={plan.id}
-            title={`Payments — ${plan.recordType.replace(/_/g, " ")} (${plan.status}) · $${plan.monthlyAmount.toLocaleString()}/mo × ${plan.termMonths}mo`}
-          >
-            <div style={{ marginBottom: 8, fontSize: 12 }}>
-              <Link href={`/program-plans/${plan.id}`} style={{ color: "#0176d3" }}>
-                Open Program Plan
-              </Link>
-            </div>
-            <DraftsTable
-              programPlanId={plan.id}
-              drafts={plan.drafts.map((d) => ({
-                id: d.id,
-                scheduledDate: d.scheduledDate.toISOString(),
-                amount: d.amount,
-                status: d.status,
-                attemptNumber: d.attemptNumber,
-                maxAttempts: d.maxAttempts,
-                returnCode: d.returnCode,
-                kind: d.kind,
-                splitGroupId: d.splitGroupId,
-                splitIndex: d.splitIndex,
-                processorSyncStatus: d.processorSyncStatus,
-              }))}
-            />
-          </Section>
-        ))
-      )}
+      <Section title={`Payment Schedule — ${livePlan.recordType.replace(/_/g, " ")} (${livePlan.status}) · $${livePlan.monthlyAmount.toLocaleString()}/mo × ${livePlan.termMonths}mo`}>
+        <div style={{ marginBottom: 8, fontSize: 12 }}>
+          <Link href={`/program-plans/${livePlan.id}`} style={{ color: "#0176d3" }}>Open Program Plan</Link>
+        </div>
+        <LivePaymentGrid
+          programPlanId={livePlan.id}
+          drafts={[...livePlan.drafts]
+            .sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime())
+            .map((d) => ({
+              id: d.id,
+              scheduledDate: d.scheduledDate.toISOString(),
+              amount: d.amount,
+              status: d.status,
+              feeProgram: d.feeProgram,
+              feeRetainer: d.feeRetainer,
+              feeSetup: d.feeSetup,
+              feeBank: d.feeBank,
+              feeService: d.feeService,
+              feeLegal: d.feeLegal,
+              escrowAmount: d.escrowAmount,
+              kind: d.kind,
+              splitGroupId: d.splitGroupId,
+              splitIndex: d.splitIndex,
+              processorSyncStatus: d.processorSyncStatus,
+            }))}
+        />
+      </Section>
+      <Section title="Reschedule Program (Projection)" defaultOpen={false}>
+        {projectionCalc}
+      </Section>
     </>
+  ) : (
+    <Section title="Reschedule Program">{projectionCalc}</Section>
   );
 
   const activitiesPanel = (
@@ -841,7 +833,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         <AccountTabs
           panels={{
             Details: detailsPanel,
-            Payments: paymentsPanel,
             "Payment Calculator": calcPanel,
             Activities: activitiesPanel,
             Documents: documentsPanel,

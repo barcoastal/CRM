@@ -157,6 +157,20 @@ export async function editDraftAmount(draftId: string, newAmount: number): Promi
   return { rebalanced: updates.filter(Boolean).length, split };
 }
 
+/** Move a pending draft to a new date (business-day adjusted). */
+export async function rescheduleDraftDate(draftId: string, newDate: Date): Promise<{ scheduledDate: Date }> {
+  const draft = await prisma.draft.findUnique({ where: { id: draftId } });
+  if (!draft) throw new Error("Draft not found");
+  if (!PENDING_STATUSES.includes(draft.status)) throw new Error(`Only pending drafts can be moved (this one is ${draft.status}).`);
+  const scheduledDate = toBusinessDay(newDate);
+  await prisma.draft.update({
+    where: { id: draftId },
+    data: { scheduledDate, processorSyncStatus: "PENDING" },
+  });
+  kickProcessorSync(draft.programPlanId);
+  return { scheduledDate };
+}
+
 /** Ad-hoc "charge now": a one-off MANUAL draft on the next business day. */
 export async function manualCharge(
   programPlanId: string,
