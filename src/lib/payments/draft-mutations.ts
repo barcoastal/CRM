@@ -157,6 +157,93 @@ export async function editDraftAmount(draftId: string, newAmount: number): Promi
   return { rebalanced: updates.filter(Boolean).length, split };
 }
 
+/**
+ * Manually split a pending draft into chosen parts (SF "Edit Split"). Parts
+ * must sum to the draft amount. Money buckets fill parts in order (retainer ->
+ * setup -> program -> escrow); weekly fees (service/bank/legal) ride part 1.
+ * The parent becomes part 1 in place; the rest are new sibling drafts.
+ */
+export async function splitDraftManual(
+  draftId: string,
+  parts: Array<{ date: Date; amount: number }>,
+): Promise<{ draftIds: string[] }> {
+  if (parts.length < 2) throw new Error("A split needs at least 2 parts");
+  if (parts.some((p) => !(p.amount > 0))) throw new Error("Every part needs a positive amount");
+  const draft = await prisma.draft.findUnique({ where: { id: draftId } });
+  if (!draft) throw new Error("Draft not found");
+  if (!PENDING_STATUSES.includes(draft.status)) throw new Error(`Only pending drafts can be split (this one is ${draft.status}).`);
+
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const total = r2(parts.reduce((s, p) => s + p.amount, 0));
+  if (Math.abs(total - draft.amount) > 0.01) {
+    throw new Error(`Parts total $${total.toFixed(2)} but the payment is $${draft.amount.toFixed(2)} - they must match.`);
+  }
+  const weeklyFees = draft.feeService + draft.feeBank + draft.feeLegal;
+  if (parts[0].amount < weeklyFees) {
+    throw new Error(`Part 1 can't go below this week's fees ($${weeklyFees.toFixed(2)}).`);
+  }
+
+  // Fill buckets across the chosen parts, same order as the $10K engine.
+  let remRetainer = r2(draft.feeRetainer);
+  let remSetup = r2(draft.feeSetup);
+  let remProgram = r2(draft.feeProgram);
+  let remEscrow = r2(draft.escrowAmount);
+  const groupId = `split-${draft.id}`;
+  const rows = parts
+    .map((p, i) => ({ ...p, date: toBusinessDay(p.date), i }))
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .map((p, i) => {
+      const feeService = i === 0 ? draft.feeService : 0;
+      const feeBank = i === 0 ? draft.feeBank : 0;
+      const feeLegal = i === 0 ? draft.feeLegal : 0;
+      let capacity = r2(p.amount - feeService - feeBank - feeLegal);
+      const takeRetainer = r2(Math.min(remRetainer, capacity));
+      capacity = r2(capacity - takeRetainer);
+      const takeSetup = r2(Math.min(remSetup, capacity));
+      capacity = r2(capacity - takeSetup);
+      const takeProgram = r2(Math.min(remProgram, capacity));
+      capacity = r2(capacity - takeProgram);
+      const takeEscrow = r2(Math.min(remEscrow, capacity));
+      remRetainer = r2(remRetainer - takeRetainer);
+      remSetup = r2(remSetup - takeSetup);
+      remProgram = r2(remProgram - takeProgram);
+      remEscrow = r2(remEscrow - takeEscrow);
+      return {
+        scheduledDate: p.date,
+        amount: r2(p.amount),
+        feeRetainer: takeRetainer,
+        feeSetup: takeSetup,
+        feeProgram: takeProgram,
+        feeService,
+        feeBank,
+        feeLegal,
+        escrowAmount: takeEscrow,
+        splitGroupId: groupId,
+        splitIndex: i,
+      };
+    });
+
+  const created = await prisma.$transaction([
+    prisma.draft.update({
+      where: { id: draft.id },
+      data: { ...rows[0], processorSyncStatus: "PENDING" },
+    }),
+    ...rows.slice(1).map((r) =>
+      prisma.draft.create({
+        data: {
+          ...r,
+          programPlanId: draft.programPlanId,
+          debitScheduleId: draft.debitScheduleId,
+          kind: draft.kind,
+          processorSyncStatus: "PENDING",
+        },
+      }),
+    ),
+  ]);
+  kickProcessorSync(draft.programPlanId);
+  return { draftIds: created.map((d) => d.id) };
+}
+
 /** Move a pending draft to a new date (business-day adjusted). */
 export async function rescheduleDraftDate(draftId: string, newDate: Date): Promise<{ scheduledDate: Date }> {
   const draft = await prisma.draft.findUnique({ where: { id: draftId } });

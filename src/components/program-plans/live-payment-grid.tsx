@@ -57,6 +57,8 @@ export function LivePaymentGrid({ programPlanId, drafts }: { programPlanId: stri
   const [editKind, setEditKind] = useState<"amount" | "date">("amount");
   const [chargeOpen, setChargeOpen] = useState(false);
   const [chargeAmount, setChargeAmount] = useState("");
+  const [splitFor, setSplitFor] = useState<LiveDraftRow | null>(null);
+  const [splitParts, setSplitParts] = useState<Array<{ date: string; amount: string }>>([]);
   const [busy, setBusy] = useState(false);
 
   async function call(url: string, init: RequestInit, okMsg: string) {
@@ -84,6 +86,31 @@ export function LivePaymentGrid({ programPlanId, drafts }: { programPlanId: stri
     call(`/api/drafts/${id}/date`, { method: "PATCH", body: JSON.stringify({ date: editDate }) }, "Payment date moved");
   const chargeNow = () =>
     call(`/api/program-plans/${programPlanId}/manual-charge`, { method: "POST", body: JSON.stringify({ amount: Number(chargeAmount) }) }, "Manual charge scheduled for the next business day");
+
+  function openSplit(d: LiveDraftRow) {
+    const half = Math.round((d.amount / 2) * 100) / 100;
+    const d1 = d.scheduledDate.slice(0, 10);
+    const next = new Date(d.scheduledDate);
+    next.setDate(next.getDate() + 7);
+    setSplitParts([
+      { date: d1, amount: half.toFixed(2) },
+      { date: next.toISOString().slice(0, 10), amount: (d.amount - half).toFixed(2) },
+    ]);
+    setSplitFor(d);
+    setMenuFor(null);
+  }
+
+  const splitSum = splitParts.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  const splitOk = splitFor != null && Math.abs(splitSum - splitFor.amount) < 0.01 && splitParts.every((p) => p.date && Number(p.amount) > 0);
+
+  const saveSplit = () => {
+    if (!splitFor) return;
+    void call(
+      `/api/drafts/${splitFor.id}/split`,
+      { method: "POST", body: JSON.stringify({ parts: splitParts.map((p) => ({ date: p.date, amount: Number(p.amount) })) }) },
+      "Payment split",
+    ).then(() => setSplitFor(null));
+  };
 
   // Running balance = cumulative escrow, SF-style (skipped/cancelled excluded).
   let run = 0;
@@ -233,6 +260,9 @@ export function LivePaymentGrid({ programPlanId, drafts }: { programPlanId: stri
                             <button style={menuItem} onClick={() => { setEditKind("date"); setEditFor(d.id); setEditDate(d.scheduledDate.slice(0, 10)); setMenuFor(null); }}>
                               Edit date
                             </button>
+                            <button style={menuItem} onClick={() => openSplit(d)}>
+                              Split payment
+                            </button>
                             <button
                               style={{ ...menuItem, color: "#c23934" }}
                               onClick={() => { if (confirm("Skip this payment and push the remaining schedule forward one week?")) void skip(d.id); }}
@@ -264,6 +294,65 @@ export function LivePaymentGrid({ programPlanId, drafts }: { programPlanId: stri
           </tfoot>
         </table>
       </div>
+
+      {splitFor && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "#fff", borderRadius: 8, padding: 20, width: 420, maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#181818", marginBottom: 4 }}>Split Payment</div>
+            <div style={{ fontSize: 12, color: "#444444", marginBottom: 12 }}>
+              {new Date(splitFor.scheduledDate).toLocaleDateString()} · {money(splitFor.amount)} - parts must add up exactly. Weekly fees stay on part 1.
+            </div>
+            {splitParts.map((p, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#444444", width: 38 }}>#{i + 1}</span>
+                <input
+                  type="date"
+                  value={p.date}
+                  onChange={(e) => setSplitParts((ps) => ps.map((x, j) => (j === i ? { ...x, date: e.target.value } : x)))}
+                  style={{ height: 30, padding: "0 6px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 12, flex: 1 }}
+                />
+                <input
+                  type="number"
+                  step="any"
+                  value={p.amount}
+                  onChange={(e) => setSplitParts((ps) => ps.map((x, j) => (j === i ? { ...x, amount: e.target.value } : x)))}
+                  style={{ width: 110, height: 30, padding: "0 6px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 12 }}
+                />
+                {splitParts.length > 2 && (
+                  <button
+                    onClick={() => setSplitParts((ps) => ps.filter((_, j) => j !== i))}
+                    style={{ border: 0, background: "none", color: "#c23934", cursor: "pointer", fontSize: 15 }}
+                    aria-label="Remove part"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const last = splitParts[splitParts.length - 1];
+                const d = new Date(last?.date || splitFor.scheduledDate);
+                d.setDate(d.getDate() + 7);
+                setSplitParts((ps) => [...ps, { date: d.toISOString().slice(0, 10), amount: "0" }]);
+              }}
+              style={{ ...btn, height: 28, fontSize: 12, marginBottom: 12 }}
+            >
+              + Add part
+            </button>
+            <div style={{ fontSize: 12, marginBottom: 12, color: splitOk ? "#2e844a" : "#c23934", fontWeight: 600 }}>
+              Parts total {money(splitSum)} of {money(splitFor.amount)}
+              {!splitOk && ` - off by ${money(Math.abs(splitSum - splitFor.amount))}`}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button onClick={() => setSplitFor(null)} style={btn}>Cancel</button>
+              <button onClick={saveSplit} disabled={!splitOk || busy} style={{ ...btnPrimary, opacity: splitOk ? 1 : 0.5 }}>
+                Split
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
