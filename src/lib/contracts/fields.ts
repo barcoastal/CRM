@@ -44,6 +44,20 @@ export const SCALAR_FIELDS: ScalarField[] = [
   { token: "ProgramFeePercent", label: "Program fee %", group: "Program" },
   { token: "ProcessorName", label: "Payment processor (SAS/RAM)", group: "Program" },
   { token: "TodayDate", label: "Today's date", group: "General" },
+  // Signer / contact details (SAS client block)
+  { token: "ContactFirstName", label: "Signer first name", group: "Signer" },
+  { token: "ContactLastName", label: "Signer last name", group: "Signer" },
+  { token: "ContactTitle", label: "Signer title", group: "Signer" },
+  { token: "ContactDOB", label: "Signer date of birth", group: "Signer" },
+  { token: "ContactHomePhone", label: "Home phone", group: "Signer" },
+  { token: "ContactCellPhone", label: "Cell phone", group: "Signer" },
+  // Bank (ACH debit authorization)
+  { token: "BankName", label: "Bank name", group: "Bank" },
+  { token: "BankRoutingNumber", label: "Routing number", group: "Bank" },
+  { token: "BankAccountNumber", label: "Account number", group: "Bank" },
+  { token: "BankAccountType", label: "Account type (Checking/Savings)", group: "Bank" },
+  { token: "BankIsChecking", label: "Checking checkbox (X)", group: "Bank" },
+  { token: "BankIsSavings", label: "Savings checkbox (X)", group: "Bank" },
 ];
 
 export const TABLE_FIELDS: TableField[] = [
