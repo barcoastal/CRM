@@ -121,6 +121,16 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
     BankAccountType: acct?.bankAccountType ?? "Checking",
     BankIsChecking: (acct?.bankAccountType ?? "Checking") === "Checking" ? "X" : "",
     BankIsSavings: acct?.bankAccountType === "Savings" ? "X" : "",
+    // "Full SSN or TIN" on the RAM form: full SSN from the SF snapshot when
+    // present, else the EIN, else the last-4 we hold natively.
+    ClientSSN: (() => {
+      try {
+        const sf = acct?.sfDataJson ? JSON.parse(acct.sfDataJson) as Record<string, unknown> : {};
+        const ssn = sf["SSN__c"];
+        if (ssn) return String(ssn);
+      } catch { /* fall through */ }
+      return acct?.ein ?? (acct?.ssnLast4 ? `***-**-${acct.ssnLast4}` : "");
+    })(),
     ProgramState: acct?.billingState?.trim() || opp.lead?.state?.trim() || "",
     TotalDebt: usd(totalDebt),
     ProgramLength: String(term),

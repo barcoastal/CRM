@@ -51,6 +51,7 @@ export const SCALAR_FIELDS: ScalarField[] = [
   { token: "ContactDOB", label: "Signer date of birth", group: "Signer" },
   { token: "ContactHomePhone", label: "Home phone", group: "Signer" },
   { token: "ContactCellPhone", label: "Cell phone", group: "Signer" },
+  { token: "ClientSSN", label: "SSN / TIN", group: "Signer" },
   // Bank (ACH debit authorization)
   { token: "BankName", label: "Bank name", group: "Bank" },
   { token: "BankRoutingNumber", label: "Routing number", group: "Bank" },
