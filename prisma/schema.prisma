@@ -1376,6 +1376,8 @@ model ProgramPlan {
   // SAS debit-schedule id returned by SetDebitSchedule (SF: Debit_Schedule_Id__c)
   externalDebitScheduleId String?
 
+  sfId String? @unique // Salesforce Program_Plan__c 18-char ID, populated by sync
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1449,6 +1451,8 @@ model Draft {
   // Processor-side draft ids (SF: External_SAS_Id__c / External_RAM_Id__c)
   externalSasId String?
   externalRamId String?
+
+  sfId String? @unique // Salesforce Draft__c 18-char ID, populated by sync
 
   // Processor data
   processorReference String?

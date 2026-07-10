@@ -23,8 +23,8 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 
 const prisma = new PrismaClient({ adapter, log: ["warn", "error"] });
 
 const ENTITY = process.argv[2];
-if (!ENTITY || !["contact", "account", "opportunity", "lead"].includes(ENTITY)) {
-  console.error("Usage: tsx scripts/migrate-sf-objects.ts <contact|account|opportunity|lead>");
+if (!ENTITY || !["contact", "account", "opportunity", "lead", "programplan", "draft"].includes(ENTITY)) {
+  console.error("Usage: tsx scripts/migrate-sf-objects.ts <contact|account|opportunity|lead|programplan|draft>");
   process.exit(1);
 }
 
@@ -42,6 +42,10 @@ const SOQL: Record<string, string> = {
   opportunity: `SELECT Id, Name, StageName, Amount, CloseDate, AccountId, OwnerId, Description, LeadSource, Probability, ExpectedRevenue, IsPrivate, NextStep, CampaignId, RecordTypeId, Total_Debt__c, Current_Total_Debt__c, Lead_Id__c, Phone_Formula__c, Formatted_Phone__c, Phone__c, Email_Formula__c, Email__c, Last_Disposition__c, Last_Disposition_DateTime__c, Lead_Source_Category__c, Preferred_method_of_Contact__c, Timezone__c, Legal_Plan_Required__c, Secured_Party__c, Current_Weekly_Payment__c, Current_Monthly_Payment__c, Weekly_Payment_To_Debt_Ratio__c, Preferred_Language__c, Dialer_Group__c, First_Draft_Date__c, First_Contract_Signed_Date__c, Version_Status__c, Fronter__c, Closer__c, Sub_Disposition__c, Business_Start_Date__c, HIGH_UCC_RISK__c, Call_ASAP__c, Addendum_Required__c, Welcome_Call_Scheduled__c, Type_of_Business__c, Processor_Info__c, Active_Opportunity__c, Verified_Phone_Number__c, Qualified_Financial_Formula__c, First_Payment_Completed__c, First_Payment_Completed_Date__c, Legal_Network__c, Affiliate__c, Last_Contacted_DateTime__c, CreatedDate, LastModifiedDate FROM Opportunity`,
   // Lead: identity + operational fields (dispositions, debt calc, five9, IPQS)
   // verified against the org describe; full row snapshotted into sfDataJson.
+  // Program Plan + Draft: the actual payment schedule/history ("payments done
+  // or not done") so the CRM's live payment grid matches SF exactly.
+  programplan: `SELECT Id, Client__c, Opportunity__c, Payment_Processor__c, First_Payment_Date__c, Payment_Term__c, Weekly_Draft_Amount__c, Setup_Fee__c, Program_Fee_Percentage__c, Completed_Drafts_Amount__c, Completed_Drafts_Count__c, Last_Completed_Draft_Date__c, Next_Draft_Date__c, Debit_Schedule_Id__c, DS_Total_Draft_Amount__c, DS_Total_Escrow_Amount__c, CreatedDate, LastModifiedDate FROM Program_Plan__c`,
+  draft: `SELECT Id, Program_Plan__c, Account__c, Draft_Date__c, Draft_Amount__c, Draft_Total_Amount__c, Draft_Status__c, Sync_Status__c, Program_Fee__c, Retainer_Fee__c, Setup_Fee__c, Processor_Fee__c, Service_Fee__c, Citadel_Fee__c, DS_Escrow_Amount__c, Draft_Cleared_Date__c, External_SAS_Id__c, External_RAM_Id__c, Retainer_SetupFee_Draft__c, CreatedDate, LastModifiedDate FROM Draft__c`,
   lead: `SELECT Id, FirstName, LastName, Company, Email, Phone, Status, LeadSource, Industry, AnnualRevenue, OwnerId, IsConverted, ConvertedDate, SSN__c,Title,Street,City,State,PostalCode,Country,Timezone__c,IP_Address__c,Keyword__c,Secured_Party__c,Call_ASAP__c,Hopper_Priority__c,Outbound_ANI_Date__c,Outbound_ANI_Identifier__c,Outbound_ANI_From__c,Hubspot_Id__c,Append_Leads_Counter__c,Call_counter__c,Has_Calendly_Event__c,Is_Archived__c,Archived_Date__c,IPQS_IsActive__c,IPQS_Active_Status__c,IPQS_Carrier__c,IPQS_Email__c,IPQS_Fraud_Score__c,IPQS_Is_Prepaid__c,IPQS_Line_Type__c,IPQS_Is_Risky__c,IPQS_Is_VOIP__c,IPQS_Is_Valid__c,Lead_Score__c,Ad_Click_Id__c,Sync_To_Account_Engagement__c,Facebook_Lead_Id__c,Total_Dial_Attempts__c,Eli_Ad_click__c,Business_Start_Date__c,EIN_Number_Tax_Id__c,Monthly_Revenue__c,UCC_filing_Date__c,MCA_Amount__c,Estimated_Total_Debt__c,Current_Total_Monthly_Payment_Formula__c,Current_Total_Daily_Payment__c,Current_Total_Weekly_Payment__c,Total_Debt_Amount__c,Payment_Amount__c,Setup_Fee__c,Retainer_Percentage__c,Payment_Term__c,Frequency__c,Monthly_Bank_Fee__c,Program_Fee_Percentage__c,Settlement_Percentage__c,Down_Payment__c,FronterLookup__c,CloserLookup__c,Call_Transferred_By_Lookup__c,Call_Received_By_Lookup__c,Call_Tranferred_DateTime__c,Call_Received_Date__c,Call_Transfer_Status__c,Transfer_Qualification__c,Outbound_Call_Priority__c,Agent_Location__c,Reason_for_Disqualification__c,Dialer_Group__c,five9_Disposition__c,five9_Last_Disposition__c,Five9_Time_To_Call__c,Add_to_f9list_Id__c,Delete_from_f9list_id__c,Five9_List_Id__c,Five9_List_Updated_by_Convoso_Batch__c,Five9_Final_Stage__c,Lead_Assignment_Date__c,Verified_Phone_Number__c,MCA_Lender_External_Id__c,MobilePhone,Work_Phone__c,Fax,Alternate_Email__c,Preferred_method_of_Contact__c,Legal_Plan_Required__c,External_ID_15_digit__c,Preferred_Language__c,Gender__c,Lenders__c,Description,Sub_Disposition__c,Last_Disposition__c FROM Lead`,
 };
 
@@ -470,6 +474,177 @@ async function migrateLeads(headers: string[], records: AsyncIterable<string[]>)
   console.log(`[${new Date().toISOString()}] DONE Lead: ${count} total`);
 }
 
+/** SF opportunity Id -> CRM opportunity.id (for program-plan links). */
+async function loadOpportunityMap(): Promise<Map<string, string>> {
+  const rows = await prisma.opportunity.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
+  const m = new Map<string, string>();
+  for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
+  return m;
+}
+
+/**
+ * SF Payment_Processor__c Id -> CRM PaymentProcessor.id. The three SF
+ * processor records are fixed; ensure matching CRM rows exist.
+ */
+async function loadProcessorMap(): Promise<Map<string, string>> {
+  const SF_PROCESSORS: Array<[string, string, string]> = [
+    ["a0W8Y00000Sbq8WUAR", "SAS", "SAS Processor"],
+    ["a0WVO000000affm2AA", "RAM", "RAM Processor"],
+    ["a0WVO000003zZS92AM", "LAPP", "LAPP Processor"],
+  ];
+  const m = new Map<string, string>();
+  for (const [sfId, code, name] of SF_PROCESSORS) {
+    const row = await prisma.paymentProcessor.upsert({
+      where: { code },
+      update: {},
+      create: { code, name },
+    });
+    m.set(sfId, row.id);
+  }
+  return m;
+}
+
+async function migrateProgramPlans(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
+  const idx = (h: string) => headers.indexOf(h);
+  const required = ["Client__c", "Weekly_Draft_Amount__c", "Debit_Schedule_Id__c"];
+  const missing = required.filter((h) => idx(h) === -1);
+  if (missing.length) throw new Error(`ProgramPlan CSV missing columns (${missing.join(", ")}) - refusing to import.`);
+  const accounts = await loadAccountMap();
+  const opps = await loadOpportunityMap();
+  const processors = await loadProcessorMap();
+  let batch: Array<Record<string, unknown>> = [];
+  let count = 0;
+  let skipped = 0;
+
+  async function flush() {
+    if (batch.length === 0) return;
+    const results = await Promise.allSettled(
+      batch.map((p) =>
+        prisma.programPlan.upsert({ where: { sfId: p.sfId as string }, update: p, create: p as never }),
+      ),
+    );
+    const failures = results.filter((r) => r.status === "rejected");
+    if (failures.length > 0) {
+      console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} plan upserts failed:`, (failures[0] as PromiseRejectedResult).reason?.message);
+    }
+    count += batch.length;
+    batch = [];
+    if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] ProgramPlan: ${count} imported, ${skipped} skipped`);
+  }
+
+  for await (const cells of records) {
+    const g = (h: string): string => { const i = idx(h); return i >= 0 ? cells[i] ?? "" : ""; };
+    const sfId = g("Id");
+    if (!sfId || !/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue;
+    const accountId = accounts.get(g("Client__c"));
+    if (!accountId) { skipped++; continue; }
+    const num = (v: string): number | null => (v !== "" && !Number.isNaN(Number(v)) ? Number(v) : null);
+    const term = num(g("Payment_Term__c"));
+    batch.push({
+      sfId,
+      accountId,
+      opportunityId: opps.get(g("Opportunity__c")) ?? null,
+      processorId: processors.get(g("Payment_Processor__c")) ?? null,
+      status: "ACTIVE",
+      startDate: g("First_Payment_Date__c") ? new Date(g("First_Payment_Date__c")) : new Date(g("CreatedDate") || Date.now()),
+      firstDraftDate: g("First_Payment_Date__c") ? new Date(g("First_Payment_Date__c")) : null,
+      termMonths: term && term > 0 ? Math.round(term) : 6,
+      // SF plans draft weekly; Weekly_Draft_Amount__c is the recurring amount.
+      monthlyAmount: num(g("Weekly_Draft_Amount__c")) ?? 0,
+      totalProgramCost: num(g("DS_Total_Draft_Amount__c")),
+      completedPaymentsCount: Math.round(num(g("Completed_Drafts_Count__c")) ?? 0),
+      externalDebitScheduleId: g("Debit_Schedule_Id__c") || null,
+    });
+    if (batch.length >= 50) await flush();
+  }
+  await flush();
+  console.log(`[${new Date().toISOString()}] DONE ProgramPlan: ${count} total, ${skipped} skipped (no matching Account)`);
+}
+
+/** SF program-plan Id -> CRM programPlan.id (for draft links). */
+async function loadPlanMap(): Promise<Map<string, string>> {
+  const rows = await prisma.programPlan.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
+  const m = new Map<string, string>();
+  for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
+  return m;
+}
+
+/** SF Draft_Status__c -> CRM Draft.status. */
+function mapDraftStatus(sf: string): string {
+  switch (sf) {
+    case "Completed": case "Processed": return "SUCCESS";
+    case "NSF": case "Rejected": return "FAILED";
+    case "Processing": return "PROCESSING";
+    case "Cancelled": return "CANCELLED";
+    case "Skipped Payment": case "Rescheduled": return "SKIPPED";
+    default: return "SCHEDULED"; // Pending | Scheduled
+  }
+}
+
+async function migrateDrafts(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
+  const idx = (h: string) => headers.indexOf(h);
+  const required = ["Program_Plan__c", "Draft_Status__c", "Draft_Total_Amount__c", "Citadel_Fee__c"];
+  const missing = required.filter((h) => idx(h) === -1);
+  if (missing.length) throw new Error(`Draft CSV missing columns (${missing.join(", ")}) - refusing to import.`);
+  const plans = await loadPlanMap();
+  console.log(`[${new Date().toISOString()}] ${plans.size} program plans mapped`);
+  let batch: Array<Record<string, unknown>> = [];
+  let count = 0;
+  let skipped = 0;
+
+  async function flush() {
+    if (batch.length === 0) return;
+    const results = await Promise.allSettled(
+      batch.map((d) =>
+        prisma.draft.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }),
+      ),
+    );
+    const failures = results.filter((r) => r.status === "rejected");
+    if (failures.length > 0) {
+      console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} draft upserts failed:`, (failures[0] as PromiseRejectedResult).reason?.message);
+    }
+    count += batch.length;
+    batch = [];
+    if (count % 25000 < 100) console.log(`[${new Date().toISOString()}] Draft: ${count} imported, ${skipped} skipped`);
+  }
+
+  for await (const cells of records) {
+    const g = (h: string): string => { const i = idx(h); return i >= 0 ? cells[i] ?? "" : ""; };
+    const sfId = g("Id");
+    if (!sfId || !/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue;
+    const programPlanId = plans.get(g("Program_Plan__c"));
+    if (!programPlanId) { skipped++; continue; }
+    const num = (v: string): number => (v !== "" && !Number.isNaN(Number(v)) ? Number(v) : 0);
+    const total = num(g("Draft_Total_Amount__c")) || num(g("Draft_Amount__c"));
+    const fees =
+      num(g("Retainer_Fee__c")) + num(g("Program_Fee__c")) + num(g("Setup_Fee__c")) +
+      num(g("Service_Fee__c")) + num(g("Processor_Fee__c")) + num(g("Citadel_Fee__c"));
+    const escrow = g("DS_Escrow_Amount__c") !== "" ? num(g("DS_Escrow_Amount__c")) : Math.max(0, Math.round((total - fees) * 100) / 100);
+    batch.push({
+      sfId,
+      programPlanId,
+      scheduledDate: g("Draft_Date__c") ? new Date(g("Draft_Date__c")) : new Date(g("CreatedDate") || Date.now()),
+      amount: total,
+      status: mapDraftStatus(g("Draft_Status__c")),
+      returnReason: ["NSF", "Rejected"].includes(g("Draft_Status__c")) ? g("Draft_Status__c") : null,
+      feeRetainer: num(g("Retainer_Fee__c")),
+      feeProgram: num(g("Program_Fee__c")),
+      feeSetup: num(g("Setup_Fee__c")),
+      feeService: num(g("Service_Fee__c")),
+      feeBank: num(g("Processor_Fee__c")),
+      feeLegal: num(g("Citadel_Fee__c")),
+      escrowAmount: escrow,
+      settledAt: g("Draft_Cleared_Date__c") ? new Date(g("Draft_Cleared_Date__c")) : null,
+      externalSasId: g("External_SAS_Id__c") || null,
+      externalRamId: g("External_RAM_Id__c") || null,
+      processorSyncStatus: g("Sync_Status__c") === "In Sync" ? "SYNCED" : "NOT_SYNCED",
+    });
+    if (batch.length >= 50) await flush();
+  }
+  await flush();
+  console.log(`[${new Date().toISOString()}] DONE Draft: ${count} total, ${skipped} skipped (no matching Program Plan)`);
+}
+
 async function main() {
   // ALWAYS re-export. Reusing a stale CSV once caused a mass null-overwrite:
   // the import mapped columns missing from an old export to null and wiped
@@ -492,6 +667,8 @@ async function main() {
   if (ENTITY === "account") await migrateAccounts(headers, rest);
   if (ENTITY === "opportunity") await migrateOpportunities(headers, rest);
   if (ENTITY === "lead") await migrateLeads(headers, rest);
+  if (ENTITY === "programplan") await migrateProgramPlans(headers, rest);
+  if (ENTITY === "draft") await migrateDrafts(headers, rest);
 
   await prisma.$disconnect();
 }

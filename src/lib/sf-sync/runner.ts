@@ -1,6 +1,7 @@
 /**
  * In-app Salesforce sync runner. Spawns the migration script per entity
- * (account -> contact -> opportunity -> lead) inside the Railway container.
+ * (account -> contact -> opportunity -> programplan -> draft -> lead)
+ * inside the Railway container.
  * State is kept in-process; progress is appended to /tmp/sf-sync.log.
  *
  * Requires env: DATABASE_URL (native to the app) and SF_AUTH_URL (the
@@ -11,7 +12,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 const LOG_PATH = "/tmp/sf-sync.log";
-const ENTITIES = ["account", "contact", "opportunity", "lead"] as const;
+// Plans before drafts (drafts FK onto plans); lead last (largest table).
+const ENTITIES = ["account", "contact", "opportunity", "programplan", "draft", "lead"] as const;
 
 export interface SyncStatus {
   running: boolean;
