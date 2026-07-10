@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { ListView, type ListViewColumn } from "@/components/slds/list-view";
 import { StatusPill } from "@/components/slds/record-page";
@@ -31,13 +32,20 @@ export default async function IntegrationsPage() {
     { key: "by", label: "Created By", render: (i) => i.createdBy?.name ?? "—" },
   ];
   return (
-    <ListView
-      entity="Settings"
-      entityLabel="Integration"
-      viewName="All Integrations"
-      totalCount={total}
-      rows={items as IntegrationRow[]}
-      columns={columns}
-    />
+    <>
+      <div style={{ padding: "10px 16px 0", fontSize: 13 }}>
+        <Link href="/integrations/processor-log" style={{ color: "#0176d3" }}>
+          Processor Sync Journal (SAS/RAM outbound payloads) →
+        </Link>
+      </div>
+      <ListView
+        entity="Settings"
+        entityLabel="Integration"
+        viewName="All Integrations"
+        totalCount={total}
+        rows={items as IntegrationRow[]}
+        columns={columns}
+      />
+    </>
   );
 }
