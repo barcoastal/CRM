@@ -450,6 +450,12 @@ model Account {
   @@index([stage])
   @@index([parentAccountId])
   @@index([primaryContactId])
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin)
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([email(ops: raw("gin_trgm_ops"))], type: Gin)
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([phone(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 // ============ DNC / SUPPRESSION LIST (replaces SF SuppressionList + Five9 DNC sync) ============
@@ -729,6 +735,12 @@ model Contact {
   sms                   SmsMessage[]             @relation("ContactSms")
   cases                 Case[]                   @relation("ContactCases")
   @@index([primaryAccountId])
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([fullName(ops: raw("gin_trgm_ops"))], type: Gin)
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([email(ops: raw("gin_trgm_ops"))], type: Gin)
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([phone(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 model AccountContactRelation {
@@ -848,6 +860,14 @@ model Lead {
   @@index([recordType])
   @@index([convertedAccountId])
   @@index([convertedContactId])
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([contactName(ops: raw("gin_trgm_ops"))], type: Gin)
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([businessName(ops: raw("gin_trgm_ops"))], type: Gin)
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([email(ops: raw("gin_trgm_ops"))], type: Gin)
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([phone(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 // Browser-captured call audio transcribed by Deepgram (post-call). Recorded in
@@ -1107,6 +1127,12 @@ model Opportunity {
   @@index([recordType])
   @@index([accountId])
   @@index([primaryContactId])
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin)
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([oppEmail(ops: raw("gin_trgm_ops"))], type: Gin)
+  // trigram index: global search does ILIKE %q% on this column
+  @@index([oppPhone(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 // ============ OPPORTUNITY HISTORY (SF Opportunity Field History parity) ============

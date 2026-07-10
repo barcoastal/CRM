@@ -35,9 +35,9 @@ export async function GET(req: Request) {
     prisma.contact.findMany({
       where: {
         OR: [
+          // fullName covers first/last; separate clauses would need two more
+          // trigram indexes for no extra recall.
           { fullName: { contains: q, mode: "insensitive" } },
-          { firstName: { contains: q, mode: "insensitive" } },
-          { lastName: { contains: q, mode: "insensitive" } },
           { email: { contains: q, mode: "insensitive" } },
           { phone: { contains: q } },
           { sfId: q.match(/^[a-zA-Z0-9]{15,18}$/) ? q : undefined },
