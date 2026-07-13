@@ -13,7 +13,7 @@ import path from "node:path";
 
 const LOG_PATH = "/tmp/sf-sync.log";
 // Plans before drafts (drafts FK onto plans); lead last (largest table).
-const ENTITIES = ["account", "contact", "opportunity", "programplan", "draft", "lead"] as const;
+const ENTITIES = ["account", "contact", "opportunity", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage", "lead"] as const;
 
 export interface SyncStatus {
   running: boolean;

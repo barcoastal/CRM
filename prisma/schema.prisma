@@ -1243,6 +1243,8 @@ model Debt {
 
   @@index([programPlanId])
   @@index([creditorId])
+
+  sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 
 model Negotiation {
@@ -1553,6 +1555,8 @@ model Fee {
 
   @@index([programPlanId])
   @@index([recordType])
+
+  sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 
 model PaymentSummary {
@@ -1641,6 +1645,8 @@ model Task {
   @@index([leadId])
   @@index([contactId])
   @@index([caseId])
+
+  sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 
 model Event {
@@ -1684,6 +1690,8 @@ model Event {
   @@index([leadId])
   @@index([contactId])
   @@index([caseId])
+
+  sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 
 // ============ PHASE 5: CASE MANAGEMENT ============
@@ -1750,6 +1758,8 @@ model Case {
   @@index([accountId])
   @@index([recordType])
   @@index([contactId])
+
+  sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 
 model CaseComment {
@@ -1828,6 +1838,8 @@ model EmailMessage {
   @@index([massEmailId])
   @@index([trackingId])
   @@index([contactId])
+
+  sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 
 model MassEmail {

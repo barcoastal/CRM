@@ -22,9 +22,10 @@ import fs from "node:fs";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 20 });
 const prisma = new PrismaClient({ adapter, log: ["warn", "error"] });
 
+const ENTITIES_ALL = ["contact", "account", "opportunity", "lead", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage"];
 const ENTITY = process.argv[2];
-if (!ENTITY || !["contact", "account", "opportunity", "lead", "programplan", "draft"].includes(ENTITY)) {
-  console.error("Usage: tsx scripts/migrate-sf-objects.ts <contact|account|opportunity|lead|programplan|draft>");
+if (!ENTITY || !ENTITIES_ALL.includes(ENTITY)) {
+  console.error(`Usage: tsx scripts/migrate-sf-objects.ts <${ENTITIES_ALL.join("|")}>`);
   process.exit(1);
 }
 
@@ -42,6 +43,14 @@ const SOQL: Record<string, string> = {
   opportunity: `SELECT Id, Name, StageName, Amount, CloseDate, AccountId, OwnerId, Description, LeadSource, Probability, ExpectedRevenue, IsPrivate, NextStep, CampaignId, RecordTypeId, Total_Debt__c, Current_Total_Debt__c, Lead_Id__c, Phone_Formula__c, Formatted_Phone__c, Phone__c, Email_Formula__c, Email__c, Last_Disposition__c, Last_Disposition_DateTime__c, Lead_Source_Category__c, Preferred_method_of_Contact__c, Timezone__c, Legal_Plan_Required__c, Secured_Party__c, Current_Weekly_Payment__c, Current_Monthly_Payment__c, Weekly_Payment_To_Debt_Ratio__c, Preferred_Language__c, Dialer_Group__c, First_Draft_Date__c, First_Contract_Signed_Date__c, Version_Status__c, Fronter__c, Closer__c, Sub_Disposition__c, Business_Start_Date__c, HIGH_UCC_RISK__c, Call_ASAP__c, Addendum_Required__c, Welcome_Call_Scheduled__c, Type_of_Business__c, Processor_Info__c, Active_Opportunity__c, Verified_Phone_Number__c, Qualified_Financial_Formula__c, First_Payment_Completed__c, First_Payment_Completed_Date__c, Legal_Network__c, Affiliate__c, Last_Contacted_DateTime__c, CreatedDate, LastModifiedDate FROM Opportunity`,
   // Lead: identity + operational fields (dispositions, debt calc, five9, IPQS)
   // verified against the org describe; full row snapshotted into sfDataJson.
+  // Related records per account: debts, fees, cases, activities, emails - so
+  // every SF account related list has a CRM counterpart.
+  debt: `SELECT Id, Opportunity__c, Program_Plan__c, Account__c, Creditor_Name__c, Creditor_Name_Formula__c, Account_Number__c, Debt_Amount__c, Original_Debt__c, Payment__c, Payment_Frequency__c, Debt_Status__c, Negotiation_Status__c, Legal_Status__c, Include_in_the_Program__c, Settlement_Amount__c, Settlement_Percentage__c, Total_Savings__c, Total_Savings_Percentage__c, CreatedDate FROM Debt_Details__c`,
+  fee: `SELECT Id, RecordTypeId, Program_Plan__c, Draft__c, Account__c, Fee_Amount__c, Fee_Date__c, Fee_Status__c, CreatedDate FROM Fee__c`,
+  case: `SELECT Id, CaseNumber, Subject, Description, Status, Priority, Origin, AccountId, OwnerId, Draft__c, CreatedDate, ClosedDate FROM Case`,
+  task: `SELECT Id, Subject, Status, Priority, Type, TaskSubtype, CallType, CallDisposition, ActivityDate, CompletedDateTime, Description, OwnerId, AccountId, WhoId, WhatId, RecordTypeId, CreatedDate FROM Task WHERE AccountId != null`,
+  event: `SELECT Id, Subject, Description, Location, StartDateTime, EndDateTime, ActivityDate, AccountId, WhoId, WhatId, OwnerId, CreatedDate FROM Event`,
+  emailmessage: `SELECT Id, FromAddress, FromName, ToAddress, CcAddress, Subject, TextBody, Incoming, Status, MessageDate, RelatedToId, CreatedDate FROM EmailMessage`,
   // Program Plan + Draft: the actual payment schedule/history ("payments done
   // or not done") so the CRM's live payment grid matches SF exactly.
   programplan: `SELECT Id, Client__c, Opportunity__c, Payment_Processor__c, First_Payment_Date__c, Payment_Term__c, Weekly_Draft_Amount__c, Setup_Fee__c, Program_Fee_Percentage__c, Completed_Drafts_Amount__c, Completed_Drafts_Count__c, Last_Completed_Draft_Date__c, Next_Draft_Date__c, Debit_Schedule_Id__c, DS_Total_Draft_Amount__c, DS_Total_Escrow_Amount__c, CreatedDate, LastModifiedDate FROM Program_Plan__c`,
@@ -646,6 +655,250 @@ async function migrateDrafts(headers: string[], records: AsyncIterable<string[]>
   console.log(`[${new Date().toISOString()}] DONE Draft: ${count} total, ${skipped} skipped (no matching Program Plan)`);
 }
 
+/** Generic upsert-by-sfId flusher used by the related-record importers. */
+function makeFlusher(
+  label: string,
+  upsert: (row: Record<string, unknown>) => Promise<unknown>,
+  logEvery = 5000,
+) {
+  let batch: Array<Record<string, unknown>> = [];
+  let count = 0;
+  let skipped = 0;
+  return {
+    push: async (row: Record<string, unknown> | null) => {
+      if (row === null) { skipped++; return; }
+      batch.push(row);
+      if (batch.length >= 50) {
+        const results = await Promise.allSettled(batch.map(upsert));
+        const failures = results.filter((r) => r.status === "rejected");
+        if (failures.length > 0) {
+          console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} ${label} upserts failed:`, (failures[0] as PromiseRejectedResult).reason?.message);
+        }
+        count += batch.length;
+        batch = [];
+        if (count % logEvery < 50) console.log(`[${new Date().toISOString()}] ${label}: ${count} imported, ${skipped} skipped`);
+      }
+    },
+    finish: async () => {
+      if (batch.length > 0) {
+        const results = await Promise.allSettled(batch.map(upsert));
+        const failures = results.filter((r) => r.status === "rejected");
+        if (failures.length > 0) {
+          console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} ${label} upserts failed:`, (failures[0] as PromiseRejectedResult).reason?.message);
+        }
+        count += batch.length;
+      }
+      console.log(`[${new Date().toISOString()}] DONE ${label}: ${count} total, ${skipped} skipped`);
+    },
+  };
+}
+
+function mkGetters(headers: string[], cells: string[]) {
+  const idx = new Map(headers.map((h, i) => [h, i]));
+  const g = (h: string): string => { const i = idx.get(h); return i != null ? cells[i] ?? "" : ""; };
+  const num = (h: string): number | null => { const v = g(h); return v !== "" && !Number.isNaN(Number(v)) ? Number(v) : null; };
+  const date = (h: string): Date | null => { const v = g(h); return v ? new Date(v) : null; };
+  return { g, num, date };
+}
+
+async function migrateDebts(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
+  const opps = await loadOpportunityMap();
+  const plans = await loadPlanMap();
+  const f = makeFlusher("Debt", (d) => prisma.debt.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }));
+  for await (const cells of records) {
+    const { g, num, date } = mkGetters(headers, cells);
+    const sfId = g("Id");
+    if (!/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue;
+    const opportunityId = opps.get(g("Opportunity__c")) ?? null;
+    if (!opportunityId) { await f.push(null); continue; }
+    const neg = g("Negotiation_Status__c");
+    const status =
+      neg.toLowerCase().includes("settled") || g("Debt_Status__c").toLowerCase().includes("settled") ? "SETTLED"
+      : neg ? "NEGOTIATING" : "ENROLLED";
+    await f.push({
+      sfId,
+      opportunityId,
+      programPlanId: plans.get(g("Program_Plan__c")) ?? null,
+      creditorName: g("Creditor_Name_Formula__c") || g("Creditor_Name__c") || "Unknown Creditor",
+      accountNumber: g("Account_Number__c") || null,
+      paymentFrequency: g("Payment_Frequency__c") ? g("Payment_Frequency__c").toUpperCase().replace(/[^A-Z]/g, "_") : null,
+      paymentAmount: num("Payment__c"),
+      originalBalance: num("Original_Debt__c") ?? num("Debt_Amount__c") ?? 0,
+      currentBalance: num("Debt_Amount__c") ?? 0,
+      enrolledBalance: num("Debt_Amount__c") ?? 0,
+      status,
+      settledAmount: num("Settlement_Amount__c"),
+      savingsAmount: num("Total_Savings__c"),
+      savingsPercent: num("Total_Savings_Percentage__c"),
+      notes: [g("Debt_Status__c"), g("Negotiation_Status__c"), g("Legal_Status__c")].filter(Boolean).join(" | ") || null,
+    });
+  }
+  await f.finish();
+}
+
+// SF Fee__c RecordTypeId -> fee type (from the org's RecordType table).
+const FEE_RECORD_TYPES: Record<string, string> = {
+  "0128Y000001Z0JPQA0": "PROCESSOR",
+  "0128Y000001Z0JQQA0": "RETAINER",
+  "0128Y000001Z0JRQA0": "SERVICE",
+  "0128Y000001Z0JSQA0": "SETUP",
+  "012VO000000fn1ZYAQ": "CITADEL",
+  "012VO000000fn1aYAA": "PROGRAM",
+};
+
+async function migrateFees(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
+  const plans = await loadPlanMap();
+  const f = makeFlusher("Fee", (d) => prisma.fee.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }), 50000);
+  for await (const cells of records) {
+    const { g, num, date } = mkGetters(headers, cells);
+    const sfId = g("Id");
+    if (!/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue;
+    const programPlanId = plans.get(g("Program_Plan__c"));
+    if (!programPlanId) { await f.push(null); continue; }
+    const st = g("Fee_Status__c").toLowerCase();
+    await f.push({
+      sfId,
+      programPlanId,
+      recordType: FEE_RECORD_TYPES[g("RecordTypeId").slice(0, 18)] ?? FEE_RECORD_TYPES[g("RecordTypeId").slice(0, 15)] ?? "OTHER",
+      amount: num("Fee_Amount__c") ?? 0,
+      chargedDate: date("Fee_Date__c") ?? date("CreatedDate") ?? new Date(),
+      status: st.includes("paid") || st.includes("collect") || st.includes("complete") ? "CHARGED" : st.includes("waiv") ? "WAIVED" : st.includes("refund") ? "REFUNDED" : "PENDING",
+    });
+  }
+  await f.finish();
+}
+
+async function loadDraftMap(): Promise<Map<string, string>> {
+  const rows = await prisma.draft.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
+  const m = new Map<string, string>();
+  for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
+  return m;
+}
+
+async function migrateCases(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
+  const accounts = await loadAccountMap();
+  const users = await loadUserMap();
+  const drafts = await loadDraftMap();
+  const f = makeFlusher("Case", (d) => prisma.case.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }), 500);
+  for await (const cells of records) {
+    const { g, date } = mkGetters(headers, cells);
+    const sfId = g("Id");
+    if (!/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue;
+    const st = g("Status").toLowerCase();
+    await f.push({
+      sfId,
+      caseNumber: g("CaseNumber") || `SF-${sfId}`,
+      subject: g("Subject") || `Case ${g("CaseNumber")}`,
+      description: g("Description") || null,
+      status: st.includes("closed") || st.includes("resolved") ? "CLOSED" : st.includes("escalat") ? "ESCALATED" : st.includes("progress") || st.includes("working") ? "IN_PROGRESS" : st.includes("new") ? "NEW" : "OPEN",
+      priority: g("Priority").toLowerCase().includes("high") ? "HIGH" : g("Priority").toLowerCase().includes("low") ? "LOW" : "NORMAL",
+      origin: ["PHONE", "EMAIL", "WEB", "CHAT"].find((o) => g("Origin").toUpperCase().includes(o)) ?? "OTHER",
+      accountId: accounts.get(g("AccountId")) ?? null,
+      draftId: drafts.get(g("Draft__c")) ?? null,
+      ownerId: users.get(g("OwnerId")) ?? null,
+      resolvedAt: date("ClosedDate"),
+    });
+  }
+  await f.finish();
+}
+
+// Task record types (from the org): Disposition rows keep their own type.
+const TASK_RT_DISPOSITION = new Set(["0128Y000001Z0MyQAK"]);
+
+async function migrateTasks(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
+  const accounts = await loadAccountMap();
+  const contacts = await loadContactMap();
+  const opps = await loadOpportunityMap();
+  const users = await loadUserMap();
+  const f = makeFlusher("Task", (d) => prisma.task.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }), 25000);
+  for await (const cells of records) {
+    const { g, date } = mkGetters(headers, cells);
+    const sfId = g("Id");
+    if (!/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue;
+    const accountId = accounts.get(g("AccountId"));
+    if (!accountId) { await f.push(null); continue; }
+    const st = g("Status").toLowerCase();
+    const sub = (g("TaskSubtype") || g("Type")).toLowerCase();
+    const type = g("CallType") || sub.includes("call") ? "CALL" : sub.includes("email") ? "EMAIL" : sub.includes("letter") ? "LETTER" : "TASK";
+    const who = g("WhoId");
+    const what = g("WhatId");
+    await f.push({
+      sfId,
+      recordType: TASK_RT_DISPOSITION.has(g("RecordTypeId")) ? "DISPOSITION" : "ACTIVITY",
+      subject: g("Subject") || "(no subject)",
+      type,
+      status: st.includes("complet") ? "COMPLETED" : st.includes("progress") ? "IN_PROGRESS" : st.includes("defer") ? "DEFERRED" : st.includes("wait") ? "WAITING" : "NOT_STARTED",
+      priority: g("Priority").toLowerCase().includes("high") ? "HIGH" : "NORMAL",
+      accountId,
+      contactId: who.startsWith("003") ? contacts.get(who) ?? null : null,
+      opportunityId: what.startsWith("006") ? opps.get(what) ?? null : null,
+      ownerId: users.get(g("OwnerId")) ?? null,
+      dueDate: date("ActivityDate"),
+      completedAt: date("CompletedDateTime"),
+      disposition: g("CallDisposition") || null,
+      notes: g("Description") || null,
+      createdAt: date("CreatedDate") ?? new Date(),
+    });
+  }
+  await f.finish();
+}
+
+async function migrateEvents(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
+  const accounts = await loadAccountMap();
+  const contacts = await loadContactMap();
+  const users = await loadUserMap();
+  const f = makeFlusher("Event", (d) => prisma.event.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }), 500);
+  for await (const cells of records) {
+    const { g, date } = mkGetters(headers, cells);
+    const sfId = g("Id");
+    if (!/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue;
+    const startAt = date("StartDateTime") ?? date("ActivityDate") ?? date("CreatedDate") ?? new Date();
+    const who = g("WhoId");
+    await f.push({
+      sfId,
+      subject: g("Subject") || "(no subject)",
+      description: g("Description") || null,
+      location: g("Location") || null,
+      startAt,
+      endAt: date("EndDateTime") ?? startAt,
+      accountId: accounts.get(g("AccountId")) ?? null,
+      contactId: who.startsWith("003") ? contacts.get(who) ?? null : null,
+      ownerId: users.get(g("OwnerId")) ?? null,
+      status: startAt < new Date() ? "COMPLETED" : "SCHEDULED",
+      createdAt: date("CreatedDate") ?? new Date(),
+    });
+  }
+  await f.finish();
+}
+
+async function migrateEmailMessages(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
+  const accounts = await loadAccountMap();
+  const opps = await loadOpportunityMap();
+  const f = makeFlusher("EmailMessage", (d) => prisma.emailMessage.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }), 5000);
+  for await (const cells of records) {
+    const { g, date } = mkGetters(headers, cells);
+    const sfId = g("Id");
+    if (!/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue;
+    const related = g("RelatedToId");
+    const incoming = g("Incoming").toLowerCase() === "true";
+    await f.push({
+      sfId,
+      direction: incoming ? "INBOUND" : "OUTBOUND",
+      status: incoming ? "DELIVERED" : "SENT",
+      fromAddress: g("FromAddress") || g("FromName") || "unknown",
+      toAddresses: g("ToAddress") || "",
+      cc: g("CcAddress") || null,
+      subject: g("Subject") || "(no subject)",
+      bodyText: g("TextBody") || null,
+      accountId: related.startsWith("001") ? accounts.get(related) ?? null : null,
+      opportunityId: related.startsWith("006") ? opps.get(related) ?? null : null,
+      sentAt: date("MessageDate") ?? date("CreatedDate"),
+      createdAt: date("CreatedDate") ?? new Date(),
+    });
+  }
+  await f.finish();
+}
+
 async function main() {
   // ALWAYS re-export. Reusing a stale CSV once caused a mass null-overwrite:
   // the import mapped columns missing from an old export to null and wiped
@@ -670,6 +923,12 @@ async function main() {
   if (ENTITY === "lead") await migrateLeads(headers, rest);
   if (ENTITY === "programplan") await migrateProgramPlans(headers, rest);
   if (ENTITY === "draft") await migrateDrafts(headers, rest);
+  if (ENTITY === "debt") await migrateDebts(headers, rest);
+  if (ENTITY === "fee") await migrateFees(headers, rest);
+  if (ENTITY === "case") await migrateCases(headers, rest);
+  if (ENTITY === "task") await migrateTasks(headers, rest);
+  if (ENTITY === "event") await migrateEvents(headers, rest);
+  if (ENTITY === "emailmessage") await migrateEmailMessages(headers, rest);
 
   await prisma.$disconnect();
 }
