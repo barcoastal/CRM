@@ -22,7 +22,7 @@ import fs from "node:fs";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 20 });
 const prisma = new PrismaClient({ adapter, log: ["warn", "error"] });
 
-const ENTITIES_ALL = ["contact", "account", "opportunity", "lead", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage"];
+const ENTITIES_ALL = ["contact", "account", "opportunity", "lead", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage", "accounthistory"];
 const ENTITY = process.argv[2];
 if (!ENTITY || !ENTITIES_ALL.includes(ENTITY)) {
   console.error(`Usage: tsx scripts/migrate-sf-objects.ts <${ENTITIES_ALL.join("|")}>`);
@@ -899,7 +899,65 @@ async function migrateEmailMessages(headers: string[], records: AsyncIterable<st
   await f.finish();
 }
 
+/**
+ * AccountHistory: SF field-change audit trail. The Bulk API refuses *History
+ * objects, so this pages the REST query API directly (no CSV step).
+ */
+async function migrateAccountHistory(): Promise<void> {
+  const raw = process.env.SF_AUTH_URL;
+  if (!raw) throw new Error("accounthistory requires SF_AUTH_URL (REST paging)");
+  const am = raw.match(/^force:\/\/([^:]*)::([^@]+)@(.+)$/);
+  if (!am) throw new Error("SF_AUTH_URL malformed");
+  const [, clientId, refreshToken, host] = am;
+  const tokRes = await fetch(`https://${host}/services/oauth2/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ grant_type: "refresh_token", client_id: clientId || "PlatformCLI", refresh_token: refreshToken }),
+  });
+  const tok = (await tokRes.json()) as { access_token?: string; instance_url?: string };
+  if (!tok.access_token) throw new Error("SF auth failed for accounthistory");
+
+  const accounts = await loadAccountMap();
+  const users = await loadUserMap();
+  const f = makeFlusher("AccountHistory", (d) =>
+    prisma.accountHistory.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }), 25000);
+
+  let url = `${tok.instance_url}/services/data/v62.0/query?q=${encodeURIComponent(
+    "SELECT Id, AccountId, Field, OldValue, NewValue, CreatedById, CreatedDate FROM AccountHistory",
+  )}`;
+  for (;;) {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${tok.access_token}` } });
+    const j = (await res.json()) as {
+      records?: Array<{ Id: string; AccountId: string; Field: string; OldValue: unknown; NewValue: unknown; CreatedById: string; CreatedDate: string }>;
+      nextRecordsUrl?: string;
+      done?: boolean;
+    };
+    if (!j.records) throw new Error(`accounthistory query failed: ${JSON.stringify(j).slice(0, 300)}`);
+    for (const r of j.records) {
+      const accountId = accounts.get(r.AccountId);
+      if (!accountId) { await f.push(null); continue; }
+      await f.push({
+        sfId: r.Id,
+        accountId,
+        field: r.Field,
+        oldValue: r.OldValue != null ? String(r.OldValue) : null,
+        newValue: r.NewValue != null ? String(r.NewValue) : null,
+        changedById: users.get(r.CreatedById) ?? null,
+        changedAt: new Date(r.CreatedDate),
+      });
+    }
+    if (j.done || !j.nextRecordsUrl) break;
+    url = `${tok.instance_url}${j.nextRecordsUrl}`;
+  }
+  await f.finish();
+}
+
 async function main() {
+  if (ENTITY === "accounthistory") {
+    await migrateAccountHistory();
+    await prisma.$disconnect();
+    return;
+  }
   // ALWAYS re-export. Reusing a stale CSV once caused a mass null-overwrite:
   // the import mapped columns missing from an old export to null and wiped
   // operational fields across all accounts. Fresh export or nothing.

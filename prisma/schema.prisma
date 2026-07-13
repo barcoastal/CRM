@@ -703,6 +703,7 @@ model AccountHistory {
   changedAt   DateTime @default(now())
 
   @@index([accountId, changedAt])
+  sfId String? @unique // Salesforce AccountHistory ID
 }
 
 model Contact {

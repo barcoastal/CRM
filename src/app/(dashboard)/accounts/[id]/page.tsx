@@ -657,6 +657,20 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         )}
         emptyHint="No contacts."
       />
+      <RelatedList
+        entity="ProgramPlan"
+        title="Notes"
+        items={account.documents.filter((d) => d.type === "NOTE")}
+        renderItem={(n) => (
+          <div style={{ display: "grid", gridTemplateColumns: "3fr 1fr", gap: 12 }}>
+            <a href={`/api/accounts/${account.id}/documents/${n.id}?view=1`} target="_blank" style={{ color: "#0176d3" }}>
+              {n.name.replace(/\.snote$/i, "")}
+            </a>
+            <span style={{ color: "#747474" }}>{n.createdAt.toLocaleDateString()}</span>
+          </div>
+        )}
+        emptyHint="No notes."
+      />
       <LeadHistoryCard
         rows={account.history.map((h) => ({
           id: h.id,

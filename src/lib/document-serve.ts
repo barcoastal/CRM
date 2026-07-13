@@ -17,10 +17,13 @@ const MIME: Record<string, string> = {
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   xls: "application/vnd.ms-excel",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  // SF enhanced notes (synced ContentNotes) hold sanitized HTML bodies.
+  snote: "text/html; charset=utf-8",
+  html: "text/html; charset=utf-8",
 };
 
 /** Content types browsers render inline. Everything else downloads even in "view" mode. */
-const INLINE_OK = new Set(["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml", "text/plain; charset=utf-8"]);
+const INLINE_OK = new Set(["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml", "text/plain; charset=utf-8", "text/html; charset=utf-8"]);
 
 export function mimeFromName(name: string): string {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
