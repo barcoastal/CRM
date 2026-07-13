@@ -1301,6 +1301,8 @@ model Document {
 
   @@index([leadId])
   @@index([accountId])
+
+  sfId String? @unique // Salesforce ContentDocument ID, populated by file sync
 }
 
 // A secure, no-login link emailed to a lead/client so they can upload their

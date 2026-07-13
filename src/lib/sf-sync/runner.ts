@@ -13,7 +13,8 @@ import path from "node:path";
 
 const LOG_PATH = "/tmp/sf-sync.log";
 // Plans before drafts (drafts FK onto plans); lead last (largest table).
-const ENTITIES = ["account", "contact", "opportunity", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage", "lead"] as const;
+// "file" runs the dedicated binary-download script (sync-sf-files.ts).
+const ENTITIES = ["account", "contact", "opportunity", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage", "file", "lead"] as const;
 
 export interface SyncStatus {
   running: boolean;
@@ -38,7 +39,8 @@ function log(line: string): void {
 function runEntity(entity: string): Promise<number> {
   return new Promise((resolve) => {
     const tsx = path.join(process.cwd(), "node_modules", ".bin", "tsx");
-    const child = spawn(tsx, ["scripts/migrate-sf-objects.ts", entity], {
+    const script = entity === "file" ? "scripts/sync-sf-files.ts" : "scripts/migrate-sf-objects.ts";
+    const child = spawn(tsx, entity === "file" ? [script] : [script, entity], {
       cwd: process.cwd(),
       env: { ...process.env, NODE_OPTIONS: "--max-old-space-size=4096" },
       stdio: ["ignore", "pipe", "pipe"],
