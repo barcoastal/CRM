@@ -29,14 +29,23 @@ export function LeadHistoryCard({
   return (
     <RelatedList
       entity="Account"
-      title={`${entityLabel} (${rows.length})`}
+      title={entityLabel}
       items={rows}
       emptyHint={emptyHint}
+      header={
+        <div style={{ ...grid, fontWeight: 700, fontSize: 11, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <div style={cell}>Date</div>
+          <div style={cell}>Field</div>
+          <div style={cell}>User</div>
+          <div style={cell}>Original Value</div>
+          <div style={cell}>New Value</div>
+        </div>
+      }
       renderItem={(h: HistoryRow) => (
         <div style={grid}>
           <div style={cell}>{new Date(h.changedAt).toLocaleString()}</div>
-          <div style={cell}>{h.changedBy?.name ?? "System"}</div>
           <div style={cell}>{prettifyFieldName(h.field)}</div>
+          <div style={cell}>{h.changedBy?.name ?? "System"}</div>
           <div style={{ ...cell, color: "#747474" }}>{display(h.oldValue)}</div>
           <div style={cell}>{display(h.newValue)}</div>
         </div>

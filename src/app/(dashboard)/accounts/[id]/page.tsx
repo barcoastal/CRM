@@ -27,6 +27,7 @@ import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { genericTone } from "@/lib/slds/status-tones";
 import { LeadHistoryCard } from "@/components/leads/lead-history-card";
+import { FilesCard, NotesCard } from "@/components/accounts/files-notes-cards";
 
 const PATH = ACCOUNT_STAGES.map((s) => ({ label: s }));
 
@@ -602,8 +603,38 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     </>
   );
 
+  // SF Related tab parity: Files + Notes cards first, two-across tiles.
+  const noteDocs = account.documents.filter((d) => d.type === "NOTE");
+  const fileDocs = account.documents.filter((d) => d.type !== "NOTE");
+  const noteTiles = await Promise.all(
+    noteDocs.slice(0, 6).map(async (n) => {
+      let snippet = "";
+      try {
+        const fsMod = await import("node:fs/promises");
+        const raw = await fsMod.readFile(n.filePath, "utf8");
+        snippet = raw.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim().slice(0, 180);
+      } catch { /* file missing locally - snippet stays empty */ }
+      return {
+        id: n.id,
+        title: n.name.replace(/\.snote$/i, ""),
+        href: `/api/accounts/${account.id}/documents/${n.id}?view=1`,
+        date: n.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        snippet,
+      };
+    }),
+  );
+  const fileTiles = fileDocs.slice(0, 6).map((f) => ({
+    id: f.id,
+    name: f.name,
+    ext: f.name.split(".").pop()?.toLowerCase() ?? "",
+    href: `/api/accounts/${account.id}/documents/${f.id}?view=1`,
+    date: f.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+  }));
+
   const relatedPanel = (
     <>
+      <FilesCard files={fileTiles} total={fileDocs.length} />
+      <NotesCard notes={noteTiles} total={noteDocs.length} />
       {allDebts.length > 0 && (
         <RelatedList
           entity="Opportunity"
@@ -656,20 +687,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           </div>
         )}
         emptyHint="No contacts."
-      />
-      <RelatedList
-        entity="ProgramPlan"
-        title="Notes"
-        items={account.documents.filter((d) => d.type === "NOTE")}
-        renderItem={(n) => (
-          <div style={{ display: "grid", gridTemplateColumns: "3fr 1fr", gap: 12 }}>
-            <a href={`/api/accounts/${account.id}/documents/${n.id}?view=1`} target="_blank" style={{ color: "#0176d3" }}>
-              {n.name.replace(/\.snote$/i, "")}
-            </a>
-            <span style={{ color: "#747474" }}>{n.createdAt.toLocaleDateString()}</span>
-          </div>
-        )}
-        emptyHint="No notes."
       />
       <LeadHistoryCard
         rows={account.history.map((h) => ({

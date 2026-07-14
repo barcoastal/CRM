@@ -9,6 +9,7 @@ export function RelatedList<T extends { id: string }>({
   emptyHint = "Nothing to show",
   newHref,
   viewAllHref,
+  header,
 }: {
   entity: string;
   title: string;
@@ -17,6 +18,8 @@ export function RelatedList<T extends { id: string }>({
   emptyHint?: string;
   newHref?: string;
   viewAllHref?: string;
+  /** Optional column-header row rendered above the items (SF table-style lists). */
+  header?: ReactNode;
 }) {
   const slug = slugEntity(entity);
   return (
@@ -54,6 +57,11 @@ export function RelatedList<T extends { id: string }>({
           </div>
         ) : (
           <ul>
+            {header && (
+              <li className="slds-p-around_small" style={{ borderBottom: "1px solid #e5e5e5", background: "#fafaf9" }}>
+                {header}
+              </li>
+            )}
             {items.map((item) => (
               <li
                 key={item.id}
