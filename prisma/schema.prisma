@@ -1249,6 +1249,8 @@ model Debt {
   @@index([programPlanId])
   @@index([creditorId])
 
+  name       String? // SF Debt autonumber ("Debt-88230")
+  sfDataJson String? // full SF row snapshot for the debt record page
   sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 

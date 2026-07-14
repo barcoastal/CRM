@@ -45,7 +45,7 @@ const SOQL: Record<string, string> = {
   // verified against the org describe; full row snapshotted into sfDataJson.
   // Related records per account: debts, fees, cases, activities, emails - so
   // every SF account related list has a CRM counterpart.
-  debt: `SELECT Id, Opportunity__c, Program_Plan__c, Account__c, Creditor_Name__c, Creditor_Name_Formula__c, Account_Number__c, Debt_Amount__c, Original_Debt__c, Payment__c, Payment_Frequency__c, Debt_Status__c, Negotiation_Status__c, Legal_Status__c, Lien_Position__c, Include_in_the_Program__c, Settlement_Amount__c, Settlement_Percentage__c, Total_Savings__c, Total_Savings_Percentage__c, CreatedDate FROM Debt_Details__c`,
+  debt: `SELECT Id, Name, Opportunity__c, Program_Plan__c, Account__c, Creditor_Name__c, Creditor_Name_Formula__c, Original_Creditor__r.Name, Current_Creditor__r.Name, Collection_Agency__r.Name, Settlement_Priority__c, Valid_Debt_Detail__c, Account_Number__c, Debt_Amount__c, Original_Debt__c, Payment__c, Payment_Frequency__c, Debt_Status__c, Negotiation_Status__c, Legal_Status__c, Lien_Position__c, Include_in_the_Program__c, Settlement_Amount__c, Settlement_Percentage__c, Total_Savings__c, Total_Savings_Percentage__c, CreatedDate FROM Debt_Details__c`,
   fee: `SELECT Id, RecordTypeId, Program_Plan__c, Draft__c, Account__c, Fee_Amount__c, Fee_Date__c, Fee_Status__c, CreatedDate FROM Fee__c`,
   case: `SELECT Id, CaseNumber, Subject, Description, Status, Priority, Origin, AccountId, OwnerId, Draft__c, CreatedDate, ClosedDate FROM Case`,
   task: `SELECT Id, Subject, Status, Priority, Type, TaskSubtype, CallType, CallDisposition, ActivityDate, CompletedDateTime, Description, OwnerId, AccountId, WhoId, WhatId, RecordTypeId, CreatedDate FROM Task WHERE AccountId != null`,
@@ -716,8 +716,12 @@ async function migrateDebts(headers: string[], records: AsyncIterable<string[]>)
     const status =
       neg.toLowerCase().includes("settled") || g("Debt_Status__c").toLowerCase().includes("settled") ? "SETTLED"
       : neg ? "NEGOTIATING" : "ENROLLED";
+    const sfData: Record<string, string> = {};
+    headers.forEach((h, i) => { const v = cells[i]; if (v !== undefined && v !== "") sfData[h] = v; });
     await f.push({
       sfId,
+      name: g("Name") || null,
+      sfDataJson: JSON.stringify(sfData),
       opportunityId,
       programPlanId: plans.get(g("Program_Plan__c")) ?? null,
       creditorName: g("Creditor_Name_Formula__c") || g("Creditor_Name__c") || "Unknown Creditor",

@@ -710,7 +710,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         }
         renderItem={(d) => (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr 1fr 1fr 1fr 1fr 1fr", gap: 8 }}>
-            <span>${d.currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <Link href={`/debts/${d.id}`} style={{ color: "#0176d3" }}>
+              ${d.currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Link>
             <span>{d.creditorName}</span>
             <span>{d.accountNumber ?? "-"}</span>
             <span>{d.paymentAmount != null ? `$${d.paymentAmount.toLocaleString()}` : "-"}</span>
