@@ -257,7 +257,15 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             E("Account Name", account.name ?? acctSf("Name"), "name", "text", { rawValue: account.name }),
             E("Rating", ratingDisplay, "Rating"),
             // Row 2: Account Owner | Owner Full Name
-            E("Account Owner", ownerName, "ownerId", "select", { rawValue: account.ownerId ?? null, options: ownerOptions }),
+            E(
+              "Account Owner",
+              account.ownerId
+                ? <Link key="aown" href={`/settings/users/${account.ownerId}`} style={{ color: "#0176d3" }}>{ownerName}</Link>
+                : ownerName,
+              "ownerId",
+              "select",
+              { rawValue: account.ownerId ?? null, options: ownerOptions },
+            ),
             // SF renders the owner as a user link (admins land on the user's
             // record page with owned records + logs).
             ["Owner Full Name", account.ownerId
