@@ -11,7 +11,7 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const r = await requireAuthOrRespond("Lead.Read");
+  const r = await requireAuthOrRespond("Lead.View");
   if ("response" in r) return r.response;
   const { id } = await params;
   const items = await prisma.leadDebt.findMany({

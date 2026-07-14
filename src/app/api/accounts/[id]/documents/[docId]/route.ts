@@ -7,7 +7,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; docId: string }> }
 ) {
-  const r = await requireAuthOrRespond("Account.Read");
+  const r = await requireAuthOrRespond("Account.View");
   if ("response" in r) return r.response;
   const { id, docId } = await params;
   const doc = await prisma.document.findFirst({ where: { id: docId, accountId: id } });

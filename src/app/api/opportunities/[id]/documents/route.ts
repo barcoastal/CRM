@@ -10,7 +10,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const r = await requireAuthOrRespond("Opportunity.Read");
+  const r = await requireAuthOrRespond("Opportunity.View");
   if ("response" in r) return r.response;
   const { id } = await params;
   const { searchParams } = new URL(request.url);

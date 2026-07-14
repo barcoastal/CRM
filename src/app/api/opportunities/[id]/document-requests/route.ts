@@ -9,7 +9,7 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const r = await requireAuthOrRespond("Opportunity.Read");
+  const r = await requireAuthOrRespond("Opportunity.View");
   if ("response" in r) return r.response;
   const { id } = await params;
   const items = await prisma.documentRequest.findMany({

@@ -16,7 +16,7 @@ function last10(raw: string): string {
 }
 
 export async function GET(request: NextRequest) {
-  const r = await requireAuthOrRespond("Lead.Read");
+  const r = await requireAuthOrRespond("Lead.View");
   if ("response" in r) return r.response;
   const phone = new URL(request.url).searchParams.get("phone");
   if (!phone) return NextResponse.json({ error: "phone required" }, { status: 400 });

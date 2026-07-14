@@ -57,7 +57,7 @@ async function soapGetUserInfo(userName: string): Promise<string> {
 }
 
 export async function POST(request: NextRequest) {
-  const r = await requireAuthOrRespond("Lead.Read");
+  const r = await requireAuthOrRespond("Lead.View");
   if ("response" in r) return r.response;
 
   const body = (await request.json().catch(() => ({}))) as { userName?: string };

@@ -15,7 +15,7 @@ import { requireAuthOrRespond } from "@/lib/api-auth";
 import { addSuppression, isSuppressed, normalizePhone, removeSuppression } from "@/lib/dnc";
 
 export async function GET(request: NextRequest) {
-  const r = await requireAuthOrRespond("Lead.Read");
+  const r = await requireAuthOrRespond("Lead.View");
   if ("response" in r) return r.response;
 
   const url = new URL(request.url);

@@ -11,7 +11,7 @@ const SOAP_NS = "http://schemas.xmlsoap.org/soap/envelope/";
 const SER_NS = "http://service.admin.ws.five9.com/";
 
 export async function GET() {
-  const r = await requireAuthOrRespond("Lead.Read");
+  const r = await requireAuthOrRespond("Lead.View");
   if ("response" in r) return r.response;
 
   const builder = new XMLBuilder({ ignoreAttributes: false, attributeNamePrefix: "@_", suppressEmptyNode: false });

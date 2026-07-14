@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 
 export async function GET(_request: NextRequest) {
-  const r = await requireAuthOrRespond("Lead.Read");
+  const r = await requireAuthOrRespond("Lead.View");
   if ("response" in r) return r.response;
   const cadences = await prisma.callCadence.findMany({
     orderBy: { name: "asc" },

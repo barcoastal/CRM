@@ -138,7 +138,7 @@ const MATCH_THRESHOLD = 0.85;
 const CANDIDATE_THRESHOLD = 0.55;
 
 export async function GET() {
-  const r = await requireAuthOrRespond("Lead.Read");
+  const r = await requireAuthOrRespond("Lead.View");
   if ("response" in r) return r.response;
 
   let five9: string[];

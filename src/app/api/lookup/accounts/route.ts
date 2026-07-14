@@ -9,7 +9,7 @@ import { requireAuthOrRespond } from "@/lib/api-auth";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const r = await requireAuthOrRespond("Account.Read");
+  const r = await requireAuthOrRespond("Account.View");
   if ("response" in r) return r.response;
 
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim();

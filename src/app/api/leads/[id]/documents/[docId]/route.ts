@@ -7,7 +7,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; docId: string }> }
 ) {
-  const r = await requireAuthOrRespond("Lead.Read");
+  const r = await requireAuthOrRespond("Lead.View");
   if ("response" in r) return r.response;
   const { id, docId } = await params;
   const doc = await prisma.document.findFirst({ where: { id: docId, leadId: id } });

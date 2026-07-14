@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const r = await requireAuthOrRespond("Opportunity.Read");
+  const r = await requireAuthOrRespond("Opportunity.View");
   if ("response" in r) return r.response;
   const { searchParams } = new URL(request.url);
   const opportunityId = searchParams.get("opportunityId");

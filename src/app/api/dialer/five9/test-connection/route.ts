@@ -105,7 +105,7 @@ function extractNames(xml: string, container: string): string[] {
 }
 
 export async function GET() {
-  const r = await requireAuthOrRespond("Lead.Read");
+  const r = await requireAuthOrRespond("Lead.View");
   if ("response" in r) return r.response;
 
   const env = envStatus();
