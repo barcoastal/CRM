@@ -96,6 +96,15 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
     orderBy = { [key]: dir } as Prisma.ContactOrderByWithRelationInput;
   }
 
+  // Per-rep owner views (SF per-person lists) - searchable in the picker.
+  const ownerUsers = await prisma.user.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+  const ownerViews = ownerUsers.map((u) => ({ value: `owner:${u.id}`, label: u.name }));
+  const allViews = [...VIEWS, ...ownerViews];
+
   const [items, total] = await Promise.all([
     prisma.contact.findMany({
       where,
@@ -215,7 +224,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
       sortDir={dir}
       searchQuery={search}
       preservedParams={preservedParams}
-      views={VIEWS}
+      views={allViews}
       currentView={view}
       page={page}
       pageSize={LIMIT}

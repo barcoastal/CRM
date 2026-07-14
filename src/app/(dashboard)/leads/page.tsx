@@ -112,7 +112,10 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const tomorrow = new Date(todayStart);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  if (view === "my-open" && myId) {
+  if (view?.startsWith("owner:")) {
+    // Per-rep view: everything a specific user owns (SF per-person lists).
+    where.assignedToId = view.slice("owner:".length);
+  } else if (view === "my-open" && myId) {
     where.assignedToId = myId;
     where.status = { notIn: ["ENROLLED", "LOST", "DNC"] };
   } else if (view === "this-week") {
@@ -137,6 +140,15 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       orderBy = { [key]: dir } as Prisma.LeadOrderByWithRelationInput;
     }
   }
+
+  // Per-rep owner views (SF per-person lists) - searchable in the picker.
+  const ownerUsers = await prisma.user.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+  const ownerViews = ownerUsers.map((u) => ({ value: `owner:${u.id}`, label: u.name }));
+  const allViews = [...VIEWS, ...ownerViews];
 
   const [leads, total] = await Promise.all([
     prisma.lead.findMany({
@@ -248,7 +260,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       sortDir={dir}
       searchQuery={search}
       preservedParams={preservedParams}
-      views={VIEWS}
+      views={allViews}
       currentView={view}
       page={page}
       pageSize={LIMIT}
