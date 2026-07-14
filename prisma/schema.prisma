@@ -456,6 +456,7 @@ model Account {
   @@index([email(ops: raw("gin_trgm_ops"))], type: Gin)
   // trigram index: global search does ILIKE %q% on this column
   @@index([phone(ops: raw("gin_trgm_ops"))], type: Gin)
+  paymentSummaryLines PaymentSummaryLine[] @relation("AccountPaymentSummaryLines")
 }
 
 // ============ DNC / SUPPRESSION LIST (replaces SF SuppressionList + Five9 DNC sync) ============
@@ -1231,6 +1232,9 @@ model Debt {
   savingsAmount    Float?
   savingsPercent   Float?
   lastPaymentDate  DateTime?
+  legalStatus       String? // SF Legal_Status__c
+  negotiationStatus String? // SF Negotiation_Status__c
+  lienPosition      String? // SF Lien_Position__c
   isDelinquent     Boolean      @default(false)
   notes            String?
   createdAt        DateTime     @default(now())
@@ -1495,7 +1499,31 @@ model ProcessorSyncLog {
   @@index([provider, createdAt])
 }
 
+// SF Payment_Summary__c mirror: one line per account per payment type
+// (Draft, Escrow Amount, Retainer Fee, ...). Renders the Payment Summaries tab.
+model PaymentSummaryLine {
+  id                String   @id @default(cuid())
+  accountId         String
+  account           Account  @relation("AccountPaymentSummaryLines", fields: [accountId], references: [id], onDelete: Cascade)
+  paymentType       String
+  recipient         String?
+  totalAmount       Float    @default(0)
+  amountInSchedule  Float    @default(0)
+  amountCollected   Float    @default(0)
+  outstandingAmount Float    @default(0)
+  completedPayments Int      @default(0)
+  nsfPayments       Int      @default(0)
+  remainingPayments Int      @default(0)
+  totalPayments     Int      @default(0)
+  sortOrder         Int      @default(0)
+  sfId              String?  @unique
+  updatedAt         DateTime @updatedAt
+
+  @@index([accountId])
+}
+
 model Offer {
+
   id             String    @id @default(cuid())
   debtId         String
   debt           Debt      @relation(fields: [debtId], references: [id], onDelete: Cascade)

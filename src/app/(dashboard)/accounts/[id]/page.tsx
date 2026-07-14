@@ -500,9 +500,38 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       No active opportunity. Create one first to use the payment calculator.
     </div>
   );
+  // SF Reschedule Program header values, read from the live plan + deal (the
+  // SF panel shows the program parameters above the real schedule).
+  const liveWeekly = livePlan
+    ? (livePlan.monthlyAmount || livePlan.drafts.find((d) => d.status === "SCHEDULED")?.amount || livePlan.drafts[0]?.amount || 0)
+    : 0;
+  const liveParams: Array<[string, string]> = livePlan
+    ? [
+        ["No of Debts Included", String(allDebts.length)],
+        ["Current Total Debt", `$${(activeOpp?.currentTotalDebt ?? totalDebt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+        ["Total Debt Included", `$${(activeOpp?.totalDebt ?? totalDebt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+        ["Service Fee", "$55.00"],
+        ["Payment Processor", account.paymentProcessor ?? "SAS Processor"],
+        ["Monthly Bank Fee", "$15.00"],
+        ["Bank Setup Fee", "$10.00"],
+        ["Frequency", "Weekly"],
+        ["Payment Term", `${livePlan.termMonths}`],
+        ["Weekly Draft", `$${liveWeekly.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+        ["First Payment Date", (livePlan.firstDraftDate ?? livePlan.startDate).toLocaleDateString("en-US")],
+        ["Weekly Payment Day", (livePlan.firstDraftDate ?? livePlan.startDate).toLocaleDateString("en-US", { weekday: "long" })],
+      ]
+    : [];
   const calcPanel = livePlan ? (
     <>
-      <Section title={`Payment Schedule — ${livePlan.recordType.replace(/_/g, " ")} (${livePlan.status}) · $${livePlan.monthlyAmount.toLocaleString()}/mo × ${livePlan.termMonths}mo`}>
+      <Section title="Reschedule Program">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 14 }}>
+          {liveParams.map(([label, value]) => (
+            <div key={label}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#444444", marginBottom: 4 }}>{label}</div>
+              <div style={{ height: 32, padding: "0 8px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 13, background: "#f3f2f2", color: "#444444", display: "flex", alignItems: "center" }}>{value}</div>
+            </div>
+          ))}
+        </div>
         <div style={{ marginBottom: 8, fontSize: 12 }}>
           <Link href={`/program-plans/${livePlan.id}`} style={{ color: "#0176d3" }}>Open Program Plan</Link>
         </div>
@@ -537,72 +566,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     <Section title="Reschedule Program">{projectionCalc}</Section>
   );
 
-  const activitiesPanel = (
-    <Section title={`Activities (${activity.length})`}>
-      {activity.length === 0 ? (
-        <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>No activity recorded.</div>
-      ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
-              <th style={th}>Date</th>
-              <th style={th}>Type</th>
-              <th style={th}>Subject</th>
-              <th style={th}>Detail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...activity].sort((a, b) => b.date.getTime() - a.date.getTime()).map((a) => (
-              <tr key={a.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                <td style={td}>{a.date.toLocaleString()}</td>
-                <td style={td}>{a.type}</td>
-                <td style={td}>{a.subject}</td>
-                <td style={td}>{a.meta ?? "-"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </Section>
-  );
-
-  const documentsPanel = (
-    <>
-      <EnvelopesRelatedList
-        envelopes={account.envelopes.map((e) => ({
-          id: e.id,
-          recordType: e.recordType,
-          status: e.status,
-          signerName: e.signerName,
-          signerEmail: e.signerEmail,
-          templateName: e.templateName,
-          documentName: e.documentName,
-          signingToken: e.signingToken,
-          sentAt: e.sentAt?.toISOString() ?? null,
-          signedAt: e.signedAt?.toISOString() ?? null,
-          completedAt: e.completedAt?.toISOString() ?? null,
-          createdAt: e.createdAt.toISOString(),
-        }))}
-        accountId={account.id}
-        defaultSignerName={account.contacts[0]?.contact.fullName}
-        defaultSignerEmail={account.contacts[0]?.contact.email ?? undefined}
-      />
-      <Section title={`Files (${account.documents.length})`}>
-        <DocumentsUpload
-          endpoint={`/api/accounts/${account.id}/documents`}
-          items={account.documents.map((d) => ({
-            id: d.id,
-            name: d.name,
-            type: d.type,
-            fileSize: d.fileSize,
-            createdAt: d.createdAt.toISOString(),
-            uploadedBy: d.uploadedBy ? { name: d.uploadedBy.name } : null,
-          }))}
-        />
-      </Section>
-    </>
-  );
-
   // SF Related tab parity: Files + Notes cards first, two-across tiles.
   const noteDocs = account.documents.filter((d) => d.type === "NOTE");
   const fileDocs = account.documents.filter((d) => d.type !== "NOTE");
@@ -631,32 +594,139 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     date: f.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
   }));
 
+
+  const activitiesPanel = (
+    <>
+    <NotesCard notes={noteTiles} total={noteDocs.length} />
+    <Section title={`Activities (${activity.length})`}>
+      {activity.length === 0 ? (
+        <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>No activity recorded.</div>
+      ) : (
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
+              <th style={th}>Date</th>
+              <th style={th}>Type</th>
+              <th style={th}>Subject</th>
+              <th style={th}>Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...activity].sort((a, b) => b.date.getTime() - a.date.getTime()).map((a) => (
+              <tr key={a.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
+                <td style={td}>{a.date.toLocaleString()}</td>
+                <td style={td}>{a.type}</td>
+                <td style={td}>{a.subject}</td>
+                <td style={td}>{a.meta ?? "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Section>
+    </>
+  );
+
+  const documentsPanel = (
+    <>
+      <Section title={`Files (${fileDocs.length})`}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+          {fileDocs.map((f) => (
+            <a
+              key={f.id}
+              href={`/api/accounts/${account.id}/documents/${f.id}?view=1`}
+              target="_blank"
+              style={{ display: "flex", gap: 10, alignItems: "center", border: "1px solid #e5e5e5", borderRadius: 6, padding: "8px 10px", textDecoration: "none", background: "#fff" }}
+            >
+              <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 6, background: (f.name.toLowerCase().endsWith(".pdf") ? "#ea001e" : "#0176d3"), color: "#fff", fontSize: 9, fontWeight: 700, textTransform: "uppercase", flexShrink: 0 }}>
+                {f.name.split(".").pop()?.slice(0, 4) ?? "file"}
+              </span>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", color: "#0176d3", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.name}</span>
+                <span style={{ color: "#747474", fontSize: 11 }}>{f.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+              </span>
+            </a>
+          ))}
+        </div>
+        <DocumentsUpload
+          endpoint={`/api/accounts/${account.id}/documents`}
+          items={[]}
+        />
+      </Section>
+      <EnvelopesRelatedList
+        envelopes={account.envelopes.map((e) => ({
+          id: e.id,
+          recordType: e.recordType,
+          status: e.status,
+          signerName: e.signerName,
+          signerEmail: e.signerEmail,
+          templateName: e.templateName,
+          documentName: e.documentName,
+          signingToken: e.signingToken,
+          sentAt: e.sentAt?.toISOString() ?? null,
+          signedAt: e.signedAt?.toISOString() ?? null,
+          completedAt: e.completedAt?.toISOString() ?? null,
+          createdAt: e.createdAt.toISOString(),
+        }))}
+        accountId={account.id}
+        defaultSignerName={account.contacts[0]?.contact.fullName}
+        defaultSignerEmail={account.contacts[0]?.contact.email ?? undefined}
+      />
+    </>
+  );
+
+  const teamMembers = (() => {
+    const seen = new Set<string>();
+    const members: { role: string; name: string | null; email?: string | null }[] = [];
+    for (const opp of account.opportunities) {
+      if (opp.assignedTo?.name && !seen.has(`a:${opp.assignedTo.id}`)) {
+        seen.add(`a:${opp.assignedTo.id}`);
+        members.push({ role: "Opp Assignee", name: opp.assignedTo.name, email: opp.assignedTo.email });
+      }
+      if (opp.closer && !seen.has(`c:${opp.closer}`)) {
+        seen.add(`c:${opp.closer}`);
+        members.push({ role: "Closer", name: opp.closer });
+      }
+      if (opp.fronter && !seen.has(`f:${opp.fronter}`)) {
+        seen.add(`f:${opp.fronter}`);
+        members.push({ role: "Fronter", name: opp.fronter });
+      }
+    }
+    return members;
+  })();
+
+  // SF Related Records order (verified in the Debt Settlement app):
+  // Debt Details -> Opportunities -> Account Team -> Files -> Notes -> History.
   const relatedPanel = (
     <>
-      <FilesCard files={fileTiles} total={fileDocs.length} />
-      <NotesCard notes={noteTiles} total={noteDocs.length} />
-      {allDebts.length > 0 && (
-        <RelatedList
-          entity="Opportunity"
-          title="Debt Details"
-          items={allDebts}
-          renderItem={(d) => (
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
-              <span>{d.creditorName}</span>
-              <span>${d.originalBalance.toLocaleString()}</span>
-              <span>${d.paymentAmount?.toLocaleString() ?? "-"}</span>
-              <StatusPill label={d.status} tone={genericTone(d.status)} />
-            </div>
-          )}
-          emptyHint="No debts."
-        />
-      )}
+      <RelatedList
+        entity="Opportunity"
+        title="Debt Details (Account)"
+        items={allDebts}
+        header={
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr 1fr 1fr 1fr 1fr 1fr", gap: 8, fontWeight: 700, fontSize: 11, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4 }}>
+            <div>Debt Amount</div><div>Creditor Name</div><div>Account #</div><div>Payment</div><div>Legal Status</div><div>Negotiation</div><div>Lien Position</div>
+          </div>
+        }
+        renderItem={(d) => (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr 1fr 1fr 1fr 1fr 1fr", gap: 8 }}>
+            <span>${d.currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>{d.creditorName}</span>
+            <span>{d.accountNumber ?? "-"}</span>
+            <span>{d.paymentAmount != null ? `$${d.paymentAmount.toLocaleString()}` : "-"}</span>
+            <span>{d.legalStatus ?? "-"}</span>
+            <span>{d.negotiationStatus ?? "-"}</span>
+            <span>{d.lienPosition ?? "-"}</span>
+          </div>
+        )}
+        emptyHint="No debts."
+      />
       <RelatedList
         entity="Opportunity"
         title="Opportunities"
         items={account.opportunities}
         renderItem={(o) => (
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr", gap: 12 }}>
             <Link href={`/opportunities/${o.id}`} style={{ color: "#0176d3" }}>{o.name ?? o.recordType.replace(/_/g, " ")}</Link>
             <span>{o.stage}</span>
             <span>${(o.totalDebt ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -664,30 +734,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         )}
         emptyHint="No opportunities."
       />
-      <RelatedList
-        entity="Case"
-        title="Cases"
-        items={account.cases}
-        renderItem={(c) => (
-          <div>
-            <Link href={`/cases/${c.id}`} style={{ color: "#0176d3" }}>{c.subject}</Link>
-            <span style={{ color: "#747474", marginLeft: 8 }}>· {c.status}</span>
-          </div>
-        )}
-        emptyHint="No cases."
-      />
-      <RelatedList
-        entity="Contact"
-        title="Contacts"
-        items={account.contacts}
-        renderItem={(rel) => (
-          <div>
-            <Link href={`/contacts/${rel.contact.id}`} style={{ color: "#0176d3" }}>{rel.contact.fullName}</Link>
-            <span style={{ color: "#747474", marginLeft: 8 }}>· {rel.role}</span>
-          </div>
-        )}
-        emptyHint="No contacts."
-      />
+      <AccountTeamCard ownerName={account.owner?.name ?? null} ownerEmail={account.owner?.email ?? null} members={teamMembers} />
+      <FilesCard files={fileTiles} total={fileDocs.length} />
+      <NotesCard notes={noteTiles} total={noteDocs.length} />
       <LeadHistoryCard
         rows={account.history.map((h) => ({
           id: h.id,
@@ -703,8 +752,36 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     </>
   );
 
+  const paymentSummaryLines = await prisma.paymentSummaryLine.findMany({
+    where: { accountId: account.id },
+    orderBy: { sortOrder: "asc" },
+  });
+
   const paymentSummariesPanel = (
-    <SasDetailsPanel accountId={account.id} />
+    <>
+      <RelatedList
+        entity="Draft"
+        title="Payment Summaries (Related Record)"
+        items={paymentSummaryLines}
+        header={
+          <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1.3fr 1fr 1fr 1fr 1fr", gap: 8, fontWeight: 700, fontSize: 11, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4 }}>
+            <div>Payment Type</div><div>Recipient</div><div>Total Amount</div><div>Amount In Schedule</div><div>Amount Collected</div><div>Outstanding Amount</div>
+          </div>
+        }
+        renderItem={(l) => (
+          <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1.3fr 1fr 1fr 1fr 1fr", gap: 8 }}>
+            <span>{l.paymentType}</span>
+            <span>{l.recipient ?? "-"}</span>
+            <span>${l.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>${l.amountInSchedule.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>${l.amountCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>${l.outstandingAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        )}
+        emptyHint="No payment summaries synced yet."
+      />
+      <SasDetailsPanel accountId={account.id} />
+    </>
   );
 
   const settlementsPanel = (
@@ -799,25 +876,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     />
   );
 
-  const teamMembers = (() => {
-    const seen = new Set<string>();
-    const members: { role: string; name: string | null; email?: string | null }[] = [];
-    for (const opp of account.opportunities) {
-      if (opp.assignedTo?.name && !seen.has(`a:${opp.assignedTo.id}`)) {
-        seen.add(`a:${opp.assignedTo.id}`);
-        members.push({ role: "Opp Assignee", name: opp.assignedTo.name, email: opp.assignedTo.email });
-      }
-      if (opp.closer && !seen.has(`c:${opp.closer}`)) {
-        seen.add(`c:${opp.closer}`);
-        members.push({ role: "Closer", name: opp.closer });
-      }
-      if (opp.fronter && !seen.has(`f:${opp.fronter}`)) {
-        seen.add(`f:${opp.fronter}`);
-        members.push({ role: "Fronter", name: opp.fronter });
-      }
-    }
-    return members;
-  })();
 
   const teamPanel = (
     <Section title="Account Team">

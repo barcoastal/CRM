@@ -22,7 +22,7 @@ import fs from "node:fs";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 20 });
 const prisma = new PrismaClient({ adapter, log: ["warn", "error"] });
 
-const ENTITIES_ALL = ["contact", "account", "opportunity", "lead", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage", "accounthistory"];
+const ENTITIES_ALL = ["contact", "account", "opportunity", "lead", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage", "accounthistory", "paymentsummary"];
 const ENTITY = process.argv[2];
 if (!ENTITY || !ENTITIES_ALL.includes(ENTITY)) {
   console.error(`Usage: tsx scripts/migrate-sf-objects.ts <${ENTITIES_ALL.join("|")}>`);
@@ -45,12 +45,13 @@ const SOQL: Record<string, string> = {
   // verified against the org describe; full row snapshotted into sfDataJson.
   // Related records per account: debts, fees, cases, activities, emails - so
   // every SF account related list has a CRM counterpart.
-  debt: `SELECT Id, Opportunity__c, Program_Plan__c, Account__c, Creditor_Name__c, Creditor_Name_Formula__c, Account_Number__c, Debt_Amount__c, Original_Debt__c, Payment__c, Payment_Frequency__c, Debt_Status__c, Negotiation_Status__c, Legal_Status__c, Include_in_the_Program__c, Settlement_Amount__c, Settlement_Percentage__c, Total_Savings__c, Total_Savings_Percentage__c, CreatedDate FROM Debt_Details__c`,
+  debt: `SELECT Id, Opportunity__c, Program_Plan__c, Account__c, Creditor_Name__c, Creditor_Name_Formula__c, Account_Number__c, Debt_Amount__c, Original_Debt__c, Payment__c, Payment_Frequency__c, Debt_Status__c, Negotiation_Status__c, Legal_Status__c, Lien_Position__c, Include_in_the_Program__c, Settlement_Amount__c, Settlement_Percentage__c, Total_Savings__c, Total_Savings_Percentage__c, CreatedDate FROM Debt_Details__c`,
   fee: `SELECT Id, RecordTypeId, Program_Plan__c, Draft__c, Account__c, Fee_Amount__c, Fee_Date__c, Fee_Status__c, CreatedDate FROM Fee__c`,
   case: `SELECT Id, CaseNumber, Subject, Description, Status, Priority, Origin, AccountId, OwnerId, Draft__c, CreatedDate, ClosedDate FROM Case`,
   task: `SELECT Id, Subject, Status, Priority, Type, TaskSubtype, CallType, CallDisposition, ActivityDate, CompletedDateTime, Description, OwnerId, AccountId, WhoId, WhatId, RecordTypeId, CreatedDate FROM Task WHERE AccountId != null`,
   event: `SELECT Id, Subject, Description, Location, StartDateTime, EndDateTime, ActivityDate, AccountId, WhoId, WhatId, OwnerId, CreatedDate FROM Event`,
   emailmessage: `SELECT Id, FromAddress, FromName, ToAddress, CcAddress, Subject, TextBody, Incoming, Status, MessageDate, RelatedToId, CreatedDate FROM EmailMessage`,
+  paymentsummary: `SELECT Id, Client__c, Payment_Type__c, Recipient__c, Total_Amount__c, Amount_In_Schedule__c, Amount_Collected__c, Outstanding_Amount__c, Completed_Payments__c, NSF_Payments__c, Remaining_Payments__c, Total_Payments__c, Sort_Order__c FROM Payment_Summary__c`,
   // Program Plan + Draft: the actual payment schedule/history ("payments done
   // or not done") so the CRM's live payment grid matches SF exactly.
   programplan: `SELECT Id, Client__c, Opportunity__c, Payment_Processor__c, First_Payment_Date__c, Payment_Term__c, Weekly_Draft_Amount__c, Setup_Fee__c, Program_Fee_Percentage__c, Completed_Drafts_Amount__c, Completed_Drafts_Count__c, Last_Completed_Draft_Date__c, Next_Draft_Date__c, Debit_Schedule_Id__c, DS_Total_Draft_Amount__c, DS_Total_Escrow_Amount__c, CreatedDate, LastModifiedDate FROM Program_Plan__c`,
@@ -727,6 +728,9 @@ async function migrateDebts(headers: string[], records: AsyncIterable<string[]>)
       currentBalance: num("Debt_Amount__c") ?? 0,
       enrolledBalance: num("Debt_Amount__c") ?? 0,
       status,
+      legalStatus: g("Legal_Status__c") || null,
+      negotiationStatus: g("Negotiation_Status__c") || null,
+      lienPosition: g("Lien_Position__c") || null,
       settledAmount: num("Settlement_Amount__c"),
       savingsAmount: num("Total_Savings__c"),
       savingsPercent: num("Total_Savings_Percentage__c"),
@@ -871,6 +875,35 @@ async function migrateEvents(headers: string[], records: AsyncIterable<string[]>
   await f.finish();
 }
 
+async function migratePaymentSummaries(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
+  const accounts = await loadAccountMap();
+  const f = makeFlusher("PaymentSummaryLine", (d) =>
+    prisma.paymentSummaryLine.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }), 10000);
+  for await (const cells of records) {
+    const { g, num } = mkGetters(headers, cells);
+    const sfId = g("Id");
+    if (!/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue;
+    const accountId = accounts.get(g("Client__c"));
+    if (!accountId) { await f.push(null); continue; }
+    await f.push({
+      sfId,
+      accountId,
+      paymentType: g("Payment_Type__c") || "Other",
+      recipient: g("Recipient__c") || null,
+      totalAmount: num("Total_Amount__c") ?? 0,
+      amountInSchedule: num("Amount_In_Schedule__c") ?? 0,
+      amountCollected: num("Amount_Collected__c") ?? 0,
+      outstandingAmount: num("Outstanding_Amount__c") ?? 0,
+      completedPayments: Math.round(num("Completed_Payments__c") ?? 0),
+      nsfPayments: Math.round(num("NSF_Payments__c") ?? 0),
+      remainingPayments: Math.round(num("Remaining_Payments__c") ?? 0),
+      totalPayments: Math.round(num("Total_Payments__c") ?? 0),
+      sortOrder: Math.round(num("Sort_Order__c") ?? 0),
+    });
+  }
+  await f.finish();
+}
+
 async function migrateEmailMessages(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
   const accounts = await loadAccountMap();
   const opps = await loadOpportunityMap();
@@ -987,6 +1020,7 @@ async function main() {
   if (ENTITY === "task") await migrateTasks(headers, rest);
   if (ENTITY === "event") await migrateEvents(headers, rest);
   if (ENTITY === "emailmessage") await migrateEmailMessages(headers, rest);
+  if (ENTITY === "paymentsummary") await migratePaymentSummaries(headers, rest);
 
   await prisma.$disconnect();
 }

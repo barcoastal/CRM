@@ -14,7 +14,7 @@ import path from "node:path";
 const LOG_PATH = "/tmp/sf-sync.log";
 // Plans before drafts (drafts FK onto plans); lead last (largest table).
 // "file" runs the dedicated binary-download script (sync-sf-files.ts).
-const ENTITIES = ["account", "contact", "opportunity", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage", "accounthistory", "file", "lead"] as const;
+const ENTITIES = ["account", "contact", "opportunity", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage", "paymentsummary", "accounthistory", "file", "lead"] as const;
 
 export interface SyncStatus {
   running: boolean;

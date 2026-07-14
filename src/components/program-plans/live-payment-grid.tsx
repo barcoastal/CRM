@@ -40,7 +40,8 @@ function sfStatus(s: string): { label: string; color: string } {
     case "CANCELLED": return { label: "Cancelled", color: "#747474" };
     case "PROCESSING": return { label: "Processing", color: "#0176d3" };
     case "RETRYING": return { label: "Retrying", color: "#8a4b00" };
-    default: return { label: "Scheduled", color: "#747474" };
+    // SF grid vocabulary: future drafts read "Pending".
+    default: return { label: "Pending", color: "#747474" };
   }
 }
 
