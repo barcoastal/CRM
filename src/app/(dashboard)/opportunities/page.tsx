@@ -109,6 +109,9 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   if (view === "my-open" && myId) {
     where.assignedToId = myId;
     where.stage = { notIn: ["CLOSED", "CLOSED_WON_FIRST_PAYMENT", "ARCHIVED"] };
+  } else if (view?.startsWith("owner:")) {
+    // Admin drill-down: everything a specific user owns.
+    where.assignedToId = view.slice("owner:".length);
   } else if (view === "this-week") {
     where.createdAt = { gte: weekStart };
   } else if (view === "today-activity") {
