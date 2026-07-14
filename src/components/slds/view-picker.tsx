@@ -50,8 +50,10 @@ export function ViewPicker({
     setOpen(false);
   }
 
-  const pinned = views.filter((v) => v.isPinned);
-  const recent = views.filter((v) => !v.isPinned);
+  const [query, setQuery] = useState("");
+  const match = (v: ListViewOption) => v.name.toLowerCase().includes(query.toLowerCase());
+  const pinned = views.filter((v) => v.isPinned && match(v));
+  const recent = views.filter((v) => !v.isPinned && match(v));
 
   return (
     <div ref={containerRef} style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -80,6 +82,15 @@ export function ViewPicker({
             zIndex: 9000,
           }}
         >
+          <div style={{ padding: "8px 12px 4px" }}>
+            <input
+              autoFocus
+              placeholder="Search lists..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              style={{ width: "100%", height: 30, padding: "0 10px", border: "1px solid #c9c7c5", borderRadius: 15, fontSize: 13 }}
+            />
+          </div>
           <div style={{ padding: "8px 12px", borderBottom: "1px solid #ecebea", display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontSize: 11, color: "#444444", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, flex: 1 }}>
               List Views

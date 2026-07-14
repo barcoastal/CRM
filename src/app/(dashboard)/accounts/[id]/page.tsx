@@ -112,7 +112,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   }));
 
   const allDebts = account.opportunities.flatMap((o) => o.debts);
-  const totalDebt = allDebts.reduce((s, d) => s + d.originalBalance, 0) || account.currentTotalDebt || 0;
+  // SF header shows the account's Total Debt field, NOT the sum of all debt
+  // records across every (incl. archived) opportunity - those can differ.
+  const totalDebt = account.currentTotalDebt || allDebts.reduce((s, d) => s + d.originalBalance, 0) || 0;
   const headerTitle = `$${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const statusTone = (status: string): "success" | "warning" | "danger" | "neutral" => {
@@ -256,7 +258,11 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             E("Rating", ratingDisplay, "Rating"),
             // Row 2: Account Owner | Owner Full Name
             E("Account Owner", ownerName, "ownerId", "select", { rawValue: account.ownerId ?? null, options: ownerOptions }),
-            ["Owner Full Name", ownerFullNameDisplay],
+            // SF renders the owner as a user link (admins land on the user's
+            // record page with owned records + logs).
+            ["Owner Full Name", account.ownerId
+              ? <Link key="own" href={`/settings/users/${account.ownerId}`} style={{ color: "#0176d3" }}>{ownerFullNameDisplay}</Link>
+              : ownerFullNameDisplay],
             // Row 3: Parent Account | Processor Status
             ["Parent Account", parentAcctNode],
             ["Processor Status", processorStatusDisplay],
@@ -906,7 +912,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       recordSubtitle={account.name}
       highlights={[
         { label: "Client Status", value: <StatusPill label={account.clientStatus} tone={statusTone(account.clientStatus)} /> },
-        { label: "Processor Status", value: account.processorStatus ?? "Not Synced" },
+        { label: "Processor Status", value: processorStatusDisplay ?? "Not Synced" },
         { label: "Payment Status", value: <StatusPill label={account.paymentStatus} tone={statusTone(account.paymentStatus)} /> },
         { label: "Bank Account Status", value: <StatusPill label={account.bankAccountStatus} tone={statusTone(account.bankAccountStatus)} /> },
       ]}
