@@ -20,6 +20,7 @@ interface Props {
   ownerName: string | null;
   summarize: ReportSummarize[];
   groupBy: string | null;
+  groupByLabel?: string | null;
   filterCount: number;
   filters?: ReportFilter[];
 }
@@ -30,7 +31,7 @@ const usd = (v: unknown): string => {
   return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 };
 
-export function ReportViewer({ id, name, objectLabel, summarize, groupBy, filterCount }: Props) {
+export function ReportViewer({ id, name, objectLabel, summarize, groupBy, groupByLabel, filterCount }: Props) {
   const [running, setRunning] = useState(true);
   const [result, setResult] = useState<ReportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +40,8 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, filter
   const [showDetails, setShowDetails] = useState(true);
   const [showSubtotals, setShowSubtotals] = useState(true);
   const [showGrandTotal, setShowGrandTotal] = useState(true);
+  // SF shows a chart only after "Add Chart" - hidden by default.
+  const [showChart, setShowChart] = useState(false);
 
   async function run() {
     setRunning(true);
@@ -62,7 +65,7 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, filter
     const metric = summarize[0];
     const bars = result.groups.map((g) => ({
       label: g.key || "(blank)",
-      value: metric ? Number(g.summary[`${metric.kind}:${metric.field}`] ?? g.rows.length) : g.rows.length,
+      value: metric ? Number(g.summary[`${metric.field}_${metric.kind}`] ?? g.rows.length) : g.rows.length,
     }));
     const max = Math.max(...bars.map((b) => b.value), 1);
     return { bars: bars.slice(0, 25), max };
@@ -74,9 +77,14 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, filter
     ];
     if (result?.totals) {
       for (const s of summarize) {
-        const key = `${s.kind}:${s.field}`;
+        const key = `${s.field}_${s.kind}`;
         if (result.totals[key] != null) {
-          cards.push({ label: `${s.kind === "sum" ? "Total" : s.kind === "avg" ? "Average" : "Count of"} ${s.field.split(".").pop()?.replace(/([A-Z])/g, " $1")}`, value: usd(result.totals[key]) });
+          const colLabel = result.columns.find((c) => c.key === s.field)?.label
+            ?? s.field.split(".").pop()?.replace(/__c$/, "").replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2");
+          cards.push({
+            label: `${s.kind === "sum" ? "Total" : s.kind === "avg" ? "Average" : "Count of"} ${colLabel}`,
+            value: usd(result.totals[key]),
+          });
         }
       }
     }
@@ -100,6 +108,9 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, filter
           <div style={{ fontSize: 18, fontWeight: 700, color: "#181818", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
         </div>
         <Link href="/reports" className="slds-button slds-button_neutral">All Reports</Link>
+        <button className="slds-button slds-button_neutral" onClick={() => setShowChart((v) => !v)} style={{ cursor: "pointer" }}>
+          {showChart ? "Remove Chart" : "Add Chart"}
+        </button>
         <button className="slds-button slds-button_neutral" title={`${filterCount} filters`} style={{ cursor: "default" }}>
           ▼ {filterCount}
         </button>
@@ -123,7 +134,7 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, filter
       {!running && !error && result && (
         <>
           {/* Bar chart over the first grouping (SF Add Chart look) */}
-          {chart && (
+          {showChart && chart && (
             <div style={{ padding: "14px 24px", borderBottom: "1px solid #e5e5e5" }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "#444444", marginBottom: 8, textAlign: "center" }}>
                 {summarize[0] ? "Sum" : "Record Count"}
@@ -146,7 +157,7 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, filter
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
-                  {groupBy && <th style={th}>{groupBy.split(".").pop()?.replace(/([A-Z])/g, " $1")} ↑</th>}
+                  {groupBy && <th style={th}>{groupByLabel ?? groupBy.split(".").pop()?.replace(/([A-Z])/g, " $1")} ↑</th>}
                   {columns.map((c) => <th key={c.key} style={th}>{c.label}</th>)}
                 </tr>
               </thead>
@@ -179,7 +190,7 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, filter
                     </td>
                     {(groupBy ? columns : columns.slice(1)).map((c) => (
                       <td key={c.key} style={{ ...td, fontWeight: 700 }}>
-                        {summarize.filter((s) => s.field === c.key).map((s) => usd(result.totals?.[`${s.kind}:${s.field}`])).join(" ") || ""}
+                        {summarize.filter((s) => s.field === c.key).map((s) => usd(result.totals?.[`${s.field}_${s.kind}`])).join(" ") || ""}
                       </td>
                     ))}
                   </tr>
@@ -220,7 +231,7 @@ function GroupRows({ group, columns, td, showDetails, showRowCounts, showSubtota
           <td key={c.key} style={{ ...td, fontWeight: 700 }}>
             {showSubtotals
               ? summarize.filter((s) => s.field === c.key).map((s) => {
-                  const v = group.summary[`${s.kind}:${s.field}`];
+                  const v = group.summary[`${s.field}_${s.kind}`];
                   return v != null ? Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 }) : "";
                 }).join(" ")
               : ""}

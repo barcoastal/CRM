@@ -31,6 +31,7 @@ export default async function ReportViewPage({ params }: PageProps) {
       ownerName={report.createdBy?.name ?? null}
       summarize={Array.isArray(report.summarize) ? (report.summarize as unknown as ReportSummarize[]) : []}
       groupBy={report.groupBy}
+      groupByLabel={report.groupBy ? (meta?.fields.find((f) => f.key === report.groupBy)?.label ?? null) : null}
       filterCount={Array.isArray(report.filters) ? (report.filters as unknown as ReportFilter[]).length : 0}
     />
   );
