@@ -15,6 +15,12 @@ export interface ReportFilter {
   field: string;
   operator: string;
   value: unknown;
+  /**
+   * SF-style boolean groups: filters sharing a group are ANDed together and
+   * the groups OR with each other; ungrouped filters AND with the OR result.
+   * Mirrors booleanFilter shapes like "(1 AND 2) OR (1 AND 3)".
+   */
+  orGroup?: string;
 }
 
 export interface ReportSummarize {
@@ -305,13 +311,27 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
     // Build where from DB-level filters (column + relation). JSON / computed
     // are applied after fetch.
     const whereClauses: Record<string, unknown>[] = [];
+    const groupClauses = new Map<string, Record<string, unknown>[]>();
     const postFilters: ReportFilter[] = [];
     for (const f of filters) {
       const field = getField(cfg.objectType, f.field);
       if (!field) continue;
       const clause = buildFilterClause(field, f.operator, f.value);
-      if (clause) whereClauses.push(clause);
-      else postFilters.push(f);
+      if (!clause) { postFilters.push(f); continue; }
+      if (f.orGroup) {
+        const list = groupClauses.get(f.orGroup) ?? [];
+        list.push(clause);
+        groupClauses.set(f.orGroup, list);
+      } else {
+        whereClauses.push(clause);
+      }
+    }
+    // OR the groups together (each group internally ANDed), then AND with the rest.
+    if (groupClauses.size > 0) {
+      const orParts = [...groupClauses.values()].map((list) =>
+        list.length === 1 ? list[0] : { AND: list },
+      );
+      whereClauses.push(orParts.length === 1 ? orParts[0] : { OR: orParts });
     }
     const where: Record<string, unknown> = whereClauses.length === 1
       ? whereClauses[0]
