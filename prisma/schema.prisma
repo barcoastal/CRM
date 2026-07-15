@@ -2254,6 +2254,13 @@ model DashboardTile {
 
 // ============ REPORTS (SF-style saved report definitions) ============
 
+// SF-style report folders (rail on the Reports home; may be empty).
+model ReportFolder {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
 model Report {
   id          String    @id @default(cuid())
   name        String
@@ -2267,6 +2274,7 @@ model Report {
   sortDir     String    @default("asc") // asc | desc
   summarize   Json      @default("[]") // [{ field, kind: "count" | "sum" | "avg" }]
   rowLimit    Int       @default(2000)
+  folder      String    @default("Public Reports") // SF-style report folder
   isShared    Boolean   @default(true)
   createdById String?
   createdBy   User?     @relation("ReportCreatedBy", fields: [createdById], references: [id])
