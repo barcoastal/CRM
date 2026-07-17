@@ -47,12 +47,18 @@ export function AccountHeaderButtons({
   async function sync() {
     setSyncing(true);
     try {
-      const res = await fetch(`/api/accounts/${accountId}/sync-processor`, { method: "POST" });
-      if (res.ok) {
-        toast.success("Synced to payment processor");
+      const res = await fetch(`/api/accounts/${accountId}/sync-processor`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const j = (await res.json().catch(() => ({}))) as { ok?: boolean; mode?: string; processor?: string; steps?: Array<{ step: string; status: string }>; error?: string };
+      if (res.ok && j.ok) {
+        const summary = (j.steps ?? []).map((s) => `${s.step}: ${s.status}`).join(" · ");
+        toast.success(j.mode === "test" ? `TEST MODE - payloads journaled (${j.processor}). ${summary}` : `Enrolled with ${j.processor}. ${summary}`, { duration: 8000 });
         router.refresh();
       } else {
-        toast.error("Sync failed");
+        toast.error(j.error ?? "Enrollment failed", { duration: 8000 });
       }
     } finally {
       setSyncing(false);
