@@ -110,7 +110,7 @@ export function GlobalSearch() {
         <input
           ref={inputRef}
           className="sf-search-input"
-          placeholder="Search Leads, Contacts, Accounts, Opportunities…"
+          placeholder="Search..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onFocus={() => { if (results.length > 0) setOpen(true); }}

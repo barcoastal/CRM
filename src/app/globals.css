@@ -41,7 +41,7 @@
 */
 
 .sf-global-bar {
-  height: 36px;
+  height: 50px;
   background: #fff;
   border-bottom: 1px solid #c9c9c9;
   display: flex;
@@ -78,12 +78,14 @@
 .sf-search {
   display: flex;
   align-items: center;
-  background: #fff;
-  border: 1px solid #c9c9c9;
+  gap: 8px;
+  width: 400px;
+  max-width: 40vw;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #747474;
   border-radius: 4px;
-  padding: 0 8px;
-  width: min(620px, 80%);
-  height: 28px;
+  background: #fff;
 }
 
 .sf-search-icon { width: 14px; height: 14px; fill: #54698d; flex-shrink: 0; }
@@ -148,7 +150,7 @@
 
 .sf-profile-menu {
   position: absolute;
-  top: 36px;
+  top: 50px;
   right: 0;
   background: #fff;
   border: 1px solid #c9c9c9;
@@ -277,14 +279,14 @@
 }
 
 .sf-nav-bar {
-  height: 40px;
+  height: 44px;
   background: #fff;
   border-bottom: 1px solid #c9c9c9;
   display: flex;
   align-items: stretch;
   padding-left: 0;
   position: sticky;
-  top: 36px;
+  top: 50px;
   z-index: 8500;
 }
 
@@ -340,7 +342,13 @@
 }
 
 .sf-tab:hover { background: #f3f2f2; }
-.sf-tab-active { color: #181818; font-weight: 600; border-bottom-color: #0176d3; }
+.sf-tab-active {
+  color: #014486;
+  font-weight: 600;
+  border-bottom-color: #0176d3;
+  background: #d8edff;
+  border-radius: 4px 4px 0 0;
+}
 .sf-tab-chev { width: 8px; height: 8px; fill: #747474; }
 
 .sf-tab-edit {

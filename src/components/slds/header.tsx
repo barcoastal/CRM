@@ -230,9 +230,6 @@ export function SldsHeader({
         </button>
       </div>
 
-      {/* Row 3 — decorative blue diagonal banner */}
-      <div className="sf-decor-band" aria-hidden="true" />
-
       <EditNavModal
         open={editNavOpen}
         onClose={() => setEditNavOpen(false)}
