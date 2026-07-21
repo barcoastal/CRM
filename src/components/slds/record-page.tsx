@@ -50,7 +50,7 @@ export function RecordPage({
         <Path
           stages={pathStages}
           currentIndex={pathCurrentIndex}
-          actionLabel={pathActionLabel ?? "Mark Current Stage"}
+          actionLabel={pathActionLabel}
           advance={pathAdvance}
         />
       )}

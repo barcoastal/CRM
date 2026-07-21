@@ -22,11 +22,10 @@ const btn: React.CSSProperties = {
   gap: 4,
 };
 
-const chevronBtn: React.CSSProperties = {
+const groupBtn: React.CSSProperties = {
   ...btn,
-  padding: "0 8px",
-  width: 32,
-  justifyContent: "center",
+  border: 0,
+  borderRadius: 0,
 };
 
 export function AccountHeaderButtons({
@@ -68,16 +67,19 @@ export function AccountHeaderButtons({
   return (
     <>
       <QuickActionsRow accountId={accountId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
-      <button style={btn} onClick={() => setModal(true)}>Disposition</button>
-      <button style={btn} onClick={() => router.push(`/accounts/${accountId}/edit`)}>Edit</button>
-      <button style={btn} onClick={sync} disabled={syncing}>
-        {syncing ? "Syncing" : "Sync to Payment Processor"}
-      </button>
-      <button style={chevronBtn} aria-label="More" title="More">
-        <svg width="11" height="11" viewBox="0 0 10 10" style={{ fill: "#0176d3" }}>
-          <path d="M0 2l5 6 5-6z" />
-        </svg>
-      </button>
+      {/* SF renders the record actions as ONE joined button group. */}
+      <div style={{ display: "inline-flex", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden" }}>
+        <button style={groupBtn} onClick={() => setModal(true)}>Disposition</button>
+        <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9" }} onClick={() => router.push(`/accounts/${accountId}/edit`)}>Edit</button>
+        <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9" }} onClick={sync} disabled={syncing}>
+          {syncing ? "Syncing" : "Sync to Payment Processor"}
+        </button>
+        <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9", padding: "0 10px" }} aria-label="More" title="More">
+          <svg width="11" height="11" viewBox="0 0 10 10" style={{ fill: "#0176d3" }}>
+            <path d="M0 2l5 6 5-6z" />
+          </svg>
+        </button>
+      </div>
       <DispositionModal
         endpoint={`/api/accounts/${accountId}/disposition`}
         stages={ACCOUNT_STAGES}

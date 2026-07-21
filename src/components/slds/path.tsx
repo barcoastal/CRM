@@ -34,7 +34,7 @@ export interface PathAdvance {
 export function Path({
   stages,
   currentIndex,
-  actionLabel = "Mark as Current Stage",
+  actionLabel,
   onAction,
   advance,
 }: {
@@ -127,7 +127,9 @@ export function Path({
         })}
       </div>
 
-      {/* SF renders this as a solid brand-blue button. */}
+      {/* SF renders this as a solid brand-blue button - only on layouts that
+          define it (the account path in this org shows no button). */}
+      {actionLabel && (
       <button
         onClick={handleAction}
         disabled={!onAction && !advance?.nextStage}
@@ -153,13 +155,14 @@ export function Path({
         </svg>
         {actionLabel}
       </button>
+      )}
 
       <style jsx>{`
         :global(.sf-path-step) {
           transition: background .15s;
         }
         :global(.sf-path-done) { background: #3ba755; }
-        :global(.sf-path-current) { background: #1b96ff; }
+        :global(.sf-path-current) { background: #032d60; }
         :global(.sf-path-upcoming) { background: #f3f3f3; }
         :global(.sf-path-done:hover) { background: #0b683b; }
         :global(.sf-path-upcoming:hover) { background: #ecebea; }

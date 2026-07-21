@@ -919,15 +919,15 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       recordTitle={headerTitle}
       recordSubtitle={account.name}
       highlights={[
-        { label: "Client Status", value: <StatusPill label={account.clientStatus} tone={statusTone(account.clientStatus)} /> },
+        // SF shows plain text in the highlights strip - no colored pills.
+        { label: "Client Status", value: account.clientStatus },
         { label: "Processor Status", value: processorStatusDisplay ?? "Not Synced" },
-        { label: "Payment Status", value: <StatusPill label={account.paymentStatus} tone={statusTone(account.paymentStatus)} /> },
-        { label: "Bank Account Status", value: <StatusPill label={account.bankAccountStatus} tone={statusTone(account.bankAccountStatus)} /> },
+        { label: "Payment Status", value: account.paymentStatus },
+        { label: "Bank Account Status", value: account.bankAccountStatus },
       ]}
       actions={<AccountHeaderButtons accountId={account.id} currentStage={account.stage} defaultEmail={emailVal} defaultPhone={phoneVal} />}
       pathStages={PATH}
       pathCurrentIndex={accountPathIndex(account.stage)}
-      pathActionLabel="Mark Stage as Complete"
       details={
         <>
         <PathSidePanelServer
