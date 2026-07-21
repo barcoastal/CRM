@@ -31,5 +31,5 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   if (!(await authorized(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return NextResponse.json({ lastAutomaticRun: getLastPollResult() });
+  return NextResponse.json({ lastAutomaticRun: await getLastPollResult() });
 }

@@ -7,14 +7,23 @@
  * credentials are absent (e.g. local dev without the creds row).
  */
 import { runProcessorSync } from "./index";
+import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma/client";
 
 const INTERVAL_MS = 30 * 60 * 1000;
 let running = false;
 let armed = false;
-let lastRun: { at: string; result: unknown } | null = null;
 
-export function getLastPollResult(): { at: string; result: unknown } | null {
-  return lastRun;
+/**
+ * Last automatic run, read from the journal (module state does NOT survive
+ * Next.js bundle boundaries between instrumentation and route handlers).
+ */
+export async function getLastPollResult(): Promise<{ at: string; result: unknown } | null> {
+  const row = await prisma.processorSyncLog.findFirst({
+    where: { provider: "POLL", method: "StatusPoll" },
+    orderBy: { createdAt: "desc" },
+  });
+  return row ? { at: row.createdAt.toISOString(), result: row.response } : null;
 }
 
 async function tick(): Promise<void> {
@@ -23,7 +32,17 @@ async function tick(): Promise<void> {
   try {
     const since = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const result = await runProcessorSync({ since });
-    lastRun = { at: new Date().toISOString(), result };
+    await prisma.processorSyncLog.create({
+      data: {
+        provider: "POLL",
+        method: "StatusPoll",
+        mode: "LIVE",
+        status: "SUCCESS",
+        payload: { since } as Prisma.InputJsonValue,
+        response: result as unknown as Prisma.InputJsonValue,
+        draftIds: [],
+      },
+    });
     const fmt = (rows: Array<{ provider: string; matched: number; updated: number }>) =>
       rows.map((r) => `${r.provider} ${r.updated}/${r.matched}`).join(", ");
     console.log(`[processor-poll] drafts: ${fmt(result.drafts)} | balances: ${fmt(result.balances)}`);
