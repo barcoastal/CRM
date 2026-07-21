@@ -811,8 +811,10 @@ async function migrateCases(headers: string[], records: AsyncIterable<string[]>)
   await f.finish();
 }
 
-// Task record types (from the org): Disposition rows keep their own type.
+// Task record types (from the org): Disposition rows keep their own type;
+// Checklist_Item rows feed the account Checklist rail card.
 const TASK_RT_DISPOSITION = new Set(["0128Y000001Z0MyQAK"]);
+const TASK_RT_CHECKLIST = new Set(["012VO000000BKUrYAO"]);
 
 async function migrateTasks(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
   const accounts = await loadAccountMap();
@@ -833,7 +835,7 @@ async function migrateTasks(headers: string[], records: AsyncIterable<string[]>)
     const what = g("WhatId");
     await f.push({
       sfId,
-      recordType: TASK_RT_DISPOSITION.has(g("RecordTypeId")) ? "DISPOSITION" : "ACTIVITY",
+      recordType: TASK_RT_DISPOSITION.has(g("RecordTypeId")) ? "DISPOSITION" : TASK_RT_CHECKLIST.has(g("RecordTypeId")) ? "CHECKLIST" : "ACTIVITY",
       subject: g("Subject") || "(no subject)",
       type,
       status: st.includes("complet") ? "COMPLETED" : st.includes("progress") ? "IN_PROGRESS" : st.includes("defer") ? "DEFERRED" : st.includes("wait") ? "WAITING" : "NOT_STARTED",

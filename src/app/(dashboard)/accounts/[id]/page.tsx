@@ -16,6 +16,7 @@ import { HealthCheckCard } from "@/components/accounts/health-check-card";
 import { EscrowBalanceCard } from "@/components/accounts/escrow-balance-card";
 import { SasDetailsPanel } from "@/components/accounts/sas-details-panel";
 import { AccountTeamCard } from "@/components/accounts/account-team-card";
+import { ChecklistCard } from "@/components/accounts/checklist-card";
 import { ContactRolesList } from "@/components/accounts/contact-roles-list";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
@@ -171,6 +172,14 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     },
   });
   const welcomeCallDone = account.welcomeCallCompleted || welcomeCallTask > 0;
+
+  // SF Checklist rail card: stage checklist items (Task RT Checklist_Item).
+  const checklistTasks = await prisma.task.findMany({
+    where: { accountId: account.id, recordType: "CHECKLIST" },
+    orderBy: { createdAt: "asc" },
+    take: 30,
+    include: { owner: { select: { name: true } } },
+  });
 
   const phoneVal = account.phone ?? acctSf("Phone");
   const emailVal = account.email ?? acctSf("Email__c");
@@ -434,10 +443,10 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           entityId={account.id}
           fields={[
             // Row 1: Client Status | Bank Account Status
-            ["Client Status", <StatusPill key="cs" label={account.clientStatus} tone={statusTone(account.clientStatus)} />],
-            ["Bank Account Status", <StatusPill key="bas" label={account.bankAccountStatus} tone={statusTone(account.bankAccountStatus)} />],
+            ["Client Status", account.clientStatus],
+            ["Bank Account Status", account.bankAccountStatus],
             // Row 2: Payment Status | (empty right)
-            ["Payment Status", <StatusPill key="ps" label={account.paymentStatus} tone={statusTone(account.paymentStatus)} />],
+            ["Payment Status", account.paymentStatus],
             ["", null],
             // Row 3: Graduation Status | (empty right)
             ["Graduation Status", account.graduatedStatus ?? acctSf("Graduation_Status__c")],
@@ -1022,6 +1031,16 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ownerName={account.owner?.name ?? null}
             ownerEmail={account.owner?.email ?? null}
             members={teamMembers}
+          />
+          <ChecklistCard
+            stage={account.stage}
+            items={checklistTasks.map((t) => ({
+              id: t.id,
+              subject: t.subject,
+              dueDate: t.dueDate?.toLocaleDateString("en-US") ?? null,
+              assignedTo: t.owner?.name ?? null,
+              done: t.status === "COMPLETED",
+            }))}
           />
           <ActivityChatterRail activities={activity} chatter={chatter} accountId={account.id} defaultEmail={account.email ?? null} />
         </>

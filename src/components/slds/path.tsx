@@ -101,7 +101,7 @@ export function Path({
                   : "polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%)",
                 fontSize: 11,
                 fontWeight: isCurrent ? 700 : 400,
-                color: isDone ? "#fff" : isCurrent ? "#fff" : "#444",
+                color: isCurrent ? "#fff" : "#444",
                 whiteSpace: "nowrap",
                 paddingLeft: isFirst ? 10 : 16,
                 paddingRight: isLast ? 10 : 16,
@@ -109,16 +109,7 @@ export function Path({
               }}
               title={stage.label}
             >
-              {isDone && (
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
-                  style={{ marginRight: 4, fill: "#fff", flexShrink: 0 }}
-                >
-                  <path d="M4.5 8.5L2 6l-1 1 3.5 3.5L11 4l-1-1z" />
-                </svg>
-              )}
+              
               <span style={{ overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>
                 {stage.label}
               </span>
@@ -161,10 +152,10 @@ export function Path({
         :global(.sf-path-step) {
           transition: background .15s;
         }
-        :global(.sf-path-done) { background: #3ba755; }
+        :global(.sf-path-done) { background: #f3f3f3; }
         :global(.sf-path-current) { background: #032d60; }
         :global(.sf-path-upcoming) { background: #f3f3f3; }
-        :global(.sf-path-done:hover) { background: #0b683b; }
+        :global(.sf-path-done:hover) { background: #e5e5e5; }
         :global(.sf-path-upcoming:hover) { background: #ecebea; }
       `}</style>
     </div>

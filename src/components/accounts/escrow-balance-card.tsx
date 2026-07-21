@@ -134,27 +134,28 @@ export function EscrowBalanceCard({
             (Pulled on: {pulledAt.toLocaleString()})
           </div>
         )}
-        {feePaidInFull && (
-          <div
-            style={{
-              marginTop: 12,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "4px 12px",
-              background: "#04844b",
-              color: "#fff",
-              borderRadius: 12,
-              fontSize: 12,
-              fontWeight: 600,
-            }}
-          >
+        {/* SF shows the fee state either way: green when paid, red when not. */}
+        <div
+          style={{
+            marginTop: 12,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "4px 12px",
+            background: feePaidInFull ? "#04844b" : "#ba0517",
+            color: "#fff",
+            borderRadius: 12,
+            fontSize: 12,
+            fontWeight: 600,
+          }}
+        >
+          {feePaidInFull && (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <path d="M5 12l5 5L20 7" />
             </svg>
-            Fee paid in full
-          </div>
-        )}
+          )}
+          {feePaidInFull ? "Fee paid in full" : "Fee not fully paid"}
+        </div>
       </div>
     </article>
   );
