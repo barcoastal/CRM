@@ -23,12 +23,16 @@ export interface DraftUpdate {
   settledAt?: string | null;
   returnCode?: string | null;
   returnReason?: string | null;
+  /** SF record id of the draft (SAS DebitRemoteID) - secondary match key. */
+  sfDraftId?: string | null;
 }
 
 export interface BalanceUpdate {
   externalAccountId: string;
   balance: number;
   pulledAt: Date;
+  /** SF account id (SAS remoteid) - secondary match key. */
+  sfAccountId?: string | null;
 }
 
 export interface PaymentProcessor {

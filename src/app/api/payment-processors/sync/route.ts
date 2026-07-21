@@ -1,36 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runProcessorSync } from "@/lib/payment-processors";
+import { getLastPollResult } from "@/lib/payment-processors/scheduler";
+import { requireAuthOrRespond } from "@/lib/api-auth";
 
 /**
- * Cron-driven payment processor sync. Hit every 15-60 minutes.
+ * Inbound processor sync (draft statuses + escrow balances).
+ * Runs automatically every 30 minutes (scheduler.ts). This route triggers it
+ * manually (POST) and reports the last automatic run (GET).
  *
- * Auth: set PROCESSOR_SYNC_SECRET in env; call with header
- *   x-processor-sync-secret: <secret>
- *   or query ?secret=<secret>
- *
- * Optional query:
- *   only=RAM | only=SAS
- *   since=YYYY-MM-DD       (default: yesterday)
+ * Auth: x-cron-secret header (CRON_SECRET) or a session with Draft.Retry.
  */
+async function authorized(request: NextRequest): Promise<boolean> {
+  const secret = process.env.CRON_SECRET ?? process.env.PROCESSOR_SYNC_SECRET;
+  if (secret && (request.headers.get("x-cron-secret") === secret || request.headers.get("x-processor-sync-secret") === secret)) return true;
+  const r = await requireAuthOrRespond("Draft.Retry");
+  return !("response" in r);
+}
+
 export async function POST(request: NextRequest) {
-  const required = process.env.PROCESSOR_SYNC_SECRET;
-  if (required) {
-    const got =
-      request.headers.get("x-processor-sync-secret") ??
-      new URL(request.url).searchParams.get("secret");
-    if (got !== required) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!(await authorized(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const url = new URL(request.url);
   const only = (url.searchParams.get("only") ?? "").toUpperCase();
   const since = url.searchParams.get("since") ?? undefined;
-
   const result = await runProcessorSync({
     since,
     only: only === "RAM" || only === "SAS" ? only : undefined,
   });
-  return NextResponse.json({ ok: true, ...result });
+  return NextResponse.json(result);
 }
 
 export async function GET(request: NextRequest) {
-  return POST(request);
+  if (!(await authorized(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  return NextResponse.json({ lastAutomaticRun: getLastPollResult() });
 }

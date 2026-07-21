@@ -33,7 +33,9 @@ export async function syncBalances(
   let updated = 0;
   for (const u of updates) {
     const acct = await prisma.account.findFirst({
-      where: { [idField]: u.externalAccountId },
+      where: u.sfAccountId
+        ? { OR: [{ [idField]: u.externalAccountId }, { sfId: u.sfAccountId }] }
+        : { [idField]: u.externalAccountId },
       select: { id: true },
     });
     if (!acct) continue;
@@ -53,8 +55,10 @@ export async function syncBalances(
  */
 const STATUS_RANK: Record<string, number> = {
   SCHEDULED: 0,
+  RETRYING: 1,
   PROCESSING: 1,
   SUCCESS: 2,
+  SKIPPED: 4,
   FAILED: 5,
   CANCELLED: 5,
 };
@@ -64,10 +68,20 @@ export async function syncDrafts(
   sinceISO: string
 ): Promise<{ provider: string; matched: number; updated: number }> {
   const updates = await provider.getDraftUpdates(sinceISO);
+  // Drafts carry the processor's id in externalSasId / externalRamId (synced
+  // from SF or written by our own outbound push); processorReference is a
+  // legacy fallback.
+  const idField = provider.name === "SAS" ? "externalSasId" : "externalRamId";
   let updated = 0;
   for (const u of updates) {
+    if (!u.externalDraftId) continue;
+    const or: Array<Record<string, string>> = [
+      { [idField]: u.externalDraftId },
+      { processorReference: u.externalDraftId },
+    ];
+    if (u.sfDraftId) or.push({ sfId: u.sfDraftId });
     const draft = await prisma.draft.findFirst({
-      where: { processorReference: u.externalDraftId },
+      where: { OR: or },
       select: { id: true, status: true },
     });
     if (!draft) continue;

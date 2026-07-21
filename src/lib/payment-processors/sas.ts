@@ -90,18 +90,20 @@ interface SasBalanceRow {
   balance_out?: number;
 }
 
+/** GetUpdatedDebits row - PascalCase per the live API (probed 2026-07-21). */
 interface SasDebitRow {
-  id?: number | string;
-  remoteid?: string;
-  customers_id?: number | string;
-  customer_remoteid?: string;
-  status?: string;
-  amount?: number;
-  scheduled_date?: string;
-  processed_date?: string;
-  settled_date?: string;
-  return_code?: string;
-  return_reason?: string;
+  PaymentID?: string;
+  DebitID?: string;
+  DebitRemoteID?: string;
+  CustomerID?: string;
+  RemoteID?: string;
+  Total?: string;
+  Status?: string;
+  DebitDate?: string;
+  BatchDate?: string;
+  DateCleared?: string;
+  TransactionID?: string;
+  Reason?: string;
 }
 
 async function sasCall<T = unknown>(method: string, body: Record<string, unknown> = {}): Promise<T[]> {
@@ -291,11 +293,10 @@ export const sasProvider: PaymentProcessor = {
     return rows
       .filter((r) => r.remoteid && typeof r.current_balance === "number")
       .map((r) => ({
-        // We key on the SF Account ID since that's what our Account.externalSasId
-        // historically stored (SF's External_SAS_Id__c). The numeric SAS id
-        // also matches because our backfill populated externalSasId from the
-        // SF mirror, which was the numeric id. Try both during lookup.
-        externalAccountId: r.remoteid,
+        // externalSasId holds the NUMERIC SAS customer id; remoteid is the
+        // legacy SF account id. Emit both so the matcher can try each.
+        externalAccountId: String(r.id),
+        sfAccountId: r.remoteid || null,
         balance: Number(r.current_balance),
         pulledAt: now,
       }));
@@ -304,16 +305,31 @@ export const sasProvider: PaymentProcessor = {
   async getDraftUpdates(sinceISO: string): Promise<DraftUpdate[]> {
     const date = sinceISO.slice(0, 10);
     const rows = await sasCall<SasDebitRow>("GetUpdatedDebits", { SinceDate: date });
-    return rows.map((d) => ({
-      externalDraftId: String(d.id ?? d.remoteid ?? ""),
-      externalAccountId: String(d.customer_remoteid ?? d.customers_id ?? ""),
-      status: normalizeDraftStatus(String(d.status ?? "")),
-      amount: d.amount != null ? Number(d.amount) : null,
-      scheduledDate: d.scheduled_date ?? null,
-      processedAt: d.processed_date ?? null,
-      settledAt: d.settled_date ?? null,
-      returnCode: d.return_code ?? null,
-      returnReason: d.return_reason ?? null,
-    }));
+    // SAS status vocabulary (SF SAS_Payment_Status_Mapping__mdt): Pending ->
+    // Scheduled, Successful -> Completed, Failed -> NSF, Rescheduled ->
+    // Skipped Payment, Cancelled/Rejected as-is.
+    const mapStatus = (raw: string): string => {
+      const v = raw.toLowerCase();
+      if (v === "pending") return "SCHEDULED";
+      if (v === "successful") return "SUCCESS";
+      if (v === "failed" || v === "rejected") return "FAILED";
+      if (v === "rescheduled") return "SKIPPED";
+      if (v === "cancelled") return "CANCELLED";
+      return normalizeDraftStatus(raw);
+    };
+    return rows
+      .filter((d) => d.DebitID)
+      .map((d) => ({
+        externalDraftId: String(d.DebitID),
+        externalAccountId: String(d.CustomerID ?? d.RemoteID ?? ""),
+        sfDraftId: d.DebitRemoteID || null,
+        status: mapStatus(String(d.Status ?? "")),
+        amount: d.Total != null && d.Total !== "" ? Number(d.Total) : null,
+        scheduledDate: d.DebitDate || null,
+        processedAt: d.BatchDate || null,
+        settledAt: d.DateCleared || null,
+        returnCode: null,
+        returnReason: d.Reason || null,
+      }));
   },
 };

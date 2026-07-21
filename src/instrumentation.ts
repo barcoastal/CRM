@@ -12,5 +12,8 @@ export async function register() {
     // the SF_AUTH_URL env var - see src/lib/sf-sync/runner.ts).
     const { scheduleNightlySfSync } = await import("@/lib/sf-sync/runner");
     scheduleNightlySfSync();
+
+    const { scheduleProcessorPolling } = await import("@/lib/payment-processors/scheduler");
+    scheduleProcessorPolling();
   }
 }
