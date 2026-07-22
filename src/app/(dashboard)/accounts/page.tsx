@@ -72,12 +72,6 @@ const COMPUTED_VIEWS = [
   { value: "today-activity", label: "Today's Activity" },
 ];
 
-const STATUS_PILL: Record<string, { bg: string; fg: string }> = {
-  Active: { bg: "#defbe6", fg: "#176d2c" },
-  Inactive: { bg: "#f2f2f2", fg: "#444656" },
-  Hardship: { bg: "#fff4d6", fg: "#8a6d00" },
-  Cancelled: { bg: "#feded2", fg: "#8e1f0b" },
-};
 
 function fmtDateShort(input: unknown): string {
   if (!input) return "";
@@ -236,22 +230,8 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     );
     const lastContacted = fmtDateShort(sfData.Last_Contacted_DateTime__c);
 
-    const pill = STATUS_PILL[clientStatus];
-    const clientStatusCell = clientStatus ? (
-      <span
-        style={{
-          display: "inline-flex",
-          padding: "2px 8px",
-          borderRadius: 10,
-          fontSize: 11,
-          fontWeight: 600,
-          background: pill?.bg ?? "#e9ecf3",
-          color: pill?.fg ?? "#444656",
-        }}
-      >
-        {clientStatus}
-      </span>
-    ) : "";
+    // SF list cells are plain text - no pills.
+    const clientStatusCell = clientStatus;
 
     const nameCfg = getInlineConfig("account", "name");
 
