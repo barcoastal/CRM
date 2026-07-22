@@ -21,7 +21,7 @@ export function SldsShell({
   return (
     <div style={{ minHeight: "100vh", background: "#f3f3f3" }}>
       <SldsHeader userInitials={initials} userName={userName} />
-      <main style={{ padding: 16, maxWidth: "100%" }}>{children}</main>
+      <main style={{ padding: 12, maxWidth: "100%" }}>{children}</main>
       <DockedComposer />
     </div>
   );

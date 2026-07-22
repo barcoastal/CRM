@@ -15,7 +15,7 @@ export function HealthCheckCard({
         background: "#fff",
         border: "1px solid #c9c9c9",
         borderRadius: 4,
-        marginBottom: 12,
+        marginBottom: 8,
         overflow: "hidden",
         boxShadow: "0 2px 2px 0 rgba(0,0,0,.05)",
       }}

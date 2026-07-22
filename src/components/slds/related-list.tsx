@@ -23,7 +23,7 @@ export function RelatedList<T extends { id: string }>({
 }) {
   const slug = slugEntity(entity);
   return (
-    <article className="slds-card slds-m-bottom_small">
+    <article className="slds-card" style={{ marginBottom: 8 }}>
       <div className="slds-card__header slds-grid">
         <header className="slds-media slds-media_center slds-has-flexi-truncate">
           <div className="slds-media__figure">

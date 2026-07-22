@@ -60,7 +60,7 @@ export function RecordPage({
           // SF Lightning's right sidebar region is 1/3 of the content width
           // (measured 624px at a 1905px viewport). 2fr/1fr matches it.
           gridTemplateColumns: rail ? "minmax(0, 2fr) minmax(320px, 1fr)" : "minmax(0, 1fr)",
-          gap: 12,
+          gap: 8,
           marginTop: 8,
         }}
       >
