@@ -81,6 +81,7 @@ export function Section({
         overflow: "hidden",
       }}
     >
+      {title !== "" && (
       <button
         onClick={() => setOpen((o) => !o)}
         style={{
@@ -112,6 +113,7 @@ export function Section({
         </svg>
         <span style={{ fontSize: 14, fontWeight: 700, color: "#181818", letterSpacing: 0 }}>{title}</span>
       </button>
+      )}
       {open && <div style={{ padding: "6px 16px" }}>{children}</div>}
     </div>
   );

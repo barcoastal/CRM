@@ -1792,6 +1792,7 @@ model Case {
   @@index([recordType])
   @@index([contactId])
 
+  sfDataJson String?
   sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 

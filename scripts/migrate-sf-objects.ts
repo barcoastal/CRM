@@ -47,7 +47,7 @@ const SOQL: Record<string, string> = {
   // every SF account related list has a CRM counterpart.
   debt: `SELECT Id, Name, Opportunity__c, Program_Plan__c, Account__c, Creditor_Name__c, Creditor_Name_Formula__c, Original_Creditor__r.Name, Current_Creditor__r.Name, Collection_Agency__r.Name, Settlement_Priority__c, Valid_Debt_Detail__c, Account_Number__c, Debt_Amount__c, Original_Debt__c, Payment__c, Payment_Frequency__c, Debt_Status__c, Negotiation_Status__c, Legal_Status__c, Lien_Position__c, Include_in_the_Program__c, Settlement_Amount__c, Settlement_Percentage__c, Total_Savings__c, Total_Savings_Percentage__c, CreatedDate FROM Debt_Details__c`,
   fee: `SELECT Id, RecordTypeId, Program_Plan__c, Draft__c, Account__c, Fee_Amount__c, Fee_Date__c, Fee_Status__c, CreatedDate FROM Fee__c`,
-  case: `SELECT Id, CaseNumber, Subject, Description, Status, Priority, Origin, AccountId, OwnerId, Draft__c, CreatedDate, ClosedDate FROM Case`,
+  case: `SELECT Id, CaseNumber, Subject, Description, Status, Priority, Origin, Type, Reason, RecordTypeId, AccountId, ContactId, ContactPhone, OwnerId, Draft__c, Opportunity__c, Resolution__c, Resolution_Summary__c, CreatedDate, ClosedDate, LastModifiedDate FROM Case`,
   task: `SELECT Id, Subject, Status, Priority, Type, TaskSubtype, CallType, CallDisposition, ActivityDate, CompletedDateTime, Description, OwnerId, AccountId, WhoId, WhatId, RecordTypeId, CreatedDate FROM Task WHERE AccountId != null`,
   event: `SELECT Id, Subject, Description, Location, StartDateTime, EndDateTime, ActivityDate, AccountId, WhoId, WhatId, OwnerId, CreatedDate FROM Event`,
   emailmessage: `SELECT Id, FromAddress, FromName, ToAddress, CcAddress, Subject, TextBody, Incoming, Status, MessageDate, RelatedToId, CreatedDate FROM EmailMessage`,
@@ -787,6 +787,7 @@ async function loadDraftMap(): Promise<Map<string, string>> {
 
 async function migrateCases(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
   const accounts = await loadAccountMap();
+  const contacts = await loadContactMap();
   const users = await loadUserMap();
   const drafts = await loadDraftMap();
   const f = makeFlusher("Case", (d) => prisma.case.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }), 500);
@@ -804,9 +805,13 @@ async function migrateCases(headers: string[], records: AsyncIterable<string[]>)
       priority: g("Priority").toLowerCase().includes("high") ? "HIGH" : g("Priority").toLowerCase().includes("low") ? "LOW" : "NORMAL",
       origin: ["PHONE", "EMAIL", "WEB", "CHAT"].find((o) => g("Origin").toUpperCase().includes(o)) ?? "OTHER",
       accountId: accounts.get(g("AccountId")) ?? null,
+      contactId: contacts.get(g("ContactId")) ?? null,
       draftId: drafts.get(g("Draft__c")) ?? null,
       ownerId: users.get(g("OwnerId")) ?? null,
       resolvedAt: date("ClosedDate"),
+      // Full SF row for 1:1 field display (Type, Reason, Record Type,
+      // Resolution, Opportunity, Contact Phone, audit stamps).
+      sfDataJson: JSON.stringify(Object.fromEntries(headers.map((h, i) => [h, cells[i] ?? ""]))),
     });
   }
   await f.finish();

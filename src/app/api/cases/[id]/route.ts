@@ -55,3 +55,19 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   }).catch(() => null);
   return NextResponse.json(updated);
 }
+
+export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const r = await requireAuthOrRespond("Case.Delete");
+  if ("response" in r) return r.response;
+  const { id } = await ctx.params;
+  const before = await prisma.case.findUnique({ where: { id } });
+  if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  await prisma.caseComment.deleteMany({ where: { caseId: id } });
+  await prisma.case.delete({ where: { id } });
+  await auditWrite({
+    userId: r.session.userId, entity: "Case", entityId: id, action: "DELETE",
+    before: before as unknown as Record<string, unknown>,
+    after: {},
+  }).catch(() => null);
+  return NextResponse.json({ ok: true });
+}

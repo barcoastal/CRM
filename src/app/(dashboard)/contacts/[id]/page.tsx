@@ -128,7 +128,16 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   // ---------- Owner cleanup ----------
   // Bar saw "1.0" showing in Owner — guard against numeric fallthrough from JSON.
   const ownerName = contact.owner?.name ?? sfc("Owner_Full_Name__c") ?? sfc("Owner_Name__c");
-  const ownerNode: React.ReactNode = ownerName && !/^[0-9.]+$/.test(ownerName) ? ownerName : null;
+  const ownerDisplayName = ownerName && !/^[0-9.]+$/.test(ownerName) ? ownerName : null;
+  const ownerNode: React.ReactNode = ownerDisplayName ? (
+    contact.owner ? (
+      <Link href={`/settings/users/${contact.owner.id}`} style={{ color: "#0176d3" }}>
+        {ownerDisplayName}
+      </Link>
+    ) : (
+      ownerDisplayName
+    )
+  ) : null;
 
   // ---------- Activities & Chatter ----------
   const activity: ActivityItem[] = [
@@ -196,6 +205,10 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   // Left col then right col, interleaved (FieldGrid renders in row-major order).
   const phoneVal = contact.phone ?? sfc("Phone");
   const emailVal = contact.email ?? sfc("Email");
+  // SF renders SSN masked to the last four digits.
+  const ssnRaw = sfc("SSN__c") ?? sfc("SSN_Encrypted__c") ?? sfc("SSN");
+  const ssnDigits = ssnRaw ? ssnRaw.replace(/\D/g, "") : "";
+  const ssnMasked = ssnDigits.length >= 4 ? `XXX-XX-${ssnDigits.slice(-4)}` : ssnRaw;
   const nameNode = (
     <span>
       {contact.fullName}
@@ -252,21 +265,21 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     ],
     // Row 7: Reports To | SSN
     ["Reports To", reportsToNode],
-    CE("SSN", sfc("SSN__c") ?? sfc("SSN_Encrypted__c") ?? sfc("SSN"), "SSN__c"),
+    CE("SSN", ssnMasked, "SSN__c"),
     // Row 8: Lead Source | Preferred Method of Contact
     CE("Lead Source", sfc("LeadSource"), "LeadSource"),
     CE("Preferred Method of Contact", sfc("Preferred_Method_of_Contact__c") ?? sfc("Preferred_Method__c"), "Preferred_Method_of_Contact__c"),
     // Row 9: Lead Id | Assistant
     ["Lead Id", sfc("Lead_Number__c") ?? sfc("Lead_Id__c") ?? sfc("LeadId__c") ?? sfc("Lead_ID__c")],
     CE("Assistant", sfc("AssistantName"), "AssistantName"),
-    // Row 10: Alternate Email | Asst. Phone (SF pairs these)
-    CE("Alternate Email", sfc("Alternate_Email__c"), "Alternate_Email__c", "email"),
-    CE("Asst. Phone", sfc("AssistantPhone"), "AssistantPhone", "phone"),
-    // Row 11: Verified Phone Number | (empty right — SF leaves blank)
+    // Row 10: Verified Phone Number | Asst. Phone (SF pairing)
     CE("Verified Phone Number", sfcBool("Verified_Phone_Number__c"), "Verified_Phone_Number__c", "checkbox"),
-    ["__PAD__", null],
-    // Row 12: Sync To Account Engagement | (empty right)
+    CE("Asst. Phone", sfc("AssistantPhone"), "AssistantPhone", "phone"),
+    // Row 11: Sync To Account Engagement | (empty right)
     CE("Sync To Account Engagement", sfcBool("Sync_To_Account_Engagement__c") ?? sfcBool("Sync_to_Pardot__c"), "Sync_To_Account_Engagement__c", "checkbox"),
+    ["__PAD__", null],
+    // Row 12: Exit Welcome Call Journey | (empty right)
+    CE("Exit Welcome Call Journey", sfcBool("Exit_Welcome_Call_Journey__c"), "Exit_Welcome_Call_Journey__c", "checkbox"),
     ["__PAD__", null],
   ];
 
@@ -283,74 +296,42 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       <ContactFieldGrid fields={contactInformationFields} entityType="contact" entityId={contact.id} />
       <ContactFieldGrid fields={addressInformationFields} entityType="contact" entityId={contact.id} />
 
-      {contact.primaryAccount && (
-        <ContactSection title="Account Information" defaultOpen={false}>
-          <ContactFieldGrid
-            fields={[
-              ["Primary Account", accountNameNode],
-              ["Account Type", contact.primaryAccount.recordType.replace(/_/g, " ")],
-              ["Client Status", contact.primaryAccount.clientStatus],
-              ["Stage", contact.primaryAccount.stage],
-              ["Account Phone", contact.primaryAccount.phone],
-              ["Account Email", contact.primaryAccount.email],
-              [
-                "Parent Account",
-                contact.primaryAccount.parentAccount?.name ? (
-                  <Link
-                    href={`/accounts/${contact.primaryAccount.parentAccount.id}`}
-                    style={{ color: "#0176d3" }}
-                  >
-                    {contact.primaryAccount.parentAccount.name}
-                  </Link>
-                ) : null,
-              ],
-            ]}
-          />
-        </ContactSection>
-      )}
-
-      <ContactSection title="Additional Information" defaultOpen={false}>
+      {/* SF Details tab continues with an expanded "Account Engagement" section. */}
+      <ContactSection title="Account Engagement">
         <ContactFieldGrid
-          entityType="contact"
-          entityId={contact.id}
           fields={[
-            CE("First Name", sfc("FirstName"), "firstName", "text", { rawValue: contact.firstName }),
-            CE("Last Name", sfc("LastName"), "lastName", "text", { rawValue: contact.lastName }),
-            CE("Middle Name", sfc("MiddleName"), "MiddleName"),
-            CE("Salutation", sfc("Salutation"), "Salutation"),
-            CE("Suffix", sfc("Suffix"), "Suffix"),
-            ["First Call Date", sfcDate("FirstCallDateTime")],
-            ["First Email Date", sfcDate("FirstEmailDateTime")],
-            CE("High UCC RISK", sfcBool("High_UCC_RISK__c"), "High_UCC_RISK__c", "checkbox"),
-            CE("Closer FIrst Name`", sfc("Closer_FIrst_Name__c"), "Closer_FIrst_Name__c"),
-            CE("SMS Opt Out", sfcBool("smagicinteract__SMSOptOut__c"), "smagicinteract__SMSOptOut__c", "checkbox"),
-            CE("External Legacy CRM Id", sfc("External_Legacy_CRM_Id__c"), "External_Legacy_CRM_Id__c"),
-            CE("Important", sfcBool("IsPriorityRecord"), "IsPriorityRecord", "checkbox"),
-            ["Is Email Bounced", sfcBool("IsEmailBounced")],
-            ["Is Person Account", sfcBool("IsPersonAccount")],
+            ["Email Opt Out", sfcBool("HasOptedOutOfEmail")],
+            ["Account Engagement Grade", sfc("pi__grade__c")],
+            ["Account Engagement Campaign", sfc("pi__campaign__c")],
+            ["Account Engagement First Referrer Type", sfc("pi__first_search_type__c")],
+            ["Account Engagement Comments", sfc("pi__comments__c")],
+            ["Account Engagement Hard Bounced", sfcBool("pi__pardot_hard_bounced__c")],
+            ["Account Engagement Conversion Date", sfcDate("pi__conversion_date__c")],
+            ["Account Engagement Last Activity", sfcDate("pi__last_activity__c")],
+            ["Account Engagement Created Date", sfcDate("pi__created_date__c")],
+            ["Account Engagement Last Scored At", sfcDate("pi__Pardot_Last_Scored_At__c") ?? sfcDate("pi__last_scored_at__c")],
+            ["Account Engagement First Activity", sfcDate("pi__first_activity__c")],
+            ["Account Engagement Notes", sfc("pi__notes__c")],
+            ["Account Engagement First Referrer", sfc("pi__first_touch_url__c") ?? sfc("pi__first_referrer__c")],
+            ["Account Engagement Score", sfc("pi__score__c")],
+            ["Account Engagement First Referrer Query", sfc("pi__first_search_term__c") ?? sfc("pi__first_referrer_query__c")],
+            ["Account Engagement URL", sfc("pi__url__c")],
           ]}
         />
       </ContactSection>
 
-      <ContactSection title="System Information" defaultOpen={false}>
-        <ContactFieldGrid
-          fields={[
-            ["Contact ID", sfc("Id") ?? contact.sfId],
-            ["Account ID", sfc("AccountId")],
-            ["Owner ID", sfc("OwnerId")],
-            ["Reports To ID", sfc("ReportsToId")],
-            ["Master Record ID", sfc("MasterRecordId")],
-            ["Individual ID", sfc("IndividualId")],
-            ["Activity Metric ID", sfc("ActivityMetricId")],
-            ["Owner Email", contact.owner?.email ?? sfc("Owner_Username__c")],
-            ["Created Date", sfcDate("CreatedDate") ?? contact.createdAt.toLocaleDateString()],
-            ["Created By ID", sfc("CreatedById")],
-            ["Last Modified Date", sfcDate("LastModifiedDate") ?? contact.updatedAt.toLocaleDateString()],
-            ["Last Modified By ID", sfc("LastModifiedById")],
-            ["Contact Description", sfc("Description")],
-          ]}
-        />
-      </ContactSection>
+      {/* SF: Created By | Last Modified By pair, then a full-width Description. */}
+      <ContactFieldGrid
+        fields={[
+          ["Created By", `${sfc("CreatedBy_Full_Name__c") ?? ""}${sfcDate("CreatedDate") ? `, ${sfcDate("CreatedDate")}` : ""}`.trim() || sfcDate("CreatedDate")],
+          ["Last Modified By", `${sfc("LastModifiedBy_Full_Name__c") ?? ""}${sfcDate("LastModifiedDate") ? `, ${sfcDate("LastModifiedDate")}` : ""}`.trim() || sfcDate("LastModifiedDate")],
+        ]}
+      />
+      <div style={{ padding: "2px 0 8px", display: "grid", gridTemplateColumns: "minmax(120px, 165px) 1fr 24px", gap: 12, alignItems: "start" }}>
+        <div style={{ fontSize: 13, color: "#181818", fontWeight: 700, paddingTop: 1 }}>Description</div>
+        <div style={{ fontSize: 13, color: "#181818", whiteSpace: "pre-wrap" }}>{sfc("Description") ?? ""}</div>
+        <div />
+      </div>
     </>
   );
 
@@ -517,7 +498,6 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           ),
         },
         { label: "Phone", value: contact.phone ?? sfc("Phone") },
-        { label: "Lead Id", value: sfc("Lead_Number__c") ?? sfc("Lead_Id__c") },
         {
           label: "Email",
           value: emailVal ? (
@@ -526,9 +506,50 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
             </a>
           ) : null,
         },
+        { label: "Lead Id", value: sfc("Lead_Number__c") ?? sfc("Lead_Id__c") },
         { label: "Contact Owner", value: ownerNode },
       ]}
-      actions={<ContactHeaderButtons contactId={contact.id} defaultEmail={emailVal} defaultPhone={phoneVal} />}
+      actions={
+        <ContactHeaderButtons
+          contactId={contact.id}
+          contactName={contact.fullName}
+          defaultEmail={emailVal}
+          defaultPhone={phoneVal}
+          editFields={[
+            { label: "First Name", key: "firstName", value: contact.firstName },
+            { label: "Phone", key: "phone", type: "phone", value: contact.phone ?? sfc("Phone") },
+            { label: "Last Name", key: "lastName", value: contact.lastName },
+            { label: "Home Phone", key: "HomePhone", type: "phone", value: sfc("HomePhone") },
+            { label: "Title", key: "title", value: contact.title ?? sfc("Title") },
+            { label: "Mobile", key: "mobilePhone", type: "phone", value: contact.mobilePhone ?? sfc("MobilePhone") },
+            { label: "Department", key: "Department", value: sfc("Department") },
+            { label: "Other Phone", key: "OtherPhone", type: "phone", value: sfc("OtherPhone") },
+            { label: "Birthdate", key: "birthdate", type: "date", value: contact.birthdate ? contact.birthdate.toISOString().slice(0, 10) : null },
+            { label: "Fax", key: "Fax", value: sfc("Fax") },
+            { label: "Lead Source", key: "LeadSource", value: sfc("LeadSource") },
+            { label: "Email", key: "email", type: "email", value: emailVal },
+            { label: "Preferred Method of Contact", key: "Preferred_Method_of_Contact__c", value: sfc("Preferred_Method_of_Contact__c") },
+            { label: "Assistant", key: "AssistantName", value: sfc("AssistantName") },
+            { label: "Asst. Phone", key: "AssistantPhone", type: "phone", value: sfc("AssistantPhone") },
+            { label: "Mailing Street", key: "MailingStreet", value: sfc("MailingStreet") },
+            { label: "Mailing City", key: "MailingCity", value: sfc("MailingCity") },
+            { label: "Mailing State/Province", key: "MailingState", value: sfc("MailingState") },
+            { label: "Mailing Zip/Postal Code", key: "MailingPostalCode", value: sfc("MailingPostalCode") },
+            { label: "Mailing Country", key: "MailingCountry", value: sfc("MailingCountry") },
+            { label: "Description", key: "Description", type: "textarea", value: sfc("Description") },
+          ]}
+          clonePayload={{
+            firstName: contact.firstName,
+            lastName: contact.lastName,
+            email: contact.email,
+            phone: contact.phone,
+            mobilePhone: contact.mobilePhone,
+            title: contact.title,
+            primaryAccountId: contact.primaryAccountId,
+            ownerId: contact.ownerId,
+          }}
+        />
+      }
       details={
         <ContactTabs
           panels={{
