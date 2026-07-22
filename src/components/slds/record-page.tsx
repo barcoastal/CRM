@@ -41,14 +41,7 @@ export function RecordPage({
       {/* SF record pages sit the header + path on a light-blue textured
           backdrop (the Lightning "header image"). The band bleeds to the
           page edges (negative margin over the 12px page padding). */}
-      <div
-        style={{
-          margin: "-12px -12px 0",
-          padding: "12px 12px 8px",
-          background:
-            "repeating-linear-gradient(115deg, rgba(1,118,211,0.045) 0 14px, rgba(1,118,211,0.075) 14px 28px), linear-gradient(180deg, #eef4fb 0%, #e8f1fa 100%)",
-        }}
-      >
+      <div>
         <ObjectHeader
           entity={entity}
           entityLabel={entityLabel}

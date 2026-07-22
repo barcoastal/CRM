@@ -72,13 +72,22 @@ export function HealthCheckCard({
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: 14,
-                height: 14,
-                fontWeight: 700,
-                fontSize: 11,
+                width: 16,
+                height: 16,
+                borderRadius: "50%",
+                background: i.ok ? "#2e844a" : "#ba0517",
+                flexShrink: 0,
               }}
             >
-              {i.ok ? "✓" : "✕"}
+              {i.ok ? (
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4">
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
+              ) : (
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              )}
             </span>
             <span>{i.label}</span>
           </li>

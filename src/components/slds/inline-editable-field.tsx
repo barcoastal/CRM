@@ -212,9 +212,10 @@ export function InlineEditableField({
     >
       <div
         style={{
-          color: "#444444",
-          fontWeight: 400,
-          fontSize: 12,
+          // SF labels at zoom: 13px BOLD #181818.
+          color: "#181818",
+          fontWeight: 700,
+          fontSize: 13,
           lineHeight: 1.35,
           wordBreak: "break-word",
           paddingTop: 1,

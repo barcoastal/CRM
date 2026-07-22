@@ -64,35 +64,24 @@ export function EscrowBalanceCard({
     >
       <header
         style={{
-          background: "#fafaf9",
-          borderBottom: "1px solid #c9c9c9",
-          padding: "8px 16px",
+          padding: "10px 12px 0 16px",
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
           gap: 8,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ flex: 1, textAlign: "center" }}>
           <span
             aria-hidden="true"
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 20,
-              height: 20,
-              background: "#0176d3",
-              color: "#fff",
-              borderRadius: 3,
-              flexShrink: 0,
+              display: "none",
             }}
           >
             <svg width="12" height="12" viewBox="0 0 52 52" style={{ fill: "#fff" }}>
               <path d="M30.4 26.5l-7.3-2c-1.3-.4-2.2-1.6-2.2-3 0-1.7 1.4-3.1 3.1-3.1H29c1.3 0 2.5.4 3.4 1.2.7.6 1.7.5 2.3-.1l1.4-1.4c.7-.7.6-1.8-.1-2.4-1.8-1.6-4.2-2.6-6.7-2.8V10c0-1.1-.9-2-2-2h-2.6c-1.1 0-2 .9-2 2v2.8c-4.4.3-7.9 4-7.8 8.4.1 3.8 2.9 7.1 6.6 8.1l6.9 1.9c1.3.4 2.2 1.6 2.2 3 0 1.7-1.4 3.1-3.1 3.1H23c-1.3 0-2.5-.4-3.4-1.2-.7-.6-1.7-.5-2.3.1L16 37.6c-.7.7-.6 1.8.1 2.4 1.8 1.6 4.2 2.6 6.7 2.8V46c0 1.1.9 2 2 2H27c1.1 0 2-.9 2-2v-2.8c4.4-.3 7.9-4 7.8-8.4 0-3.8-2.7-7.2-6.4-8.3z" />
             </svg>
           </span>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#181818", margin: 0 }}>
             Escrow Balance
           </h3>
         </div>
@@ -102,8 +91,8 @@ export function EscrowBalanceCard({
             disabled={refreshing}
             title="Pull live balance from payment processor"
             style={{
-              background: "transparent",
-              border: 0,
+              background: "#fff",
+              border: "1px solid #c9c9c9",
               cursor: refreshing ? "wait" : "pointer",
               color: "#747474",
               fontSize: 14,
@@ -111,9 +100,9 @@ export function EscrowBalanceCard({
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 22,
-              height: 22,
-              borderRadius: 3,
+              width: 28,
+              height: 28,
+              borderRadius: 4,
             }}
           >
             <svg width="14" height="14" viewBox="0 0 52 52" style={{ fill: "currentColor" }}>
@@ -122,15 +111,15 @@ export function EscrowBalanceCard({
           </button>
         )}
       </header>
-      <div style={{ padding: "20px 16px 16px", textAlign: "center" }}>
-        <div style={{ fontSize: 28, fontWeight: 700, color: balance < 0 ? "#ba0517" : "#04844b" }}>
+      <div style={{ padding: "20px 16px 16px" }}>
+        <div style={{ fontSize: 28, fontWeight: 700, textAlign: "center", color: balance < 0 ? "#ba0517" : "#04844b" }}>
           {/* SF shows negative balances in red accounting parens: ($0.00) */}
           {balance < 0
             ? `($${Math.abs(balance).toFixed(2)})`
             : `$${balance.toFixed(2)}`}
         </div>
         {pulledAt && (
-          <div style={{ fontSize: 11, color: "#747474", marginTop: 6 }}>
+          <div style={{ fontSize: 11, color: "#747474", marginTop: 6, textAlign: "right" }}>
             (Pulled on: {pulledAt.toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}{" "}
             {pulledAt.toLocaleString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/New_York" })} EST)
           </div>
@@ -138,7 +127,7 @@ export function EscrowBalanceCard({
         {/* SF shows the fee state either way: green when paid, red when not. */}
         <div
           style={{
-            marginTop: 12,
+            marginTop: 16,
             display: "inline-flex",
             alignItems: "center",
             gap: 6,

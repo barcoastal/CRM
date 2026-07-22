@@ -192,9 +192,10 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
     >
       <div
         style={{
-          fontSize: 12,
-          color: "#444444",
-          fontWeight: 400,
+          // SF labels at zoom: 13px BOLD #181818 (not gray).
+          fontSize: 13,
+          color: "#181818",
+          fontWeight: 700,
           lineHeight: 1.35,
           paddingTop: 1,
         }}
