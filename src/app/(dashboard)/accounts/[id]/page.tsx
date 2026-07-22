@@ -138,7 +138,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     const v = acctSf(k);
     if (!v) return null;
     const n = Number(v);
-    return Number.isFinite(n) ? `$${n.toLocaleString()}` : v;
+    return Number.isFinite(n) ? `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : v;
   };
   const acctSfDate = (k: string): string | null => {
     const v = acctSf(k);
@@ -150,7 +150,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     const v = acctSf(k);
     if (!v) return null;
     const d = new Date(v);
-    return Number.isNaN(d.getTime()) ? v : d.toLocaleString();
+    if (Number.isNaN(d.getTime())) return v;
+    // SF prints "12/5/2024 1:44 PM" - no comma, no seconds, no leading zeros.
+    return `${d.toLocaleDateString("en-US")} ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`;
   };
   const acctSfBool = (k: string): string | null => {
     const v = acctSfData[k];
@@ -215,7 +217,13 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     <Link key="pc" href={`/contacts/${account.primaryContact.id}`} style={{ color: "#0176d3" }}>{account.primaryContact.fullName}</Link>
   ) : (acctSf("Primary_Contact_Name__c") ?? acctSf("Primary_Contact__c"));
   const syncedDateTimeDisplay = acctSfDateTime("Synced_DateTime__c");
-  const closerDisplay = account.opportunities[0]?.closer ?? acctSf("Closer__c");
+  const closerName = account.opportunities[0]?.closer ?? acctSf("Closer_FIrst_Name__c") ?? acctSf("Closer__c");
+  const closerUser = closerName
+    ? await prisma.user.findFirst({ where: { name: { equals: closerName, mode: "insensitive" } }, select: { id: true } })
+    : null;
+  const closerDisplay = closerUser
+    ? <Link key="closer" href={`/settings/users/${closerUser.id}`} style={{ color: "#0176d3" }}>{closerName}</Link>
+    : closerName;
   const firstDraftDateDisplay = acctSfDate("First_Draft_Date__c");
   const lastContactedDateTimeDisplay = acctSfDateTime("Last_Contacted_DateTime__c");
   const firstPaymentCompletedDateDisplay = acctSfDate("First_Payment_Completed_Date__c") ?? acctSfDate("First_Payment_Date__c");
@@ -284,7 +292,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["Parent Account", parentAcctNode],
             ["Processor Status", processorStatusDisplay],
             // Row 4: Account Number | Phone
-            ["Account Number", acctSf("AccountNumber") ?? account.id.slice(-8).toUpperCase()],
+            ["Account Number", acctSf("AccountNumber")],
             [
               "Phone",
               // SF renders the number as a plain blue link - clicking dials.
