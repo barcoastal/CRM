@@ -120,21 +120,25 @@ export function ObjectHeader({
         >
           <ul
             style={{
-              display: "grid",
-              gridTemplateColumns: `repeat(${highlights.length}, minmax(0, 1fr))`,
-              gap: 0,
+              // SF packs highlight fields to the LEFT at content width with a
+              // fixed gutter; they do not spread across the full header width.
+              display: "flex",
+              justifyContent: "flex-start",
+              columnGap: 48,
               listStyle: "none",
               margin: 0,
               padding: 0,
+              overflow: "hidden",
             }}
           >
             {highlights.map((h, i) => (
               <li
                 key={i}
                 style={{
-                  padding: i === 0 ? "0 14px 0 0" : "0 14px",
                   // SF's highlights strip has no vertical dividers.
                   minWidth: 0,
+                  maxWidth: 220,
+                  flex: "0 1 auto",
                   display: "flex",
                   flexDirection: "column",
                 }}

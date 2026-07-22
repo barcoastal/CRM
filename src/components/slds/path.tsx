@@ -97,11 +97,14 @@ export function Path({
                 justifyContent: "center",
                 position: "relative",
                 marginLeft: isFirst ? 0 : -8,
+                // SF chevrons point RIGHT: the left edge is an inward notch
+                // (cut by the previous stage's arrow), the right edge is the
+                // outward arrow tip.
                 clipPath: isLast
-                  ? "polygon(8px 0, 100% 0, 100% 100%, 8px 100%, 0 50%)"
+                  ? "polygon(0 0, 100% 0, 100% 100%, 0 100%, 10px 50%)"
                   : isFirst
                   ? "polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%)"
-                  : "polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%)",
+                  : "polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%, 10px 50%)",
                 fontSize: 11,
                 fontWeight: isCurrent ? 700 : 400,
                 color: isCurrent ? "#fff" : "#444",

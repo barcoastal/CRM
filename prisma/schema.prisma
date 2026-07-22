@@ -359,7 +359,7 @@ model Account {
   clientStatus      String  @default("Active") // Active | Inactive | Hardship | Cancelled
   processorStatus   String? // Active | Inactive | Suspended
   paymentStatus     String  @default("Active") // Active | NSF | Suspended | Closed
-  bankAccountStatus String  @default("Active") // Active | Pending | Closed | Invalid
+  bankAccountStatus String? // SF Bank_Account_Status__c (e.g. "R01 Insufficient Funds"), blank when unset
 
   // Program dates
   programStartDate  DateTime?
