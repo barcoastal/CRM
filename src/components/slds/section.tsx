@@ -112,7 +112,7 @@ export function Section({
         </svg>
         <span style={{ fontSize: 14, fontWeight: 700, color: "#181818", letterSpacing: 0 }}>{title}</span>
       </button>
-      {open && <div style={{ padding: "8px 16px" }}>{children}</div>}
+      {open && <div style={{ padding: "6px 16px" }}>{children}</div>}
     </div>
   );
 }
@@ -180,8 +180,8 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div
       style={{
-        padding: "4px 0",
-        minHeight: 28,
+        padding: "2px 0",
+        minHeight: 26,
         position: "relative",
         display: "grid",
         gridTemplateColumns: "33% 1fr 28px",
