@@ -874,12 +874,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         entity="Opportunity"
         entityLabel="Opportunity"
         recordTitle={oppName}
-        recordSubtitle={
-          <>
-            {opp.recordType.replace(/_/g, " ")} ·{" "}
-            <StatusPill label={formatStage(opp.stage)} tone={opportunityStageTone(opp.stage)} />
-          </>
-        }
+        recordSubtitle={undefined}
         highlights={[
           // SF Lightning highlights row (verified against the live record):
           // Account Name | Current Total Debt | Lead Id | Opportunity Owner | Version.
@@ -890,41 +885,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           { label: "Version", value: oppSf("Version_Status__c") ?? String(opp.version ?? "1.0") },
         ]}
         actions={<OppHeaderButtons opportunityId={opp.id} currentStage={opp.stage} forecastCategory={opp.forecastCategory ?? null} defaultEmail={emailDisplay ?? opp.lead?.email ?? null} defaultPhone={phoneDisplay ?? opp.lead?.phone ?? null} defaultSignerName={opp.lead?.contactName?.trim() || opp.primaryContact?.fullName?.trim() || null} recommendedAgreement={recommendedAgreement} />}
-        pathStages={PATH}
-        pathCurrentIndex={oppPathIndex(opp.stage)}
-        pathActionLabel={(() => {
-          const idx = oppPathIndex(opp.stage);
-          if (idx >= PATH.length - 1) return "Change Closed Stage";
-          // SF labels the action by the current stage being completed, e.g.
-          // "Mark First Payment Complete" when current is "Closed Won First
-          // Payment Pending". We strip the wordy prefixes.
-          const cur = PATH[idx]?.label ?? "Current Stage";
-          const short = cur
-            .replace(/^Closed Won /, "")
-            .replace(/^Closed /, "")
-            .replace(/^Working /, "")
-            .replace(/ Pending$/, "")
-            .replace(/^Waiting for /, "")
-            .replace(/s Received$/, "");
-          return `Mark ${short} Complete`;
-        })()}
-        pathAdvance={(() => {
-          // Clicking the button advances to the NEXT real stage (SF behavior).
-          // The path's terminal "Closed" chevron maps to the real win stage.
-          const progression = [
-            "Working Opportunity",
-            "Waiting for Agreements",
-            "Agreements Received",
-            "Ready To Close",
-            "Contract Sent",
-            "Contract Signed",
-            "Closed Won First Payment Pending",
-            "Closed Won - First Payment Completed",
-          ];
-          const cur = progression.indexOf(formatStage(opp.stage));
-          const nextStage = cur >= 0 && cur < progression.length - 1 ? progression[cur + 1] : null;
-          return { entity: "opportunities", entityId: opp.id, nextStage };
-        })()}
+        // SF opp layout in this org shows NO stage path - stage lives in Details.
         details={
           <>
             <PathSidePanelServer

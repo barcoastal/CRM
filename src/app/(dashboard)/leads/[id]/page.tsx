@@ -861,7 +861,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       actions={<LeadHeaderButtons leadId={lead.id} currentStage={stage} converted={!!converted} defaultEmail={emailVal} defaultPhone={phoneVal} businessName={lead.businessName ?? undefined} contactName={displayContactName} />}
       pathStages={LEAD_PATH}
       pathCurrentIndex={Math.max(0, leadPathIndex(lead.status))}
-      pathActionLabel={converted ? "Converted" : "Mark Status as Complete"}
       details={
         <>
           <PathSidePanelServer

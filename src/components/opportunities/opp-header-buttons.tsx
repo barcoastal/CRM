@@ -27,6 +27,27 @@ const btn: React.CSSProperties = {
   cursor: "pointer",
 };
 
+const groupBtn: React.CSSProperties = {
+  ...{
+  background: "#fff",
+  border: "1px solid #c9c9c9",
+  color: "#0176d3",
+  padding: "0 12px",
+  height: 32,
+  borderRadius: 4,
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+},
+  border: 0,
+  borderRadius: 0,
+};
+
+const menuItemStyle: React.CSSProperties = {
+  display: "block", width: "100%", textAlign: "left", padding: "8px 12px",
+  background: "transparent", border: 0, cursor: "pointer", fontSize: 13, color: "#181818",
+};
+
 export function OppHeaderButtons({
   opportunityId,
   currentStage,
@@ -50,6 +71,7 @@ export function OppHeaderButtons({
       : defaultCategoryForStage(currentStage);
   const router = useRouter();
   const [modal, setModal] = useState(false);
+  const [moreMenu, setMoreMenu] = useState(false);
   const [contractModal, setContractModal] = useState(false);
   const [packetModal, setPacketModal] = useState(false);
 
@@ -66,22 +88,28 @@ export function OppHeaderButtons({
     <>
       <QuickActionsRow opportunityId={opportunityId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
       <CategoryPicker opportunityId={opportunityId} value={initialCategory} size="sm" />
-      <SubmitForApprovalButton entityType="Opportunity" entityId={opportunityId} />
-      <button style={btn} onClick={() => setPacketModal(true)}>
-        Send Packet
-      </button>
-      <button style={btn} onClick={() => setContractModal(true)}>
-        Send Contract
-      </button>
-      <button style={btn} onClick={() => setModal(true)}>
-        Disposition
-      </button>
-      <button style={btn} onClick={updateOpp}>
-        Update Opportunity
-      </button>
-      <button style={btn} onClick={amendOpp}>
-        Amend Opportunity
-      </button>
+      {/* SF shows three actions + a chevron menu holding the rest. */}
+      <div style={{ display: "inline-flex", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden", position: "relative" }}>
+        <button style={groupBtn} onClick={() => setModal(true)}>Disposition</button>
+        <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9" }} onClick={() => setContractModal(true)}>Send Contract</button>
+        <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9" }} onClick={() => setPacketModal(true)}>Send Packet</button>
+        <button
+          style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9", padding: "0 10px" }}
+          aria-label="More actions"
+          onClick={() => setMoreMenu((v) => !v)}
+        >
+          <svg width="11" height="11" viewBox="0 0 10 10" style={{ fill: "#0176d3" }}>
+            <path d="M0 2l5 6 5-6z" />
+          </svg>
+        </button>
+        {moreMenu && (
+          <div style={{ position: "absolute", top: "100%", right: 0, zIndex: 30, background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, boxShadow: "0 2px 8px rgba(0,0,0,0.15)", minWidth: 190, marginTop: 2 }}>
+            <button style={menuItemStyle} onClick={() => { setMoreMenu(false); void updateOpp(); }}>Update Opportunity</button>
+            <button style={menuItemStyle} onClick={() => { setMoreMenu(false); void amendOpp(); }}>Amend Opportunity</button>
+            <div style={{ padding: "6px 12px" }}><SubmitForApprovalButton entityType="Opportunity" entityId={opportunityId} /></div>
+          </div>
+        )}
+      </div>
       <DispositionModal
         endpoint={`/api/opportunities/${opportunityId}/disposition`}
         stages={OPP_STAGES}

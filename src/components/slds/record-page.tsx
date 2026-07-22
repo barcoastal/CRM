@@ -79,33 +79,28 @@ export function HeaderActions({
 }: {
   buttons: { label: string; href?: string; onClick?: () => void; primary?: boolean }[];
 }) {
+  // SF renders record actions as ONE joined button group with a trailing chevron.
+  const groupItem: React.CSSProperties = {
+    background: "#fff", border: 0, color: "#0176d3", padding: "0 12px", height: 30,
+    fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex",
+    alignItems: "center", textDecoration: "none", whiteSpace: "nowrap",
+  };
   return (
-    <>
-      {buttons.map((b, i) =>
-        b.href ? (
-          <a
-            key={i}
-            href={b.href}
-            className={`slds-button ${b.primary ? "slds-button_brand" : "slds-button_neutral"}`}
-          >
-            {b.label}
-          </a>
+    <span style={{ display: "inline-flex", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden" }}>
+      {buttons.map((b, i) => {
+        const style = { ...groupItem, ...(i > 0 ? { borderLeft: "1px solid #c9c9c9" } : {}) };
+        return b.href ? (
+          <a key={i} href={b.href} style={style}>{b.label}</a>
         ) : (
-          <button
-            key={i}
-            className={`slds-button ${b.primary ? "slds-button_brand" : "slds-button_neutral"}`}
-            onClick={b.onClick}
-          >
-            {b.label}
-          </button>
-        ),
-      )}
-      <button className="slds-button slds-button_icon slds-button_icon-border-filled" title="More">
-        <svg width="14" height="14" viewBox="0 0 14 14" style={{ fill: "#181818" }}>
-          <circle cx="2" cy="7" r="1.5" /><circle cx="7" cy="7" r="1.5" /><circle cx="12" cy="7" r="1.5" />
+          <button key={i} style={style} onClick={b.onClick}>{b.label}</button>
+        );
+      })}
+      <button style={{ ...groupItem, borderLeft: "1px solid #c9c9c9", padding: "0 10px" }} title="More" aria-label="More">
+        <svg width="11" height="11" viewBox="0 0 10 10" style={{ fill: "#0176d3" }}>
+          <path d="M0 2l5 6 5-6z" />
         </svg>
       </button>
-    </>
+    </span>
   );
 }
 
