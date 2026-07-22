@@ -227,10 +227,10 @@ export function SldsHeader({
             );
           })}
           {visibleTabs.length > 11 && (
-            <span style={{ position: "relative" }}>
+            <span style={{ position: "relative", display: "inline-flex", alignItems: "stretch" }}>
               <button
                 className={`sf-tab ${visibleTabs.slice(11).some((t) => pathname.startsWith(t.href)) ? "sf-tab-active" : ""}`}
-                style={{ background: moreOpen ? "#f3f2f2" : undefined, border: 0, cursor: "pointer" }}
+                style={{ background: moreOpen ? "#f3f2f2" : undefined, border: 0, cursor: "pointer", height: "100%", display: "inline-flex", alignItems: "center" }}
                 onClick={() => setMoreOpen((v) => !v)}
               >
                 More
