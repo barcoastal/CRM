@@ -69,9 +69,12 @@ export function Path({
         display: "flex",
         alignItems: "center",
         background: "#fff",
-        borderBottom: "1px solid #c9c9c9",
-        padding: "10px 16px",
+        border: "1px solid #c9c9c9",
+        borderRadius: 8,
+        boxShadow: "0 2px 2px 0 rgba(0,0,0,.05)",
+        padding: "6px 12px",
         gap: 0,
+        marginTop: 8,
       }}
     >
       <div style={{ flex: 1, display: "flex", height: 32, overflow: "hidden" }}>

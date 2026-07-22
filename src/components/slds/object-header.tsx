@@ -132,8 +132,8 @@ export function ObjectHeader({
               <li
                 key={i}
                 style={{
-                  padding: "0 14px",
-                  borderLeft: i === 0 ? "none" : "1px solid #c9c9c9",
+                  padding: i === 0 ? "0 14px 0 0" : "0 14px",
+                  // SF's highlights strip has no vertical dividers.
                   minWidth: 0,
                   display: "flex",
                   flexDirection: "column",
