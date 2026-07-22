@@ -33,17 +33,25 @@ interface TabItem {
 }
 
 const TABS: TabItem[] = [
+  // SF Debt Settlement app tab order - the first tabs must read exactly like
+  // the org so daily SF users feel at home: Home, Payment Calculator, Tasks,
+  // Leads, Accounts, Contacts, Opportunities, Payment Processors, Cases,
+  // Application Logs, Reports. Everything after lands under More.
   { label: "Home", href: "/dashboard" },
-  { label: "Dashboards", href: "/dashboards", entity: "Dashboard" },
+  { label: "Payment Calculator", href: "/calculator", entity: "ProgramPlan" },
+  { label: "Tasks", href: "/tasks", entity: "Task" },
   { label: "Leads", href: "/leads", entity: "Lead" },
   { label: "Accounts", href: "/accounts", entity: "Account" },
   { label: "Contacts", href: "/contacts", entity: "Contact" },
   { label: "Opportunities", href: "/opportunities", entity: "Opportunity" },
+  { label: "Payment Processors", href: "/integrations/processor-log", entity: "Settings" },
+  { label: "Cases", href: "/cases", entity: "Case" },
+  { label: "Application Logs", href: "/settings/app-log", entity: "Settings" },
+  { label: "Reports", href: "/reports" },
+  { label: "Dashboards", href: "/dashboards", entity: "Dashboard" },
   { label: "Forecasting", href: "/forecasting", entity: "Opportunity" },
   { label: "Clients", href: "/clients", entity: "Client" },
   { label: "Creditors", href: "/creditors", entity: "Creditor" },
-  { label: "Cases", href: "/cases", entity: "Case" },
-  { label: "Tasks", href: "/tasks", entity: "Task" },
   { label: "Approvals", href: "/approvals", entity: "Case" },
   { label: "Automation", href: "/automation/flows", entity: "Case" },
   { label: "Events", href: "/events", entity: "Event" },
@@ -64,7 +72,6 @@ const TABS: TabItem[] = [
   { label: "Marketing", href: "/marketing", entity: "Campaign" },
   { label: "Sign Docs", href: "/sign-docs", entity: "ProgramPlan" },
   { label: "Campaigns", href: "/campaigns", entity: "Campaign" },
-  { label: "Reports", href: "/reports" },
 ];
 
 /**
@@ -76,7 +83,7 @@ const TABS: TabItem[] = [
  * Modeled directly from cdcrm.lightning.force.com screenshots.
  */
 export function SldsHeader({
-  appName = "Coastal CRM",
+  appName = "Debt Settlement",
   userInitials = "U",
   userName,
 }: {
@@ -86,6 +93,7 @@ export function SldsHeader({
 }) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [launcherOpen, setLauncherOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [editNavOpen, setEditNavOpen] = useState(false);
@@ -202,7 +210,7 @@ export function SldsHeader({
         </button>
         <Link href="/dashboard" className="sf-app-name">{appName}</Link>
         <nav className="sf-tab-nav">
-          {visibleTabs.map((t) => {
+          {visibleTabs.slice(0, 11).map((t) => {
             const active =
               pathname === t.href || (t.href !== "/dashboard" && pathname.startsWith(t.href));
             return (
@@ -218,6 +226,37 @@ export function SldsHeader({
               </Link>
             );
           })}
+          {visibleTabs.length > 11 && (
+            <span style={{ position: "relative" }}>
+              <button
+                className={`sf-tab ${visibleTabs.slice(11).some((t) => pathname.startsWith(t.href)) ? "sf-tab-active" : ""}`}
+                style={{ background: moreOpen ? "#f3f2f2" : undefined, border: 0, cursor: "pointer" }}
+                onClick={() => setMoreOpen((v) => !v)}
+              >
+                More
+                <svg className="sf-tab-chev" aria-hidden="true">
+                  <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#down" />
+                </svg>
+              </button>
+              {moreOpen && (
+                <span
+                  style={{ position: "absolute", top: "100%", right: 0, zIndex: 9100, background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, boxShadow: "0 2px 6px rgba(0,0,0,0.15)", minWidth: 200, maxHeight: 480, overflowY: "auto", display: "block", padding: "4px 0" }}
+                  onMouseLeave={() => setMoreOpen(false)}
+                >
+                  {visibleTabs.slice(11).map((t) => (
+                    <Link
+                      key={t.href}
+                      href={t.href}
+                      onClick={() => setMoreOpen(false)}
+                      style={{ display: "block", padding: "7px 16px", fontSize: 13, color: "#181818", textDecoration: "none" }}
+                    >
+                      {t.label}
+                    </Link>
+                  ))}
+                </span>
+              )}
+            </span>
+          )}
         </nav>
         <button
           className="sf-tab-edit"
