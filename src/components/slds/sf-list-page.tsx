@@ -310,7 +310,7 @@ export function SfListPage(props: SfListPageProps) {
                   <td
                     role="gridcell"
                     style={{
-                      padding: "6px 8px",
+                      padding: "3px 8px",
                       fontSize: 12,
                       color: "#444444",
                       borderBottom: "1px solid #f3f2f2",
@@ -326,7 +326,7 @@ export function SfListPage(props: SfListPageProps) {
                         key={c.key}
                         role="gridcell"
                         style={{
-                          padding: "6px 8px",
+                          padding: "3px 8px",
                           fontSize: 12,
                           color: "#181818",
                           borderBottom: "1px solid #f3f2f2",
