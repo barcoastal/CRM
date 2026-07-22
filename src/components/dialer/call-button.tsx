@@ -8,7 +8,7 @@ interface Props {
   leadId?: string;
   opportunityId?: string;
   accountId?: string;
-  variant?: "primary" | "ghost";
+  variant?: "primary" | "ghost" | "link";
   size?: "sm" | "md";
   label?: string;
 }
@@ -65,6 +65,20 @@ export function CallButton({
     cursor: busy || !phone ? "not-allowed" : "pointer",
     opacity: busy || !phone ? 0.5 : 1,
   };
+
+  if (variant === "link") {
+    // SF shows the phone as a plain blue link (still click-to-dial).
+    return (
+      <button
+        onClick={dial}
+        disabled={busy || !phone}
+        style={{ background: "none", border: 0, padding: 0, color: "#0176d3", fontSize: 13, cursor: busy || !phone ? "default" : "pointer", textAlign: "left" }}
+        title={phone ?? "No phone"}
+      >
+        {label}
+      </button>
+    );
+  }
 
   return (
     <button onClick={dial} disabled={busy || !phone} style={baseStyle} title={phone ?? "No phone"}>

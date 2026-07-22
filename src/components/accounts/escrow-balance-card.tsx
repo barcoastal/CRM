@@ -126,12 +126,13 @@ export function EscrowBalanceCard({
         <div style={{ fontSize: 28, fontWeight: 700, color: balance < 0 ? "#ba0517" : "#04844b" }}>
           {/* SF shows negative balances in red accounting parens: ($0.00) */}
           {balance < 0
-            ? `($${Math.abs(balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
-            : `$${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            ? `($${Math.abs(balance).toFixed(2)})`
+            : `$${balance.toFixed(2)}`}
         </div>
         {pulledAt && (
           <div style={{ fontSize: 11, color: "#747474", marginTop: 6 }}>
-            (Pulled on: {pulledAt.toLocaleString()})
+            (Pulled on: {pulledAt.toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}{" "}
+            {pulledAt.toLocaleString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/New_York" })} EST)
           </div>
         )}
         {/* SF shows the fee state either way: green when paid, red when not. */}

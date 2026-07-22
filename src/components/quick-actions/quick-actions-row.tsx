@@ -48,8 +48,9 @@ export function QuickActionsRow({ leadId, opportunityId, accountId, contactId, d
         onClick={() => setOpen((o) => !o)}
         style={caretBtn}
       >
-        <svg width="12" height="12" viewBox="0 0 12 12" style={{ fill: "#0176d3" }}>
-          <path d="M6 9L1 4h10z" />
+        {/* SF shows the hierarchy glyph on this button. */}
+        <svg width="14" height="14" style={{ fill: "#0176d3" }} aria-hidden="true">
+          <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#hierarchy" />
         </svg>
       </button>
 

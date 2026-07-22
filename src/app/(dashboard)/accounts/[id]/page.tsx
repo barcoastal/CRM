@@ -287,12 +287,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["Account Number", acctSf("AccountNumber") ?? account.id.slice(-8).toUpperCase()],
             [
               "Phone",
-              phoneVal ? (
-                <span key="ph" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#0176d3" }}>
-                  {phoneVal}
-                  <CallButton phone={phoneVal} accountId={account.id} />
-                </span>
-              ) : null,
+              // SF renders the number as a plain blue link - clicking dials.
+              phoneVal ? <CallButton key="ph" phone={phoneVal} accountId={account.id} variant="link" label={phoneVal} /> : null,
               { fieldKey: "phone", type: "phone", rawValue: account.phone ?? phoneVal },
             ],
             // Row 5: Account Site | Fax
