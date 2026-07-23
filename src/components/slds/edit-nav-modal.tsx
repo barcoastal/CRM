@@ -9,8 +9,8 @@ export type NavItem = {
   entity?: string;
 };
 
-const ORDER_KEY = "sf:navOrder";
-const HIDDEN_KEY = "sf:navHidden";
+const ORDER_KEY = "sf:navOrder.v2"; // v2: SF Debt Settlement tab order became the default
+const HIDDEN_KEY = "sf:navHidden.v2";
 
 export function loadNavPrefs(): { order: string[]; hidden: string[] } {
   try {

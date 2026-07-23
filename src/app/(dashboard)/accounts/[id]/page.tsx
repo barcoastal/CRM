@@ -151,8 +151,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     if (!v) return null;
     const d = new Date(v);
     if (Number.isNaN(d.getTime())) return v;
-    // SF prints "12/5/2024 1:44 PM" - no comma, no seconds, no leading zeros.
-    return `${d.toLocaleDateString("en-US")} ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`;
+    // SF prints "12/5/2024, 1:44 PM" in the org's timezone (EST), no seconds.
+    return `${d.toLocaleDateString("en-US", { timeZone: "America/New_York" })}, ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/New_York" })}`;
   };
   const acctSfBool = (k: string): string | null => {
     const v = acctSfData[k];
@@ -212,15 +212,26 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const totalDebtSfDisplay = acctSfDollar("Total_Debt__c") ?? `$${totalDebt.toLocaleString()}`;
   const currentBalanceDisplay = acctSfDollar("Current_Total_Debt_Amount__c") ?? acctSfDollar("Current_Balance__c");
   const creditorTypeDisplay = acctSf("Creditor_Type__c");
-  const accountRecordTypeDisplay = acctSf("Account_Record_Type__c") ?? account.recordType.replace(/_/g, " ");
+  // SF shows the picklist LABEL "R01: Insufficient Funds"; the API value has
+  // no colon. Insert it after ACH return codes.
+  const bankStatusDisplay = account.bankAccountStatus
+    ? account.bankAccountStatus.replace(/^(R\d{2}) /, "$1: ")
+    : null;
+  const accountRecordTypeDisplay = (acctSf("Account_Record_Type__c") ?? account.recordType.replace(/_/g, " "))
+    .toLowerCase()
+    .replace(/\b\w/g, (ch) => ch.toUpperCase());
   const primaryContactNode = account.primaryContact?.fullName ? (
     <Link key="pc" href={`/contacts/${account.primaryContact.id}`} style={{ color: "#0176d3" }}>{account.primaryContact.fullName}</Link>
   ) : (acctSf("Primary_Contact_Name__c") ?? acctSf("Primary_Contact__c"));
   const syncedDateTimeDisplay = acctSfDateTime("Synced_DateTime__c");
-  const closerName = account.opportunities[0]?.closer ?? acctSf("Closer_FIrst_Name__c") ?? acctSf("Closer__c");
-  const closerUser = closerName
-    ? await prisma.user.findFirst({ where: { name: { equals: closerName, mode: "insensitive" } }, select: { id: true } })
+  const closerSfId = acctSf("Closer__c");
+  const closerUserBySfId = closerSfId && /^005[a-zA-Z0-9]{12,15}$/.test(closerSfId)
+    ? await prisma.user.findFirst({ where: { sfId: closerSfId }, select: { id: true, name: true } })
     : null;
+  const closerName = closerUserBySfId?.name ?? account.opportunities[0]?.closer ?? acctSf("Closer_FIrst_Name__c");
+  const closerUser = closerUserBySfId ?? (closerName
+    ? await prisma.user.findFirst({ where: { name: { equals: closerName, mode: "insensitive" } }, select: { id: true, name: true } })
+    : null);
   const closerDisplay = closerUser
     ? <Link key="closer" href={`/settings/users/${closerUser.id}`} style={{ color: "#0176d3" }}>{closerName}</Link>
     : closerName;
@@ -303,7 +314,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             E("Account Site", acctSf("Site"), "Site"),
             E("Fax", faxDisplay, "Fax"),
             // Row 6: Type | Website
-            E("Type", acctSf("Type") ?? account.recordType.replace(/_/g, " "), "type", "text", { rawValue: account.type }),
+            E("Type", acctSf("Type"), "type", "text", { rawValue: account.type }),
             E("Website", websiteDisplay, "website", "text", { rawValue: account.website }),
             // Row 7: Industry | Ticker Symbol
             E("Industry", account.industry ?? acctSf("Industry"), "industry", "text", { rawValue: account.industry }),
@@ -448,7 +459,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           fields={[
             // Row 1: Client Status | Bank Account Status
             ["Client Status", account.clientStatus],
-            ["Bank Account Status", account.bankAccountStatus],
+            ["Bank Account Status", bankStatusDisplay],
             // Row 2: Payment Status | (empty right)
             ["Payment Status", account.paymentStatus],
             ["", null],
@@ -936,7 +947,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         { label: "Client Status", value: account.clientStatus },
         { label: "Processor Status", value: processorStatusDisplay ?? "Not Synced" },
         { label: "Payment Status", value: account.paymentStatus },
-        { label: "Bank Account Status", value: account.bankAccountStatus },
+        { label: "Bank Account Status", value: bankStatusDisplay },
       ]}
       actions={
         <AccountHeaderButtons

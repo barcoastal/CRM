@@ -75,35 +75,8 @@ export function BankDetailsCard({
         boxShadow: "0 2px 2px 0 rgba(0,0,0,.05)",
       }}
     >
-      <header
-        style={{
-          background: "#fafaf9",
-          borderBottom: "1px solid #c9c9c9",
-          padding: "8px 16px",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}
-      >
-        <span
-          aria-hidden="true"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 20,
-            height: 20,
-            background: "#9b6cb1",
-            color: "#fff",
-            borderRadius: 3,
-            flexShrink: 0,
-          }}
-        >
-          <svg width="12" height="12" viewBox="0 0 52 52" style={{ fill: "#fff" }}>
-            <path d="M26 4L4 14v3h44v-3L26 4zM6 19v23h6V19H6zm10 0v23h6V19h-6zm10 0v23h6V19h-6zm10 0v23h6V19h-6zM4 44v4h44v-4H4z" />
-          </svg>
-        </span>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
+      <header style={{ padding: "12px 16px 2px", textAlign: "center" }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#181818", margin: 0 }}>
           Bank Details
         </h3>
       </header>
