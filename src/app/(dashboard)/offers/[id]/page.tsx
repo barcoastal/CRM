@@ -16,7 +16,7 @@ export default async function OfferDetailPage({ params }: { params: Promise<{ id
           opportunity: { select: { id: true, account: { select: { name: true } } } },
         },
       },
-      settlement: true,
+      settlements: true,
       createdBy: { select: { id: true, name: true } },
       negotiations: { include: { negotiator: { select: { id: true, name: true } } }, orderBy: { date: "desc" } },
     },
@@ -27,7 +27,7 @@ export default async function OfferDetailPage({ params }: { params: Promise<{ id
     <RecordPage
       entity="Offer"
       entityLabel="Offer"
-      recordTitle={`${o.debt.creditor?.account?.name ?? o.debt.creditorName}: $${o.amountOffered.toLocaleString()}`}
+      recordTitle={`${o.debt?.creditor?.account?.name ?? o.debt?.creditorName ?? "Offer"}: $${o.amountOffered.toLocaleString()}`}
       recordSubtitle={
         <>
           {o.direction.replace(/_/g, " ")} · <StatusPill label={o.status} tone={genericTone(o.status)} />
@@ -76,10 +76,10 @@ export default async function OfferDetailPage({ params }: { params: Promise<{ id
           <Section title="Related">
             <FieldGrid
               fields={[
-                ["Creditor", o.debt.creditor?.account?.name && <Link key="c" href={`/accounts/${o.debt.creditor.account.id}`} style={{ color: "#0176d3" }}>{o.debt.creditor.account.name}</Link>],
-                ["Debt — Original Balance", `$${o.debt.originalBalance.toLocaleString()}`],
-                ["Opportunity", o.debt.opportunity && <Link key="op" href={`/opportunities/${o.debt.opportunity.id}`} style={{ color: "#0176d3" }}>{o.debt.opportunity.account?.name ?? o.debt.opportunity.id}</Link>],
-                ["Settlement", o.settlement && <Link key="st" href={`/settlements/${o.settlement.id}`} style={{ color: "#0176d3" }}>${o.settlement.settledAmount.toLocaleString()} ({o.settlement.status})</Link>],
+                ["Creditor", o.debt?.creditor?.account?.name && <Link key="c" href={`/accounts/${o.debt.creditor.account.id}`} style={{ color: "#0176d3" }}>{o.debt.creditor.account.name}</Link>],
+                ["Debt, Original Balance", o.debt ? `$${o.debt.originalBalance.toLocaleString()}` : null],
+                ["Opportunity", o.debt?.opportunity && <Link key="op" href={`/opportunities/${o.debt.opportunity.id}`} style={{ color: "#0176d3" }}>{o.debt.opportunity.account?.name ?? o.debt.opportunity.id}</Link>],
+                ["Settlement", o.settlements[0] && <Link key="st" href={`/settlements/${o.settlements[0].id}`} style={{ color: "#0176d3" }}>${o.settlements[0].settledAmount.toLocaleString()} ({o.settlements[0].status})</Link>],
               ]}
             />
           </Section>

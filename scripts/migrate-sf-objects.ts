@@ -22,7 +22,7 @@ import fs from "node:fs";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 20 });
 const prisma = new PrismaClient({ adapter, log: ["warn", "error"] });
 
-const ENTITIES_ALL = ["contact", "account", "opportunity", "lead", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage", "accounthistory", "paymentsummary"];
+const ENTITIES_ALL = ["contact", "account", "opportunity", "lead", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage", "accounthistory", "paymentsummary", "offer", "settlement"];
 const ENTITY = process.argv[2];
 if (!ENTITY || !ENTITIES_ALL.includes(ENTITY)) {
   console.error(`Usage: tsx scripts/migrate-sf-objects.ts <${ENTITIES_ALL.join("|")}>`);
@@ -48,6 +48,8 @@ const SOQL: Record<string, string> = {
   debt: `SELECT Id, Name, Opportunity__c, Program_Plan__c, Account__c, Creditor_Name__c, Creditor_Name_Formula__c, Original_Creditor__r.Name, Current_Creditor__r.Name, Collection_Agency__r.Name, Settlement_Priority__c, Valid_Debt_Detail__c, Account_Number__c, Debt_Amount__c, Original_Debt__c, Payment__c, Payment_Frequency__c, Debt_Status__c, Negotiation_Status__c, Legal_Status__c, Lien_Position__c, Include_in_the_Program__c, Settlement_Amount__c, Settlement_Percentage__c, Total_Savings__c, Total_Savings_Percentage__c, CreatedDate FROM Debt_Details__c`,
   fee: `SELECT Id, RecordTypeId, Program_Plan__c, Draft__c, Account__c, Fee_Amount__c, Fee_Date__c, Fee_Status__c, CreatedDate FROM Fee__c`,
   case: `SELECT Id, CaseNumber, Subject, Description, Status, Priority, Origin, Type, Reason, RecordTypeId, AccountId, ContactPhone, OwnerId, Draft__c, Opportunity__c, Resolution__c, Resolution_Summary__c, CreatedDate, ClosedDate, LastModifiedDate FROM Case`,
+  offer: `SELECT Id, Name, Name__c, Account__c, Client_Account__c, Opportunity__c, Payment_Method__c, Payment_Method_Amount__c, Settlement_Frequency__c, Settlement_Term__c, Start_Date__c, Status__c, Total_Settlement_Amount__c, CreatedDate, LastModifiedDate FROM Offer__c`,
+  settlement: `SELECT Id, Name, Name__c, Account__c, Client_Account__c, Offer__c, Opportunity__c, Payment_Method__c, Payment_Method_Amount__c, Settlement_Date__c, Settlement_Status__c, Sync_Status__c, RecordTypeId, CreatedDate, LastModifiedDate FROM Settlement__c`,
   task: `SELECT Id, Subject, Status, Priority, Type, TaskSubtype, CallType, CallDisposition, ActivityDate, CompletedDateTime, Description, OwnerId, AccountId, WhoId, WhatId, RecordTypeId, CreatedDate FROM Task WHERE AccountId != null`,
   event: `SELECT Id, Subject, Description, Location, StartDateTime, EndDateTime, ActivityDate, AccountId, WhoId, WhatId, OwnerId, CreatedDate FROM Event`,
   emailmessage: `SELECT Id, FromAddress, FromName, ToAddress, CcAddress, Subject, TextBody, Incoming, Status, MessageDate, RelatedToId, CreatedDate FROM EmailMessage`,
@@ -815,6 +817,85 @@ async function migrateCases(headers: string[], records: AsyncIterable<string[]>)
   await f.finish();
 }
 
+async function loadOpportunityMapForSettlements(): Promise<Map<string, string>> {
+  const rows = await prisma.opportunity.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
+  const m = new Map<string, string>();
+  for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
+  return m;
+}
+
+const OFFER_STATUS: Record<string, string> = {
+  "in review": "PENDING", accepted: "ACCEPTED", declined: "REJECTED", cancelled: "WITHDRAWN",
+};
+const SETTLEMENT_STATUS: Record<string, string> = {
+  pending: "PENDING_PAYOFF", scheduled: "PENDING_PAYOFF", completed: "PAID", failed: "PENDING_PAYOFF",
+  cancelled: "CANCELLED", simulated: "PENDING_PAYOFF",
+};
+
+async function migrateOffers(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
+  const accounts = await loadAccountMap();
+  const opps = await loadOpportunityMapForSettlements();
+  const f = makeFlusher("Offer", (d) => prisma.offer.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }), 500);
+  for await (const cells of records) {
+    const { g, num, date } = mkGetters(headers, cells);
+    const sfId = g("Id");
+    if (!/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue;
+    await f.push({
+      sfId,
+      amountOffered: num("Payment_Method_Amount__c") ?? 0,
+      percentOffered: 0,
+      status: OFFER_STATUS[g("Status__c").toLowerCase()] ?? "PENDING",
+      clientAccountId: accounts.get(g("Client_Account__c")) ?? null,
+      creditorAccountId: accounts.get(g("Account__c")) ?? null,
+      opportunityId: opps.get(g("Opportunity__c")) ?? null,
+      paymentMethod: g("Payment_Method__c") || null,
+      settlementFrequency: g("Settlement_Frequency__c") || null,
+      settlementTerm: g("Settlement_Term__c") || null,
+      startDate: date("Start_Date__c"),
+      totalSettlementAmount: num("Total_Settlement_Amount__c"),
+      sfDataJson: JSON.stringify(Object.fromEntries(headers.map((h, i) => [h, cells[i] ?? ""]))),
+    });
+  }
+  await f.finish();
+}
+
+async function loadOfferMap(): Promise<Map<string, string>> {
+  const rows = await prisma.offer.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
+  const m = new Map<string, string>();
+  for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
+  return m;
+}
+
+async function migrateSettlements(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
+  const accounts = await loadAccountMap();
+  const opps = await loadOpportunityMapForSettlements();
+  const offers = await loadOfferMap();
+  const f = makeFlusher("Settlement", (d) => prisma.settlement.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }), 500);
+  for await (const cells of records) {
+    const { g, num, date } = mkGetters(headers, cells);
+    const sfId = g("Id");
+    if (!/^[a-zA-Z0-9]{15,18}$/.test(sfId)) continue;
+    const amt = num("Payment_Method_Amount__c") ?? 0;
+    await f.push({
+      sfId,
+      settledAmount: amt,
+      savingsAmount: 0,
+      savingsPercent: 0,
+      settledDate: date("Settlement_Date__c") ?? date("CreatedDate") ?? new Date(),
+      status: SETTLEMENT_STATUS[g("Settlement_Status__c").toLowerCase()] ?? "PENDING_PAYOFF",
+      offerId: offers.get(g("Offer__c")) ?? null,
+      clientAccountId: accounts.get(g("Client_Account__c")) ?? null,
+      creditorAccountId: accounts.get(g("Account__c")) ?? null,
+      opportunityId: opps.get(g("Opportunity__c")) ?? null,
+      paymentMethod: g("Payment_Method__c") || null,
+      settlementDate: date("Settlement_Date__c"),
+      syncStatus: g("Sync_Status__c") || null,
+      sfDataJson: JSON.stringify(Object.fromEntries(headers.map((h, i) => [h, cells[i] ?? ""]))),
+    });
+  }
+  await f.finish();
+}
+
 // Task record types (from the org): Disposition rows keep their own type;
 // Checklist_Item rows feed the account Checklist rail card.
 const TASK_RT_DISPOSITION = new Set(["0128Y000001Z0MyQAK"]);
@@ -1032,6 +1113,8 @@ async function main() {
   if (ENTITY === "event") await migrateEvents(headers, rest);
   if (ENTITY === "emailmessage") await migrateEmailMessages(headers, rest);
   if (ENTITY === "paymentsummary") await migratePaymentSummaries(headers, rest);
+  if (ENTITY === "offer") await migrateOffers(headers, rest);
+  if (ENTITY === "settlement") await migrateSettlements(headers, rest);
 
   await prisma.$disconnect();
 }

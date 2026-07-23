@@ -141,7 +141,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       debts: {
         include: {
           creditor: { include: { account: { select: { name: true } } } },
-          offers: { include: { settlement: true }, orderBy: { createdAt: "desc" } },
+          offers: { include: { settlements: true }, orderBy: { createdAt: "desc" } },
           settlement: true,
           negotiations: { include: { negotiator: { select: { id: true, name: true } } }, orderBy: { date: "desc" } },
         },

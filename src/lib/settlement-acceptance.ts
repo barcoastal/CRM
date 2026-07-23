@@ -26,15 +26,18 @@ export async function acceptOffer(
 ): Promise<AcceptOfferResult> {
   const offer = await prisma.offer.findUnique({
     where: { id: offerId },
-    include: { settlement: true, debt: true },
+    include: { settlements: true, debt: true },
   });
   if (!offer) throw new Error(`Offer ${offerId} not found`);
-  if (offer.settlement) {
+  if (offer.settlements.length > 0) {
     return {
-      settlementId: offer.settlement.id,
-      debtId: offer.debtId,
+      settlementId: offer.settlements[0].id,
+      debtId: offer.debtId ?? "",
       alreadyAccepted: true,
     };
+  }
+  if (!offer.debtId || !offer.debt) {
+    throw new Error("Offer has no linked debt; SF-synced offers are accepted in Salesforce");
   }
 
   if (offer.status === "WITHDRAWN" || offer.status === "EXPIRED" || offer.status === "REJECTED") {
@@ -46,7 +49,7 @@ export async function acceptOffer(
 
   const settlementResult = await prisma.$transaction(async (tx) => {
     const settledAmount = offer.amountOffered;
-    const currentBalance = offer.debt.currentBalance ?? offer.debt.originalBalance ?? 0;
+    const currentBalance = offer.debt!.currentBalance ?? offer.debt!.originalBalance ?? 0;
     const savingsAmount = Math.max(currentBalance - settledAmount, 0);
     const savingsPercent = currentBalance > 0 ? savingsAmount / currentBalance : 0;
 
@@ -68,7 +71,7 @@ export async function acceptOffer(
 
     await tx.offer.update({ where: { id: offer.id }, data: { status: "ACCEPTED" } });
     await tx.debt.update({
-      where: { id: offer.debtId },
+      where: { id: offer.debtId! },
       data: {
         status: "SETTLED",
         settledAmount,

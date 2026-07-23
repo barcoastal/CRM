@@ -12,7 +12,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     include: {
       debt: { include: { creditor: true } },
       createdBy: { select: { id: true, name: true } },
-      settlement: true,
+      settlements: true,
       negotiations: true,
     },
   });

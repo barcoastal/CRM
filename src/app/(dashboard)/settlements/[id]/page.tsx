@@ -28,14 +28,14 @@ export default async function SettlementDetailPage({ params }: { params: Promise
     <RecordPage
       entity="Settlement"
       entityLabel="Settlement"
-      recordTitle={`${s.debt.creditor?.account?.name ?? s.debt.creditorName} — $${s.settledAmount.toLocaleString()}`}
+      recordTitle={`${s.debt?.creditor?.account?.name ?? s.debt?.creditorName} — $${s.settledAmount.toLocaleString()}`}
       recordSubtitle={
         <>
           {s.recordType} · <StatusPill label={s.status} tone={settlementStatusTone(s.status)} />
         </>
       }
       highlights={[
-        { label: "Original Balance", value: `$${s.debt.originalBalance.toLocaleString()}` },
+        { label: "Original Balance", value: `$${(s.debt?.originalBalance ?? 0).toLocaleString()}` },
         { label: "Settled", value: `$${s.settledAmount.toLocaleString()}` },
         { label: "Savings", value: `$${s.savingsAmount.toLocaleString()} (${Math.round(s.savingsPercent * 100)}%)` },
         { label: "Settled Date", value: s.settledDate.toLocaleDateString() },
@@ -69,10 +69,10 @@ export default async function SettlementDetailPage({ params }: { params: Promise
           <Section title="Related">
             <FieldGrid
               fields={[
-                ["Creditor", s.debt.creditor?.account?.name ?? s.debt.creditorName],
-                ["Debt — Original Balance", `$${s.debt.originalBalance.toLocaleString()}`],
-                ["Opportunity", s.debt.opportunity && <Link key="o" href={`/opportunities/${s.debt.opportunity.id}`} style={{ color: "#0176d3" }}>{s.debt.opportunity.account?.name ?? s.debt.opportunity.id}</Link>],
-                ["Program Plan", s.debt.programPlan && <Link key="pp" href={`/program-plans/${s.debt.programPlan.id}`} style={{ color: "#0176d3" }}>{s.debt.programPlan.recordType}</Link>],
+                ["Creditor", s.debt?.creditor?.account?.name ?? s.debt?.creditorName],
+                ["Debt — Original Balance", `$${(s.debt?.originalBalance ?? 0).toLocaleString()}`],
+                ["Opportunity", s.debt?.opportunity && <Link key="o" href={`/opportunities/${s.debt?.opportunity?.id}`} style={{ color: "#0176d3" }}>{s.debt?.opportunity?.account?.name ?? s.debt?.opportunity?.id}</Link>],
+                ["Program Plan", s.debt?.programPlan && <Link key="pp" href={`/program-plans/${s.debt!.programPlan!.id}`} style={{ color: "#0176d3" }}>{s.debt!.programPlan!.recordType}</Link>],
                 ["Source Offer", s.offer && `$${s.offer.amountOffered.toLocaleString()} (${s.offer.direction})`],
               ]}
             />

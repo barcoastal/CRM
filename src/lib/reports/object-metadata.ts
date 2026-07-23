@@ -84,6 +84,11 @@ const LEAD_FIELDS: ObjectField[] = [
   { key: "assignedTo.email", label: "Owner Email", type: "string", source: "relation", relation: "assignedTo" },
   { key: "sfDataJson.Campaign__c", label: "SF Campaign", type: "string", source: "json", jsonColumn: "sfDataJson" },
   { key: "sfDataJson.LeadSource", label: "SF Lead Source", type: "string", source: "json", jsonColumn: "sfDataJson" },
+  { key: "sfDataJson.Transfer_Qualification__c", label: "Transfer Qualification", type: "string", source: "json", jsonColumn: "sfDataJson" },
+  { key: "sfDataJson.Call_Transfer_Status__c", label: "Call Transfer Status", type: "string", source: "json", jsonColumn: "sfDataJson" },
+  { key: "sfDataJson.Call_Tranferred_DateTime__c", label: "Call Transferred DateTime", type: "date", source: "json", jsonColumn: "sfDataJson" },
+  { key: "sfDataJson.Call_Received_Date__c", label: "Call Received Date", type: "date", source: "json", jsonColumn: "sfDataJson" },
+  { key: "sfDataJson.Lead_Id__c", label: "Lead Id", type: "string", source: "json", jsonColumn: "sfDataJson" },
 ];
 
 // ============ OPPORTUNITY ============
@@ -174,6 +179,7 @@ const ACCOUNT_FIELDS: ObjectField[] = [
   { key: "owner.name", label: "Owner Name", type: "string", source: "relation", relation: "owner" },
   { key: "owner.email", label: "Owner Email", type: "string", source: "relation", relation: "owner" },
   { key: "primaryContact.name", label: "Primary Contact", type: "string", source: "relation", relation: "primaryContact" },
+  { key: "sfDataJson.Legal_Network__c", label: "Legal Network", type: "string", source: "json", jsonColumn: "sfDataJson" },
 ];
 
 // ============ CASE ============

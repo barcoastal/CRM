@@ -1527,8 +1527,8 @@ model PaymentSummaryLine {
 model Offer {
 
   id             String    @id @default(cuid())
-  debtId         String
-  debt           Debt      @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  debtId         String?
+  debt           Debt?     @relation(fields: [debtId], references: [id], onDelete: Cascade)
   direction      String    @default("FROM_US") // FROM_US | FROM_CREDITOR
   amountOffered  Float
   percentOffered Float // amountOffered / debt.currentBalance
@@ -1543,17 +1543,30 @@ model Offer {
   updatedAt      DateTime  @updatedAt
 
   negotiations Negotiation[]
-  settlement   Settlement?
+  settlements  Settlement[]
+
+  // SF Offer__c mirror (nightly sync)
+  sfId                  String?   @unique
+  sfDataJson            String?
+  clientAccountId       String? // our Account.id for SF Client_Account__c
+  creditorAccountId     String? // our Account.id for SF Account__c (creditor)
+  opportunityId         String? // our Opportunity.id for SF Opportunity__c
+  paymentMethod         String? // Wire | ACH
+  settlementFrequency   String? // Monthly | Twice Monthly | Weekly
+  settlementTerm        String?
+  startDate             DateTime?
+  totalSettlementAmount Float?
 
   @@index([debtId])
   @@index([status])
+  @@index([clientAccountId])
 }
 
 model Settlement {
   id             String    @id @default(cuid())
-  debtId         String    @unique
-  debt           Debt      @relation(fields: [debtId], references: [id], onDelete: Cascade)
-  offerId        String?   @unique
+  debtId         String?   @unique
+  debt           Debt?     @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  offerId        String?
   offer          Offer?    @relation(fields: [offerId], references: [id])
   recordType     String    @default("STANDARD") // STANDARD | LITIGATION | BUYOUT | WORKOUT
   settledAmount  Float
@@ -1569,7 +1582,19 @@ model Settlement {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  // SF Settlement__c mirror (nightly sync)
+  sfId              String?   @unique
+  sfDataJson        String?
+  clientAccountId   String? // our Account.id for SF Client_Account__c
+  creditorAccountId String? // our Account.id for SF Account__c (creditor)
+  opportunityId     String? // our Opportunity.id for SF Opportunity__c
+  paymentMethod     String? // Wire | ACH
+  settlementDate    DateTime?
+  syncStatus        String? // Sync Pending | In Sync | Sync Failed
+
   @@index([status])
+  @@index([offerId])
+  @@index([clientAccountId])
 }
 
 model Fee {

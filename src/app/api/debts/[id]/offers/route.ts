@@ -10,7 +10,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   const offers = await prisma.offer.findMany({
     where: { debtId: id },
     orderBy: { createdAt: "desc" },
-    include: { createdBy: { select: { id: true, name: true } }, settlement: true },
+    include: { createdBy: { select: { id: true, name: true } }, settlements: true },
   });
   return NextResponse.json({ items: offers });
 }
