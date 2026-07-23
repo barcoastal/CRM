@@ -122,7 +122,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
               fields={[
                 // Row 1: Case Number | Case Origin
                 ["Case Number", c.caseNumber],
-                ["Case Origin", sfv("Origin") ?? titleCase(c.origin)],
+                ["Case Origin", c.sfDataJson ? sfv("Origin") : titleCase(c.origin)],
                 // Row 2: Subject | Priority
                 ["Subject", c.subject],
                 ["Priority", priorityDisplay],
@@ -137,7 +137,8 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                 ["Case Reason", sfv("Reason")],
                 // Row 6: Date/Time Opened | Case Record Type
                 ["Date/Time Opened", sfDateTime(c.createdAt)],
-                ["Case Record Type", titleCase(c.recordType)],
+                // The org has a single Case record type, labeled "Customer Support" in SF.
+                ["Case Record Type", sfv("RecordTypeId") ? "Customer Support" : titleCase(c.recordType)],
                 // Row 7: Draft | Date/Time Closed
                 ["Draft", draftNode],
                 ["Date/Time Closed", sfDateTime(c.closedAt ?? c.resolvedAt)],

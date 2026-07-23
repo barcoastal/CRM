@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { DispositionModal } from "@/components/leads/disposition-modal";
 import { QuickActionsRow } from "@/components/quick-actions/quick-actions-row";
 import { ACCOUNT_STAGES, ACCOUNT_STAGE_TO_SUB_DISPOSITIONS } from "@/lib/sf-canonical";
+import { RecordEditModal, type EditField } from "@/components/slds/record-edit-modal";
 
 const btn: React.CSSProperties = {
   background: "#fff",
@@ -30,17 +31,22 @@ const groupBtn: React.CSSProperties = {
 
 export function AccountHeaderButtons({
   accountId,
+  accountName,
   currentStage,
   defaultEmail,
   defaultPhone,
+  editFields = [],
 }: {
   accountId: string;
+  accountName?: string;
   currentStage: string;
   defaultEmail?: string | null;
   defaultPhone?: string | null;
+  editFields?: EditField[];
 }) {
   const router = useRouter();
   const [modal, setModal] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
   async function sync() {
@@ -70,7 +76,7 @@ export function AccountHeaderButtons({
       {/* SF renders the record actions as ONE joined button group. */}
       <div style={{ display: "inline-flex", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden" }}>
         <button style={groupBtn} onClick={() => setModal(true)}>Disposition</button>
-        <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9" }} onClick={() => router.push(`/accounts/${accountId}/edit`)}>Edit</button>
+        <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9" }} onClick={() => (editFields.length > 0 ? setEditOpen(true) : router.push(`/accounts/${accountId}/edit`))}>Edit</button>
         <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9" }} onClick={sync} disabled={syncing}>
           {syncing ? "Syncing" : "Sync to Payment Processor"}
         </button>
@@ -80,6 +86,13 @@ export function AccountHeaderButtons({
           </svg>
         </button>
       </div>
+      <RecordEditModal
+        recordTitle={accountName ?? "Account"}
+        endpointBase={`/api/accounts/${accountId}/field`}
+        fields={editFields}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+      />
       <DispositionModal
         endpoint={`/api/accounts/${accountId}/disposition`}
         stages={ACCOUNT_STAGES}

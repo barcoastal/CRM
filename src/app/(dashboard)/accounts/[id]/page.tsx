@@ -938,7 +938,31 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         { label: "Payment Status", value: account.paymentStatus },
         { label: "Bank Account Status", value: account.bankAccountStatus },
       ]}
-      actions={<AccountHeaderButtons accountId={account.id} currentStage={account.stage} defaultEmail={emailVal} defaultPhone={phoneVal} />}
+      actions={
+        <AccountHeaderButtons
+          accountId={account.id}
+          accountName={account.name}
+          currentStage={account.stage}
+          defaultEmail={emailVal}
+          defaultPhone={phoneVal}
+          editFields={[
+            { label: "Account Name", key: "name", value: account.name, required: true },
+            { label: "Phone", key: "phone", type: "phone", value: account.phone },
+            { label: "Account Type", key: "type", value: account.type },
+            { label: "Website", key: "website", value: account.website },
+            { label: "Industry", key: "industry", value: account.industry },
+            { label: "Annual Revenue", key: "annualRevenue", value: account.annualRevenue != null ? String(account.annualRevenue) : null },
+            { label: "EIN Number / Tax Id", key: "ein", value: account.ein },
+            { label: "Employees", key: "numberOfEmployees", value: account.numberOfEmployees != null ? String(account.numberOfEmployees) : null },
+            { label: "Billing Street", key: "billingStreet", value: account.billingStreet },
+            { label: "Billing City", key: "billingCity", value: account.billingCity },
+            { label: "Billing State/Province", key: "billingState", value: account.billingState },
+            { label: "Billing Zip/Postal Code", key: "billingZip", value: account.billingZip },
+            { label: "Billing Country", key: "billingCountry", value: account.billingCountry },
+            { label: "Description", key: "description", type: "textarea", value: account.description },
+          ]}
+        />
+      }
       pathStages={PATH}
       pathCurrentIndex={accountPathIndex(account.stage)}
       details={
