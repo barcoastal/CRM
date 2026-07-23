@@ -224,7 +224,7 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
           wired through the E() helper + InlineEditableField, where clicking
           it actually opens an inline editor. Rendering a static pencil here
           mislead users into clicking a dead control. */}
-      <span aria-hidden="true" style={{ display: "inline-block", width: 24, height: 24 }} />
+      <span aria-hidden="true" style={{ display: "inline-block", width: 24, height: 18 }} />
       <style jsx>{`
         :global(.sf-field) {
           border-bottom: 1px solid #e5e5e5;

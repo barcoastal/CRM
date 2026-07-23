@@ -121,7 +121,7 @@ export function ContactField({ label, value }: { label: string; value: ReactNode
           intentionally render NO pencil. Only rows wired via CE() +
           InlineEditableField show a clickable pencil. A static pencil here
           previously mislead users into clicking a dead control. */}
-      <span aria-hidden="true" style={{ display: "inline-block", width: 24, height: 24 }} />
+      <span aria-hidden="true" style={{ display: "inline-block", width: 24, height: 18 }} />
       <style jsx>{`
         :global(.sfc-field:hover) {
           background: #fafaf9;

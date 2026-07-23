@@ -391,7 +391,7 @@ export function InlineEditableField({
               cursor: "pointer",
               padding: 0,
               width: 24,
-              height: 24,
+              height: 18,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
@@ -404,7 +404,7 @@ export function InlineEditableField({
             </svg>
           </button>
         ) : (
-          <span aria-hidden="true" style={{ display: "inline-block", width: 24, height: 24 }} />
+          <span aria-hidden="true" style={{ display: "inline-block", width: 24, height: 18 }} />
         )}
       </div>
 
