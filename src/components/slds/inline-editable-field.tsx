@@ -61,7 +61,7 @@ export function InlineEditableField({
 }: InlineEditableFieldProps) {
   // Pad cells used to align two-column rows skip rendering entirely.
   if (label === "__PAD__") {
-    return <div aria-hidden="true" style={{ minHeight: 26, padding: "2px 0" }} />;
+    return <div aria-hidden="true" style={{ minHeight: 23, padding: "2px 0" }} />;
   }
 
   const [editing, setEditing] = useState(false);
@@ -203,10 +203,10 @@ export function InlineEditableField({
         alignItems: "start",
         gap: 8,
         padding: "2px 0",
-        minHeight: 26,
+        minHeight: 23,
         borderBottom: "1px solid #e5e5e5",
         fontSize: 13,
-        lineHeight: 1.35,
+        lineHeight: 1.25,
         position: "relative",
       }}
     >
@@ -216,7 +216,7 @@ export function InlineEditableField({
           color: "#181818",
           fontWeight: 700,
           fontSize: 13,
-          lineHeight: 1.35,
+          lineHeight: 1.25,
           wordBreak: "break-word",
           paddingTop: 1,
         }}
@@ -444,7 +444,7 @@ const inputStyle: React.CSSProperties = {
   background: "#fff",
   padding: "4px 8px",
   fontSize: 13,
-  lineHeight: 1.35,
+  lineHeight: 1.25,
   borderRadius: 3,
   outline: "none",
   minWidth: 0,

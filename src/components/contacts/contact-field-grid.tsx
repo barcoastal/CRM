@@ -79,7 +79,7 @@ export function ContactFieldGrid({
 export function ContactField({ label, value }: { label: string; value: ReactNode }) {
   // Spacer cells used to align two-column rows skip rendering entirely.
   if (label === "__PAD__") {
-    return <div aria-hidden="true" style={{ minHeight: 32, padding: "8px 0" }} />;
+    return <div aria-hidden="true" style={{ minHeight: 23, padding: "2px 0" }} />;
   }
   const isEmpty = value == null || value === "" || value === false;
   return (
@@ -87,14 +87,14 @@ export function ContactField({ label, value }: { label: string; value: ReactNode
       className="sfc-field"
       style={{
         display: "grid",
-        gridTemplateColumns: "minmax(120px, 165px) 1fr 24px",
+        gridTemplateColumns: "33% 1fr 24px",
         alignItems: "start",
         gap: 12,
-        padding: "8px 0",
-        minHeight: 32,
+        padding: "2px 0",
+        minHeight: 23,
         borderBottom: "1px solid #e5e5e5",
         fontSize: 13,
-        lineHeight: 1.35,
+        lineHeight: 1.25,
       }}
     >
       <div

@@ -182,8 +182,10 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div
       style={{
+        // SF live at 1200-1512px: single-line field rows are 24-25px tall
+        // including the 1px underline. 23px + border matches.
         padding: "2px 0",
-        minHeight: 26,
+        minHeight: 23,
         position: "relative",
         display: "grid",
         gridTemplateColumns: "33% 1fr 28px",
@@ -198,7 +200,7 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
           fontSize: 13,
           color: "#181818",
           fontWeight: 700,
-          lineHeight: 1.35,
+          lineHeight: 1.25,
           paddingTop: 1,
         }}
       >
@@ -209,7 +211,7 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
           fontSize: 13,
           color: "#181818",
           wordBreak: "break-word",
-          lineHeight: 1.35,
+          lineHeight: 1.25,
           minWidth: 0,
         }}
       >
