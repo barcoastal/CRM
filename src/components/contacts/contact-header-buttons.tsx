@@ -14,7 +14,7 @@ const btn: React.CSSProperties = {
   padding: "0 12px",
   height: 32,
   fontSize: 13,
-  fontWeight: 600,
+  fontWeight: 400,
   color: "#0176d3",
   cursor: "pointer",
   fontFamily: "inherit",

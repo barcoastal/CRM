@@ -146,10 +146,10 @@ export function ObjectHeader({
                 <div
                   title={h.label}
                   style={{
-                    fontSize: 11,
+                    fontSize: 12,
                     color: "#444444",
                     fontWeight: 400,
-                    lineHeight: 1.4,
+                    lineHeight: 1.25,
                     marginBottom: 2,
                     whiteSpace: "nowrap",
                     overflow: "hidden",

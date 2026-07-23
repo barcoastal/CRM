@@ -105,7 +105,7 @@ export function Path({
                   : isFirst
                   ? "polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%)"
                   : "polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%, 10px 50%)",
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: isCurrent ? 700 : 400,
                 color: isCurrent ? "#fff" : "#444",
                 whiteSpace: "nowrap",

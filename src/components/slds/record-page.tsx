@@ -87,7 +87,7 @@ export function HeaderActions({
   // SF renders record actions as ONE joined button group with a trailing chevron.
   const groupItem: React.CSSProperties = {
     background: "#fff", border: 0, color: "#0176d3", padding: "0 12px", height: 30,
-    fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex",
+    fontSize: 13, fontWeight: 400, cursor: "pointer", display: "inline-flex",
     alignItems: "center", textDecoration: "none", whiteSpace: "nowrap",
   };
   return (

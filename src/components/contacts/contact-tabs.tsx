@@ -40,8 +40,8 @@ export function ContactTabs({
               style={{
                 background: "transparent",
                 border: 0,
-                padding: "12px 14px 10px",
-                fontSize: 13,
+                padding: "8px 16px",
+                fontSize: 16,
                 fontWeight: active ? 700 : 400,
                 color: active ? "#181818" : "#444444",
                 borderBottom: active ? "3px solid #0176d3" : "3px solid transparent",

@@ -16,7 +16,7 @@ const btn: React.CSSProperties = {
   height: 32,
   borderRadius: 4,
   fontSize: 13,
-  fontWeight: 600,
+  fontWeight: 400,
   cursor: "pointer",
   display: "inline-flex",
   alignItems: "center",
