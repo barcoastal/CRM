@@ -114,10 +114,32 @@ function setNested(target: Record<string, unknown>, path: string[], value: unkno
 }
 
 function buildFilterClause(field: ObjectField, operator: string, value: unknown): Record<string, unknown> | null {
-  // JSON-path filters are post-processed in JS (Prisma's JSON filtering on
-  // string JSON columns is fiddly across the SF lossless snapshot). Return null
-  // so we apply them after fetch.
-  if (field.source === "json") return null;
+  // JSON-path filters: prefilter in the DB via substring match on the raw JSON
+  // text (sync writes compact JSON, so "Key":"Value" hits the exact key). The
+  // JS post-filter still runs after fetch for exactness; without the DB
+  // prefilter, only the newest rowLimit rows would ever be scanned.
+  if (field.source === "json") {
+    const jsonCol = field.jsonColumn;
+    if (!jsonCol) return null;
+    const jsonKey = field.key.startsWith(`${jsonCol}.`)
+      ? field.key.slice(jsonCol.length + 1)
+      : field.key;
+    const pat = (v: unknown) => `"${jsonKey}":${JSON.stringify(String(v))}`;
+    switch (operator) {
+      case "equals":
+        return { [jsonCol]: { contains: pat(value) } };
+      case "in":
+        return Array.isArray(value) && value.length > 0
+          ? { OR: value.map((v) => ({ [jsonCol]: { contains: pat(v) } })) }
+          : null;
+      case "contains":
+        return { [jsonCol]: { contains: String(value) } };
+      case "isNotNull":
+        return { AND: [{ [jsonCol]: { contains: `"${jsonKey}":` } }, { NOT: { [jsonCol]: { contains: `"${jsonKey}":""` } } }] };
+      default:
+        return null; // ranges etc. stay JS-side only
+    }
+  }
   // Computed filters are JS-side.
   if (field.source === "computed") return null;
 
@@ -317,7 +339,9 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
       const field = getField(cfg.objectType, f.field);
       if (!field) continue;
       const clause = buildFilterClause(field, f.operator, f.value);
-      if (!clause) { postFilters.push(f); continue; }
+      // json/computed filters always post-filter too (DB clause is a prefilter)
+      if (field.source === "json" || field.source === "computed") postFilters.push(f);
+      if (!clause) { if (field.source !== "json" && field.source !== "computed") postFilters.push(f); continue; }
       if (f.orGroup) {
         const list = groupClauses.get(f.orGroup) ?? [];
         list.push(clause);
