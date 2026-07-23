@@ -99,8 +99,8 @@ export function ContactField({ label, value }: { label: string; value: ReactNode
     >
       <div
         style={{
-          color: "#444444",
-          fontWeight: 400,
+          color: "#181818",
+          fontWeight: 700,
           fontSize: 12,
           paddingTop: 1,
           wordBreak: "break-word",

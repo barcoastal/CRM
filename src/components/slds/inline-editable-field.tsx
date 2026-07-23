@@ -115,7 +115,7 @@ export function InlineEditableField({
   }, [value, displayNode, type, editing]);
 
   const isEmpty =
-    committed == null || committed === "" || (typeof committed === "boolean" && !committed && type === "checkbox" && false);
+    committedNode == null && (committed == null || committed === "");
   const readValue: ReactNode = (() => {
     if (committedNode) return committedNode;
     if (format) return format(committed);
@@ -212,10 +212,10 @@ export function InlineEditableField({
     >
       <div
         style={{
-          // SF labels at zoom: 13px BOLD #181818.
+          // SF live computed: 12px BOLD #181818 labels.
           color: "#181818",
           fontWeight: 700,
-          fontSize: 13,
+          fontSize: 12,
           lineHeight: 1.25,
           wordBreak: "break-word",
           paddingTop: 1,

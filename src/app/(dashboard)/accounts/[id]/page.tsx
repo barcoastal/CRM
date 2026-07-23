@@ -314,7 +314,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             E("Account Site", acctSf("Site"), "Site"),
             E("Fax", faxDisplay, "Fax"),
             // Row 6: Type | Website
-            E("Type", acctSf("Type"), "type", "text", { rawValue: account.type }),
+            E("Type", acctSf("Type"), "type", "text"),
             E("Website", websiteDisplay, "website", "text", { rawValue: account.website }),
             // Row 7: Industry | Ticker Symbol
             E("Industry", account.industry ?? acctSf("Industry"), "industry", "text", { rawValue: account.industry }),
