@@ -37,12 +37,19 @@ export function Path({
   actionLabel,
   onAction,
   advance,
+  doneVariant = "plain",
+  currentColor = "#032d60",
 }: {
   stages: readonly PathStage[];
   currentIndex: number;
   actionLabel?: string;
   onAction?: () => void;
   advance?: PathAdvance;
+  /** "green": SF opportunity style - completed stages are green with a white
+   *  check and no label. "plain": SF account/lead style - light gray. */
+  doneVariant?: "plain" | "green";
+  /** Current-stage fill (SF: navy, but dark green #2e844a for Closed Won). */
+  currentColor?: string;
 }) {
   const handleAction = async () => {
     if (onAction) return onAction();
@@ -77,7 +84,7 @@ export function Path({
         marginTop: 8,
       }}
     >
-      <div style={{ flex: 1, display: "flex", height: 32, overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", height: 32, overflow: "hidden", borderRadius: 16 }}>
         {stages.map((stage, i) => {
           const isDone = i < currentIndex;
           const isCurrent = i === currentIndex;
@@ -112,13 +119,21 @@ export function Path({
                 paddingLeft: isFirst ? 10 : 16,
                 paddingRight: isLast ? 10 : 16,
                 cursor: "default",
+                ...(isDone && doneVariant === "green" ? { background: "#3ba755" } : {}),
+                ...(isCurrent ? { background: currentColor } : {}),
               }}
               title={stage.label}
             >
-              
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>
-                {stage.label}
-              </span>
+              {isDone && doneVariant === "green" ? (
+                // SF opp path: completed = white check only, no label
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
+              ) : (
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>
+                  {stage.label}
+                </span>
+              )}
             </div>
           );
         })}
@@ -159,9 +174,8 @@ export function Path({
           transition: background .15s;
         }
         :global(.sf-path-done) { background: #f3f3f3; }
-        :global(.sf-path-current) { background: #032d60; }
         :global(.sf-path-upcoming) { background: #f3f3f3; }
-        :global(.sf-path-done:hover) { background: #e5e5e5; }
+
         :global(.sf-path-upcoming:hover) { background: #ecebea; }
       `}</style>
     </div>

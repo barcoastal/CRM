@@ -107,8 +107,9 @@ function oppPathIndex(stage: string): number {
   if (s.includes("WAITING")) return 1;
   return 0;
 }
-// Keep an OPP_STAGES reference for the SfDataSection legend below.
-void OPP_STAGES;
+// SF opp path: the 8 open stages, then ONE terminal chevron that displays the
+// actual closed stage name ("Closed Won - ...", "Closed Lost") once closed.
+const OPP_PATH_OPEN_STAGES = OPP_STAGES.filter((st) => !st.startsWith("Closed"));
 
 export default async function OpportunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -885,7 +886,17 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           { label: "Version", value: oppSf("Version_Status__c") ?? String(opp.version ?? "1.0") },
         ]}
         actions={<OppHeaderButtons opportunityId={opp.id} currentStage={opp.stage} forecastCategory={opp.forecastCategory ?? null} defaultEmail={emailDisplay ?? opp.lead?.email ?? null} defaultPhone={phoneDisplay ?? opp.lead?.phone ?? null} defaultSignerName={opp.lead?.contactName?.trim() || opp.primaryContact?.fullName?.trim() || null} recommendedAgreement={recommendedAgreement} />}
-        // SF opp layout in this org shows NO stage path - stage lives in Details.
+        pathStages={[
+          ...OPP_PATH_OPEN_STAGES.map((st) => ({ label: st })),
+          { label: opp.stage.startsWith("Closed") ? opp.stage : "Closed" },
+        ]}
+        pathCurrentIndex={
+          opp.stage.startsWith("Closed")
+            ? OPP_PATH_OPEN_STAGES.length
+            : Math.max(0, OPP_PATH_OPEN_STAGES.indexOf(opp.stage as (typeof OPP_PATH_OPEN_STAGES)[number]))
+        }
+        pathDoneVariant="green"
+        pathCurrentColor={opp.stage.startsWith("Closed Won") ? "#2e844a" : "#032d60"}
         details={
           <>
             <PathSidePanelServer

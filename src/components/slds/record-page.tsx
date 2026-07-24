@@ -20,6 +20,8 @@ export function RecordPage({
   pathCurrentIndex,
   pathActionLabel,
   pathAdvance,
+  pathDoneVariant,
+  pathCurrentColor,
   details,
   rail,
 }: {
@@ -33,6 +35,8 @@ export function RecordPage({
   pathCurrentIndex?: number;
   pathActionLabel?: string;
   pathAdvance?: PathAdvance;
+  pathDoneVariant?: "plain" | "green";
+  pathCurrentColor?: string;
   details: ReactNode;
   rail?: ReactNode;
 }) {
@@ -56,6 +60,8 @@ export function RecordPage({
             currentIndex={pathCurrentIndex}
             actionLabel={pathActionLabel}
             advance={pathAdvance}
+            doneVariant={pathDoneVariant}
+            currentColor={pathCurrentColor}
           />
         )}
       </div>
