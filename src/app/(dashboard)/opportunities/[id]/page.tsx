@@ -883,7 +883,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           { label: "Current Total Debt", value: `$${totalDebtVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
           { label: "Lead Id", value: sfLeadIdDisplay },
           { label: "Opportunity Owner", value: ownerDisplay },
-          { label: "Version", value: oppSf("Version_Status__c") ?? String(opp.version ?? "1.0") },
+          { label: "Version", value: String(opp.version ?? oppSf("Version__c") ?? "1.0") },
         ]}
         actions={<OppHeaderButtons opportunityId={opp.id} currentStage={opp.stage} forecastCategory={opp.forecastCategory ?? null} defaultEmail={emailDisplay ?? opp.lead?.email ?? null} defaultPhone={phoneDisplay ?? opp.lead?.phone ?? null} defaultSignerName={opp.lead?.contactName?.trim() || opp.primaryContact?.fullName?.trim() || null} recommendedAgreement={recommendedAgreement} />}
         pathStages={[
