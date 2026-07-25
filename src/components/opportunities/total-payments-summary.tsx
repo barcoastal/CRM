@@ -68,11 +68,9 @@ export function TotalPaymentsSummary(props: TotalPaymentsSummaryProps) {
     ["Total Weekly Saving", fmtMoney(props.totalWeeklySaving)],
   ];
 
-  const allEmpty =
-    props.empty &&
-    props.totalProgramCost == null &&
-    props.totalProgramFee == null &&
-    props.totalWeeklyPayment == null;
+  // `empty` is authoritative: SF shows "No Records Found" until payment
+  // records exist, even though we could compute defaults.
+  const allEmpty = !!props.empty;
 
   return (
     <article
@@ -96,8 +94,12 @@ export function TotalPaymentsSummary(props: TotalPaymentsSummaryProps) {
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
           Total Payments Summary
         </h3>
-        {allEmpty && <span style={{ fontSize: 12, color: "#747474" }}>No Records Found</span>}
       </header>
+      {allEmpty && (
+        <div style={{ padding: "20px 12px", textAlign: "center", fontSize: 13, color: "#444444" }}>
+          No Records Found
+        </div>
+      )}
       {!allEmpty && (
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <tbody>
