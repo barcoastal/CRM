@@ -87,12 +87,12 @@ export function OppHeaderButtons({
   return (
     <>
       <QuickActionsRow opportunityId={opportunityId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
-      <CategoryPicker opportunityId={opportunityId} value={initialCategory} size="sm" />
-      {/* SF shows three actions + a chevron menu holding the rest. */}
-      <div style={{ display: "inline-flex", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden", position: "relative" }}>
+      {/* SF opp header shows exactly: Disposition | Update Opportunity |
+          Amend Opportunity, plus a chevron menu holding our extra actions. */}
+      <div style={{ display: "inline-flex", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "visible", position: "relative" }}>
         <button style={groupBtn} onClick={() => setModal(true)}>Disposition</button>
-        <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9" }} onClick={() => setContractModal(true)}>Send Contract</button>
-        <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9" }} onClick={() => setPacketModal(true)}>Send Packet</button>
+        <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9" }} onClick={() => void updateOpp()}>Update Opportunity</button>
+        <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9" }} onClick={() => void amendOpp()}>Amend Opportunity</button>
         <button
           style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9", padding: "0 10px" }}
           aria-label="More actions"
@@ -104,8 +104,11 @@ export function OppHeaderButtons({
         </button>
         {moreMenu && (
           <div style={{ position: "absolute", top: "100%", right: 0, zIndex: 30, background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, boxShadow: "0 2px 8px rgba(0,0,0,0.15)", minWidth: 190, marginTop: 2 }}>
-            <button style={menuItemStyle} onClick={() => { setMoreMenu(false); void updateOpp(); }}>Update Opportunity</button>
-            <button style={menuItemStyle} onClick={() => { setMoreMenu(false); void amendOpp(); }}>Amend Opportunity</button>
+            <button style={menuItemStyle} onClick={() => { setMoreMenu(false); setContractModal(true); }}>Send Contract</button>
+            <button style={menuItemStyle} onClick={() => { setMoreMenu(false); setPacketModal(true); }}>Send Packet</button>
+            <div style={{ padding: "6px 12px", borderTop: "1px solid #ecebea" }}>
+              <CategoryPicker opportunityId={opportunityId} value={initialCategory} size="sm" />
+            </div>
             <div style={{ padding: "6px 12px" }}><SubmitForApprovalButton entityType="Opportunity" entityId={opportunityId} /></div>
           </div>
         )}
