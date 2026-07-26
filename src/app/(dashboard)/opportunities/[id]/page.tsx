@@ -300,7 +300,41 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     accountDisplayName ?? null
   );
 
-  const ownerDisplay = opp.assignedTo?.name ?? oppSf("Owner_Full_Name__c");
+  const ownerName = opp.assignedTo?.name ?? oppSf("Owner_Full_Name__c");
+  // SF renders the owner as a user link with a small avatar; link to our
+  // user record when the owner exists in the CRM, else plain text.
+  const ownerDisplay = opp.assignedTo ? (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span
+        aria-hidden="true"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          background: "#7f8de1",
+          color: "#fff",
+          fontSize: 10,
+          fontWeight: 700,
+          flexShrink: 0,
+        }}
+      >
+        {(opp.assignedTo.name || "?")
+          .split(/\s+/)
+          .map((p) => p[0])
+          .slice(0, 2)
+          .join("")
+          .toUpperCase()}
+      </span>
+      <Link href={`/settings/users/${opp.assignedTo.id}`} style={{ color: "#0176d3" }}>
+        {opp.assignedTo.name}
+      </Link>
+    </span>
+  ) : (
+    ownerName
+  );
   // Active users for the Opportunity Owner inline-edit select (SF: change owner).
   const ownerOptions = (
     await prisma.user.findMany({
