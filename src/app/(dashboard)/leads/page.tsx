@@ -150,7 +150,10 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const ownerViews = ownerUsers.map((u) => ({ value: `owner:${u.id}`, label: u.name }));
   const allViews = [...VIEWS, ...ownerViews];
 
-  const [leads, total] = await Promise.all([
+  // SF caps list-view counts at 2,000 ("2,000+ items"). An exact COUNT(*)
+  // over the 7M-row Lead table takes seconds, so probe up to the cap instead.
+  const COUNT_CAP = 2000;
+  const [leads, countProbe] = await Promise.all([
     prisma.lead.findMany({
       where,
       include: {
@@ -160,8 +163,10 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       skip: (page - 1) * LIMIT,
       take: LIMIT,
     }),
-    prisma.lead.count({ where }),
+    prisma.lead.findMany({ where, select: { id: true }, take: COUNT_CAP + 1 }),
   ]);
+  const countCapped = countProbe.length > COUNT_CAP;
+  const total = countCapped ? COUNT_CAP : countProbe.length;
 
   const rows: SfRow[] = leads.map((lead) => {
     let sfData: Record<string, unknown> = {};
@@ -244,6 +249,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       title="Leads"
       subtitle={subtitle}
       count={total}
+      countCapped={countCapped}
       iconColor="#f88962"
       iconSlug="lead"
       actions={[

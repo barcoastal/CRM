@@ -56,6 +56,8 @@ export interface SfListPageProps {
   subtitle: string;
   /** total items count */
   count: number;
+  /** true when `count` is a capped probe (display "2,000+" like SF) */
+  countCapped?: boolean;
   /** background hex for the icon tile (e.g. "#f88962" for Lead orange) */
   iconColor?: string;
   /** SLDS standard icon slug, e.g. "lead", "opportunity" */
@@ -93,6 +95,7 @@ export function SfListPage(props: SfListPageProps) {
     title,
     subtitle,
     count,
+    countCapped,
     iconColor,
     iconSlug,
     actions,
@@ -111,6 +114,7 @@ export function SfListPage(props: SfListPageProps) {
   } = props;
 
   const ids = rows.map((r) => r.id);
+  const countLabel = count.toLocaleString("en-US") + (countCapped ? "+" : "");
 
   // Pagination (only when page + pageSize are provided)
   const pageNum = page && page > 0 ? page : 1;
@@ -137,6 +141,7 @@ export function SfListPage(props: SfListPageProps) {
           title={title}
           subtitle={subtitle}
           count={count}
+          countLabel={countLabel}
           actions={actions}
           searchQuery={searchQuery ?? ""}
           pathname={pathname}
@@ -393,7 +398,7 @@ export function SfListPage(props: SfListPageProps) {
             }}
           >
             <span>
-              {startIdx}–{endIdx} of {count} · Page {pageNum} of {totalPages}
+              {startIdx}–{endIdx} of {countLabel} · Page {pageNum} of {totalPages}
             </span>
             <div style={{ display: "flex", gap: 8 }}>
               <PagerLink href={pageHref(pageNum - 1)} disabled={pageNum <= 1} label="‹ Previous" />
@@ -421,6 +426,7 @@ function Header({
   title,
   subtitle,
   count,
+  countLabel,
   actions,
   searchQuery,
   pathname,
@@ -433,6 +439,7 @@ function Header({
   title: string;
   subtitle: string;
   count: number;
+  countLabel?: string;
   actions: SfListAction[];
   searchQuery: string;
   pathname: string;
@@ -504,7 +511,7 @@ function Header({
               </div>
             )}
             <div style={{ marginTop: 2, fontSize: 12, color: "#444444" }}>
-              {count} item{count === 1 ? "" : "s"}
+              {countLabel ?? String(count)} item{count === 1 ? "" : "s"}
               <span style={{ color: "#747474" }}> · Updated a few seconds ago</span>
             </div>
           </div>

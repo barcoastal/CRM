@@ -862,6 +862,11 @@ model Lead {
   @@index([recordType])
   @@index([convertedAccountId])
   @@index([convertedContactId])
+  @@index([updatedAt])
+  @@index([createdAt])
+  @@index([status])
+  @@index([assignedToId])
+  @@index([lastContactedAt])
   // trigram index: global search does ILIKE %q% on this column
   @@index([contactName(ops: raw("gin_trgm_ops"))], type: Gin)
   // trigram index: global search does ILIKE %q% on this column
