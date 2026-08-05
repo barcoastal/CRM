@@ -163,7 +163,9 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       skip: (page - 1) * LIMIT,
       take: LIMIT,
     }),
-    prisma.lead.findMany({ where, select: { id: true }, take: COUNT_CAP + 1 }),
+    // orderBy forces the indexed scan path; without it the planner may walk
+    // the 7M-row heap sequentially hunting for matches (20s on this-week).
+    prisma.lead.findMany({ where, orderBy, select: { id: true }, take: COUNT_CAP + 1 }),
   ]);
   const countCapped = countProbe.length > COUNT_CAP;
   const total = countCapped ? COUNT_CAP : countProbe.length;
