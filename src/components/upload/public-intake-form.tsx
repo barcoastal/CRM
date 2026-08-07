@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { US_STATES, isValidUsZip } from "@/lib/us-states";
+import { KNOWN_CREDITORS } from "@/lib/creditors";
 
 /**
  * Public no-login intake form. The agent picks which sections to request
@@ -19,7 +20,10 @@ type Fields = {
   email: string;
 };
 
-type DebtRow = { lender: string; amount: string };
+type DebtRow = { lender: string; lenderOther: string; amount: string };
+
+const OTHER = "__OTHER__";
+const LENDER_OPTIONS = [...KNOWN_CREDITORS].sort((a, b) => a.localeCompare(b));
 
 function formatSsn(v: string): string {
   const d = v.replace(/\D/g, "").slice(0, 9);
@@ -48,7 +52,7 @@ export function PublicIntakeForm({
   const [ssn, setSsn] = useState("");
   const [ein, setEin] = useState("");
   const [dob, setDob] = useState("");
-  const [debts, setDebts] = useState<DebtRow[]>([{ lender: "", amount: "" }]);
+  const [debts, setDebts] = useState<DebtRow[]>([{ lender: "", lenderOther: "", amount: "" }]);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,8 +60,9 @@ export function PublicIntakeForm({
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setF((p) => ({ ...p, [k]: e.target.value }));
 
-  const setDebt = (i: number, k: keyof DebtRow) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const setDebt = (i: number, k: keyof DebtRow) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setDebts((rows) => rows.map((r, j) => (j === i ? { ...r, [k]: e.target.value } : r)));
+  const effectiveLender = (d: DebtRow) => (d.lender === OTHER ? d.lenderOther.trim() : d.lender);
 
   async function submit() {
     if (want("address") && f.zip.trim() && !isValidUsZip(f.zip)) {
@@ -84,7 +89,9 @@ export function PublicIntakeForm({
           ein: want("ein") ? ein : "",
           dob: want("dob") ? dob : "",
           debts: want("debts")
-            ? debts.filter((d) => d.lender.trim() || d.amount.trim())
+            ? debts
+                .map((d) => ({ lender: effectiveLender(d), amount: d.amount }))
+                .filter((d) => d.lender || d.amount.trim())
             : [],
         }),
       });
@@ -215,7 +222,23 @@ export function PublicIntakeForm({
             <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 32px", gap: 10, alignItems: "end" }}>
               <div>
                 <label style={lbl}>Lender / funder name</label>
-                <input value={d.lender} onChange={setDebt(i, "lender")} style={inp} placeholder="e.g. OnDeck" />
+                <select value={d.lender} onChange={setDebt(i, "lender")} style={{ ...inp, background: "#fff" }}>
+                  <option value="">Select your lender…</option>
+                  {LENDER_OPTIONS.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                  <option value={OTHER}>Other (not on the list)</option>
+                </select>
+                {d.lender === OTHER && (
+                  <input
+                    value={d.lenderOther}
+                    onChange={setDebt(i, "lenderOther")}
+                    style={{ ...inp, marginTop: 8 }}
+                    placeholder="Type the lender's name"
+                  />
+                )}
               </div>
               <div>
                 <label style={lbl}>Amount owed</label>
@@ -247,7 +270,7 @@ export function PublicIntakeForm({
           ))}
           <button
             type="button"
-            onClick={() => setDebts((rows) => [...rows, { lender: "", amount: "" }])}
+            onClick={() => setDebts((rows) => [...rows, { lender: "", lenderOther: "", amount: "" }])}
             style={{
               marginTop: 10,
               background: "#fff",
