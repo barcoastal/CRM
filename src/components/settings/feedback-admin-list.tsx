@@ -7,6 +7,7 @@ interface Item {
   id: string;
   type: string;
   message: string;
+  screenshot: string | null;
   pageUrl: string | null;
   userAgent: string | null;
   status: string;
@@ -33,6 +34,7 @@ export function FeedbackAdminList({ items: initial }: { items: Item[] }) {
   const [items, setItems] = useState(initial);
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [zoomed, setZoomed] = useState<string | null>(null);
 
   async function setStatus(id: string, status: string) {
     const res = await fetch(`/api/feedback/${id}`, {
@@ -121,6 +123,23 @@ export function FeedbackAdminList({ items: initial }: { items: Item[] }) {
               <div style={{ fontSize: 13, color: "#181818", whiteSpace: "pre-wrap", marginBottom: 4 }}>
                 {i.message}
               </div>
+              {i.screenshot && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={i.screenshot}
+                  alt="Screenshot"
+                  onClick={() => setZoomed(i.screenshot)}
+                  style={{
+                    display: "block",
+                    maxWidth: 220,
+                    maxHeight: 140,
+                    border: "1px solid #c9c9c9",
+                    borderRadius: 4,
+                    cursor: "zoom-in",
+                    margin: "6px 0",
+                  }}
+                />
+              )}
               {i.pageUrl && (
                 <a href={i.pageUrl} style={{ fontSize: 12, color: "#0176d3", wordBreak: "break-all" }}>
                   {i.pageUrl}
@@ -129,6 +148,25 @@ export function FeedbackAdminList({ items: initial }: { items: Item[] }) {
             </div>
           );
         })
+      )}
+      {zoomed && (
+        <div
+          onClick={() => setZoomed(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(8,7,7,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1200,
+            padding: 24,
+            cursor: "zoom-out",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={zoomed} alt="Screenshot" style={{ maxWidth: "95%", maxHeight: "95%", borderRadius: 6 }} />
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Header feedback widget: one click, three fields, auto-captures the page the
@@ -37,6 +37,94 @@ export function FeedbackButton() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mine, setMine] = useState<MyReport[]>([]);
+  const [shot, setShot] = useState<string | null>(null); // base image data URL
+  const [capturing, setCapturing] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawing = useRef(false);
+  const last = useRef<{ x: number; y: number } | null>(null);
+
+  // Paint the captured image onto the annotation canvas (also = clear pen).
+  const paintShot = (src: string | null) => {
+    if (!src || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 400;
+      const scale = Math.min(1, maxW / img.width);
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    img.src = src;
+  };
+  useEffect(() => {
+    paintShot(shot);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shot]);
+
+  const canvasPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    return {
+      x: ((e.clientX - rect.left) / rect.width) * e.currentTarget.width,
+      y: ((e.clientY - rect.top) / rect.height) * e.currentTarget.height,
+    };
+  };
+  const startDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    drawing.current = true;
+    last.current = canvasPos(e);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const moveDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!drawing.current || !last.current || !canvasRef.current) return;
+    const ctx = canvasRef.current.getContext("2d");
+    if (!ctx) return;
+    const p = canvasPos(e);
+    ctx.strokeStyle = "#ea001e";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(last.current.x, last.current.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    last.current = p;
+  };
+  const endDraw = () => {
+    drawing.current = false;
+    last.current = null;
+  };
+
+  async function capturePage() {
+    setCapturing(true);
+    try {
+      const { default: html2canvas } = await import("html2canvas");
+      // Hide the modal while capturing so it does not cover the page.
+      const overlayEl = document.getElementById("feedback-overlay");
+      if (overlayEl) overlayEl.style.visibility = "hidden";
+      const canvas = await html2canvas(document.body, {
+        x: window.scrollX,
+        y: window.scrollY,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        logging: false,
+      });
+      if (overlayEl) overlayEl.style.visibility = "visible";
+      setShot(canvas.toDataURL("image/jpeg", 0.85));
+    } catch {
+      setError("Could not capture the page. You can upload a screenshot file instead.");
+    } finally {
+      setCapturing(false);
+    }
+  }
+
+  function uploadShot(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setShot(String(reader.result));
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -54,10 +142,12 @@ export function FeedbackButton() {
     setBusy(true);
     setError(null);
     try {
+      const screenshot =
+        shot && canvasRef.current ? canvasRef.current.toDataURL("image/jpeg", 0.85) : null;
       const res = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, message, pageUrl: window.location.href }),
+        body: JSON.stringify({ type, message, pageUrl: window.location.href, screenshot }),
       });
       if (!res.ok) {
         const d = (await res.json().catch(() => ({}))) as { error?: string };
@@ -65,6 +155,7 @@ export function FeedbackButton() {
         return;
       }
       setMessage("");
+      setShot(null);
       setSent(true);
     } catch {
       setError("Network error, please try again.");
@@ -99,7 +190,7 @@ export function FeedbackButton() {
       </button>
 
       {open && (
-        <div style={overlay} onClick={() => !busy && setOpen(false)}>
+        <div id="feedback-overlay" style={overlay} onClick={() => !busy && setOpen(false)}>
           <div style={modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ margin: "0 0 4px", fontSize: 16, color: "#181818" }}>Give feedback</h2>
             <p style={{ margin: "0 0 14px", fontSize: 13, color: "#747474" }}>
@@ -145,6 +236,56 @@ export function FeedbackButton() {
                   }
                   style={{ ...input, height: "auto", padding: 8, resize: "vertical" }}
                 />
+
+                <label style={label}>Screenshot (optional)</label>
+                {!shot ? (
+                  <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                    <button type="button" onClick={() => void capturePage()} disabled={capturing} style={btnGhost}>
+                      {capturing ? "Capturing..." : "Capture this page"}
+                    </button>
+                    <label style={{ ...btnGhost, display: "inline-flex", alignItems: "center", cursor: "pointer" }}>
+                      Upload image
+                      <input type="file" accept="image/*" onChange={uploadShot} style={{ display: "none" }} />
+                    </label>
+                  </div>
+                ) : (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, color: "#747474", marginBottom: 4 }}>
+                      Draw on the image to mark what is off (red pen):
+                    </div>
+                    <canvas
+                      ref={canvasRef}
+                      onPointerDown={startDraw}
+                      onPointerMove={moveDraw}
+                      onPointerUp={endDraw}
+                      onPointerLeave={endDraw}
+                      style={{
+                        width: "100%",
+                        border: "1px solid #c9c7c5",
+                        borderRadius: 4,
+                        cursor: "crosshair",
+                        touchAction: "none",
+                        display: "block",
+                      }}
+                    />
+                    <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => paintShot(shot)}
+                        style={{ ...btnGhost, padding: "3px 10px", fontSize: 12 }}
+                      >
+                        Clear drawing
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShot(null)}
+                        style={{ ...btnGhost, padding: "3px 10px", fontSize: 12 }}
+                      >
+                        Remove screenshot
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {error && <div style={{ margin: "0 0 10px", fontSize: 13, color: "#c23934" }}>{error}</div>}
 

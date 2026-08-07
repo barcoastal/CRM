@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
     type?: string;
     message?: string;
     pageUrl?: string;
+    screenshot?: string;
   };
   const type = TYPES.includes(b.type as (typeof TYPES)[number]) ? (b.type as string) : "BUG";
   const message = (b.message ?? "").trim().slice(0, 5000);
@@ -56,6 +57,13 @@ export async function POST(request: NextRequest) {
       message,
       pageUrl: (b.pageUrl ?? "").slice(0, 500) || null,
       userAgent: request.headers.get("user-agent")?.slice(0, 300) ?? null,
+      // Annotated jpeg data URL from the widget; cap ~3MB to protect the DB.
+      screenshot:
+        typeof b.screenshot === "string" &&
+        b.screenshot.startsWith("data:image/") &&
+        b.screenshot.length < 3_000_000
+          ? b.screenshot
+          : null,
     },
   });
 

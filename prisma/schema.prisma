@@ -1337,6 +1337,7 @@ model Feedback {
   message    String
   pageUrl    String?
   userAgent  String?
+  screenshot String? // annotated screenshot data URL (jpeg)
   status     String   @default("NEW") // NEW | IN_PROGRESS | DONE | WONT_FIX
   adminNotes String?
   createdAt  DateTime @default(now())

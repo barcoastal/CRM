@@ -46,6 +46,7 @@ export default async function FeedbackAdminPage() {
           id: i.id,
           type: i.type,
           message: i.message,
+          screenshot: i.screenshot,
           pageUrl: i.pageUrl,
           userAgent: i.userAgent,
           status: i.status,
