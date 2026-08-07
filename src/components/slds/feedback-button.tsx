@@ -82,10 +82,20 @@ export function FeedbackButton() {
           setOpen(true);
           setSent(false);
         }}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 5,
+          width: "auto",
+          padding: "0 8px",
+        }}
       >
         <svg className="sf-util-icon" aria-hidden="true">
-          <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#feed" />
+          <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#announcement" />
         </svg>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "#444444", whiteSpace: "nowrap" }}>
+          Feedback
+        </span>
       </button>
 
       {open && (
