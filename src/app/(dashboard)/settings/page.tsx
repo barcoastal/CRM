@@ -14,6 +14,7 @@ export default async function SettingsPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
+  const feedbackCount = await prisma.feedback.count({ where: { status: "NEW" } });
   const [users, profiles, roles, queues, permSets, integrations, templates, dispositions, listViews, pathGuidance, pageLayouts, fieldLabels, validationRules] = await Promise.all([
     prisma.user.count({ where: { isActive: true } }),
     prisma.profile.count({ where: { isActive: true } }),
@@ -38,6 +39,7 @@ export default async function SettingsPage() {
         { href: "/settings/profiles", title: "Profiles", description: "Permission profiles users are assigned to", count: profiles },
         { href: "/settings/permission-sets", title: "Permission Sets", description: "Fine-grained capability bundles", count: permSets },
         { href: "/settings/roles", title: "Role Hierarchy", description: "Reporting relationships", count: roles },
+        { href: "/settings/feedback", title: "User Feedback", description: "Bugs, ideas, SF differences", count: feedbackCount },
         { href: "/settings/queues", title: "Queues", description: "Lead/case routing pools", count: queues },
       ],
     },

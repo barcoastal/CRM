@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { ObjectIcon } from "./icon";
 import { AppLauncher } from "./app-launcher";
 import { GlobalSearch } from "./global-search";
+import { FeedbackButton } from "@/components/slds/feedback-button";
 import { EditNavModal, applyNavPrefs, type NavItem } from "./edit-nav-modal";
 import { avatarFor } from "@/lib/avatars";
 import { NotificationsPanel, useNotificationsCount } from "@/components/notifications/notifications-panel";
@@ -155,6 +156,7 @@ export function SldsHeader({
               </div>
             )}
           </div>
+          <FeedbackButton />
           <a
             href="https://www.lightningdesignsystem.com/"
             target="_blank"

@@ -150,6 +150,7 @@ model User {
   city           String?
   state          String?
   postalCode     String?
+  feedback       Feedback[] @relation("FeedbackUser")
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
@@ -428,24 +429,25 @@ model Account {
   // First contract signed timestamp (set by envelope-trigger on first COMPLETED envelope)
   firstContractSignedDate DateTime?
 
-  contacts           AccountContactRelation[]
-  opportunities      Opportunity[]
-  creditor           Creditor?
-  convertedFromLead  Lead[]                   @relation("LeadConvertedAccount")
-  primaryForContact  Contact[]                @relation("PrimaryContactAccount")
-  programPlans       ProgramPlan[]
-  paymentSummary     PaymentSummary?
-  financialSummaries FinancialSummary[]
-  tasks              Task[]                   @relation("AccountTasks")
-  events             Event[]                  @relation("AccountEvents")
-  emails             EmailMessage[]           @relation("AccountEmails")
-  sms                SmsMessage[]             @relation("AccountSms")
-  cases              Case[]                   @relation("AccountCases")
-  history            AccountHistory[]
-  documents          Document[]               @relation("AccountDocuments")
-  documentRequests   DocumentRequest[]        @relation("AccountDocRequests")
-  envelopes          Envelope[]               @relation("AccountEnvelopes")
-  cadenceEnrollments CadenceEnrollment[]      @relation("AccountCadenceEnrollments")
+  contacts            AccountContactRelation[]
+  opportunities       Opportunity[]
+  creditor            Creditor?
+  convertedFromLead   Lead[]                   @relation("LeadConvertedAccount")
+  primaryForContact   Contact[]                @relation("PrimaryContactAccount")
+  programPlans        ProgramPlan[]
+  paymentSummary      PaymentSummary?
+  financialSummaries  FinancialSummary[]
+  tasks               Task[]                   @relation("AccountTasks")
+  events              Event[]                  @relation("AccountEvents")
+  emails              EmailMessage[]           @relation("AccountEmails")
+  sms                 SmsMessage[]             @relation("AccountSms")
+  cases               Case[]                   @relation("AccountCases")
+  history             AccountHistory[]
+  documents           Document[]               @relation("AccountDocuments")
+  documentRequests    DocumentRequest[]        @relation("AccountDocRequests")
+  envelopes           Envelope[]               @relation("AccountEnvelopes")
+  cadenceEnrollments  CadenceEnrollment[]      @relation("AccountCadenceEnrollments")
+  paymentSummaryLines PaymentSummaryLine[]     @relation("AccountPaymentSummaryLines")
 
   @@index([recordType])
   @@index([stage])
@@ -457,7 +459,6 @@ model Account {
   @@index([email(ops: raw("gin_trgm_ops"))], type: Gin)
   // trigram index: global search does ILIKE %q% on this column
   @@index([phone(ops: raw("gin_trgm_ops"))], type: Gin)
-  paymentSummaryLines PaymentSummaryLine[] @relation("AccountPaymentSummaryLines")
 }
 
 // ============ DNC / SUPPRESSION LIST (replaces SF SuppressionList + Five9 DNC sync) ============
@@ -703,9 +704,9 @@ model AccountHistory {
   changedById String?
   changedBy   User?    @relation("AccountHistoryChangedBy", fields: [changedById], references: [id])
   changedAt   DateTime @default(now())
+  sfId        String?  @unique // Salesforce AccountHistory ID
 
   @@index([accountId, changedAt])
-  sfId String? @unique // Salesforce AccountHistory ID
 }
 
 model Contact {
@@ -742,6 +743,7 @@ model Contact {
   emails                EmailMessage[]           @relation("ContactEmails")
   sms                   SmsMessage[]             @relation("ContactSms")
   cases                 Case[]                   @relation("ContactCases")
+
   @@index([primaryAccountId])
   // trigram index: global search does ILIKE %q% on this column
   @@index([fullName(ops: raw("gin_trgm_ops"))], type: Gin)
@@ -1126,7 +1128,7 @@ model Opportunity {
   client                      Client?
   debts                       Debt[]
   documents                   Document[]
-  documentRequests            DocumentRequest[]        @relation("OppDocRequests")
+  documentRequests            DocumentRequest[]               @relation("OppDocRequests")
   programPlans                ProgramPlan[]
   financialSummaries          FinancialSummary[]
   tasks                       Task[]                          @relation("OpportunityTasks")
@@ -1218,38 +1220,38 @@ model Client {
 }
 
 model Debt {
-  id               String       @id @default(cuid())
-  clientId         String?
-  client           Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  opportunityId    String?
-  opportunity      Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  programPlanId    String?
-  programPlan      ProgramPlan? @relation(fields: [programPlanId], references: [id])
-  creditorId       String?
-  creditor         Creditor?    @relation(fields: [creditorId], references: [id])
-  creditorName     String // legacy free-form; preferred is creditorId. Kept for now.
-  creditorPhone    String?
-  creditorEmail    String?
-  accountNumber    String?
-  debtType         String? // MCA | CREDIT_LINE | TERM_LOAN | BUSINESS_CC | EQUIPMENT | INVOICE_FACTORING | OTHER (carried from LeadDebt)
-  paymentFrequency String? // DAILY | WEEKLY | BI_WEEKLY | MONTHLY | LUMP_SUM
-  paymentAmount    Float?
-  originalBalance  Float
-  currentBalance   Float
-  enrolledBalance  Float
-  status           String       @default("ENROLLED") // ENROLLED, NEGOTIATING, SETTLED, PAID, DISPUTED, WRITTEN_OFF
-  settledAmount    Float?
-  settledDate      DateTime?
-  savingsAmount    Float?
-  savingsPercent   Float?
-  lastPaymentDate  DateTime?
+  id                String       @id @default(cuid())
+  clientId          String?
+  client            Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  opportunityId     String?
+  opportunity       Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  programPlanId     String?
+  programPlan       ProgramPlan? @relation(fields: [programPlanId], references: [id])
+  creditorId        String?
+  creditor          Creditor?    @relation(fields: [creditorId], references: [id])
+  creditorName      String // legacy free-form; preferred is creditorId. Kept for now.
+  creditorPhone     String?
+  creditorEmail     String?
+  accountNumber     String?
+  debtType          String? // MCA | CREDIT_LINE | TERM_LOAN | BUSINESS_CC | EQUIPMENT | INVOICE_FACTORING | OTHER (carried from LeadDebt)
+  paymentFrequency  String? // DAILY | WEEKLY | BI_WEEKLY | MONTHLY | LUMP_SUM
+  paymentAmount     Float?
+  originalBalance   Float
+  currentBalance    Float
+  enrolledBalance   Float
+  status            String       @default("ENROLLED") // ENROLLED, NEGOTIATING, SETTLED, PAID, DISPUTED, WRITTEN_OFF
+  settledAmount     Float?
+  settledDate       DateTime?
+  savingsAmount     Float?
+  savingsPercent    Float?
+  lastPaymentDate   DateTime?
   legalStatus       String? // SF Legal_Status__c
   negotiationStatus String? // SF Negotiation_Status__c
   lienPosition      String? // SF Lien_Position__c
-  isDelinquent     Boolean      @default(false)
-  notes            String?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  isDelinquent      Boolean      @default(false)
+  notes             String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   negotiations Negotiation[]
   payments     Payment[]
@@ -1257,12 +1259,12 @@ model Debt {
   settlement   Settlement?
   tasks        Task[]        @relation("DebtTasks")
 
-  @@index([programPlanId])
-  @@index([creditorId])
-
   name       String? // SF Debt autonumber ("Debt-88230")
   sfDataJson String? // full SF row snapshot for the debt record page
-  sfId String? @unique // Salesforce 18-char ID, populated by sync
+  sfId       String? @unique // Salesforce 18-char ID, populated by sync
+
+  @@index([programPlanId])
+  @@index([creditorId])
 }
 
 model Negotiation {
@@ -1317,39 +1319,58 @@ model Document {
   uploadedBy    User         @relation(fields: [uploadedById], references: [id])
   createdAt     DateTime     @default(now())
 
+  sfId String? @unique // Salesforce ContentDocument ID, populated by file sync
+
   @@index([leadId])
   @@index([accountId])
-
-  sfId String? @unique // Salesforce ContentDocument ID, populated by file sync
 }
 
 // A secure, no-login link emailed to a lead/client so they can upload their
 // own documents (loan docs, statements, etc.) back to us. Files they upload
 // are filed onto the Opportunity (and its Account) as normal Document records.
+
+model Feedback {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation("FeedbackUser", fields: [userId], references: [id], onDelete: Cascade)
+  type       String // BUG | IDEA | PARITY (looks different from Salesforce)
+  message    String
+  pageUrl    String?
+  userAgent  String?
+  status     String   @default("NEW") // NEW | IN_PROGRESS | DONE | WONT_FIX
+  adminNotes String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
 model DocumentRequest {
-  id             String       @id @default(cuid())
-  token          String       @unique @default(cuid())
-  opportunityId  String?
-  opportunity    Opportunity? @relation("OppDocRequests", fields: [opportunityId], references: [id], onDelete: Cascade)
-  accountId      String?
-  account        Account?     @relation("AccountDocRequests", fields: [accountId], references: [id], onDelete: Cascade)
-  leadId         String?
-  lead           Lead?        @relation("LeadDocRequests", fields: [leadId], references: [id], onDelete: Cascade)
-  recipientName  String?
-  recipientEmail String
-  message        String?
-  kind           String       @default("DOCUMENTS") // DOCUMENTS | INFO
+  id              String       @id @default(cuid())
+  token           String       @unique @default(cuid())
+  opportunityId   String?
+  opportunity     Opportunity? @relation("OppDocRequests", fields: [opportunityId], references: [id], onDelete: Cascade)
+  accountId       String?
+  account         Account?     @relation("AccountDocRequests", fields: [accountId], references: [id], onDelete: Cascade)
+  leadId          String?
+  lead            Lead?        @relation("LeadDocRequests", fields: [leadId], references: [id], onDelete: Cascade)
+  recipientName   String?
+  recipientEmail  String
+  message         String?
+  kind            String       @default("DOCUMENTS") // DOCUMENTS | INFO
   // For INFO requests: JSON array of field keys the agent asked the client
   // for, e.g. ["address","ssn","ein","dob","debts"]. Null = legacy (address).
   requestedFields String?
-  collectedJson  Json? // for INFO requests: snapshot of what the client submitted
-  status         String       @default("SENT") // SENT | COMPLETED | EXPIRED | CANCELLED
-  expiresAt      DateTime?
-  completedAt    DateTime?
-  uploadCount    Int          @default(0)
-  createdById    String
-  createdBy      User         @relation("DocRequestCreatedBy", fields: [createdById], references: [id])
-  createdAt      DateTime     @default(now())
+  collectedJson   Json? // for INFO requests: snapshot of what the client submitted
+  status          String       @default("SENT") // SENT | COMPLETED | EXPIRED | CANCELLED
+  expiresAt       DateTime?
+  completedAt     DateTime?
+  uploadCount     Int          @default(0)
+  createdById     String
+  createdBy       User         @relation("DocRequestCreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime     @default(now())
 
   @@index([opportunityId])
   @@index([token])
@@ -1457,18 +1478,18 @@ model Draft {
 
   // ---- Flexible payments engine (docs/superpowers/specs/2026-07-09-flexible-payments-design.md) ----
   // Per-draft fee breakdown (also feeds processor payloads + payment summaries).
-  feeRetainer  Float @default(0)
-  feeProgram   Float @default(0)
-  feeSetup     Float @default(0)
-  feeService   Float @default(0) // charged once per week - first split child only
-  feeBank      Float @default(0)
-  feeLegal     Float @default(0) // Citadel/Victory
-  escrowAmount Float @default(0)
+  feeRetainer         Float     @default(0)
+  feeProgram          Float     @default(0)
+  feeSetup            Float     @default(0)
+  feeService          Float     @default(0) // charged once per week - first split child only
+  feeBank             Float     @default(0)
+  feeLegal            Float     @default(0) // Citadel/Victory
+  escrowAmount        Float     @default(0)
   // $10K split grouping: children of one logical payment share a splitGroupId.
-  splitGroupId String?
-  splitIndex   Int?
+  splitGroupId        String?
+  splitIndex          Int?
   // SCHEDULED = generated from the plan; MANUAL = ad-hoc "charge now".
-  kind String @default("SCHEDULED")
+  kind                String    @default("SCHEDULED")
   // Merchant sync queue: mutations mark PENDING; the processor client drains.
   processorSyncStatus String    @default("NOT_SYNCED") // NOT_SYNCED | PENDING | SYNCED | FAILED
   skippedAt           DateTime?
@@ -1539,7 +1560,6 @@ model PaymentSummaryLine {
 }
 
 model Offer {
-
   id             String    @id @default(cuid())
   debtId         String?
   debt           Debt?     @relation(fields: [debtId], references: [id], onDelete: Cascade)
@@ -1625,10 +1645,10 @@ model Fee {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
+  sfId String? @unique // Salesforce 18-char ID, populated by sync
+
   @@index([programPlanId])
   @@index([recordType])
-
-  sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 
 model PaymentSummary {
@@ -1710,6 +1730,8 @@ model Task {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  sfId String? @unique // Salesforce 18-char ID, populated by sync
+
   @@index([ownerId, status])
   @@index([dueDate])
   @@index([accountId])
@@ -1717,8 +1739,6 @@ model Task {
   @@index([leadId])
   @@index([contactId])
   @@index([caseId])
-
-  sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 
 model Event {
@@ -1755,6 +1775,8 @@ model Event {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  sfId String? @unique // Salesforce 18-char ID, populated by sync
+
   @@index([ownerId, status])
   @@index([startAt])
   @@index([accountId])
@@ -1762,8 +1784,6 @@ model Event {
   @@index([leadId])
   @@index([contactId])
   @@index([caseId])
-
-  sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 
 // ============ PHASE 5: CASE MANAGEMENT ============
@@ -1824,15 +1844,15 @@ model Case {
   emails   EmailMessage[] @relation("CaseEmails")
   sms      SmsMessage[]   @relation("CaseSms")
 
+  sfDataJson String?
+  sfId       String? @unique // Salesforce 18-char ID, populated by sync
+
   @@index([status])
   @@index([ownerId])
   @@index([ownerGroupId])
   @@index([accountId])
   @@index([recordType])
   @@index([contactId])
-
-  sfDataJson String?
-  sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 
 model CaseComment {
@@ -1903,6 +1923,8 @@ model EmailMessage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  sfId String? @unique // Salesforce 18-char ID, populated by sync
+
   @@index([status])
   @@index([direction])
   @@index([accountId])
@@ -1911,8 +1933,6 @@ model EmailMessage {
   @@index([massEmailId])
   @@index([trackingId])
   @@index([contactId])
-
-  sfId String? @unique // Salesforce 18-char ID, populated by sync
 }
 
 model MassEmail {
