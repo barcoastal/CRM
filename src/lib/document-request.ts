@@ -36,6 +36,8 @@ function renderBrandedEmail(args: {
   recipientName?: string | null;
   senderName?: string | null;
   intro: string;
+  /** Bullet list of what is being requested, shown under the intro. */
+  items?: string[];
   note?: string | null;
   ctaLabel: string;
   ctaUrl: string;
@@ -44,6 +46,17 @@ function renderBrandedEmail(args: {
   const first = (args.recipientName ?? "").split(" ")[0] || "there";
   const logo = `${appBaseUrl()}/email/coastal-logo.png`;
   const font = "'Aeonik','Helvetica Neue',Helvetica,Arial,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+  const items =
+    args.items && args.items.length
+      ? `<tr><td style="padding:0 40px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-left:3px solid #3052FF;">
+          <tr><td style="padding:2px 0 2px 16px;">
+            <p style="margin:0 0 6px;font-family:${font};font-size:13px;font-weight:600;color:#0b0b14;">Here is what we need from you:</p>
+            ${args.items.map((it) => `<p style="margin:0 0 4px;font-family:${font};font-size:14px;line-height:1.5;color:#1a1a2e;">&#10003;&nbsp; ${escapeHtml(it)}</p>`).join("")}
+          </td></tr>
+        </table>
+      </td></tr>`
+      : "";
   const note = args.note
     ? `<tr><td style="padding:0 40px 8px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F2F4F9;border-radius:8px;">
@@ -72,6 +85,7 @@ function renderBrandedEmail(args: {
               <p style="margin:0 0 20px;font-family:${font};font-size:15px;line-height:1.65;color:#1a1a2e;">${args.intro}</p>
             </td>
           </tr>
+          ${items}
           ${note}
           <tr>
             <td style="padding:16px 40px 8px;">
@@ -134,19 +148,32 @@ export function renderDocRequestHtml(args: {
   });
 }
 
+const INFO_FIELD_LABELS: Record<string, string> = {
+  address: "Your mailing address and contact details",
+  ssn: "Your Social Security Number",
+  ein: "Your business EIN / Tax ID",
+  dob: "Your date of birth",
+  debts: "Your current debts (lender and amount owed)",
+};
+
 export function renderInfoRequestHtml(args: {
   recipientName?: string | null;
   senderName?: string | null;
   message?: string | null;
   intakeUrl: string;
+  requestedFields?: string[];
   expiresDays?: number;
 }): string {
   const sender = escapeHtml(args.senderName || "Your advisor");
+  const items = (args.requestedFields ?? ["address"])
+    .map((k) => INFO_FIELD_LABELS[k])
+    .filter((v): v is string => !!v);
   return renderBrandedEmail({
     heading: "Please confirm your information",
     recipientName: args.recipientName,
     senderName: args.senderName,
-    intro: `${sender} at Coastal Debt Resolve needs your current mailing address and contact details to move your file forward. It takes about a minute using the secure button below.`,
+    intro: `${sender} at Coastal Debt Resolve needs a few details from you to move your file forward. It takes about a minute using the secure button below.`,
+    items,
     note: args.message,
     ctaLabel: "Confirm my information",
     ctaUrl: args.intakeUrl,

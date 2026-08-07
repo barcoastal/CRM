@@ -42,7 +42,13 @@ export async function POST(
     message?: string;
     expiresInDays?: number;
     kind?: string;
+    requestedFields?: unknown;
   };
+
+  const VALID_FIELDS = ["address", "ssn", "ein", "dob", "debts"] as const;
+  const requestedFields = Array.isArray(body.requestedFields)
+    ? VALID_FIELDS.filter((k) => (body.requestedFields as unknown[]).includes(k))
+    : [];
 
   const recipientEmail = (body.recipientEmail ?? "").trim();
   if (!recipientEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail)) {
@@ -63,6 +69,7 @@ export async function POST(
       recipientName: body.recipientName?.trim() || null,
       message: body.message?.trim() || null,
       kind,
+      requestedFields: kind === "INFO" && requestedFields.length ? JSON.stringify(requestedFields) : null,
       expiresAt,
       createdById: session.userId,
     },
@@ -86,6 +93,8 @@ export async function POST(
             senderName: sender?.name ?? null,
             message: req.message,
             intakeUrl: link,
+            requestedFields: requestedFields.length ? requestedFields : ["address"],
+            expiresDays: days > 0 ? days : undefined,
           })
         : renderDocRequestHtml({
             recipientName: req.recipientName,

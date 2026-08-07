@@ -45,6 +45,7 @@ export default async function IntakePage({ params }: { params: Promise<{ token: 
       expiresAt: true,
       recipientName: true,
       kind: true,
+      requestedFields: true,
       account: {
         select: {
           billingStreet: true,
@@ -82,16 +83,42 @@ export default async function IntakePage({ params }: { params: Promise<{ token: 
     );
   }
 
+  // Which sections the agent asked for. Legacy requests (null) = address only.
+  const VALID = ["address", "ssn", "ein", "dob", "debts"] as const;
+  let requested: (typeof VALID)[number][] = ["address"];
+  if (req.requestedFields) {
+    try {
+      const parsed = JSON.parse(req.requestedFields) as unknown;
+      if (Array.isArray(parsed)) {
+        const filtered = VALID.filter((k) => parsed.includes(k));
+        if (filtered.length) requested = filtered;
+      }
+    } catch {
+      // keep the address-only default
+    }
+  }
+  const SECTION_LABELS: Record<(typeof VALID)[number], string> = {
+    address: "your mailing address and contact details",
+    ssn: "your Social Security Number",
+    ein: "your business EIN / Tax ID",
+    dob: "your date of birth",
+    debts: "your current debts (lender and amount)",
+  };
+  const asked = requested.map((k) => SECTION_LABELS[k]);
+  const askedText =
+    asked.length === 1 ? asked[0] : `${asked.slice(0, -1).join(", ")} and ${asked[asked.length - 1]}`;
+
   const first = (req.recipientName ?? "").split(" ")[0];
   return shell(
     <>
       <h1 style={{ margin: "0 0 8px", fontSize: 20, color: "#181818" }}>Confirm your information</h1>
       <p style={{ margin: "0 0 20px", fontSize: 14, lineHeight: 1.5, color: "#444444" }}>
-        {first ? `Hi ${first}, ` : ""}please review and fill in your mailing address and contact
-        details below, then submit. Add anything else we should know at the bottom.
+        {first ? `Hi ${first}, ` : ""}please fill in {askedText} below, then submit. Add anything
+        else we should know at the bottom.
       </p>
       <PublicIntakeForm
         token={token}
+        requested={requested}
         initial={{
           street: req.account?.billingStreet ?? "",
           city: req.account?.billingCity ?? "",

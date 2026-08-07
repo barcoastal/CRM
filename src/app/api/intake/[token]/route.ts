@@ -42,6 +42,15 @@ export async function POST(
   if (state !== "OK") return NextResponse.json({ error: state.toLowerCase() }, { status: 410 });
 
   const b = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  const digits = (v: unknown, len: number): string => {
+    const d = typeof v === "string" ? v.replace(/\D/g, "") : "";
+    return d.length === len ? d : "";
+  };
+  const money = (v: unknown): number | null => {
+    const n = Number(String(v ?? "").replace(/[$,\s]/g, ""));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  const rawDebts = Array.isArray(b.debts) ? (b.debts as Array<Record<string, unknown>>) : [];
   const info = {
     street: str(b.street),
     city: str(b.city),
@@ -52,6 +61,16 @@ export async function POST(
     email: str(b.email, 200),
     notes: str(b.notes, 4000),
   };
+  const ssn = digits(b.ssn, 9);
+  const ein = digits(b.ein, 9);
+  const dobStr = str(b.dob, 10);
+  const dob = /^\d{4}-\d{2}-\d{2}$/.test(dobStr) ? new Date(`${dobStr}T00:00:00Z`) : null;
+  const debts = rawDebts
+    .map((d) => ({ lender: str(d.lender, 200), amount: money(d.amount) }))
+    .filter((d) => d.lender && d.amount != null)
+    .slice(0, 30) as Array<{ lender: string; amount: number }>;
+  const ssnMasked = ssn ? `XXX-XX-${ssn.slice(-4)}` : "";
+  const einFmt = ein ? `${ein.slice(0, 2)}-${ein.slice(2)}` : "";
 
   // Save the address + contact onto the Account (only overwrite when provided).
   // This is THE storage the contract packet reads (buildContractData pulls
@@ -63,6 +82,11 @@ export async function POST(
   if (info.zip) data.billingZip = info.zip;
   if (info.phone) data.phone = info.phone;
   if (info.email) data.email = info.email;
+  if (ein) data.ein = ein;
+  if (ssn) {
+    data.ssn = ssn;
+    data.ssnLast4 = ssn.slice(-4);
+  }
 
   if (req.accountId) {
     if (Object.keys(data).length) {
@@ -103,13 +127,86 @@ export async function POST(
     }
   }
 
+  // Reload the request row: the account may have just been created above.
+  const fresh = await prisma.documentRequest.findUnique({
+    where: { id: req.id },
+    select: {
+      accountId: true,
+      opportunityId: true,
+      opportunity: { select: { accountId: true, primaryContactId: true } },
+    },
+  });
+  const effAccountId = fresh?.accountId ?? fresh?.opportunity?.accountId ?? null;
+
+  // Mirror person-level fields onto the Contact (primary contact of the
+  // opportunity, else the account's primary contact).
+  const contactId =
+    fresh?.opportunity?.primaryContactId ??
+    (effAccountId
+      ? (
+          await prisma.account.findUnique({
+            where: { id: effAccountId },
+            select: { primaryContactId: true },
+          })
+        )?.primaryContactId ?? null
+      : null);
+  if (contactId) {
+    const cData: Record<string, unknown> = {};
+    if (ssn) cData.ssn = ssn;
+    if (dob) cData.birthdate = dob;
+    if (info.street) cData.mailingStreet = info.street;
+    if (info.city) cData.mailingCity = info.city;
+    if (info.state) cData.mailingState = info.state;
+    if (info.zip) cData.mailingZip = info.zip;
+    if (info.phone) cData.phone = info.phone;
+    if (info.email) cData.email = info.email;
+    if (Object.keys(cData).length) {
+      await prisma.contact.update({ where: { id: contactId }, data: cData }).catch(() => undefined);
+    }
+  }
+
+  // Debt rows land on the opportunity (Debt Information tab + totals).
+  if (debts.length && req.opportunityId) {
+    await prisma.debt
+      .createMany({
+        data: debts.map((d) => ({
+          opportunityId: req.opportunityId,
+          creditorName: d.lender,
+          originalBalance: d.amount,
+          currentBalance: d.amount,
+          enrolledBalance: d.amount,
+          status: "ENROLLED",
+        })),
+      })
+      .catch(() => undefined);
+    // Refresh the opp debt rollups so Total Debt reflects what the client listed.
+    const sum = await prisma.debt.aggregate({
+      where: { opportunityId: req.opportunityId },
+      _sum: { originalBalance: true },
+    });
+    const totalDebt = sum._sum.originalBalance ?? null;
+    if (totalDebt != null) {
+      await prisma.opportunity
+        .update({
+          where: { id: req.opportunityId },
+          data: { totalDebt, currentTotalDebt: totalDebt },
+        })
+        .catch(() => undefined);
+    }
+  }
+
   // Log everything the client submitted as a NOTE task on the opp + account so
   // it shows in the activity timeline (and the free-text "anything else").
+  // SSN is masked here; the full value lives only in the dedicated columns.
   const addrLine = [info.street, info.city, info.state, info.zip].filter(Boolean).join(", ");
   const noteBody = [
     addrLine && `Address: ${addrLine}`,
     info.phone && `Phone: ${info.phone}`,
     info.email && `Email: ${info.email}`,
+    ssnMasked && `SSN: ${ssnMasked}`,
+    einFmt && `EIN/TIN: ${einFmt}`,
+    dob && `Date of birth: ${dobStr}`,
+    ...debts.map((d) => `Debt: ${d.lender} - $${d.amount.toLocaleString()}`),
     info.notes && `Notes: ${info.notes}`,
   ]
     .filter(Boolean)
@@ -133,7 +230,18 @@ export async function POST(
 
   await prisma.documentRequest.update({
     where: { id: req.id },
-    data: { status: "COMPLETED", completedAt: new Date(), collectedJson: info },
+    data: {
+      status: "COMPLETED",
+      completedAt: new Date(),
+      // Snapshot keeps the SSN masked; full values live in the record columns.
+      collectedJson: {
+        ...info,
+        ssn: ssnMasked || undefined,
+        ein: einFmt || undefined,
+        dob: dobStr || undefined,
+        debts: debts.length ? debts : undefined,
+      },
+    },
   });
 
   // Notify the rep (best-effort).

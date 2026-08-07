@@ -17,6 +17,14 @@ const COPY = {
   },
 } as const;
 
+const INFO_FIELD_OPTIONS = [
+  { key: "address", label: "Full address + phone/email" },
+  { key: "ssn", label: "Social Security Number" },
+  { key: "ein", label: "EIN / TIN" },
+  { key: "dob", label: "Date of birth" },
+  { key: "debts", label: "Debt info (lender + amount)" },
+] as const;
+
 export function RequestDocumentsButton({
   opportunityId,
   defaultEmail,
@@ -33,6 +41,7 @@ export function RequestDocumentsButton({
   const [email, setEmail] = useState(defaultEmail ?? "");
   const [name, setName] = useState(defaultName ?? "");
   const [message, setMessage] = useState("");
+  const [fields, setFields] = useState<string[]>(["address"]);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; url?: string; text: string } | null>(null);
 
@@ -43,7 +52,13 @@ export function RequestDocumentsButton({
       const res = await fetch(`/api/opportunities/${opportunityId}/document-requests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipientEmail: email, recipientName: name, message, kind }),
+        body: JSON.stringify({
+          recipientEmail: email,
+          recipientName: name,
+          message,
+          kind,
+          requestedFields: kind === "INFO" ? fields : undefined,
+        }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
@@ -80,6 +95,31 @@ export function RequestDocumentsButton({
           <div style={modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ margin: "0 0 4px", fontSize: 16, color: "#181818" }}>{copy.title}</h2>
             <p style={{ margin: "0 0 16px", fontSize: 13, color: "#747474" }}>{copy.blurb}</p>
+
+            {kind === "INFO" && (
+              <>
+                <label style={label}>What do you need from the client?</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", marginBottom: 12 }}>
+                  {INFO_FIELD_OPTIONS.map((o) => (
+                    <label
+                      key={o.key}
+                      style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#181818", cursor: "pointer" }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={fields.includes(o.key)}
+                        onChange={(e) =>
+                          setFields((prev) =>
+                            e.target.checked ? [...prev, o.key] : prev.filter((k) => k !== o.key),
+                          )
+                        }
+                      />
+                      {o.label}
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
 
             <label style={label}>Recipient email</label>
             <input value={email} onChange={(e) => setEmail(e.target.value)} style={input} type="email" />

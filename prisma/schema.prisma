@@ -326,6 +326,7 @@ model Account {
   name              String // org name OR person full name
   type              String    @default("ORG") // ORG | PERSON
   ein               String?
+  ssn               String?
   ssnLast4          String?
   phone             String?
   email             String?
@@ -719,6 +720,11 @@ model Contact {
   mobilePhone      String?
   title            String?
   birthdate        DateTime?
+  ssn              String?
+  mailingStreet    String?
+  mailingCity      String?
+  mailingState     String?
+  mailingZip       String?
   primaryAccountId String?
   primaryAccount   Account?  @relation("PrimaryContactAccount", fields: [primaryAccountId], references: [id])
   ownerId          String?
@@ -1333,6 +1339,9 @@ model DocumentRequest {
   recipientEmail String
   message        String?
   kind           String       @default("DOCUMENTS") // DOCUMENTS | INFO
+  // For INFO requests: JSON array of field keys the agent asked the client
+  // for, e.g. ["address","ssn","ein","dob","debts"]. Null = legacy (address).
+  requestedFields String?
   collectedJson  Json? // for INFO requests: snapshot of what the client submitted
   status         String       @default("SENT") // SENT | COMPLETED | EXPIRED | CANCELLED
   expiresAt      DateTime?
