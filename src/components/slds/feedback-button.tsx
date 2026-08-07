@@ -194,7 +194,17 @@ export function FeedbackButton() {
 
       {open && (
         <div id="feedback-overlay" style={overlay} onClick={() => !busy && setOpen(false)}>
-          <div style={modal} onClick={(e) => e.stopPropagation()}>
+          <div
+            style={{
+              ...modal,
+              // Grow the dialog while annotating so the image is big enough
+              // to actually see what you are marking.
+              maxWidth: shot && !sent ? "min(1100px, 95vw)" : 440,
+              maxHeight: "92vh",
+              overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 style={{ margin: "0 0 4px", fontSize: 16, color: "#181818" }}>Give feedback</h2>
             <p style={{ margin: "0 0 14px", fontSize: 13, color: "#747474" }}>
               Goes straight to the team with a link to the page you are on.
