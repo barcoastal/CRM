@@ -49,7 +49,9 @@ export function FeedbackButton() {
     const canvas = canvasRef.current;
     const img = new Image();
     img.onload = () => {
-      const maxW = 400;
+      // Keep full resolution (capped) so the saved image stays readable;
+      // the canvas is only DISPLAYED small via CSS width: 100%.
+      const maxW = 2400;
       const scale = Math.min(1, maxW / img.width);
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
@@ -81,7 +83,8 @@ export function FeedbackButton() {
     if (!ctx) return;
     const p = canvasPos(e);
     ctx.strokeStyle = "#ea001e";
-    ctx.lineWidth = 3;
+    // Pen thickness relative to image size so strokes stay visible at full res.
+    ctx.lineWidth = Math.max(3, Math.round(canvasRef.current.width / 250));
     ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(last.current.x, last.current.y);
