@@ -84,7 +84,7 @@ export default async function IntakePage({ params }: { params: Promise<{ token: 
   }
 
   // Which sections the agent asked for. Legacy requests (null) = address only.
-  const VALID = ["address", "ssn", "ein", "dob", "debts"] as const;
+  const VALID = ["address", "ssn", "ein", "dob", "debts", "bank"] as const;
   let requested: (typeof VALID)[number][] = ["address"];
   if (req.requestedFields) {
     try {
@@ -103,6 +103,7 @@ export default async function IntakePage({ params }: { params: Promise<{ token: 
     ein: "your business EIN / Tax ID",
     dob: "your date of birth",
     debts: "your current debts (lender and amount)",
+    bank: "your bank details",
   };
   const asked = requested.map((k) => SECTION_LABELS[k]);
   const askedText =

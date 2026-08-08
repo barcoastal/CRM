@@ -154,6 +154,7 @@ const INFO_FIELD_LABELS: Record<string, string> = {
   ein: "Your business EIN / Tax ID",
   dob: "Your date of birth",
   debts: "Your current debts (lender and amount owed)",
+  bank: "Your bank details (bank name, routing and account number)",
 };
 
 export function renderInfoRequestHtml(args: {

@@ -23,6 +23,7 @@ const INFO_FIELD_OPTIONS = [
   { key: "ein", label: "EIN / TIN" },
   { key: "dob", label: "Date of birth" },
   { key: "debts", label: "Debt info (lender + amount)" },
+  { key: "bank", label: "Bank details (routing + account)" },
 ] as const;
 
 export function RequestDocumentsButton({

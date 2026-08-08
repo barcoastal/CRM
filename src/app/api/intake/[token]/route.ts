@@ -69,6 +69,17 @@ export async function POST(
     .map((d) => ({ lender: str(d.lender, 200), amount: money(d.amount) }))
     .filter((d) => d.lender && d.amount != null)
     .slice(0, 30) as Array<{ lender: string; amount: number }>;
+  const rawBank = (b.bank ?? {}) as Record<string, unknown>;
+  const bank = {
+    name: str(rawBank.name, 120),
+    routing: digits(rawBank.routing, 9),
+    account: (() => {
+      const d = typeof rawBank.account === "string" ? rawBank.account.replace(/\D/g, "") : "";
+      return d.length >= 4 && d.length <= 17 ? d : "";
+    })(),
+    accountType: str(rawBank.accountType, 20) === "Savings" ? "Savings" : "Checking",
+  };
+  const hasBank = !!(bank.name || bank.routing || bank.account);
   const ssnMasked = ssn ? `XXX-XX-${ssn.slice(-4)}` : "";
   const einFmt = ein ? `${ein.slice(0, 2)}-${ein.slice(2)}` : "";
 
@@ -83,6 +94,12 @@ export async function POST(
   if (info.phone) data.phone = info.phone;
   if (info.email) data.email = info.email;
   if (ein) data.ein = ein;
+  if (bank.name) data.bankName = bank.name;
+  if (bank.routing) data.bankRoutingNumber = bank.routing;
+  if (bank.account) {
+    data.bankAccountNumber = bank.account;
+    data.bankAccountType = bank.accountType;
+  }
   if (ssn) {
     data.ssn = ssn;
     data.ssnLast4 = ssn.slice(-4);
@@ -205,6 +222,7 @@ export async function POST(
     info.email && `Email: ${info.email}`,
     ssnMasked && `SSN: ${ssnMasked}`,
     einFmt && `EIN/TIN: ${einFmt}`,
+    hasBank && `Bank: ${[bank.name, bank.accountType, bank.routing && `routing ${bank.routing}`, bank.account && `account ...${bank.account.slice(-4)}`].filter(Boolean).join(", ")}`,
     dob && `Date of birth: ${dobStr}`,
     ...debts.map((d) => `Debt: ${d.lender} - $${d.amount.toLocaleString()}`),
     info.notes && `Notes: ${info.notes}`,
@@ -239,6 +257,9 @@ export async function POST(
         ssn: ssnMasked || undefined,
         ein: einFmt || undefined,
         dob: dobStr || undefined,
+        bank: hasBank
+          ? { name: bank.name, accountType: bank.accountType, routing: bank.routing, accountLast4: bank.account.slice(-4) }
+          : undefined,
         debts: debts.length ? debts : undefined,
       },
     },

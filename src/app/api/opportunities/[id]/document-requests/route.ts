@@ -45,7 +45,7 @@ export async function POST(
     requestedFields?: unknown;
   };
 
-  const VALID_FIELDS = ["address", "ssn", "ein", "dob", "debts"] as const;
+  const VALID_FIELDS = ["address", "ssn", "ein", "dob", "debts", "bank"] as const;
   const requestedFields = Array.isArray(body.requestedFields)
     ? VALID_FIELDS.filter((k) => (body.requestedFields as unknown[]).includes(k))
     : [];

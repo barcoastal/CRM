@@ -9,7 +9,7 @@ import { KNOWN_CREDITORS } from "@/lib/creditors";
  * (address, ssn, ein, dob, debts) when sending the link; only those render.
  */
 
-export type IntakeFieldKey = "address" | "ssn" | "ein" | "dob" | "debts";
+export type IntakeFieldKey = "address" | "ssn" | "ein" | "dob" | "debts" | "bank";
 
 type Fields = {
   street: string;
@@ -53,6 +53,7 @@ export function PublicIntakeForm({
   const [ein, setEin] = useState("");
   const [dob, setDob] = useState("");
   const [debts, setDebts] = useState<DebtRow[]>([{ lender: "", lenderOther: "", amount: "" }]);
+  const [bank, setBank] = useState({ name: "", routing: "", account: "", accountType: "Checking" });
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +78,10 @@ export function PublicIntakeForm({
       setError("Please enter your full 9-digit EIN / Tax ID.");
       return;
     }
+    if (want("bank") && bank.routing && bank.routing.replace(/\D/g, "").length !== 9) {
+      setError("Please enter a valid 9-digit routing number.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -88,6 +93,7 @@ export function PublicIntakeForm({
           ssn: want("ssn") ? ssn : "",
           ein: want("ein") ? ein : "",
           dob: want("dob") ? dob : "",
+          bank: want("bank") ? bank : undefined,
           debts: want("debts")
             ? debts
                 .map((d) => ({ lender: effectiveLender(d), amount: d.amount }))
@@ -208,6 +214,52 @@ export function PublicIntakeForm({
           )}
           <p style={{ margin: "8px 0 0", fontSize: 12, color: "#747474" }}>
             This information is transmitted securely and used only to process your file.
+          </p>
+        </section>
+      )}
+
+      {want("bank") && (
+        <section>
+          <h2 style={sectionTitle}>Bank details</h2>
+          <p style={{ margin: "0 0 8px", fontSize: 13, color: "#444444" }}>
+            The account your program payments will draft from.
+          </p>
+          <label style={lbl}>Bank name</label>
+          <input value={bank.name} onChange={(e) => setBank((b) => ({ ...b, name: e.target.value }))} style={inp} placeholder="e.g. Chase" />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div>
+              <label style={lbl}>Routing number</label>
+              <input
+                value={bank.routing}
+                onChange={(e) => setBank((b) => ({ ...b, routing: e.target.value.replace(/[^0-9]/g, "").slice(0, 9) }))}
+                style={inp}
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="9 digits"
+              />
+            </div>
+            <div>
+              <label style={lbl}>Account number</label>
+              <input
+                value={bank.account}
+                onChange={(e) => setBank((b) => ({ ...b, account: e.target.value.replace(/[^0-9]/g, "").slice(0, 17) }))}
+                style={inp}
+                inputMode="numeric"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+          <label style={lbl}>Account type</label>
+          <select
+            value={bank.accountType}
+            onChange={(e) => setBank((b) => ({ ...b, accountType: e.target.value }))}
+            style={{ ...inp, background: "#fff" }}
+          >
+            <option value="Checking">Checking</option>
+            <option value="Savings">Savings</option>
+          </select>
+          <p style={{ margin: "8px 0 0", fontSize: 12, color: "#747474" }}>
+            This information is transmitted securely and used only to set up your program payments.
           </p>
         </section>
       )}
