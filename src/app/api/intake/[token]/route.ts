@@ -157,7 +157,7 @@ export async function POST(
 
   // Mirror person-level fields onto the Contact (primary contact of the
   // opportunity, else the account's primary contact).
-  const contactId =
+  let contactId =
     fresh?.opportunity?.primaryContactId ??
     (effAccountId
       ? (
@@ -167,19 +167,61 @@ export async function POST(
           })
         )?.primaryContactId ?? null
       : null);
-  if (contactId) {
-    const cData: Record<string, unknown> = {};
-    if (ssn) cData.ssn = ssn;
-    if (dob) cData.birthdate = dob;
-    if (info.street) cData.mailingStreet = info.street;
-    if (info.city) cData.mailingCity = info.city;
-    if (info.state) cData.mailingState = info.state;
-    if (info.zip) cData.mailingZip = info.zip;
-    if (info.phone) cData.phone = info.phone;
-    if (info.email) cData.email = info.email;
-    if (Object.keys(cData).length) {
-      await prisma.contact.update({ where: { id: contactId }, data: cData }).catch(() => undefined);
+
+  const cData: Record<string, unknown> = {};
+  if (ssn) cData.ssn = ssn;
+  if (dob) cData.birthdate = dob;
+  if (info.street) cData.mailingStreet = info.street;
+  if (info.city) cData.mailingCity = info.city;
+  if (info.state) cData.mailingState = info.state;
+  if (info.zip) cData.mailingZip = info.zip;
+  if (info.phone) cData.phone = info.phone;
+  if (info.email) cData.email = info.email;
+
+  if (!contactId && Object.keys(cData).length && req.recipientName?.trim()) {
+    // No contact on the deal yet: create one from the recipient so the
+    // person-level data (SSN, birthdate, mailing address) has a home, and
+    // link it as primary on both the opportunity and the account.
+    const parts = req.recipientName.trim().split(/\s+/);
+    const firstName = parts[0];
+    const lastName = parts.slice(1).join(" ") || firstName;
+    const created = await prisma.contact
+      .create({
+        data: {
+          firstName,
+          lastName,
+          fullName: req.recipientName.trim(),
+          primaryAccountId: effAccountId,
+          ...cData,
+        },
+      })
+      .catch(() => null);
+    if (created) {
+      contactId = created.id;
+      if (req.opportunityId) {
+        await prisma.opportunity
+          .update({ where: { id: req.opportunityId }, data: { primaryContactId: created.id } })
+          .catch(() => undefined);
+      }
+      if (effAccountId) {
+        await prisma.account
+          .update({ where: { id: effAccountId }, data: { primaryContactId: created.id } })
+          .catch(() => undefined);
+      }
     }
+  } else if (contactId && Object.keys(cData).length) {
+    await prisma.contact.update({ where: { id: contactId }, data: cData }).catch(() => undefined);
+  }
+
+  // Mirror phone/email onto the Opportunity record fields the opp Details
+  // page displays (oppPhone/oppEmail).
+  if (req.opportunityId && (info.phone || info.email)) {
+    const oData: Record<string, string> = {};
+    if (info.phone) oData.oppPhone = info.phone;
+    if (info.email) oData.oppEmail = info.email;
+    await prisma.opportunity
+      .update({ where: { id: req.opportunityId }, data: oData })
+      .catch(() => undefined);
   }
 
   // Debt rows land on the opportunity (Debt Information tab + totals).
