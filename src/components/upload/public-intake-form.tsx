@@ -369,8 +369,11 @@ export function PublicIntakeForm({
           cursor: busy ? "wait" : "pointer",
         }}
       >
-        {busy ? "Submitting..." : "Submit my information"}
+        {busy ? "Submitting securely..." : "\u{1F512} Submit my information securely"}
       </button>
+      <p style={{ margin: "10px 0 0", fontSize: 12, color: "#747474", textAlign: "center" }}>
+        Protected with 256-bit SSL encryption
+      </p>
     </div>
   );
 }

@@ -8,13 +8,13 @@ function shell(children: React.ReactNode) {
     <div
       style={{
         minHeight: "100vh",
-        background: "#f4f6f9",
+        background: "#F2F4F9",
         display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "center",
-        padding: "48px 16px",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "40px 16px",
         fontFamily:
-          "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif",
+          "'Aeonik','Helvetica Neue',-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif",
       }}
     >
       <div
@@ -22,13 +22,51 @@ function shell(children: React.ReactNode) {
           width: "100%",
           maxWidth: 560,
           background: "#fff",
-          border: "1px solid #c9c9c9",
-          borderRadius: 8,
-          padding: 32,
+          border: "1px solid #e4e8f5",
+          borderRadius: 12,
+          overflow: "hidden",
         }}
       >
-        {children}
-        <p style={{ textAlign: "center", marginTop: 24, fontSize: 11, color: "#747474" }}>
+        <div
+          style={{
+            padding: "22px 32px",
+            borderBottom: "1px solid #eef1f8",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/email/coastal-logo.png" alt="Coastal Debt Resolve" style={{ width: 170, height: "auto" }} />
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "4px 12px",
+              borderRadius: 14,
+              background: "#eaf5ec",
+              color: "#2e844a",
+              fontSize: 12,
+              fontWeight: 700,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="#2e844a" aria-hidden="true">
+              <path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3H9z" />
+            </svg>
+            Secure form
+          </span>
+        </div>
+        <div style={{ padding: 32 }}>{children}</div>
+      </div>
+      <div style={{ width: "100%", maxWidth: 560, padding: "18px 8px 0", textAlign: "center" }}>
+        <p style={{ margin: "0 0 4px", fontSize: 12, color: "#6b7280", lineHeight: 1.6 }}>
+          &#128274; Your information is encrypted in transit with bank-level SSL security and used
+          only to service your file. It is never shared or sold.
+        </p>
+        <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#1a1a2e" }}>
           Coastal Debt Resolve
         </p>
       </div>

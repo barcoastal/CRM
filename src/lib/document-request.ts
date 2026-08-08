@@ -7,12 +7,12 @@
  * (src/lib/esign/send-email.ts) so transactional mail goes out the same way.
  */
 
-/** Absolute base URL of the CRM, for building the public upload link. */
+/**
+ * Absolute base URL for PUBLIC client-facing links. Always the branded
+ * domain: a railway.app URL in an email asking for an SSN reads as phishing.
+ */
 export function appBaseUrl(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.NEXTAUTH_URL ??
-    "https://crm-production-613a.up.railway.app";
+  const raw = process.env.NEXT_PUBLIC_APP_URL ?? "https://crm.coastaldebt-tools.com";
   return raw.replace(/\/+$/, "");
 }
 
@@ -36,8 +36,6 @@ function renderBrandedEmail(args: {
   recipientName?: string | null;
   senderName?: string | null;
   intro: string;
-  /** Bullet list of what is being requested, shown under the intro. */
-  items?: string[];
   note?: string | null;
   ctaLabel: string;
   ctaUrl: string;
@@ -46,17 +44,18 @@ function renderBrandedEmail(args: {
   const first = (args.recipientName ?? "").split(" ")[0] || "there";
   const logo = `${appBaseUrl()}/email/coastal-logo.png`;
   const font = "'Aeonik','Helvetica Neue',Helvetica,Arial,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
-  const items =
-    args.items && args.items.length
-      ? `<tr><td style="padding:0 40px 16px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-left:3px solid #3052FF;">
-          <tr><td style="padding:2px 0 2px 16px;">
-            <p style="margin:0 0 6px;font-family:${font};font-size:13px;font-weight:600;color:#0b0b14;">Here is what we need from you:</p>
-            ${args.items.map((it) => `<p style="margin:0 0 4px;font-family:${font};font-size:14px;line-height:1.5;color:#1a1a2e;">&#10003;&nbsp; ${escapeHtml(it)}</p>`).join("")}
+  const trust = `<tr><td style="padding:4px 40px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F2F4F9;border-radius:8px;">
+          <tr><td style="padding:14px 18px;">
+            <p style="margin:0 0 6px;font-family:${font};font-size:13px;font-weight:600;color:#0b0b14;">&#128274;&nbsp; Your information is protected</p>
+            <p style="margin:0;font-family:${font};font-size:13px;line-height:1.7;color:#1a1a2e;">
+              &#10003;&nbsp; Encrypted end to end with bank-level SSL security<br/>
+              &#10003;&nbsp; A private link created only for you, expiring automatically<br/>
+              &#10003;&nbsp; Used solely to service your file, never shared or sold
+            </p>
           </td></tr>
         </table>
-      </td></tr>`
-      : "";
+      </td></tr>`;
   const note = args.note
     ? `<tr><td style="padding:0 40px 8px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F2F4F9;border-radius:8px;">
@@ -85,7 +84,6 @@ function renderBrandedEmail(args: {
               <p style="margin:0 0 20px;font-family:${font};font-size:15px;line-height:1.65;color:#1a1a2e;">${args.intro}</p>
             </td>
           </tr>
-          ${items}
           ${note}
           <tr>
             <td style="padding:16px 40px 8px;">
@@ -94,8 +92,10 @@ function renderBrandedEmail(args: {
                   <a href="${args.ctaUrl}" style="display:inline-block;padding:14px 32px;font-family:${font};font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">${escapeHtml(args.ctaLabel)}</a>
                 </td></tr>
               </table>
+              <p style="margin:8px 0 0;font-family:${font};font-size:12px;color:#6b7280;">&#128274; Secured with 256-bit SSL encryption</p>
             </td>
           </tr>
+          ${trust}
           <tr>
             <td style="padding:20px 40px 8px;">
               <p style="margin:0 0 4px;font-family:${font};font-size:12px;line-height:1.5;color:#6b7280;">Button not working? Copy and paste this link into your browser:</p>
@@ -148,15 +148,6 @@ export function renderDocRequestHtml(args: {
   });
 }
 
-const INFO_FIELD_LABELS: Record<string, string> = {
-  address: "Your mailing address and contact details",
-  ssn: "Your Social Security Number",
-  ein: "Your business EIN / Tax ID",
-  dob: "Your date of birth",
-  debts: "Your current debts (lender and amount owed)",
-  bank: "Your bank details (bank name, routing and account number)",
-};
-
 export function renderInfoRequestHtml(args: {
   recipientName?: string | null;
   senderName?: string | null;
@@ -166,15 +157,11 @@ export function renderInfoRequestHtml(args: {
   expiresDays?: number;
 }): string {
   const sender = escapeHtml(args.senderName || "Your advisor");
-  const items = (args.requestedFields ?? ["address"])
-    .map((k) => INFO_FIELD_LABELS[k])
-    .filter((v): v is string => !!v);
   return renderBrandedEmail({
     heading: "Please confirm your information",
     recipientName: args.recipientName,
     senderName: args.senderName,
     intro: `${sender} at Coastal Debt Resolve needs a few details from you to move your file forward. It takes about a minute using the secure button below.`,
-    items,
     note: args.message,
     ctaLabel: "Confirm my information",
     ctaUrl: args.intakeUrl,
