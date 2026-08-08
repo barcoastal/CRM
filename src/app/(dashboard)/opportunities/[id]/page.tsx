@@ -23,6 +23,7 @@ import { OppReportsCard } from "@/components/opportunities/opp-reports-card";
 import { settlementStatusTone, genericTone } from "@/lib/slds/status-tones";
 import { OPP_STAGES } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
+import { ClientSubmittedInfoCard } from "@/components/shared/client-submitted-info";
 import { LeadHistoryCard } from "@/components/leads/lead-history-card";
 import { RecordFiles } from "@/components/files/record-files";
 
@@ -170,6 +171,14 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   if (!opp) notFound();
 
   const latestCalc = opp.paymentCalculations[0];
+
+  // What the client sent back through Request Info links (Client Submitted Info box).
+  const infoRequests = await prisma.documentRequest.findMany({
+    where: { opportunityId: opp.id, kind: "INFO", status: "COMPLETED" },
+    orderBy: { completedAt: "desc" },
+    take: 5,
+    select: { id: true, recipientName: true, recipientEmail: true, completedAt: true, collectedJson: true },
+  });
 
   // Merge Opp + Lead-era activity
   const leadActivity: ActivityItem[] = opp.lead
@@ -609,6 +618,8 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           ]}
         />
       </Section>
+
+      <ClientSubmittedInfoCard requests={infoRequests} />
 
       <Section title="Five9 Fields">
         {/* SF Five9 Fields section. */}

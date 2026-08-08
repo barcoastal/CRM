@@ -6,6 +6,7 @@ import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activit
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { RelatedList } from "@/components/slds/related-list";
 import { SfDataSection } from "@/components/slds/sf-data-section";
+import { ClientSubmittedInfoCard } from "@/components/shared/client-submitted-info";
 import { ContactTabs } from "@/components/contacts/contact-tabs";
 import { ContactHeaderButtons } from "@/components/contacts/contact-header-buttons";
 import { ContactSection } from "@/components/contacts/contact-section";
@@ -289,12 +290,29 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     ["Other Address", otherAddress],
   ];
 
+  // Request Info submissions tied to this person (via primary-contact links).
+  const infoRequests = await prisma.documentRequest.findMany({
+    where: {
+      kind: "INFO",
+      status: "COMPLETED",
+      OR: [
+        { opportunity: { primaryContactId: contact.id } },
+        { account: { primaryContactId: contact.id } },
+      ],
+    },
+    orderBy: { completedAt: "desc" },
+    take: 5,
+    select: { id: true, recipientName: true, recipientEmail: true, completedAt: true, collectedJson: true },
+  });
+
   const detailsPanel = (
     <>
       {/* SF marks Contact Information + Address Information detailHeading=false,
           so Lightning renders these fields with NO section headers. Bare grids. */}
       <ContactFieldGrid fields={contactInformationFields} entityType="contact" entityId={contact.id} />
       <ContactFieldGrid fields={addressInformationFields} entityType="contact" entityId={contact.id} />
+
+      <ClientSubmittedInfoCard requests={infoRequests} />
 
       {/* SF Details tab continues with an expanded "Account Engagement" section. */}
       <ContactSection title="Account Engagement">

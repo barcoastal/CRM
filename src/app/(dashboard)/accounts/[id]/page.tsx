@@ -26,6 +26,7 @@ import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
 import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
+import { ClientSubmittedInfoCard } from "@/components/shared/client-submitted-info";
 import { genericTone } from "@/lib/slds/status-tones";
 import { LeadHistoryCard } from "@/components/leads/lead-history-card";
 import { FilesCard, NotesCard } from "@/components/accounts/files-notes-cards";
@@ -270,6 +271,13 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const createdByDisplay = `${acctSf("CreatedBy_Full_Name__c") ?? ""}${acctSf("CreatedBy_Full_Name__c") ? `, ${account.createdAt.toLocaleString()}` : account.createdAt.toLocaleString()}`;
   const lastModifiedByDisplay = `${acctSf("LastModifiedBy_Full_Name__c") ?? ""}${acctSf("LastModifiedBy_Full_Name__c") ? `, ${account.updatedAt.toLocaleString()}` : account.updatedAt.toLocaleString()}`;
 
+  const infoRequests = await prisma.documentRequest.findMany({
+    where: { accountId: account.id, kind: "INFO", status: "COMPLETED" },
+    orderBy: { completedAt: "desc" },
+    take: 5,
+    select: { id: true, recipientName: true, recipientEmail: true, completedAt: true, collectedJson: true },
+  });
+
   const detailsPanel = (
     <>
       {/* SF Dakota Enterprises Account Details — pair-by-pair parity with SF Lightning.
@@ -393,6 +401,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ["", null],
           ]}
         />
+
+      <ClientSubmittedInfoCard requests={infoRequests} />
 
       <Section title="Program & Financial (from SF)" defaultOpen={false}>
         <FieldGrid
