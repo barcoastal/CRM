@@ -8,6 +8,7 @@ import { ObjectIcon } from "./icon";
 import { AppLauncher } from "./app-launcher";
 import { GlobalSearch } from "./global-search";
 import { FeedbackButton } from "@/components/slds/feedback-button";
+import { ConsoleNav, readNavMode } from "@/components/slds/console-nav";
 import { EditNavModal, applyNavPrefs, type NavItem } from "./edit-nav-modal";
 import { avatarFor } from "@/lib/avatars";
 import { NotificationsPanel, useNotificationsCount } from "@/components/notifications/notifications-panel";
@@ -99,10 +100,12 @@ export function SldsHeader({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [editNavOpen, setEditNavOpen] = useState(false);
   const [visibleTabs, setVisibleTabs] = useState<NavItem[]>(TABS);
+  const [navMode, setNavModeState] = useState<"console" | "standard">("console");
   const pathname = usePathname();
 
   useEffect(() => {
     setVisibleTabs(applyNavPrefs(TABS));
+    setNavModeState(readNavMode());
   }, []);
 
   return (
@@ -198,7 +201,10 @@ export function SldsHeader({
       {/* App Launcher modal */}
       <AppLauncher open={launcherOpen} onClose={() => setLauncherOpen(false)} />
 
-      {/* Row 2 — app launcher waffle + app name + horizontal tab nav */}
+      {/* Row 2 — console workspace bar OR the standard horizontal tab nav */}
+      {navMode === "console" ? (
+        <ConsoleNav appName={`${appName} Console`} objects={visibleTabs.map((t) => ({ label: t.label, href: t.href }))} />
+      ) : (
       <div className="sf-nav-bar">
         <button
           className="sf-app-launcher"
@@ -270,6 +276,7 @@ export function SldsHeader({
           </svg>
         </button>
       </div>
+      )}
 
       <EditNavModal
         open={editNavOpen}

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ObjectHeader, type ObjectHeaderField } from "./object-header";
 import { Path, type PathStage, type PathAdvance } from "./path";
+import { RegisterConsoleTab } from "@/components/slds/console-nav";
 
 /**
  * Canonical SF Lightning record-page layout:
@@ -46,6 +47,7 @@ export function RecordPage({
           backdrop (the Lightning "header image"). The band bleeds to the
           page edges (negative margin over the 12px page padding). */}
       <div>
+        <RegisterConsoleTab label={recordTitle} entity={entity} />
         <ObjectHeader
           entity={entity}
           entityLabel={entityLabel}
