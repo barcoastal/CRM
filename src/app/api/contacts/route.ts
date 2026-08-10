@@ -71,9 +71,14 @@ export async function POST(req: NextRequest) {
   if (d.primaryAccountId) {
     await prisma.accountContactRelation.upsert({
       where: { accountId_contactId: { accountId: d.primaryAccountId, contactId: contact.id } },
-      create: { accountId: d.primaryAccountId, contactId: contact.id, role: "Primary Contact" },
+      create: { accountId: d.primaryAccountId, contactId: contact.id, role: d.setPrimaryForAccount ? "Primary Contact" : "Contact" },
       update: {},
     });
+    if (d.setPrimaryForAccount) {
+      await prisma.account
+        .update({ where: { id: d.primaryAccountId }, data: { primaryContactId: contact.id } })
+        .catch(() => undefined);
+    }
   }
 
   return NextResponse.json(contact, { status: 201 });

@@ -18,6 +18,7 @@ import { SasDetailsPanel } from "@/components/accounts/sas-details-panel";
 import { AccountTeamCard } from "@/components/accounts/account-team-card";
 import { ChecklistCard } from "@/components/accounts/checklist-card";
 import { ContactRolesList } from "@/components/accounts/contact-roles-list";
+import { AddContactButton } from "@/components/contacts/add-contact-button";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
 import { RescheduleCalculator } from "@/components/shared/reschedule-calculator";
@@ -911,6 +912,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
 
   const contactsPanel = (
     <ContactRolesList
+      action={<AddContactButton accountId={account.id} />}
       rows={account.contacts.map((rel) => ({
         id: rel.id,
         role: rel.role,

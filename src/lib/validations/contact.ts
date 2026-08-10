@@ -8,7 +8,8 @@ export const createContactSchema = z.object({
   mobilePhone: z.string().optional().nullable(),
   title: z.string().optional().nullable(),
   birthdate: z.string().datetime().optional().nullable(),
-  primaryAccountId: z.string().cuid().optional().nullable(),
+  primaryAccountId: z.string().min(1).optional().nullable(),
+  setPrimaryForAccount: z.boolean().optional(),
   ownerId: z.string().cuid().optional().nullable(),
 });
 

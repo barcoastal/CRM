@@ -11,6 +11,8 @@ import { RelatedList } from "@/components/slds/related-list";
 import { OppTabs } from "@/components/opportunities/opp-tabs";
 import { OppHeaderButtons } from "@/components/opportunities/opp-header-buttons";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
+import { ContactRolesList } from "@/components/accounts/contact-roles-list";
+import { AddContactButton } from "@/components/contacts/add-contact-button";
 import { RescheduleCalculator } from "@/components/shared/reschedule-calculator";
 import { generateRescheduleSchedule } from "@/lib/reschedule-schedule";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
@@ -135,7 +137,15 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           tasks: { orderBy: { createdAt: "desc" }, take: 50 },
         },
       },
-      account: { select: { id: true, name: true, recordType: true } },
+      account: {
+        select: {
+          id: true,
+          name: true,
+          recordType: true,
+          primaryContactId: true,
+          contacts: { include: { contact: { select: { id: true, fullName: true, title: true, email: true, phone: true } } } },
+        },
+      },
       primaryContact: { select: { id: true, fullName: true, email: true } },
       assignedTo: { select: { id: true, name: true } },
       client: true,
@@ -895,6 +905,30 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     <SfDataSection sfDataJson={opp.sfDataJson} sfId={opp.sfId} />
   );
 
+  const contactsPanel = opp.account ? (
+    <ContactRolesList
+      action={<AddContactButton accountId={opp.account.id} />}
+      rows={opp.account.contacts.map((rel) => ({
+        id: rel.id,
+        role: rel.role,
+        isPrimary: rel.contact.id === (opp.primaryContactId ?? opp.account?.primaryContactId),
+        contact: {
+          id: rel.contact.id,
+          fullName: rel.contact.fullName,
+          title: rel.contact.title,
+          email: rel.contact.email,
+          phone: rel.contact.phone,
+        },
+      }))}
+    />
+  ) : (
+    <Section title="Contacts">
+      <div style={{ padding: 16, fontSize: 13, color: "#747474" }}>
+        No account is linked to this opportunity yet.
+      </div>
+    </Section>
+  );
+
   const marketingPanel = (
     <Section title="Marketing Attribution">
       <FieldGrid
@@ -952,6 +986,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
                 Details: detailsPanel,
                 Activities: activitiesPanel,
                 "Debt Information": debtPanel,
+                Contacts: contactsPanel,
                 "Payment Calculator": calcPanel,
                 Settlements: settlementsPanel,
                 Documents: documentsPanel,

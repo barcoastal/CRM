@@ -17,7 +17,7 @@ type Row = {
   };
 };
 
-export function ContactRolesList({ rows }: { rows: Row[] }) {
+export function ContactRolesList({ rows, action }: { rows: Row[]; action?: React.ReactNode }) {
   if (rows.length === 0) {
     return (
       <article
@@ -58,9 +58,10 @@ export function ContactRolesList({ rows }: { rows: Row[] }) {
           >
             C
           </span>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0, flex: 1 }}>
             Contact Roles (0)
           </h3>
+          {action}
         </header>
         <div style={{ padding: "12px 16px", fontSize: 12, color: "#747474" }}>No contact roles yet.</div>
       </article>
@@ -106,9 +107,10 @@ export function ContactRolesList({ rows }: { rows: Row[] }) {
             <path d="M26 24c5 0 9-4 9-9s-4-9-9-9-9 4-9 9 4 9 9 9zm0 4c-6 0-18 3-18 9v5h36v-5c0-6-12-9-18-9z" />
           </svg>
         </span>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#181818", margin: 0, flex: 1 }}>
           Contact Roles ({rows.length})
         </h3>
+        {action}
       </header>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
