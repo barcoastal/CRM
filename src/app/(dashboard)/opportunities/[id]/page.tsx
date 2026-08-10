@@ -27,6 +27,7 @@ import { OPP_STAGES } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { ClientSubmittedInfoCard } from "@/components/shared/client-submitted-info";
 import { RecordNotes } from "@/components/shared/record-notes";
+import { NotesRailCard } from "@/components/shared/notes-rail-card";
 import { fetchChainNotes } from "@/lib/notes";
 import { LeadHistoryCard } from "@/components/leads/lead-history-card";
 import { RecordFiles } from "@/components/files/record-files";
@@ -1051,6 +1052,10 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             <ContactRolesCard
               primary={opp.primaryContact}
               accountId={opp.account?.id}
+            />
+            <NotesRailCard
+              notes={chainNotes.map((n) => ({ id: n.id, body: n.body, author: n.author, createdAt: n.createdAt.toISOString(), source: n.source }))}
+              attach={{ leadId: opp.lead?.id ?? null, opportunityId: opp.id, accountId: opp.account?.id ?? null }}
             />
             <ActivityChatterRail activities={activity} chatter={chatter} opportunityId={opp.id} defaultEmail={opp.oppEmail ?? opp.lead?.email ?? null} />
           </>

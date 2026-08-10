@@ -16,6 +16,7 @@ import { CreditorTable } from "@/components/leads/creditor-table";
 import { LeadRelated } from "@/components/leads/lead-related";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { RecordNotes } from "@/components/shared/record-notes";
+import { NotesRailCard } from "@/components/shared/notes-rail-card";
 import { fetchChainNotes } from "@/lib/notes";
 import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
@@ -927,7 +928,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               !!sf("Call_Received_Date__c")
             }
           />
-          <ActivityChatterRail activities={activity} chatter={chatter} leadId={lead.id} defaultEmail={emailVal} />
+          <NotesRailCard
+              notes={chainNotes.map((n) => ({ id: n.id, body: n.body, author: n.author, createdAt: n.createdAt.toISOString(), source: n.source }))}
+              attach={{ leadId: lead.id }}
+            />
+            <ActivityChatterRail activities={activity} chatter={chatter} leadId={lead.id} defaultEmail={emailVal} />
         </>
       }
     />

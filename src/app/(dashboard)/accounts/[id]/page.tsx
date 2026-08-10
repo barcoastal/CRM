@@ -29,6 +29,7 @@ import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { ClientSubmittedInfoCard } from "@/components/shared/client-submitted-info";
 import { RecordNotes } from "@/components/shared/record-notes";
+import { NotesRailCard } from "@/components/shared/notes-rail-card";
 import { fetchChainNotes } from "@/lib/notes";
 import { genericTone } from "@/lib/slds/status-tones";
 import { LeadHistoryCard } from "@/components/leads/lead-history-card";
@@ -1110,7 +1111,11 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
               done: t.status === "COMPLETED",
             }))}
           />
-          <ActivityChatterRail activities={activity} chatter={chatter} accountId={account.id} defaultEmail={account.email ?? null} />
+          <NotesRailCard
+              notes={chainNotes.map((n) => ({ id: n.id, body: n.body, author: n.author, createdAt: n.createdAt.toISOString(), source: n.source }))}
+              attach={{ accountId: account.id }}
+            />
+            <ActivityChatterRail activities={activity} chatter={chatter} accountId={account.id} defaultEmail={account.email ?? null} />
         </>
       }
     />
