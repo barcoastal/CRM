@@ -198,6 +198,17 @@ export async function POST(
       .catch(() => null);
     if (created) {
       contactId = created.id;
+      if (effAccountId) {
+        // Also create the relation row so the contact shows in the
+        // Contacts tab lists on the account and opportunity.
+        await prisma.accountContactRelation
+          .upsert({
+            where: { accountId_contactId: { accountId: effAccountId, contactId: created.id } },
+            create: { accountId: effAccountId, contactId: created.id, role: "Primary Contact" },
+            update: {},
+          })
+          .catch(() => undefined);
+      }
       if (req.opportunityId) {
         await prisma.opportunity
           .update({ where: { id: req.opportunityId }, data: { primaryContactId: created.id } })
