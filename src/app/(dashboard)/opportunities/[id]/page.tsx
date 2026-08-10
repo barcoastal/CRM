@@ -26,6 +26,8 @@ import { settlementStatusTone, genericTone } from "@/lib/slds/status-tones";
 import { OPP_STAGES } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { ClientSubmittedInfoCard } from "@/components/shared/client-submitted-info";
+import { RecordNotes } from "@/components/shared/record-notes";
+import { fetchChainNotes } from "@/lib/notes";
 import { LeadHistoryCard } from "@/components/leads/lead-history-card";
 import { RecordFiles } from "@/components/files/record-files";
 
@@ -181,6 +183,12 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   if (!opp) notFound();
 
   const latestCalc = opp.paymentCalculations[0];
+
+  const chainNotes = await fetchChainNotes({
+    leadIds: [opp.lead?.id],
+    opportunityIds: [opp.id],
+    accountIds: [opp.account?.id],
+  });
 
   // What the client sent back through Request Info links (Client Submitted Info box).
   const infoRequests = await prisma.documentRequest.findMany({
@@ -630,6 +638,11 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       </Section>
 
       <ClientSubmittedInfoCard requests={infoRequests} />
+
+      <RecordNotes
+        notes={chainNotes.map((n) => ({ ...n, createdAt: n.createdAt.toISOString() }))}
+        attach={{ leadId: opp.lead?.id ?? null, opportunityId: opp.id, accountId: opp.account?.id ?? null }}
+      />
 
       <Section title="Five9 Fields">
         {/* SF Five9 Fields section. */}

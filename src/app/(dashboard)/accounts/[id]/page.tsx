@@ -28,6 +28,8 @@ import { ComposeEmailButton } from "@/components/emails/compose-email-button";
 import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { ClientSubmittedInfoCard } from "@/components/shared/client-submitted-info";
+import { RecordNotes } from "@/components/shared/record-notes";
+import { fetchChainNotes } from "@/lib/notes";
 import { genericTone } from "@/lib/slds/status-tones";
 import { LeadHistoryCard } from "@/components/leads/lead-history-card";
 import { FilesCard, NotesCard } from "@/components/accounts/files-notes-cards";
@@ -272,6 +274,16 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const createdByDisplay = `${acctSf("CreatedBy_Full_Name__c") ?? ""}${acctSf("CreatedBy_Full_Name__c") ? `, ${account.createdAt.toLocaleString()}` : account.createdAt.toLocaleString()}`;
   const lastModifiedByDisplay = `${acctSf("LastModifiedBy_Full_Name__c") ?? ""}${acctSf("LastModifiedBy_Full_Name__c") ? `, ${account.updatedAt.toLocaleString()}` : account.updatedAt.toLocaleString()}`;
 
+  const chainOpps = await prisma.opportunity.findMany({
+    where: { accountId: account.id },
+    select: { id: true, leadId: true },
+  });
+  const chainNotes = await fetchChainNotes({
+    leadIds: chainOpps.map((o) => o.leadId),
+    opportunityIds: chainOpps.map((o) => o.id),
+    accountIds: [account.id],
+  });
+
   const infoRequests = await prisma.documentRequest.findMany({
     where: { accountId: account.id, kind: "INFO", status: "COMPLETED" },
     orderBy: { completedAt: "desc" },
@@ -404,6 +416,11 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         />
 
       <ClientSubmittedInfoCard requests={infoRequests} />
+
+      <RecordNotes
+        notes={chainNotes.map((n) => ({ ...n, createdAt: n.createdAt.toISOString() }))}
+        attach={{ accountId: account.id }}
+      />
 
       <Section title="Program & Financial (from SF)" defaultOpen={false}>
         <FieldGrid

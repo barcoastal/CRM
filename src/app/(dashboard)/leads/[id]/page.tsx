@@ -15,6 +15,8 @@ import { DebtInformation } from "@/components/leads/debt-information";
 import { CreditorTable } from "@/components/leads/creditor-table";
 import { LeadRelated } from "@/components/leads/lead-related";
 import { SfDataSection } from "@/components/slds/sf-data-section";
+import { RecordNotes } from "@/components/shared/record-notes";
+import { fetchChainNotes } from "@/lib/notes";
 import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
 import { leadStatusTone } from "@/lib/slds/status-tones";
@@ -615,6 +617,16 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // Convert action is the header button. We surface a slim post-conversion
   // breadcrumb at the very top of Details so users can jump to the converted
   // Account / Opportunity, but skip the big CTA banner entirely.
+  const chainOppsForNotes = await prisma.opportunity.findMany({
+    where: { leadId: lead.id },
+    select: { id: true, accountId: true },
+  });
+  const chainNotes = await fetchChainNotes({
+    leadIds: [lead.id],
+    opportunityIds: chainOppsForNotes.map((o) => o.id),
+    accountIds: [...chainOppsForNotes.map((o) => o.accountId), lead.convertedAccountId],
+  });
+
   const details = (
     <>
       {converted && (
@@ -665,10 +677,15 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       {additionalInformation}
       {descriptionInformation}
       {lead.notes && (
-        <Section title="Notes" defaultOpen={false}>
+        <Section title="Notes (from Salesforce)" defaultOpen={false}>
           <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>{lead.notes}</div>
         </Section>
       )}
+
+      <RecordNotes
+        notes={chainNotes.map((n) => ({ ...n, createdAt: n.createdAt.toISOString() }))}
+        attach={{ leadId: lead.id }}
+      />
     </>
   );
 
