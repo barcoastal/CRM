@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ContractAnalysisButton } from "@/components/documents/contract-analysis-button";
 
 type DocItem = {
   id: string;
@@ -10,6 +11,7 @@ type DocItem = {
   fileSize: number | null;
   createdAt: string;
   uploadedBy: { name: string } | null;
+  hasAnalysis?: boolean;
 };
 
 const DOC_TYPES = [
@@ -149,6 +151,11 @@ export function DocumentsUpload({
                 <td style={td}>{d.uploadedBy?.name ?? "-"}</td>
                 <td style={td}>{new Date(d.createdAt).toLocaleString()}</td>
                 <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}>
+                  {/[.](pdf|png|jpe?g|webp)$/i.test(d.name) && (
+                    <span style={{ marginRight: 12, display: "inline-block" }}>
+                      <ContractAnalysisButton documentId={d.id} documentName={d.name} hasAnalysis={!!d.hasAnalysis} />
+                    </span>
+                  )}
                   <a
                     href={`${baseUrl}/${d.id}?view=1`}
                     target="_blank"

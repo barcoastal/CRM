@@ -1319,6 +1319,10 @@ model Document {
   uploadedBy    User         @relation(fields: [uploadedById], references: [id])
   createdAt     DateTime     @default(now())
 
+  // AI contract analysis (Gemini) - structured extraction of MCA agreements.
+  analysisJson Json?
+  analyzedAt   DateTime?
+
   sfId String? @unique // Salesforce ContentDocument ID, populated by file sync
 
   @@index([leadId])

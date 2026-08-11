@@ -875,6 +875,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             fileSize: d.fileSize,
             createdAt: d.createdAt.toISOString(),
             uploadedBy: d.uploadedBy ? { name: d.uploadedBy.name } : null,
+            hasAnalysis: d.analyzedAt != null,
           }))}
         />
       </Section>
