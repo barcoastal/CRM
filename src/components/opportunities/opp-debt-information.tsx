@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreditorCombobox } from "@/components/debts/creditor-combobox";
+import { DebtAnalysisDrawer } from "@/components/debts/debt-analysis-drawer";
+import type { ContractAnalysisData } from "@/components/documents/analysis-body";
 
 export type OppDebtRow = {
   id: string;
@@ -14,6 +16,8 @@ export type OppDebtRow = {
   currentBalance: number;
   enrolledBalance: number;
   status: string;
+  analysis?: ContractAnalysisData | null;
+  analysisDocName?: string | null;
 };
 
 const TYPE_OPTIONS = [
@@ -96,6 +100,7 @@ export function OppDebtInformation({
   items: OppDebtRow[];
 }) {
   const router = useRouter();
+  const [drawerDebt, setDrawerDebt] = useState<OppDebtRow | null>(null);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -239,6 +244,25 @@ export function OppDebtInformation({
               <td style={td}>
                 <span style={{ color: "#747474", marginRight: 8 }}>{i + 1}</span>
                 {d.creditorName}
+                {d.analysis && (
+                  <button
+                    onClick={() => setDrawerDebt(d)}
+                    title="View contract analysis"
+                    style={{
+                      marginLeft: 8,
+                      background: "#eef1f8",
+                      border: 0,
+                      borderRadius: 10,
+                      padding: "1px 10px",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#3052FF",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Contract ▸
+                  </button>
+                )}
               </td>
               <td style={td}>{label(TYPE_OPTIONS, d.debtType)}</td>
               <td style={td}>{fmtMoney(d.originalBalance)}</td>
@@ -358,6 +382,13 @@ export function OppDebtInformation({
           )}
         </tbody>
       </table>
+      <DebtAnalysisDrawer
+        open={drawerDebt != null}
+        onClose={() => setDrawerDebt(null)}
+        creditorName={drawerDebt?.creditorName ?? ""}
+        documentName={drawerDebt?.analysisDocName ?? null}
+        analysis={drawerDebt?.analysis ?? null}
+      />
     </div>
   );
 }

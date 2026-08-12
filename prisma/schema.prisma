@@ -1230,6 +1230,9 @@ model Debt {
   creditorId        String?
   creditor          Creditor?    @relation(fields: [creditorId], references: [id])
   creditorName      String // legacy free-form; preferred is creditorId. Kept for now.
+  // Uploaded contract this debt was created from (AI analysis lives there).
+  sourceDocumentId  String?
+  sourceDocument    Document?    @relation("DebtSourceDocument", fields: [sourceDocumentId], references: [id])
   creditorPhone     String?
   creditorEmail     String?
   accountNumber     String?
@@ -1303,6 +1306,7 @@ model Payment {
 
 model Document {
   id            String       @id @default(cuid())
+  debtsFromThis Debt[]       @relation("DebtSourceDocument")
   clientId      String?
   client        Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   opportunityId String?

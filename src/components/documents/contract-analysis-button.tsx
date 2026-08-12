@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 /**
  * "Analyze" action per uploaded document: runs the Gemini contract analysis
@@ -33,6 +35,7 @@ const money = (n: number | null | undefined) =>
   n == null ? "-" : n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export function ContractAnalysisButton({ documentId, documentName, hasAnalysis }: { documentId: string; documentName: string; hasAnalysis: boolean }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
@@ -61,13 +64,24 @@ export function ContractAnalysisButton({ documentId, documentName, hasAnalysis }
     setError(null);
     try {
       const res = await fetch(`/api/documents/${documentId}/analyze`, { method: "POST" });
-      const d = (await res.json().catch(() => ({}))) as { analysis?: Analysis; analyzedAt?: string; error?: string };
+      const d = (await res.json().catch(() => ({}))) as {
+        analysis?: Analysis;
+        analyzedAt?: string;
+        error?: string;
+        debtCreated?: { creditorName: string; amount: number } | null;
+      };
       if (!res.ok || !d.analysis) {
         setError(d.error ?? "Analysis failed, please try again.");
         return;
       }
       setAnalysis(d.analysis);
       setAnalyzedAt(d.analyzedAt ?? null);
+      if (d.debtCreated) {
+        toast.success(
+          `Debt added: ${d.debtCreated.creditorName} - $${d.debtCreated.amount.toLocaleString()}`,
+        );
+        router.refresh();
+      }
     } catch {
       setError("Network error, please try again.");
     } finally {

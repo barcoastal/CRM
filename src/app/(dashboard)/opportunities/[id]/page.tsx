@@ -154,6 +154,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       client: true,
       debts: {
         include: {
+          sourceDocument: { select: { name: true, analysisJson: true } },
           creditor: { include: { account: { select: { name: true } } } },
           offers: { include: { settlements: true }, orderBy: { createdAt: "desc" } },
           settlement: true,
@@ -732,6 +733,8 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           currentBalance: d.currentBalance,
           enrolledBalance: d.enrolledBalance,
           status: d.status,
+          analysis: (d.sourceDocument?.analysisJson as import("@/components/documents/analysis-body").ContractAnalysisData | null) ?? null,
+          analysisDocName: d.sourceDocument?.name ?? null,
         }))}
       />
     </Section>

@@ -61,7 +61,61 @@ export async function POST(
       data: { analysisJson: analysis as object, analyzedAt: new Date() },
       select: { analysisJson: true, analyzedAt: true },
     });
-    return NextResponse.json({ analysis: updated.analysisJson, analyzedAt: updated.analyzedAt });
+
+    // Funding agreements become debt rows automatically: creditor = funder,
+    // balance = total payback (falls back to amount funded).
+    let debtCreated: { creditorName: string; amount: number } | null = null;
+    let debtLinked = false;
+    const isAgreement = /agreement|mca|loan|advance|contract/i.test(analysis.docType ?? "");
+    const balance = analysis.paybackAmount ?? analysis.fundingAmount;
+    if (isAgreement && analysis.funderName && balance != null && balance > 0 && doc.opportunityId) {
+      const existing = await prisma.debt.findFirst({
+        where: {
+          opportunityId: doc.opportunityId,
+          creditorName: { contains: analysis.funderName.slice(0, 25), mode: "insensitive" },
+        },
+      });
+      if (existing) {
+        if (!existing.sourceDocumentId) {
+          await prisma.debt.update({ where: { id: existing.id }, data: { sourceDocumentId: doc.id } });
+        }
+        debtLinked = true;
+      } else {
+        const FREQ: Record<string, string> = { daily: "DAILY", weekly: "WEEKLY", "bi-weekly": "BI_WEEKLY", biweekly: "BI_WEEKLY", monthly: "MONTHLY" };
+        await prisma.debt.create({
+          data: {
+            opportunityId: doc.opportunityId,
+            creditorName: analysis.funderName,
+            debtType: "MCA",
+            originalBalance: balance,
+            currentBalance: balance,
+            enrolledBalance: balance,
+            paymentAmount: analysis.paymentAmount ?? null,
+            paymentFrequency: analysis.paymentFrequency ? FREQ[analysis.paymentFrequency.toLowerCase()] ?? null : null,
+            status: "ENROLLED",
+            sourceDocumentId: doc.id,
+          },
+        });
+        const sum = await prisma.debt.aggregate({
+          where: { opportunityId: doc.opportunityId },
+          _sum: { originalBalance: true },
+        });
+        const totalDebt = sum._sum.originalBalance;
+        if (totalDebt != null) {
+          await prisma.opportunity
+            .update({ where: { id: doc.opportunityId }, data: { totalDebt, currentTotalDebt: totalDebt } })
+            .catch(() => undefined);
+        }
+        debtCreated = { creditorName: analysis.funderName, amount: balance };
+      }
+    }
+
+    return NextResponse.json({
+      analysis: updated.analysisJson,
+      analyzedAt: updated.analyzedAt,
+      debtCreated,
+      debtLinked,
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Analysis failed.";
     return NextResponse.json({ error: msg }, { status: 502 });
