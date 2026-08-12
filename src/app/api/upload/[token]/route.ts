@@ -4,9 +4,11 @@ import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { sendESignEmail } from "@/lib/esign/send-email";
 import { appBaseUrl } from "@/lib/document-request";
+import { uploadRoot } from "@/lib/upload-storage";
 
 // Public (no-login) endpoint. The token is the only secret.
-const UPLOAD_ROOT = path.join(process.cwd(), "uploads", "opportunities");
+
+const UPLOAD_ROOT = uploadRoot("opportunities");
 const MAX_BYTES = 25 * 1024 * 1024; // 25 MB per file
 
 async function loadRequest(token: string) {
@@ -77,7 +79,7 @@ export async function POST(
   await fs.mkdir(dir, { recursive: true });
   const filePath = path.join(dir, storedName);
   await fs.writeFile(filePath, buf);
-  const relPath = path.relative(process.cwd(), filePath);
+  const relPath = filePath; // absolute: /data volume, not under cwd
 
   // One physical file, a Document row on the Opportunity and on the Account so
   // it shows in both Files lists. uploadedBy = the rep who sent the request.

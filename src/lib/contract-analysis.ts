@@ -18,6 +18,7 @@ export interface ContractAnalysis {
   hasConfessionOfJudgment: boolean;
   hasPersonalGuarantee: boolean;
   hasUccFilingClause: boolean;
+  hasTroClause: boolean;
   fees: string[];
   defaultClauses: string[];
   redFlags: string[];
@@ -40,6 +41,7 @@ const RESPONSE_SCHEMA = {
     hasConfessionOfJudgment: { type: "BOOLEAN" },
     hasPersonalGuarantee: { type: "BOOLEAN" },
     hasUccFilingClause: { type: "BOOLEAN" },
+    hasTroClause: { type: "BOOLEAN", description: "True when the contract lets the funder seek a TRO, temporary restraining order, injunction or other injunctive relief against the merchant or its bank" },
     fees: { type: "ARRAY", items: { type: "STRING" }, description: "Origination, ACH, default fees etc with amounts" },
     defaultClauses: { type: "ARRAY", items: { type: "STRING" }, description: "Key default/acceleration triggers, short" },
     redFlags: { type: "ARRAY", items: { type: "STRING" }, description: "Terms unusually hostile to the merchant" },
@@ -50,6 +52,7 @@ const RESPONSE_SCHEMA = {
     "hasConfessionOfJudgment",
     "hasPersonalGuarantee",
     "hasUccFilingClause",
+    "hasTroClause",
     "fees",
     "defaultClauses",
     "redFlags",
@@ -89,8 +92,9 @@ export async function analyzeContract(file: Buffer, mimeType: string): Promise<C
                   "Analyze the attached document. It is usually an MCA funding agreement, loan contract,",
                   "bank statement or settlement offer uploaded by a client. Extract the requested fields.",
                   "Amounts are USD numbers without symbols. When a field is not present use null.",
-                  "redFlags: call out confession of judgment, personal guarantees, aggressive default",
-                  "interest, fee stacking, reconciliation traps and similar merchant-hostile terms.",
+                  "redFlags: call out confession of judgment, personal guarantees, TRO/injunctive",
+                  "relief rights, aggressive default interest, fee stacking, reconciliation traps",
+                  "and similar merchant-hostile terms.",
                   "The summary is for the settlement negotiator working this file.",
                 ].join(" "),
               },

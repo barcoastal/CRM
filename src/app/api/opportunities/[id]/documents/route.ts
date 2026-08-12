@@ -3,8 +3,10 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { uploadRoot } from "@/lib/upload-storage";
 
-const UPLOAD_ROOT = path.join(process.cwd(), "uploads", "opportunities");
+
+const UPLOAD_ROOT = uploadRoot("opportunities");
 
 export async function GET(
   request: NextRequest,
@@ -57,7 +59,8 @@ export async function POST(
       opportunityId: id,
       name: file.name,
       type,
-      filePath: path.relative(process.cwd(), filePath),
+      // Absolute path: uploads live on the /data volume, not under cwd.
+      filePath,
       fileSize: buf.byteLength,
       uploadedById: session.userId,
     },

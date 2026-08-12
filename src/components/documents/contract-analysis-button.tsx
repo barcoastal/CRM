@@ -22,6 +22,7 @@ interface Analysis {
   hasConfessionOfJudgment: boolean;
   hasPersonalGuarantee: boolean;
   hasUccFilingClause: boolean;
+  hasTroClause: boolean;
   fees: string[];
   defaultClauses: string[];
   redFlags: string[];
@@ -120,6 +121,7 @@ export function ContractAnalysisButton({ documentId, documentName, hasAnalysis }
                   {flag(analysis.hasConfessionOfJudgment, "Confession of Judgment")}
                   {flag(analysis.hasPersonalGuarantee, "Personal Guarantee")}
                   {flag(analysis.hasUccFilingClause, "UCC Filing")}
+                  {flag(analysis.hasTroClause, "TRO / Injunction")}
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 20px", marginBottom: 14 }}>
