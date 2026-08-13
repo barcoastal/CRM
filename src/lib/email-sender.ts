@@ -37,6 +37,7 @@ async function sendViaResend(args: {
   html?: string | null;
   text?: string | null;
   replyTo?: string | null;
+  headers?: Record<string, string> | null;
   attachments?: ResendAttachment[] | null;
 }): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -52,6 +53,7 @@ async function sendViaResend(args: {
   if (args.cc && args.cc.length > 0) body.cc = args.cc;
   if (args.bcc && args.bcc.length > 0) body.bcc = args.bcc;
   if (args.replyTo) body.reply_to = args.replyTo;
+  if (args.headers && Object.keys(args.headers).length > 0) body.headers = args.headers;
   if (args.attachments && args.attachments.length > 0) body.attachments = args.attachments;
 
   try {
@@ -192,6 +194,10 @@ export async function sendQueuedEmail(msgId: string): Promise<SendResult> {
     html: rendered.html ?? null,
     text: rendered.text ?? null,
     replyTo,
+    // inReplyTo is stored without angle brackets; RFC 5322 requires them.
+    headers: msg.inReplyTo
+      ? { "In-Reply-To": `<${msg.inReplyTo}>`, References: `<${msg.inReplyTo}>` }
+      : null,
     attachments,
   });
 
