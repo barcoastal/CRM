@@ -400,10 +400,11 @@ export function OppDebtInformation({
 function RowIntel({ name }: { name: string }) {
   // Small inline risk marker on saved debt rows; full card shows in the form.
   const intel = findLenderIntel(name);
-  if (!intel?.lienRiskLevel) return null;
-  const color = intel.lienRiskLevel === 1 ? "#2e844a" : intel.lienRiskLevel === 2 ? "#8c5f10" : "#c23934";
+  if (!intel || (!intel.lienRiskLevel && !intel.coj && !intel.tro)) return null;
+  const color =
+    intel.lienRiskLevel === 1 ? "#2e844a" : intel.lienRiskLevel === 2 ? "#8c5f10" : "#c23934";
   const parts = [
-    `Risk ${intel.lienRiskLevel}`,
+    intel.lienRiskLevel ? `Risk ${intel.lienRiskLevel}` : null,
     intel.coj ? "COJ" : null,
     intel.tro ? "TRO" : null,
   ].filter(Boolean);
