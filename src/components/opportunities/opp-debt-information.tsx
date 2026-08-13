@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CreditorCombobox } from "@/components/debts/creditor-combobox";
 import { DebtAnalysisDrawer } from "@/components/debts/debt-analysis-drawer";
 import { LenderIntelCard } from "@/components/debts/lender-intel-card";
-import { findLenderIntel } from "@/lib/lender-intel";
+import { useLenders, matchLender } from "@/lib/use-lenders";
 import type { ContractAnalysisData } from "@/components/documents/analysis-body";
 
 export type OppDebtRow = {
@@ -424,7 +424,8 @@ export function OppDebtInformation({
 
 function RowIntel({ name }: { name: string }) {
   // Small inline risk marker on saved debt rows; full card shows in the form.
-  const intel = findLenderIntel(name);
+  const { lenders } = useLenders();
+  const intel = matchLender(lenders, name);
   if (!intel || (!intel.lienRiskLevel && !intel.coj && !intel.tro)) return null;
   const color =
     intel.lienRiskLevel === 1 ? "#2e844a" : intel.lienRiskLevel === 2 ? "#8c5f10" : "#c23934";
@@ -444,7 +445,8 @@ function RowIntel({ name }: { name: string }) {
 }
 
 function ExpandedLenderInfo({ row, onOpenContract }: { row: OppDebtRow; onOpenContract: () => void }) {
-  const intel = findLenderIntel(row.creditorName);
+  const { lenders } = useLenders();
+  const intel = matchLender(lenders, row.creditorName);
   return (
     <div>
       {intel ? (

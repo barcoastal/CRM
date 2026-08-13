@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { KNOWN_CREDITORS } from "@/lib/creditors";
+import { useLenders } from "@/lib/use-lenders";
 
 /**
  * Typeahead for picking a creditor from the known list (src/lib/creditors.ts),
@@ -64,20 +65,34 @@ export function CreditorCombobox(props: CreditorComboboxProps) {
     props.onChange?.(v);
   };
 
+  const { lenders } = useLenders();
+  // DB directory (editable, grows automatically) merged with the static list.
+  const allNames = useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const n of [...lenders.map((l) => l.name), ...KNOWN_CREDITORS]) {
+      const k = n.trim().toLowerCase();
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      out.push(n);
+    }
+    return out.sort((a, b) => a.localeCompare(b));
+  }, [lenders]);
+
   const matches = useMemo(() => {
     const q = val.trim().toLowerCase();
-    if (!q) return KNOWN_CREDITORS.slice(0, MAX_RESULTS);
+    if (!q) return allNames.slice(0, MAX_RESULTS);
     const starts: string[] = [];
     const incl: string[] = [];
-    for (const c of KNOWN_CREDITORS) {
+    for (const c of allNames) {
       const lc = c.toLowerCase();
       if (lc.startsWith(q)) starts.push(c);
       else if (lc.includes(q)) incl.push(c);
     }
     return [...starts, ...incl].slice(0, MAX_RESULTS);
-  }, [val]);
+  }, [val, allNames]);
 
-  const isCustom = val.trim().length > 0 && !KNOWN_CREDITORS.some((c) => c.toLowerCase() === val.trim().toLowerCase());
+  const isCustom = val.trim().length > 0 && !allNames.some((c) => c.toLowerCase() === val.trim().toLowerCase());
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {

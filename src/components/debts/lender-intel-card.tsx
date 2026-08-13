@@ -1,17 +1,19 @@
 "use client";
 
-import { findLenderIntel } from "@/lib/lender-intel";
+import { useLenders, matchLender } from "@/lib/use-lenders";
 import { isVictoryCreditor } from "@/lib/creditor-agreements";
 
 /**
  * Intel card shown beside the creditor picker (and inside the contract
- * drawer) the moment the chosen lender matches Bar's lender sheet.
+ * drawer) when the chosen lender matches the Lender directory (DB-backed,
+ * editable on the Lenders page).
  */
 export function LenderIntelCard({ lenderName }: { lenderName: string | null | undefined }) {
-  const intel = findLenderIntel(lenderName);
+  const { lenders } = useLenders();
+  const intel = matchLender(lenders, lenderName ?? null);
   if (!intel) return null;
   const legal =
-    isVictoryCreditor(intel.name) || isVictoryCreditor(lenderName ?? "") ? "Victory" : "Citadel";
+    intel.legal ?? (isVictoryCreditor(intel.name) || isVictoryCreditor(lenderName ?? "") ? "Victory" : "Citadel");
 
   const risk = intel.lienRiskLevel;
   const riskStyle =

@@ -1337,6 +1337,24 @@ model Document {
 // own documents (loan docs, statements, etc.) back to us. Files they upload
 // are filed onto the Opportunity (and its Account) as normal Document records.
 
+model Lender {
+  id            String   @id @default(cuid())
+  name          String
+  nameNorm      String   @unique // lowercased, alphanumeric only - dedup key
+  aka           String? // slash-separated aliases
+  plaidFinicity Boolean  @default(false)
+  lienRiskLevel Int? // 1 works with us | 2 medium | 3 aggressive
+  coj           Boolean  @default(false)
+  tro           Boolean  @default(false)
+  venue         String?
+  notes         String?
+  // Agreement routing override; null = derive from the VLP (Victory) list.
+  legal         String? // Victory | Citadel
+  source        String   @default("SHEET") // SHEET | MANUAL | CONTRACT_ANALYSIS
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
 model Feedback {
   id         String   @id @default(cuid())
   userId     String

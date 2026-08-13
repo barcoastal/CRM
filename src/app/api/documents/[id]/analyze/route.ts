@@ -62,6 +62,36 @@ export async function POST(
       select: { analysisJson: true, analyzedAt: true },
     });
 
+    // Unknown funders join the Lender directory automatically so the intel
+    // sheet grows as contracts come in.
+    if (analysis.funderName) {
+      const funderNorm = analysis.funderName.trim().toLowerCase().replace(/[^a-z0-9 ]/g, "");
+      if (funderNorm) {
+        const known = await prisma.lender.findFirst({
+          where: {
+            OR: [
+              { nameNorm: funderNorm },
+              { aka: { contains: analysis.funderName.trim(), mode: "insensitive" } },
+            ],
+          },
+        });
+        if (!known) {
+          await prisma.lender
+            .create({
+              data: {
+                name: analysis.funderName.trim(),
+                nameNorm: funderNorm,
+                coj: analysis.hasConfessionOfJudgment,
+                tro: analysis.hasTroClause ?? false,
+                notes: `Auto-added from contract analysis of "${doc.name}".${analysis.summary ? ` ${analysis.summary}` : ""}`,
+                source: "CONTRACT_ANALYSIS",
+              },
+            })
+            .catch(() => undefined);
+        }
+      }
+    }
+
     // Funding agreements become debt rows automatically: creditor = funder,
     // balance = total payback (falls back to amount funded).
     let debtCreated: { creditorName: string; amount: number } | null = null;
