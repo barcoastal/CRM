@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreditorCombobox } from "@/components/debts/creditor-combobox";
 import { DebtAnalysisDrawer } from "@/components/debts/debt-analysis-drawer";
@@ -103,6 +103,7 @@ export function OppDebtInformation({
 }) {
   const router = useRouter();
   const [drawerDebt, setDrawerDebt] = useState<OppDebtRow | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -242,8 +243,24 @@ export function OppDebtInformation({
             </tr>
           )}
           {items.map((d, i) => (
-            <tr key={d.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
+            <Fragment key={d.id}>
+            <tr style={{ borderBottom: expandedId === d.id ? "none" : "1px solid #f3f3f3" }}>
               <td style={td}>
+                <button
+                  onClick={() => setExpandedId((v) => (v === d.id ? null : d.id))}
+                  aria-label={expandedId === d.id ? "Collapse lender info" : "Show lender info"}
+                  style={{
+                    background: "transparent",
+                    border: 0,
+                    cursor: "pointer",
+                    color: "#747474",
+                    marginRight: 6,
+                    fontSize: 11,
+                    width: 16,
+                  }}
+                >
+                  {expandedId === d.id ? "▾" : "▸"}
+                </button>
                 <span style={{ color: "#747474", marginRight: 8 }}>{i + 1}</span>
                 {d.creditorName}
                 <RowIntel name={d.creditorName} />
@@ -289,6 +306,14 @@ export function OppDebtInformation({
                 </button>
               </td>
             </tr>
+            {expandedId === d.id && (
+              <tr style={{ borderBottom: "1px solid #f3f3f3" }}>
+                <td colSpan={7} style={{ padding: "0 12px 12px 34px", background: "#fbfcfe" }}>
+                  <ExpandedLenderInfo row={d} onOpenContract={() => setDrawerDebt(d)} />
+                </td>
+              </tr>
+            )}
+            </Fragment>
           ))}
           {showForm && (
             <tr style={{ background: "#fafaf9", borderTop: "1px solid #c9c9c9" }}>
@@ -415,5 +440,39 @@ function RowIntel({ name }: { name: string }) {
     >
       {parts.join(" · ")}
     </span>
+  );
+}
+
+function ExpandedLenderInfo({ row, onOpenContract }: { row: OppDebtRow; onOpenContract: () => void }) {
+  const intel = findLenderIntel(row.creditorName);
+  return (
+    <div>
+      {intel ? (
+        <LenderIntelCard lenderName={row.creditorName} />
+      ) : (
+        <div style={{ marginTop: 8, fontSize: 12, color: "#747474" }}>
+          No lender data on file for &quot;{row.creditorName}&quot;. Check the Lenders tab for the
+          full sheet, or tell an admin to add this lender.
+        </div>
+      )}
+      {row.analysis && (
+        <button
+          onClick={onOpenContract}
+          style={{
+            marginTop: 8,
+            background: "#fff",
+            border: "1px solid #3052FF",
+            color: "#3052FF",
+            borderRadius: 4,
+            padding: "5px 14px",
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          View contract analysis ▸
+        </button>
+      )}
+    </div>
   );
 }
