@@ -21,6 +21,7 @@ interface AccountsPageProps {
     view?: string;
     page?: string;
     display?: string;
+    ktab?: string;
   }>;
 }
 
@@ -155,35 +156,63 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   }
 
   if (params.display === "kanban") {
-    const statusGroupsRaw = await prisma.account.groupBy({
-      by: ["clientStatus"],
-      where,
+    // SF accounts kanban: record-type tabs above the board, columns by OWNER
+    // (matches the org's console board), drag between columns to reassign.
+    const ktab = params.ktab === "UNCATEGORIZED" ? "UNCATEGORIZED" : params.ktab || "BUSINESS_ACCOUNT";
+    const typeGroupsRaw = await prisma.account.groupBy({ by: ["recordType"], where, _count: true });
+    const groupTabs = typeGroupsRaw
+      .sort((a, b) => b._count - a._count)
+      .map((g) => ({
+        label: g.recordType.replace(/_/g, " "),
+        count: g._count,
+        href: `/accounts?display=kanban&ktab=${encodeURIComponent(g.recordType)}${params.view ? `&view=${params.view}` : ""}`,
+        active: g.recordType === ktab,
+      }));
+    const kwhere = { ...where, recordType: ktab === "UNCATEGORIZED" ? ktab : ktab };
+
+    const ownerGroupsRaw = await prisma.account.groupBy({
+      by: ["ownerId"],
+      where: { ...kwhere, ownerId: { not: null } },
       _count: true,
     });
-    const statusGroups = statusGroupsRaw
-      .filter((g) => g.clientStatus && g.clientStatus.trim())
-      .sort((a, b) => b._count - a._count)
-      .slice(0, 8);
+    const ownerGroups = ownerGroupsRaw.sort((a, b) => b._count - a._count).slice(0, 12);
+    const ownersById = new Map(
+      (
+        await prisma.user.findMany({
+          where: { id: { in: ownerGroups.map((g) => g.ownerId as string) } },
+          select: { id: true, name: true },
+        })
+      ).map((u) => [u.id, u.name]),
+    );
     const columns = await Promise.all(
-      statusGroups.map(async (g) => {
-          const cards = await prisma.account.findMany({
-            where: { ...where, clientStatus: g.clientStatus },
-            orderBy: { updatedAt: "desc" },
-            take: 12,
-            select: { id: true, name: true, phone: true, escrowBalance: true },
-          });
-          return {
-            value: g.clientStatus as string,
-            label: g.clientStatus as string,
-            count: g._count,
-            cards: cards.map((a) => ({
+      ownerGroups.map(async (g) => {
+        const cards = await prisma.account.findMany({
+          where: { ...kwhere, ownerId: g.ownerId },
+          orderBy: { updatedAt: "desc" },
+          take: 10,
+          select: { id: true, name: true, phone: true, sfDataJson: true },
+        });
+        return {
+          value: g.ownerId as string,
+          label: ownersById.get(g.ownerId as string) ?? "Unknown",
+          count: g._count,
+          cards: cards.map((a) => {
+            let num: string | null = null;
+            try {
+              const sf = a.sfDataJson ? (JSON.parse(a.sfDataJson) as Record<string, unknown>) : {};
+              num = String(sf["Client_Number__c"] ?? sf["Lead_Number__c"] ?? "") || null;
+            } catch {
+              // ignore bad snapshots
+            }
+            return {
               id: a.id,
               title: a.name,
               sub: a.phone,
-              amount: a.escrowBalance != null ? `$${a.escrowBalance.toLocaleString()}` : null,
+              amount: num,
               href: `/accounts/${a.id}`,
-            })),
-          };
+            };
+          }),
+        };
       }),
     );
     return (
@@ -191,7 +220,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         entity="account"
         title="Accounts"
         subtitle="Recently Viewed"
-        count={columns.reduce((s2, c) => s2 + c.count, 0)}
+        count={groupTabs.reduce((s2, t) => s2 + t.count, 0)}
         iconColor="#7f8de1"
         iconSlug="account"
         actions={[{ label: "New", href: "/accounts/new" }]}
@@ -199,11 +228,11 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         rows={[]}
         pathname="/accounts"
         searchQuery={search}
-        preservedParams={{ ...(params.view ? { view: params.view } : {}) }}
+        preservedParams={{ ...(params.view ? { view: params.view } : {}), ktab }}
         views={COMPUTED_VIEWS}
         currentView={view}
         displayMode="kanban"
-        bodyOverride={<KanbanBoard columns={columns} entity="accounts" fieldKey="clientStatus" />}
+        bodyOverride={<KanbanBoard columns={columns} entity="accounts" fieldKey="ownerId" groupTabs={groupTabs} />}
         massConfig={{
           entity: "account",
           statusField: "recordType",

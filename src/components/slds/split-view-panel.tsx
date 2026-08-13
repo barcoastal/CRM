@@ -41,6 +41,10 @@ export function SplitViewPanel({ entity }: { entity: string }) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [menuOpen, setMenuOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
+  const [viewsOpen, setViewsOpen] = useState(false);
+  const [views, setViews] = useState<Array<{ value: string; label: string }>>([]);
+  const [viewQ, setViewQ] = useState("");
+  const [view, setView] = useState("recent");
 
   useEffect(() => {
     const consoleMode = window.localStorage.getItem("sf:navMode.v1") !== "standard";
@@ -48,11 +52,12 @@ export function SplitViewPanel({ entity }: { entity: string }) {
     setReady(true);
     setOpen(window.localStorage.getItem(COLLAPSE_KEY) !== "closed");
     setPinned(window.localStorage.getItem(`${COLLAPSE_KEY}:pin`) === "1");
+    setView(window.localStorage.getItem(`${COLLAPSE_KEY}:view:${param}`) ?? "recent");
   }, [param]);
 
-  const load = () => {
+  const load = (v = view) => {
     if (!param) return;
-    fetch(`/api/split-list?entity=${param}`)
+    fetch(`/api/split-list?entity=${param}&view=${encodeURIComponent(v)}`)
       .then((r) => (r.ok ? r.json() : { rows: [] }))
       .then((d: { rows?: SplitRow[] }) => {
         setRows(d.rows ?? []);
@@ -64,8 +69,12 @@ export function SplitViewPanel({ entity }: { entity: string }) {
   useEffect(() => {
     if (!ready || !open) return;
     load();
+    fetch(`/api/split-list?entity=${param}&views=1`)
+      .then((r2) => (r2.ok ? r2.json() : { views: [] }))
+      .then((d: { views?: Array<{ value: string; label: string }> }) => setViews(d.views ?? []))
+      .catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, open, param]);
+  }, [ready, open, param, view]);
 
   const visible = useMemo(() => {
     const n = q.trim().toLowerCase();
@@ -144,9 +153,93 @@ export function SplitViewPanel({ entity }: { entity: string }) {
                   <use xlinkHref={`/slds/icons/standard-sprite/svg/symbols.svg#${entity.toLowerCase()}`} />
                 </svg>
               </span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: "#181818", flex: 1 }}>
-                Recently Viewed
-              </span>
+              <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+                <button
+                  onClick={() => setViewsOpen((v) => !v)}
+                  style={{
+                    background: "transparent",
+                    border: 0,
+                    padding: 0,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: "#181818",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    maxWidth: "100%",
+                  }}
+                >
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {views.find((v) => v.value === view)?.label ?? "Recently Viewed"}
+                  </span>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="#747474" aria-hidden="true" style={{ flexShrink: 0 }}>
+                    <path d="M0 2.5l5 5 5-5z" />
+                  </svg>
+                </button>
+                {viewsOpen && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 26,
+                      left: 0,
+                      zIndex: 45,
+                      background: "#fff",
+                      border: "1px solid #c9c9c9",
+                      borderRadius: 4,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                      width: 260,
+                      maxHeight: 320,
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <div style={{ padding: 8 }}>
+                      <input
+                        value={viewQ}
+                        onChange={(e) => setViewQ(e.target.value)}
+                        placeholder="Search lists..."
+                        autoFocus
+                        style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 13, boxSizing: "border-box" }}
+                      />
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#444444", padding: "2px 12px 4px" }}>
+                      Recent List Views
+                    </div>
+                    <div style={{ overflowY: "auto" }}>
+                      {views
+                        .filter((v) => !viewQ.trim() || v.label.toLowerCase().includes(viewQ.trim().toLowerCase()))
+                        .map((v) => (
+                          <button
+                            key={v.value}
+                            onClick={() => {
+                              setView(v.value);
+                              window.localStorage.setItem(`${COLLAPSE_KEY}:view:${param}`, v.value);
+                              setViewsOpen(false);
+                              setViewQ("");
+                            }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              width: "100%",
+                              textAlign: "left",
+                              padding: "6px 12px",
+                              fontSize: 13,
+                              color: "#181818",
+                              background: v.value === view ? "#f3f3f3" : "transparent",
+                              border: 0,
+                              cursor: "pointer",
+                            }}
+                          >
+                            <span style={{ width: 12 }}>{v.value === view ? "✓" : ""}</span>
+                            {v.label}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={togglePin}
                 title={pinned ? "Unpin list" : "Pin list"}
@@ -188,6 +281,19 @@ export function SplitViewPanel({ entity }: { entity: string }) {
                     }}
                   >
                     <Link
+                      href={`/${param}/new`}
+                      onClick={() => setMenuOpen(false)}
+                      style={{ display: "block", padding: "7px 14px", fontSize: 13, color: "#181818", textDecoration: "none" }}
+                    >
+                      New
+                    </Link>
+                    <button
+                      onClick={() => setMenuOpen(false)}
+                      style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 14px", fontSize: 13, color: "#747474", background: "transparent", border: 0, cursor: "default" }}
+                    >
+                      Import
+                    </button>
+                    <Link
                       href={`/${param}`}
                       onClick={() => setMenuOpen(false)}
                       style={{ display: "block", padding: "7px 14px", fontSize: 13, color: "#181818", textDecoration: "none" }}
@@ -221,7 +327,7 @@ export function SplitViewPanel({ entity }: { entity: string }) {
                   ? ` · Updated ${refreshedAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`
                   : ""}
               </span>
-              <button onClick={load} title="Refresh" style={iconBtn}>
+              <button onClick={() => load()} title="Refresh" style={iconBtn}>
                 <svg width="12" height="12" viewBox="0 0 52 52" fill="currentColor" aria-hidden="true">
                   <path d="M26 9c-9.4 0-17 7.6-17 17 0 1.7.3 3.4.8 5l-3.5-2c-.4-.2-.9-.1-1.2.3l-1 1.5c-.3.4-.2.9.2 1.2l7 4.1c.5.3 1.1.1 1.4-.3l4.1-7c.3-.5.1-1.1-.3-1.4l-1.5-1c-.4-.3-.9-.2-1.2.2l-1.7 2.5c-.3-1.4-.4-2.7-.4-4.1 0-7.1 5.8-12.9 12.9-12.9 4.1 0 7.7 1.9 10.1 4.9.4.4 1 .5 1.4.1l1.5-1.3c.4-.4.4-1 0-1.4C36.2 11.6 31.4 9 26 9zm17.7 21.2l-7-4.1c-.5-.3-1.1-.1-1.4.3l-4.1 7c-.3.5-.1 1.1.3 1.4l1.5 1c.4.3 1 .2 1.2-.2l1.6-2.4c.3 1.3.4 2.5.4 3.8 0 7.1-5.8 12.9-12.9 12.9-4.1 0-7.7-1.9-10.1-4.9-.4-.4-1-.5-1.4-.1l-1.5 1.3c-.4.4-.4 1 0 1.4 3 3.7 7.8 6.3 13.2 6.3 9.4 0 17-7.6 17-17 0-1.7-.3-3.4-.8-4.9l3.5 2c.4.2.9.1 1.2-.3l1-1.5c.4-.4.3-1-.1-1.2z" />
                 </svg>
