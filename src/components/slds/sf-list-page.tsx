@@ -58,6 +58,10 @@ export interface SfListPageProps {
   count: number;
   /** true when `count` is a capped probe (display "2,000+" like SF) */
   countCapped?: boolean;
+  /** current display mode; when set, a Table/Kanban switcher renders */
+  displayMode?: "table" | "kanban";
+  /** replaces the table body (kanban board) */
+  bodyOverride?: React.ReactNode;
   /** background hex for the icon tile (e.g. "#f88962" for Lead orange) */
   iconColor?: string;
   /** SLDS standard icon slug, e.g. "lead", "opportunity" */
@@ -96,6 +100,8 @@ export function SfListPage(props: SfListPageProps) {
     subtitle,
     count,
     countCapped,
+    displayMode,
+    bodyOverride,
     iconColor,
     iconSlug,
     actions,
@@ -150,6 +156,48 @@ export function SfListPage(props: SfListPageProps) {
           currentView={currentView}
         />
 
+        {displayMode && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 4,
+              background: "#fff",
+              border: "1px solid #c9c9c9",
+              borderBottom: "none",
+              padding: "6px 12px 0",
+            }}
+          >
+            {(["table", "kanban"] as const).map((m) => (
+              <a
+                key={m}
+                href={buildHref(pathname, preservedParams, {
+                  search: searchQuery || undefined,
+                  sort: sortKey || undefined,
+                  dir: sortKey ? sortDir : undefined,
+                  display: m === "table" ? undefined : m,
+                })}
+                title={m === "table" ? "Table view" : "Kanban view"}
+                style={{
+                  padding: "4px 12px",
+                  borderRadius: 4,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  background: displayMode === m ? "#0176d3" : "#fff",
+                  color: displayMode === m ? "#fff" : "#0176d3",
+                  border: "1px solid #c9c9c9",
+                }}
+              >
+                {m === "table" ? "Table" : "Kanban"}
+              </a>
+            ))}
+          </div>
+        )}
+        {bodyOverride ? (
+          bodyOverride
+        ) : (
+        <>
         <div
           style={{
             background: "#fff",
@@ -405,6 +453,8 @@ export function SfListPage(props: SfListPageProps) {
               <PagerLink href={pageHref(pageNum + 1)} disabled={pageNum >= totalPages} label="Next ›" />
             </div>
           </div>
+        )}
+        </>
         )}
 
         <style>{`

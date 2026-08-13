@@ -9,6 +9,7 @@ import {
 } from "@/components/slds/sf-list-page";
 import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
 import { InlineEditCell } from "@/components/lists/inline-edit-cell";
+import { KanbanBoard } from "@/components/lists/kanban-board";
 import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
 
 // Display labels for opportunity stages — match SF screenshots which show
@@ -35,6 +36,7 @@ interface OpportunitiesPageProps {
     dir?: string;
     view?: string;
     page?: string;
+    display?: string;
   }>;
 }
 
@@ -128,6 +130,67 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
       const key = Object.keys(SORT_MAP[sort])[0] as keyof Prisma.OpportunityOrderByWithRelationInput;
       orderBy = { [key]: dir } as Prisma.OpportunityOrderByWithRelationInput;
     }
+  }
+
+  if (params.display === "kanban") {
+    const stageGroups = await prisma.opportunity.groupBy({
+      by: ["stage"],
+      where,
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" } },
+      take: 9,
+    });
+    const columns = await Promise.all(
+      stageGroups.map(async (g) => {
+        const cards = await prisma.opportunity.findMany({
+          where: { ...where, stage: g.stage },
+          orderBy: { updatedAt: "desc" },
+          take: 12,
+          select: { id: true, name: true, currentTotalDebt: true, account: { select: { name: true } } },
+        });
+        return {
+          value: g.stage,
+          label: g.stage.replace(/_/g, " "),
+          count: g._count.id,
+          cards: cards.map((o) => ({
+            id: o.id,
+            title: o.name ?? "(unnamed)",
+            sub: o.account?.name ?? null,
+            amount: o.currentTotalDebt != null ? `$${o.currentTotalDebt.toLocaleString()}` : null,
+            href: `/opportunities/${o.id}`,
+          })),
+        };
+      }),
+    );
+    return (
+      <SfListPage
+        entity="opportunity"
+        title="Opportunities"
+        subtitle={VIEWS.find((v) => v.value === view)?.label ?? "Recently Viewed"}
+        count={columns.reduce((s2, c) => s2 + c.count, 0)}
+        iconColor="#fcb95b"
+        iconSlug="opportunity"
+        actions={[{ label: "New" }]}
+        columns={COLUMNS}
+        rows={[]}
+        pathname="/opportunities"
+        searchQuery={search}
+        preservedParams={{ ...(params.view ? { view: params.view } : {}) }}
+        views={VIEWS}
+        currentView={view}
+        displayMode="kanban"
+        bodyOverride={<KanbanBoard columns={columns} entity="opportunities" fieldKey="stage" />}
+        massConfig={{
+          entity: "opportunity",
+          statusField: "stage",
+          statusLabel: "Stage",
+          statusOptions: OPPORTUNITY_STAGES.map((s2) => ({
+            value: s2,
+            label: s2.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          })),
+        }}
+      />
+    );
   }
 
   // Per-rep owner views (SF per-person lists) - searchable in the picker.
@@ -254,6 +317,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
       title="Opportunities"
       subtitle={subtitle}
       count={total}
+      displayMode="table"
       iconColor="#fcb95b"
       iconSlug="opportunity"
       actions={[

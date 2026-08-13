@@ -8,6 +8,7 @@ import {
 } from "@/components/slds/sf-list-page";
 import { LEAD_STATUSES } from "@/lib/validations/lead";
 import { InlineEditCell } from "@/components/lists/inline-edit-cell";
+import { KanbanBoard } from "@/components/lists/kanban-board";
 import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
 
 interface LeadsPageProps {
@@ -21,6 +22,7 @@ interface LeadsPageProps {
     sort?: string;
     dir?: string;
     view?: string;
+    display?: string;
   }>;
 }
 
@@ -141,6 +143,67 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     }
   }
 
+  const display = params.display === "kanban" ? "kanban" : "table";
+
+  if (display === "kanban") {
+    // Board columns = the top real statuses under the current filters.
+    const statusGroups = await prisma.lead.groupBy({
+      by: ["status"],
+      where,
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" } },
+      take: 8,
+    });
+    const columns = await Promise.all(
+      statusGroups.map(async (g) => {
+        const cards = await prisma.lead.findMany({
+          where: { ...where, status: g.status },
+          orderBy: { updatedAt: "desc" },
+          take: 12,
+          select: { id: true, contactName: true, businessName: true, totalDebtEst: true },
+        });
+        return {
+          value: g.status,
+          label: g.status,
+          count: g._count.id,
+          cards: cards.map((l) => ({
+            id: l.id,
+            title: l.contactName || l.businessName || "(no name)",
+            sub: l.businessName,
+            amount: l.totalDebtEst ? `$${l.totalDebtEst.toLocaleString()}` : null,
+            href: `/leads/${l.id}`,
+          })),
+        };
+      }),
+    );
+    return (
+      <SfListPage
+        entity="lead"
+        title="Leads"
+        subtitle={VIEWS.find((v) => v.value === view)?.label ?? "Recently Viewed"}
+        count={columns.reduce((s2, c) => s2 + c.count, 0)}
+        iconColor="#f88962"
+        iconSlug="lead"
+        actions={[{ label: "New", href: "/leads/new" }]}
+        columns={COLUMNS}
+        rows={[]}
+        pathname="/leads"
+        searchQuery={search}
+        preservedParams={{ ...(params.view ? { view: params.view } : {}) }}
+        views={VIEWS}
+        currentView={view}
+        displayMode="kanban"
+        bodyOverride={<KanbanBoard columns={columns} entity="leads" fieldKey="status" />}
+        massConfig={{
+          entity: "lead",
+          statusField: "status",
+          statusLabel: "Status",
+          statusOptions: LEAD_STATUSES.map((s2) => ({ value: s2, label: s2 })),
+        }}
+      />
+    );
+  }
+
   // Per-rep owner views (SF per-person lists) - searchable in the picker.
   const ownerUsers = await prisma.user.findMany({
     where: { isActive: true },
@@ -252,6 +315,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       subtitle={subtitle}
       count={total}
       countCapped={countCapped}
+      displayMode="table"
       iconColor="#f88962"
       iconSlug="lead"
       actions={[

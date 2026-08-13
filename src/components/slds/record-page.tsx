@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ObjectHeader, type ObjectHeaderField } from "./object-header";
 import { Path, type PathStage, type PathAdvance } from "./path";
 import { RegisterConsoleTab } from "@/components/slds/console-nav";
+import { SplitViewPanel } from "@/components/slds/split-view-panel";
 
 /**
  * Canonical SF Lightning record-page layout:
@@ -42,7 +43,9 @@ export function RecordPage({
   rail?: ReactNode;
 }) {
   return (
-    <div>
+    <div style={{ display: "flex", alignItems: "flex-start" }}>
+      <SplitViewPanel entity={entity} />
+      <div style={{ flex: 1, minWidth: 0 }}>
       {/* SF record pages sit the header + path on a light-blue textured
           backdrop (the Lightning "header image"). The band bleeds to the
           page edges (negative margin over the 12px page padding). */}
@@ -79,6 +82,7 @@ export function RecordPage({
       >
         <div>{details}</div>
         {rail && <div>{rail}</div>}
+      </div>
       </div>
     </div>
   );
