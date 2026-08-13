@@ -12,6 +12,28 @@ import { isVictoryCreditor } from "@/lib/creditor-agreements";
  * meets that are not on the list.
  */
 
+type SortKey = "name" | "aka" | "legal" | "risk" | "flags" | "venue" | "notes";
+
+const COLUMNS: Array<{ key: SortKey; label: string }> = [
+  { key: "name", label: "Lender" },
+  { key: "aka", label: "AKA / DBA" },
+  { key: "legal", label: "Legal" },
+  { key: "risk", label: "Risk" },
+  { key: "flags", label: "Flags" },
+  { key: "venue", label: "Sues in" },
+  { key: "notes", label: "Notes" },
+];
+
+const DEFAULT_WIDTHS: Record<string, number> = {
+  name: 220,
+  aka: 180,
+  legal: 90,
+  risk: 60,
+  flags: 130,
+  venue: 110,
+  notes: 420,
+};
+
 const legalOf = (l: DbLender): "Victory" | "Citadel" =>
   (l.legal as "Victory" | "Citadel" | null) ?? (isVictoryCreditor(l.name) ? "Victory" : "Citadel");
 
@@ -23,10 +45,49 @@ export function LendersDirectory() {
   const [onlyTro, setOnlyTro] = useState(false);
   const [legal, setLegal] = useState("");
   const [editing, setEditing] = useState<DbLender | "new" | null>(null);
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "name", dir: 1 });
+  const [widths, setWidths] = useState<Record<string, number>>(() => {
+    if (typeof window === "undefined") return DEFAULT_WIDTHS;
+    try {
+      const raw = window.localStorage.getItem("sf:lenderCols.v1");
+      return raw ? { ...DEFAULT_WIDTHS, ...(JSON.parse(raw) as Record<string, number>) } : DEFAULT_WIDTHS;
+    } catch {
+      return DEFAULT_WIDTHS;
+    }
+  });
+  const dragRef = { current: null as null | { key: string; startX: number; startW: number } };
+
+  const startResize = (key: string) => (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const start = { key, startX: e.clientX, startW: widths[key] ?? DEFAULT_WIDTHS[key] ?? 120 };
+    const onMove = (ev: PointerEvent) => {
+      const w = Math.max(50, start.startW + (ev.clientX - start.startX));
+      setWidths((prev) => {
+        const next = { ...prev, [key]: w };
+        try {
+          window.localStorage.setItem("sf:lenderCols.v1", JSON.stringify(next));
+        } catch {
+          // ignore quota errors
+        }
+        return next;
+      });
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    void dragRef;
+  };
+
+  const toggleSort = (key: SortKey) =>
+    setSort((s) => (s.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
 
   const rows = useMemo(() => {
     const n = q.trim().toLowerCase();
-    return lenders.filter((l) => {
+    const filtered = lenders.filter((l) => {
       if (n && !`${l.name} ${l.aka ?? ""} ${l.notes ?? ""}`.toLowerCase().includes(n)) return false;
       if (risk && String(l.lienRiskLevel ?? "") !== risk) return false;
       if (onlyCoj && !l.coj) return false;
@@ -34,7 +95,25 @@ export function LendersDirectory() {
       if (legal && legalOf(l) !== legal) return false;
       return true;
     });
-  }, [lenders, q, risk, onlyCoj, onlyTro, legal]);
+    const val = (l: DbLender): string | number => {
+      switch (sort.key) {
+        case "name": return l.name.toLowerCase();
+        case "aka": return (l.aka ?? "").toLowerCase();
+        case "legal": return legalOf(l);
+        case "risk": return l.lienRiskLevel ?? 99;
+        case "flags": return (l.coj ? 2 : 0) + (l.tro ? 1 : 0);
+        case "venue": return (l.venue ?? "").toLowerCase() || "zzz";
+        case "notes": return (l.notes ?? "").toLowerCase() || "zzz";
+      }
+    };
+    return [...filtered].sort((a, b) => {
+      const va = val(a);
+      const vb = val(b);
+      if (va < vb) return -1 * sort.dir;
+      if (va > vb) return 1 * sort.dir;
+      return a.name.localeCompare(b.name);
+    });
+  }, [lenders, q, risk, onlyCoj, onlyTro, legal, sort]);
 
   const riskChip = (level?: number | null) => {
     if (!level) return null;
@@ -110,23 +189,49 @@ export function LendersDirectory() {
       </div>
 
       <div style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, tableLayout: "fixed" }}>
           <thead>
             <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
-              <th style={th}>Lender</th>
-              <th style={th}>AKA / DBA</th>
-              <th style={{ ...th, width: 80 }}>Legal</th>
-              <th style={{ ...th, width: 60 }}>Risk</th>
-              <th style={{ ...th, width: 120 }}>Flags</th>
-              <th style={{ ...th, width: 110 }}>Sues in</th>
-              <th style={th}>Notes</th>
+              {COLUMNS.map((c) => (
+                <th key={c.key} style={{ ...th, width: widths[c.key], position: "relative" }}>
+                  <button
+                    onClick={() => toggleSort(c.key)}
+                    style={{
+                      background: "none",
+                      border: 0,
+                      padding: 0,
+                      font: "inherit",
+                      color: "inherit",
+                      textTransform: "inherit",
+                      letterSpacing: "inherit",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {c.label}
+                    {sort.key === c.key && <span style={{ marginLeft: 4 }}>{sort.dir === 1 ? "▲" : "▼"}</span>}
+                  </button>
+                  <span
+                    onPointerDown={startResize(c.key)}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      right: -3,
+                      width: 7,
+                      height: "100%",
+                      cursor: "col-resize",
+                      zIndex: 2,
+                    }}
+                  />
+                </th>
+              ))}
               {canEdit && <th style={{ ...th, width: 60 }} />}
             </tr>
           </thead>
           <tbody>
             {rows.map((l) => (
               <tr key={l.id} style={{ borderBottom: "1px solid #f3f3f3", verticalAlign: "top" }}>
-                <td style={{ ...td, fontWeight: 600, whiteSpace: "nowrap" }}>
+                <td style={{ ...td, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
                   {l.name}
                   {l.source === "CONTRACT_ANALYSIS" && (
                     <span title="Added automatically by the contract analyzer" style={{ marginLeft: 6, fontSize: 10, color: "#3052FF", fontWeight: 700 }}>
@@ -150,7 +255,7 @@ export function LendersDirectory() {
                   </span>
                 </td>
                 <td style={td}>{riskChip(l.lienRiskLevel)}</td>
-                <td style={{ ...td, whiteSpace: "nowrap" }}>
+                <td style={{ ...td, overflow: "hidden" }}>
                   {l.coj && warn("COJ")}
                   {l.tro && warn("TRO")}
                   {l.plaidFinicity && (
