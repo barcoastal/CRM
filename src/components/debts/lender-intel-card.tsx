@@ -1,6 +1,7 @@
 "use client";
 
 import { findLenderIntel } from "@/lib/lender-intel";
+import { isVictoryCreditor } from "@/lib/creditor-agreements";
 
 /**
  * Intel card shown beside the creditor picker (and inside the contract
@@ -9,6 +10,8 @@ import { findLenderIntel } from "@/lib/lender-intel";
 export function LenderIntelCard({ lenderName }: { lenderName: string | null | undefined }) {
   const intel = findLenderIntel(lenderName);
   if (!intel) return null;
+  const legal =
+    isVictoryCreditor(intel.name) || isVictoryCreditor(lenderName ?? "") ? "Victory" : "Citadel";
 
   const risk = intel.lienRiskLevel;
   const riskStyle =
@@ -73,6 +76,18 @@ export function LenderIntelCard({ lenderName }: { lenderName: string | null | un
             Plaid/Finicity
           </span>
         )}
+        <span
+          style={{
+            padding: "1px 10px",
+            borderRadius: 10,
+            background: legal === "Victory" ? "#eaf5ec" : "#eef1f8",
+            color: legal === "Victory" ? "#2e844a" : "#3052FF",
+            fontSize: 11,
+            fontWeight: 700,
+          }}
+        >
+          Legal: {legal}
+        </span>
         {intel.venue && <span style={{ color: "#444444" }}>Sues in: {intel.venue}</span>}
       </div>
       {intel.notes && <div style={{ color: "#181818", lineHeight: 1.5 }}>{intel.notes}</div>}

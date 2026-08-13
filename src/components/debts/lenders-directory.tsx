@@ -1,7 +1,44 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LENDER_INTEL } from "@/lib/lender-intel";
+import { LENDER_INTEL, type LenderIntel } from "@/lib/lender-intel";
+import { KNOWN_CREDITORS } from "@/lib/creditors";
+import { isVictoryCreditor } from "@/lib/creditor-agreements";
+
+const normName = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9 ]/g, "");
+
+interface DirectoryRow extends LenderIntel {
+  legal: "Victory" | "Citadel";
+  hasIntel: boolean;
+}
+
+// Full directory: every lender from the intel sheet PLUS the main creditors
+// list (309), deduped by exact name/alias. Legal = the agreement this lender
+// routes to (VLP tab -> Victory, everyone else -> Citadel).
+function buildDirectory(): DirectoryRow[] {
+  const covered = new Set<string>();
+  const rows: DirectoryRow[] = [];
+  for (const l of LENDER_INTEL) {
+    covered.add(normName(l.name));
+    for (const a of (l.aka ?? "").split("/")) {
+      const na = normName(a);
+      if (na) covered.add(na);
+    }
+    rows.push({
+      ...l,
+      hasIntel: true,
+      legal: isVictoryCreditor(l.name) || (l.aka ?? "").split("/").some((a) => isVictoryCreditor(a.trim())) ? "Victory" : "Citadel",
+    });
+  }
+  for (const name of KNOWN_CREDITORS) {
+    if (covered.has(normName(name))) continue;
+    covered.add(normName(name));
+    rows.push({ name, hasIntel: false, legal: isVictoryCreditor(name) ? "Victory" : "Citadel" });
+  }
+  return rows.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+const DIRECTORY = buildDirectory();
 
 /** Full lender intel sheet as a searchable, filterable directory page. */
 export function LendersDirectory() {
@@ -9,17 +46,19 @@ export function LendersDirectory() {
   const [risk, setRisk] = useState("");
   const [onlyCoj, setOnlyCoj] = useState(false);
   const [onlyTro, setOnlyTro] = useState(false);
+  const [legal, setLegal] = useState("");
 
   const rows = useMemo(() => {
     const n = q.trim().toLowerCase();
-    return LENDER_INTEL.filter((l) => {
+    return DIRECTORY.filter((l) => {
       if (n && !`${l.name} ${l.aka ?? ""} ${l.notes ?? ""}`.toLowerCase().includes(n)) return false;
       if (risk && String(l.lienRiskLevel ?? "") !== risk) return false;
       if (onlyCoj && !l.coj) return false;
       if (onlyTro && !l.tro) return false;
+      if (legal && l.legal !== legal) return false;
       return true;
     });
-  }, [q, risk, onlyCoj, onlyTro]);
+  }, [q, risk, onlyCoj, onlyTro, legal]);
 
   const riskChip = (level?: 1 | 2 | 3) => {
     if (!level) return null;
@@ -53,7 +92,7 @@ export function LendersDirectory() {
         }}
       >
         <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#181818" }}>
-          Lenders ({rows.length}{rows.length !== LENDER_INTEL.length ? ` of ${LENDER_INTEL.length}` : ""})
+          Lenders ({rows.length}{rows.length !== DIRECTORY.length ? ` of ${DIRECTORY.length}` : ""})
         </h1>
         <p style={{ margin: "4px 0 10px", fontSize: 13, color: "#747474" }}>
           The lender intel sheet: risk level, COJ / TRO exposure, venue and negotiation notes.
@@ -66,6 +105,11 @@ export function LendersDirectory() {
             placeholder="Search lender, alias or note..."
             style={{ height: 32, padding: "0 10px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 13, width: 280 }}
           />
+          <select value={legal} onChange={(e) => setLegal(e.target.value)} style={{ height: 32, padding: "0 8px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 13, background: "#fff" }}>
+            <option value="">All legal</option>
+            <option value="Victory">Victory</option>
+            <option value="Citadel">Citadel</option>
+          </select>
           <select value={risk} onChange={(e) => setRisk(e.target.value)} style={{ height: 32, padding: "0 8px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 13, background: "#fff" }}>
             <option value="">All risk levels</option>
             <option value="1">Risk 1 - works with us</option>
@@ -87,6 +131,7 @@ export function LendersDirectory() {
             <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
               <th style={th}>Lender</th>
               <th style={th}>AKA / DBA</th>
+              <th style={{ ...th, width: 80 }}>Legal</th>
               <th style={{ ...th, width: 60 }}>Risk</th>
               <th style={{ ...th, width: 110 }}>Flags</th>
               <th style={{ ...th, width: 110 }}>Sues in</th>
@@ -98,6 +143,20 @@ export function LendersDirectory() {
               <tr key={l.name} style={{ borderBottom: "1px solid #f3f3f3", verticalAlign: "top" }}>
                 <td style={{ ...td, fontWeight: 600, whiteSpace: "nowrap" }}>{l.name}</td>
                 <td style={{ ...td, color: "#747474" }}>{l.aka ?? ""}</td>
+                <td style={td}>
+                  <span
+                    style={{
+                      padding: "1px 10px",
+                      borderRadius: 10,
+                      background: l.legal === "Victory" ? "#eaf5ec" : "#eef1f8",
+                      color: l.legal === "Victory" ? "#2e844a" : "#3052FF",
+                      fontSize: 11,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {l.legal}
+                  </span>
+                </td>
                 <td style={td}>{riskChip(l.lienRiskLevel)}</td>
                 <td style={{ ...td, whiteSpace: "nowrap" }}>
                   {l.coj && warn("COJ")}
@@ -114,7 +173,7 @@ export function LendersDirectory() {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ padding: 24, textAlign: "center", color: "#747474" }}>
+                <td colSpan={7} style={{ padding: 24, textAlign: "center", color: "#747474" }}>
                   No lenders match.
                 </td>
               </tr>
