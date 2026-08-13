@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreditorCombobox } from "@/components/debts/creditor-combobox";
 import { DebtAnalysisDrawer } from "@/components/debts/debt-analysis-drawer";
+import { LenderIntelCard } from "@/components/debts/lender-intel-card";
+import { findLenderIntel } from "@/lib/lender-intel";
 import type { ContractAnalysisData } from "@/components/documents/analysis-body";
 
 export type OppDebtRow = {
@@ -244,6 +246,7 @@ export function OppDebtInformation({
               <td style={td}>
                 <span style={{ color: "#747474", marginRight: 8 }}>{i + 1}</span>
                 {d.creditorName}
+                <RowIntel name={d.creditorName} />
                 {d.analysis && (
                   <button
                     onClick={() => setDrawerDebt(d)}
@@ -296,6 +299,7 @@ export function OppDebtInformation({
                   placeholder="Search creditor…"
                   style={inputStyle}
                 />
+                <LenderIntelCard lenderName={form.creditorName} />
               </td>
               <td style={td}>
                 <select value={form.debtType} onChange={(e) => setForm({ ...form, debtType: e.target.value })} style={inputStyle}>
@@ -390,5 +394,25 @@ export function OppDebtInformation({
         analysis={drawerDebt?.analysis ?? null}
       />
     </div>
+  );
+}
+
+function RowIntel({ name }: { name: string }) {
+  // Small inline risk marker on saved debt rows; full card shows in the form.
+  const intel = findLenderIntel(name);
+  if (!intel?.lienRiskLevel) return null;
+  const color = intel.lienRiskLevel === 1 ? "#2e844a" : intel.lienRiskLevel === 2 ? "#8c5f10" : "#c23934";
+  const parts = [
+    `Risk ${intel.lienRiskLevel}`,
+    intel.coj ? "COJ" : null,
+    intel.tro ? "TRO" : null,
+  ].filter(Boolean);
+  return (
+    <span
+      title={intel.notes ?? undefined}
+      style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color }}
+    >
+      {parts.join(" · ")}
+    </span>
   );
 }

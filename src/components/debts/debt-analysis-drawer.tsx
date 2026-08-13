@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnalysisBody, type ContractAnalysisData } from "@/components/documents/analysis-body";
+import { LenderIntelCard } from "@/components/debts/lender-intel-card";
 
 /**
  * Slide-out panel (from the right) showing the contract analysis attached to
@@ -82,6 +83,8 @@ export function DebtAnalysisDrawer({
           </button>
         </header>
         <div style={{ padding: 18, overflowY: "auto" }}>
+          <LenderIntelCard lenderName={creditorName} />
+          <div style={{ height: 10 }} />
           {analysis ? (
             <AnalysisBody analysis={analysis} />
           ) : (
