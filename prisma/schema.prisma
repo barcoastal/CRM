@@ -1957,16 +1957,18 @@ model EmailMessage {
   // conversation. subjectNorm = lowercased subject with re:/fwd: prefixes
   // stripped, used for fallback thread matching. messageIdHeader / inReplyTo
   // carry RFC 5322 ids (inbound gives us both; outbound Resend sends get
-  // inReplyTo when composed as a reply). readAt = when the owner opened it.
+  // inReplyTo when composed as a reply).
+  // threadId is a plain thread key (no FK relation) on purpose: the root
+  // message may be deleted without breaking the rest of the conversation.
   threadId        String?
   subjectNorm     String?
   messageIdHeader String?
   inReplyTo       String?
-  readAt          DateTime?
+  readAt          DateTime? // inbox mark-read action (distinct from openedAt, which tracks recipient pixel fires)
 
-  @@index([threadId])
+  @@index([threadId, createdAt])
   @@index([subjectNorm])
-  @@index([ownerId])
+  @@index([ownerId, direction])
   @@index([status])
   @@index([direction])
   @@index([accountId])
