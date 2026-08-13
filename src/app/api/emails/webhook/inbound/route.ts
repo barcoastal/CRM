@@ -27,6 +27,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
+import { extractEmails, normalizeMessageId, normalizeSubject, prismaThreadFinders, resolveThreadId } from "@/lib/email/threading";
 
 function verifySvix(rawBody: string, headers: Headers): boolean {
   const secret = process.env.RESEND_WEBHOOK_SECRET;
@@ -78,11 +79,21 @@ export async function POST(req: NextRequest) {
     prisma.opportunity.findFirst({ where: { oppEmail: { equals: fromEmail, mode: "insensitive" } }, select: { id: true, assignedToId: true } }),
   ]);
 
-  // Owner = the related entity's owner if available, else first ADMIN-role user
+  // Owner priority: 1) the user whose mailboxAddress is in to/cc,
+  // 2) the related record's owner, 3) an admin catch-all, 4) any user.
+  const recipientEmails = [...toArr, ...ccArr].flatMap((r) => extractEmails(r));
+  const mailboxUser = recipientEmails.length
+    ? await prisma.user.findFirst({
+        where: { mailboxAddress: { in: recipientEmails, mode: "insensitive" }, isActive: true },
+        select: { id: true },
+      })
+    : null;
+
   let ownerId: string | null =
+    mailboxUser?.id ??
     lead?.assignedToId ?? contact?.ownerId ?? account?.ownerId ?? opp?.assignedToId ?? null;
   if (!ownerId) {
-    const admin = await prisma.user.findFirst({ where: { role: { in: ["ADMIN", "MANAGER"] } }, select: { id: true } });
+    const admin = await prisma.user.findFirst({ where: { role: { in: ["SUPER_ADMIN", "ADMIN", "MANAGER"] } }, select: { id: true } });
     ownerId = admin?.id ?? null;
   }
   // Last resort: any user
@@ -100,8 +111,12 @@ export async function POST(req: NextRequest) {
     });
     if (existing) return NextResponse.json({ ok: true, id: existing.id, dedup: true });
   }
-  void inReplyTo; // schema doesn't carry a thread parent yet
   void receivedAt; // EmailMessage uses createdAt as the received timestamp
+
+  const threadId = await resolveThreadId(
+    { inReplyTo: inReplyTo || null, subject, counterpartyEmails: [fromEmail] },
+    prismaThreadFinders(),
+  );
 
   const created = await prisma.emailMessage.create({
     data: {
@@ -120,9 +135,18 @@ export async function POST(req: NextRequest) {
       accountId: account?.id ?? null,
       opportunityId: opp?.id ?? null,
       ownerId,
+      subjectNorm: normalizeSubject(subject),
+      messageIdHeader: messageId ? normalizeMessageId(messageId) : null,
+      inReplyTo: inReplyTo ? normalizeMessageId(inReplyTo) : null,
+      threadId,
     },
-    select: { id: true },
+    select: { id: true, threadId: true },
   });
 
-  return NextResponse.json({ ok: true, id: created.id, matched: { lead: !!lead, contact: !!contact, account: !!account, opportunity: !!opp } });
+  // A brand new conversation threads to itself.
+  if (!created.threadId) {
+    await prisma.emailMessage.update({ where: { id: created.id }, data: { threadId: created.id } });
+  }
+
+  return NextResponse.json({ ok: true, id: created.id, matched: { lead: !!lead, contact: !!contact, account: !!account, opportunity: !!opp, mailbox: !!mailboxUser } });
 }
