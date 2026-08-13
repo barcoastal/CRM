@@ -228,30 +228,56 @@ export async function GET(request: NextRequest) {
       prisma.opportunity.count({ where: oppWhere }),
     ]);
 
-    // Format leads + opps donuts
-    const leadsByStatus = leadsByStatusRaw
-      .map((row) => ({ label: row.status, count: row._count.id }))
-      .sort((a, b) => b.count - a.count);
+    // Cap chart categories: the Lead table carries 59 distinct statuses
+    // (including junk fragments), which renders as an unreadable smear.
+    // Keep the top N and fold the tail into "Other".
+    function topN<T extends { label: string; count: number; amount?: number }>(
+      rows: T[],
+      n = 8,
+    ): T[] {
+      const sorted = [...rows].sort((a, b) => b.count - a.count);
+      if (sorted.length <= n) return sorted;
+      const head = sorted.slice(0, n);
+      const tail = sorted.slice(n);
+      const other = {
+        ...tail[0],
+        label: `Other (${tail.length})`,
+        count: tail.reduce((s2, r) => s2 + r.count, 0),
+        amount: tail.reduce((s2, r) => s2 + (r.amount ?? 0), 0),
+      };
+      return [...head, other];
+    }
 
-    const oppsByStage = collapseStages(
-      oppsByStageRaw.map((row) => ({ label: row.stage, count: row._count.id })),
-    ).map(({ label, count }) => ({ label, count }));
+    // Format leads + opps donuts
+    const leadsByStatus = topN(
+      leadsByStatusRaw.map((row) => ({ label: row.status, count: row._count.id })),
+    );
+
+    const oppsByStage = topN(
+      collapseStages(
+        oppsByStageRaw.map((row) => ({ label: row.stage, count: row._count.id })),
+      ).map(({ label, count }) => ({ label, count })),
+      10,
+    );
 
     // Leads bar (count + debt)
-    const leadsBar = leadAmountByStatusRaw
-      .map((row) => ({
+    const leadsBar = topN(
+      leadAmountByStatusRaw.map((row) => ({
         label: row.status,
         count: row._count.id,
         amount: row._sum.totalDebtEst ?? 0,
-      }))
-      .sort((a, b) => b.count - a.count);
-
-    const oppsBar = collapseStages(
-      oppAmountByStageRaw.map((row) => ({
-        label: row.stage,
-        count: row._count.id,
-        amount: row._sum.amount ?? row._sum.currentTotalDebt ?? 0,
       })),
+    );
+
+    const oppsBar = topN(
+      collapseStages(
+        oppAmountByStageRaw.map((row) => ({
+          label: row.stage,
+          count: row._count.id,
+          amount: row._sum.amount ?? row._sum.currentTotalDebt ?? 0,
+        })),
+      ),
+      10,
     );
 
     // Build disposition-by-day tables. We bucket records by created date and
