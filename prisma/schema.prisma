@@ -20,6 +20,7 @@ model User {
   avatar            String?
   isActive          Boolean   @default(true)
   isCloser          Boolean   @default(false) // closers see the Five9 popup dialer
+  mailboxAddress    String?   @unique // per-user CRM inbox address, e.g. bar@coastaldebt.com; provisioned by admins
   lastLoginAt       DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -1952,6 +1953,20 @@ model EmailMessage {
 
   sfId String? @unique // Salesforce 18-char ID, populated by sync
 
+  // Inbox threading (Email Center). threadId = id of the first message in the
+  // conversation. subjectNorm = lowercased subject with re:/fwd: prefixes
+  // stripped, used for fallback thread matching. messageIdHeader / inReplyTo
+  // carry RFC 5322 ids (inbound gives us both; outbound Resend sends get
+  // inReplyTo when composed as a reply). readAt = when the owner opened it.
+  threadId        String?
+  subjectNorm     String?
+  messageIdHeader String?
+  inReplyTo       String?
+  readAt          DateTime?
+
+  @@index([threadId])
+  @@index([subjectNorm])
+  @@index([ownerId])
   @@index([status])
   @@index([direction])
   @@index([accountId])
