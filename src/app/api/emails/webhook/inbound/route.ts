@@ -113,10 +113,16 @@ export async function POST(req: NextRequest) {
   }
   void receivedAt; // EmailMessage uses createdAt as the received timestamp
 
-  const threadId = await resolveThreadId(
-    { inReplyTo: inReplyTo || null, subject, counterpartyEmails: [fromEmail] },
-    prismaThreadFinders(),
-  );
+  let threadId: string | null = null;
+  try {
+    threadId = await resolveThreadId(
+      { inReplyTo: inReplyTo || null, subject, counterpartyEmails: [fromEmail] },
+      prismaThreadFinders(),
+    );
+  } catch {
+    // DB hiccup: save the message as a new self-threaded conversation rather
+    // than failing ingestion and triggering provider retry storms.
+  }
 
   const created = await prisma.emailMessage.create({
     data: {
