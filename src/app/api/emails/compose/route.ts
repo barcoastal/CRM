@@ -57,6 +57,8 @@ export async function POST(request: NextRequest) {
     accountId: string | null;
     opportunityId: string | null;
     caseId: string | null;
+    direction: string;
+    toAddresses: string;
   } | null = null;
 
   if (body.replyToMessageId) {
@@ -73,6 +75,8 @@ export async function POST(request: NextRequest) {
         accountId: true,
         opportunityId: true,
         caseId: true,
+        direction: true,
+        toAddresses: true,
       },
     });
     if (!parent) {
@@ -81,7 +85,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Resolve to/subject with parent fallbacks.
-  const to = body.to ?? (parent ? extractEmails(parent.fromAddress).join(", ") : undefined);
+  const to =
+    body.to ??
+    (parent
+      ? extractEmails(
+          parent.direction === "OUTBOUND" ? parent.toAddresses : parent.fromAddress,
+        ).join(", ")
+      : undefined);
   if (!to) return NextResponse.json({ error: "to required" }, { status: 400 });
 
   const subject =
@@ -100,9 +110,8 @@ export async function POST(request: NextRequest) {
   });
   const defaultFrom = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
   const senderAddress = sender?.mailboxAddress ?? sender?.email;
-  const fromAddress = senderAddress
-    ? `${sender?.name ?? senderAddress} <${senderAddress}>`
-    : defaultFrom;
+  const safeName = (sender?.name ?? senderAddress ?? "").replace(/"/g, '\\"');
+  const fromAddress = senderAddress ? `"${safeName}" <${senderAddress}>` : defaultFrom;
 
   // Thread stamping: inherit from parent or start a new thread.
   const threadId = parent ? (parent.threadId ?? parent.id) : null;
