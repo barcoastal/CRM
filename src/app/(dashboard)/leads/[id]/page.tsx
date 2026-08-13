@@ -16,6 +16,7 @@ import { CreditorTable } from "@/components/leads/creditor-table";
 import { LeadRelated } from "@/components/leads/lead-related";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { RecordNotes } from "@/components/shared/record-notes";
+import { resolveSfUserNames, isSfUserId } from "@/lib/sf-users";
 import { NotesRailCard } from "@/components/shared/notes-rail-card";
 import { fetchChainNotes } from "@/lib/notes";
 import { CallButton } from "@/components/dialer/call-button";
@@ -185,6 +186,27 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     if (v == null || v === "") return null;
     return String(v);
   };
+  // Fronter/Closer/Call lookups hold raw SF user ids; show real user names.
+  const sfUserMap = await resolveSfUserNames([
+    sf("FronterLookup__c"),
+    sf("CloserLookup__c"),
+    sf("Call_Transferred_By_Lookup__c"),
+    sf("Call_Received_By_Lookup__c"),
+  ]);
+  const sfUser = (k: string): React.ReactNode => {
+    const v = sf(k);
+    if (!v) return null;
+    if (!isSfUserId(v)) return v;
+    const u = sfUserMap.get(v.trim());
+    return u ? (
+      <Link key={k} href={`/settings/users/${u.id}`} style={{ color: "#0176d3" }}>
+        {u.name}
+      </Link>
+    ) : (
+      v
+    );
+  };
+
   const sfDollar = (k: string): string | null => {
     const v = sf(k);
     if (!v) return null;
@@ -418,11 +440,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       <FieldGrid
         fields={[
           // Row 1: Fronter | Closer
-          ["Fronter", sf("FronterLookup__c")],
-          ["Closer", sf("CloserLookup__c")],
+          ["Fronter", sfUser("FronterLookup__c")],
+          ["Closer", sfUser("CloserLookup__c")],
           // Row 2: Call Transferred By | Call Received By
-          ["Call Transferred By", sf("Call_Transferred_By_Lookup__c")],
-          ["Call Received By", sf("Call_Received_By_Lookup__c")],
+          ["Call Transferred By", sfUser("Call_Transferred_By_Lookup__c")],
+          ["Call Received By", sfUser("Call_Received_By_Lookup__c")],
           // Row 3: Call Tranferred DateTime | Call Received Date
           ["Call Tranferred DateTime", sfDate("Call_Tranferred_DateTime__c")],
           ["Call Received Date", sfDate("Call_Received_Date__c")],

@@ -27,6 +27,7 @@ import { OPP_STAGES } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { ClientSubmittedInfoCard } from "@/components/shared/client-submitted-info";
 import { RecordNotes } from "@/components/shared/record-notes";
+import { resolveSfUserNames, isSfUserId } from "@/lib/sf-users";
 import { NotesRailCard } from "@/components/shared/notes-rail-card";
 import { fetchChainNotes } from "@/lib/notes";
 import { LeadHistoryCard } from "@/components/leads/lead-history-card";
@@ -380,6 +381,31 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     const n = Number(p);
     return Number.isFinite(n) ? `${n}%` : p;
   })();
+  // Call Disposition lookups + Fronter/Closer may hold raw SF user ids.
+  const oppSfUserMap = await resolveSfUserNames([
+    oppSf("Fronter__c"),
+    oppSf("Closer__c"),
+    oppSf("FronterLookup__c"),
+    oppSf("CloserLookup__c"),
+    oppSf("Call_Transferred_By__c"),
+    oppSf("Call_Received_By__c"),
+    oppSf("Call_Transferred_By_Lookup__c"),
+    oppSf("Call_Received_By_Lookup__c"),
+  ]);
+  const oppSfUser = (k: string): React.ReactNode => {
+    const v = oppSf(k);
+    if (!v) return null;
+    if (!isSfUserId(v)) return v;
+    const u = oppSfUserMap.get(v.trim());
+    return u ? (
+      <Link key={k} href={`/settings/users/${u.id}`} style={{ color: "#0176d3" }}>
+        {u.name}
+      </Link>
+    ) : (
+      v
+    );
+  };
+
   // CreatedById/LastModifiedById are SF user ids; resolve to names via our
   // mirrored User rows (there is no *_Full_Name__c formula on Opportunity).
   const auditSfIds = [oppSf("CreatedById"), oppSf("LastModifiedById")].filter(
@@ -578,17 +604,17 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           entityId={opp.id}
           fields={[
             // Row 1: Fronter | Closer
-            E("Fronter", oppSf("Fronter__c"), "fronter"),
-            E("Closer", oppSf("Closer__c"), "closer"),
+            E("Fronter", oppSfUser("Fronter__c"), "fronter"),
+            E("Closer", oppSfUser("Closer__c"), "closer"),
             // Row 2: Fronter Reference | Closer Reference
-            ["Fronter Reference", oppSf("FronterLookup__c")],
-            ["Closer Reference", oppSf("CloserLookup__c")],
+            ["Fronter Reference", oppSfUser("FronterLookup__c")],
+            ["Closer Reference", oppSfUser("CloserLookup__c")],
             // Row 3: Call Transferred By | Call Received By
-            ["Call Transferred By", oppSf("Call_Transferred_By__c")],
-            ["Call Received By", oppSf("Call_Received_By__c")],
+            ["Call Transferred By", oppSfUser("Call_Transferred_By__c")],
+            ["Call Received By", oppSfUser("Call_Received_By__c")],
             // Row 4: Call Transferred By Reference | Call Received By Reference
-            ["Call Transferred By Reference", oppSf("Call_Transferred_By_Lookup__c")],
-            ["Call Received By Reference", oppSf("Call_Received_By_Lookup__c")],
+            ["Call Transferred By Reference", oppSfUser("Call_Transferred_By_Lookup__c")],
+            ["Call Received By Reference", oppSfUser("Call_Received_By_Lookup__c")],
             // Row 5: Call Tranferred DateTime | Call Received Date
             ["Call Tranferred DateTime", oppSfDateTime("Call_Tranferred_DateTime__c") ?? oppSfDateTime("Call_Transferred_DateTime__c")],
             ["Call Received Date", oppSfDateTime("Call_Received_Date__c")],
