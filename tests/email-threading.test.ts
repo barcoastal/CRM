@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   normalizeSubject,
+  normalizeMessageId,
   extractEmails,
   resolveThreadId,
   type ThreadFinders,
@@ -15,6 +16,13 @@ describe("normalizeSubject", () => {
   });
 });
 
+describe("normalizeMessageId", () => {
+  it("strips angle brackets and lowercases", () => {
+    expect(normalizeMessageId("<ABC@x.com>")).toBe("abc@x.com");
+    expect(normalizeMessageId("abc@x.com")).toBe("abc@x.com");
+  });
+});
+
 describe("extractEmails", () => {
   it("parses display names and CSV lists", () => {
     expect(extractEmails('Joe Sullivan <joe@x.com>, "Ann" <ann@y.com>')).toEqual([
@@ -24,6 +32,20 @@ describe("extractEmails", () => {
     expect(extractEmails("plain@x.com")).toEqual(["plain@x.com"]);
     expect(extractEmails(null)).toEqual([]);
     expect(extractEmails("not-an-email")).toEqual([]);
+  });
+
+  it("handles quoted display names containing commas", () => {
+    expect(extractEmails('"Sullivan, Joe" <joe@x.com>, Ann <ann@y.com>')).toEqual([
+      "joe@x.com",
+      "ann@y.com",
+    ]);
+  });
+
+  it("handles mixed plain and angle-bracket addresses", () => {
+    expect(extractEmails("plain@x.com, Name <other@x.com>")).toEqual([
+      "plain@x.com",
+      "other@x.com",
+    ]);
   });
 });
 
@@ -90,5 +112,22 @@ describe("resolveThreadId", () => {
       f,
     );
     expect(r).toBeNull();
+  });
+
+  it("computes the 30-day window from the injected now", async () => {
+    let receivedSince: Date | null = null;
+    const now = new Date("2026-08-13T00:00:00Z");
+    const f = finders({
+      bySubjectAndCounterparty: async (_s, _e, since) => {
+        receivedSince = since;
+        return null;
+      },
+    });
+    await resolveThreadId(
+      { inReplyTo: null, subject: "Hi there", counterpartyEmails: ["joe@x.com"] },
+      f,
+      now,
+    );
+    expect(receivedSince).toEqual(new Date("2026-07-14T00:00:00Z"));
   });
 });

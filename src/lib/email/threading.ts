@@ -20,11 +20,31 @@ export function normalizeSubject(subject: string): string {
   return s.trim().toLowerCase();
 }
 
+/** Message-IDs appear both as "<abc@x>" and "abc@x" depending on provider; compare normalized. */
+export function normalizeMessageId(id: string): string {
+  return id.replace(/^</, "").replace(/>$/, "").trim().toLowerCase();
+}
+
 /** Parse "Name <a@b>, c@d" style strings into lowercase bare addresses. */
 export function extractEmails(raw: string | null | undefined): string[] {
   if (!raw) return [];
-  return raw
-    .split(",")
+  const segments: string[] = [];
+  let buf = "";
+  let inQuotes = false;
+  let inAngle = false;
+  for (const ch of raw) {
+    if (ch === '"') inQuotes = !inQuotes;
+    else if (ch === "<") inAngle = true;
+    else if (ch === ">") inAngle = false;
+    if (ch === "," && !inQuotes && !inAngle) {
+      segments.push(buf);
+      buf = "";
+    } else {
+      buf += ch;
+    }
+  }
+  segments.push(buf);
+  return segments
     .map((part) => {
       const m = part.match(/<([^>]+)>/);
       return (m?.[1] ?? part).replace(/"/g, "").trim().toLowerCase();
@@ -66,28 +86,36 @@ export async function resolveThreadId(
 
 export function prismaThreadFinders(): ThreadFinders {
   return {
+    // Matches only Message-ID/provider ids; outbound replies get threadId directly at compose time, so no reverse inReplyTo lookup is needed.
     async byMessageIdHeader(messageId) {
+      const bare = normalizeMessageId(messageId);
+      const bracketed = `<${bare}>`;
       return prisma.emailMessage.findFirst({
         where: {
-          OR: [{ messageIdHeader: messageId }, { providerMessageId: messageId }],
+          OR: [
+            { messageIdHeader: { in: [bare, bracketed], mode: "insensitive" } },
+            { providerMessageId: { in: [bare, bracketed], mode: "insensitive" } },
+          ],
         },
         select: { id: true, threadId: true },
       });
     },
     async bySubjectAndCounterparty(subjectNorm, emails, since) {
       if (emails.length === 0) return null;
-      return prisma.emailMessage.findFirst({
-        where: {
-          subjectNorm,
-          createdAt: { gte: since },
-          OR: emails.flatMap((e) => [
-            { fromAddress: { contains: e, mode: "insensitive" as const } },
-            { toAddresses: { contains: e, mode: "insensitive" as const } },
-          ]),
-        },
+      const wanted = new Set(emails.map((e) => e.toLowerCase()));
+      const candidates = await prisma.emailMessage.findMany({
+        where: { subjectNorm, createdAt: { gte: since } },
         orderBy: { createdAt: "desc" },
-        select: { id: true, threadId: true },
+        take: 25,
+        select: { id: true, threadId: true, fromAddress: true, toAddresses: true },
       });
+      for (const c of candidates) {
+        const participants = [...extractEmails(c.fromAddress), ...extractEmails(c.toAddresses)];
+        if (participants.some((p) => wanted.has(p))) {
+          return { id: c.id, threadId: c.threadId };
+        }
+      }
+      return null;
     },
   };
 }
