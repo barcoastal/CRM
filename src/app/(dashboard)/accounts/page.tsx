@@ -8,6 +8,7 @@ import {
 } from "@/components/slds/sf-list-page";
 import { ACCOUNT_RECORD_TYPES } from "@/lib/record-types";
 import { InlineEditCell } from "@/components/lists/inline-edit-cell";
+import { KanbanBoard } from "@/components/lists/kanban-board";
 import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
 import { buildWhere, type ListFilter } from "@/lib/list-views";
 
@@ -19,6 +20,7 @@ interface AccountsPageProps {
     dir?: string;
     view?: string;
     page?: string;
+    display?: string;
   }>;
 }
 
@@ -152,6 +154,66 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     orderBy = { [key]: dir } as Prisma.AccountOrderByWithRelationInput;
   }
 
+  if (params.display === "kanban") {
+    const statusGroupsRaw = await prisma.account.groupBy({
+      by: ["clientStatus"],
+      where,
+      _count: true,
+    });
+    const statusGroups = statusGroupsRaw
+      .filter((g) => g.clientStatus && g.clientStatus.trim())
+      .sort((a, b) => b._count - a._count)
+      .slice(0, 8);
+    const columns = await Promise.all(
+      statusGroups.map(async (g) => {
+          const cards = await prisma.account.findMany({
+            where: { ...where, clientStatus: g.clientStatus },
+            orderBy: { updatedAt: "desc" },
+            take: 12,
+            select: { id: true, name: true, phone: true, escrowBalance: true },
+          });
+          return {
+            value: g.clientStatus as string,
+            label: g.clientStatus as string,
+            count: g._count,
+            cards: cards.map((a) => ({
+              id: a.id,
+              title: a.name,
+              sub: a.phone,
+              amount: a.escrowBalance != null ? `$${a.escrowBalance.toLocaleString()}` : null,
+              href: `/accounts/${a.id}`,
+            })),
+          };
+      }),
+    );
+    return (
+      <SfListPage
+        entity="account"
+        title="Accounts"
+        subtitle="Recently Viewed"
+        count={columns.reduce((s2, c) => s2 + c.count, 0)}
+        iconColor="#7f8de1"
+        iconSlug="account"
+        actions={[{ label: "New", href: "/accounts/new" }]}
+        columns={COLUMNS}
+        rows={[]}
+        pathname="/accounts"
+        searchQuery={search}
+        preservedParams={{ ...(params.view ? { view: params.view } : {}) }}
+        views={COMPUTED_VIEWS}
+        currentView={view}
+        displayMode="kanban"
+        bodyOverride={<KanbanBoard columns={columns} entity="accounts" fieldKey="clientStatus" />}
+        massConfig={{
+          entity: "account",
+          statusField: "recordType",
+          statusLabel: "Record Type",
+          statusOptions: [],
+        }}
+      />
+    );
+  }
+
   const [items, total, ownerRows] = await Promise.all([
     prisma.account.findMany({
       where,
@@ -280,6 +342,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
       title="Accounts"
       subtitle={subtitle}
       count={total}
+      displayMode="table"
       iconColor="#7f8de1"
       iconSlug="account"
       actions={[
