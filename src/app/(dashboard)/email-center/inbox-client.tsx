@@ -87,6 +87,7 @@ export function InboxClient({
   }, [folder, viewUser, isAdmin, me.id]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loadThreads flips the loading flag before fetching, same pattern the rest of the app uses
     void loadThreads();
   }, [loadThreads]);
 
