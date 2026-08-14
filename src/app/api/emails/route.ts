@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { createEmailSchema } from "@/lib/validations/email-message";
 
+const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN", "MANAGER"];
+
 export async function GET(req: NextRequest) {
   const r = await requireAuthOrRespond("Email.Send");
   if ("response" in r) return r.response;
@@ -12,6 +14,20 @@ export async function GET(req: NextRequest) {
     const v = url.searchParams.get(key);
     if (v) where[key] = v;
   }
+
+  // Non-admins only ever see their own messages, or messages attached to a
+  // record they are explicitly filtering by (record pages already gate access
+  // to the record itself). Direct owner/thread browsing stays self-scoped.
+  const isAdmin = ADMIN_ROLES.includes(r.session.role);
+  if (!isAdmin) {
+    const hasRecordFilter = Boolean(
+      where.accountId || where.contactId || where.leadId || where.opportunityId || where.caseId,
+    );
+    if (!hasRecordFilter) {
+      where.ownerId = r.session.userId;
+    }
+  }
+
   const limit = Math.min(Number(url.searchParams.get("limit") ?? "50"), 200);
 
   const items = await prisma.emailMessage.findMany({
