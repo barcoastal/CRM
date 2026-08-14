@@ -54,7 +54,7 @@
 }
 
 .sf-app-badge {
-  background: #3052ff;
+  background: linear-gradient(135deg, #1b96ff, #0b5cab);
   width: 36px;
   height: 36px;
   border-radius: 8px;

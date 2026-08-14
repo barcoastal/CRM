@@ -8,53 +8,43 @@ const ROOT = path.resolve(".");
 const BRAND = path.join(ROOT, "public/brand");
 const APP = path.join(ROOT, "src/app");
 
-const BLUE = "#3052FF";
-const MID = "#5C8DFF";
-const LIGHT = "#7FB2FF";
+const BLUE = "#1B96FF";
+const DEEP = "#0B5CAB";
+const SKY = "#4FC3F7";
 const INK = "#0D121C";
 
-// smooth single-period wave (up then down), x0..x1 centered at yC, amplitude A
-function wave(x0, x1, yC, A) {
-  const mid = (x0 + x1) / 2;
-  const a = x0 + (mid - x0) * 0.55;
-  const b = mid - (mid - x0) * 0.55;
-  const c = mid + (x1 - mid) * 0.55;
-  const d = x1 - (x1 - mid) * 0.55;
-  return `M ${x0} ${yC} C ${a} ${yC - A} ${b} ${yC - A} ${mid} ${yC} C ${c} ${yC + A} ${d} ${yC + A} ${x1} ${yC}`;
-}
+// Azure Sky cloud (option B, picked 2026-08-14): puffy cloud built from
+// circle lobes + rounded base, airy azure gradient with a sunlit highlight.
+const GRAD = `<linearGradient id="az" x1="0" y1="0" x2="0.2" y2="1"><stop offset="0" stop-color="${SKY}"/><stop offset="0.6" stop-color="${BLUE}"/><stop offset="1" stop-color="${DEEP}"/></linearGradient>`;
+const BADGE_GRAD = `<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${BLUE}"/><stop offset="1" stop-color="${DEEP}"/></linearGradient>`;
 
-// 3-line ripple mark in a 512 box (primary). colors top->bottom.
-function ripples3(c1, c2, c3, sw = 40) {
+function cloud(fill) {
   return (
-    `<path d="${wave(96, 416, 190, 38)}" stroke="${c1}" stroke-width="${sw}" fill="none" stroke-linecap="round"/>` +
-    `<path d="${wave(96, 416, 256, 38)}" stroke="${c2}" stroke-width="${sw}" fill="none" stroke-linecap="round"/>` +
-    `<path d="${wave(96, 416, 322, 38)}" stroke="${c3}" stroke-width="${sw}" fill="none" stroke-linecap="round"/>`
+    `<g fill="${fill}">` +
+    `<circle cx="172" cy="300" r="74"/>` +
+    `<circle cx="256" cy="248" r="96"/>` +
+    `<circle cx="348" cy="296" r="76"/>` +
+    `<rect x="130" y="296" width="270" height="80" rx="40"/>` +
+    `</g>`
   );
 }
 
-// 2-line bold variant (only for the 16px favicon)
-function ripples2(c1, c2, sw = 60) {
-  return (
-    `<path d="${wave(96, 416, 212, 44)}" stroke="${c1}" stroke-width="${sw}" fill="none" stroke-linecap="round"/>` +
-    `<path d="${wave(96, 416, 312, 44)}" stroke="${c2}" stroke-width="${sw}" fill="none" stroke-linecap="round"/>`
-  );
-}
+const HIGHLIGHT = `<g fill="#B3E5FC" opacity="0.7"><circle cx="234" cy="220" r="56"/><circle cx="170" cy="280" r="34"/></g>`;
 
 const box = (inner, bg = "none") =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">${bg !== "none" ? `<rect width="512" height="512" fill="${bg}"/>` : ""}${inner}</svg>`;
 
 const roundedIcon = (inner) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="${BLUE}"/>${inner}</svg>`;
+  `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs>${BADGE_GRAD}</defs><rect width="512" height="512" rx="112" fill="url(#bg)"/>${inner}</svg>`;
 
 // --- SVG sources ---
-const markSvg = box(ripples3(LIGHT, MID, BLUE)); // on transparent
-const markWhiteSvg = box(ripples3("#BFD4FF", "#E2ECFF", "#ffffff")); // for dark bg
-const icon3Svg = roundedIcon(ripples3("#BFD4FF", "#E2ECFF", "#ffffff"));
-const icon2Svg = roundedIcon(ripples2("#CFE0FF", "#ffffff"));
+const markSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs>${GRAD}</defs>${cloud("url(#az)")}${HIGHLIGHT}</svg>`;
+const markWhiteSvg = box(cloud("#ffffff"));
+const icon3Svg = roundedIcon(cloud("#ffffff"));
+const icon2Svg = roundedIcon(cloud("#ffffff"));
 
 function wordmarkSvg(textA, textB, bg) {
-  const scale = 96 / 230;
-  const markBand = `<g transform="translate(8,4) scale(${scale.toFixed(4)})"><g transform="translate(-70,-140)">${ripples3(LIGHT, MID, BLUE, 44)}</g></g>`;
+  const markBand = `<defs>${GRAD}</defs><g transform="translate(14,2) scale(0.195)">${cloud(bg === null && textA === "#ffffff" ? "#ffffff" : "url(#az)")}</g>`;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="104" viewBox="0 0 512 104">` +
     (bg ? `<rect width="512" height="104" fill="${bg}"/>` : "") +
@@ -99,7 +89,7 @@ async function main() {
   fs.writeFileSync(path.join(BRAND, "mark.svg"), markSvg);
   fs.writeFileSync(path.join(BRAND, "mark-white.svg"), markWhiteSvg);
   fs.writeFileSync(path.join(BRAND, "coastal-crm.svg"), wordmarkSvg(INK, BLUE, null));
-  fs.writeFileSync(path.join(BRAND, "wordmark-white.svg"), wordmarkSvg("#ffffff", LIGHT, null));
+  fs.writeFileSync(path.join(BRAND, "wordmark-white.svg"), wordmarkSvg("#ffffff", SKY, null));
 
   // PWA icons
   fs.writeFileSync(path.join(BRAND, "icon-192.png"), await png(icon3Svg, 192));
