@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     where: { id },
     select: {
       id: true, name: true, email: true, role: true, avatar: true,
-      isActive: true, lastLoginAt: true, createdAt: true, updatedAt: true,
+      isActive: true, lastLoginAt: true, createdAt: true, updatedAt: true, mailboxAddress: true,
       profile: { select: { id: true, name: true, label: true } },
       hierarchyRole: { select: { id: true, name: true } },
       manager: { select: { id: true, name: true } },
@@ -36,6 +36,7 @@ const updateUserSchema = z.object({
   isActive: z.boolean().optional(),
   isCloser: z.boolean().optional(),
   five9Username: z.string().max(255).optional().nullable(),
+  mailboxAddress: z.string().email().max(255).optional().nullable(),
 });
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -56,6 +57,15 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     if (dupe) return NextResponse.json({ error: "Email already in use" }, { status: 409 });
   }
 
+  if (d.mailboxAddress && d.mailboxAddress !== before.mailboxAddress) {
+    const dupe = await prisma.user.findFirst({
+      where: { mailboxAddress: { equals: d.mailboxAddress, mode: "insensitive" } },
+    });
+    if (dupe && dupe.id !== id) {
+      return NextResponse.json({ error: "Mailbox address already in use" }, { status: 409 });
+    }
+  }
+
   const data: Record<string, unknown> = {};
   if (d.name !== undefined) data.name = d.name;
   if (d.email !== undefined) data.email = d.email;
@@ -67,6 +77,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (d.isActive !== undefined) data.isActive = d.isActive;
   if (d.isCloser !== undefined) data.isCloser = d.isCloser;
   if (d.five9Username !== undefined) data.five9Username = d.five9Username || null;
+  if (d.mailboxAddress !== undefined) data.mailboxAddress = d.mailboxAddress ? d.mailboxAddress.toLowerCase() : null;
 
   const user = await prisma.user.update({
     where: { id }, data,

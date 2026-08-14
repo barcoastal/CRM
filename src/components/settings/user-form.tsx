@@ -28,6 +28,7 @@ export function UserForm({
     isActive: boolean;
     isCloser: boolean;
     five9Username: string | null;
+    mailboxAddress: string | null;
   };
   profiles: Option[];
   roles: Option[];
@@ -47,6 +48,7 @@ export function UserForm({
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
   const [isCloser, setIsCloser] = useState(initial?.isCloser ?? false);
   const [five9Username, setFive9Username] = useState(initial?.five9Username ?? "");
+  const [mailboxAddress, setMailboxAddress] = useState(initial?.mailboxAddress ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +67,7 @@ export function UserForm({
       isActive,
       isCloser,
       five9Username: five9Username.trim() || null,
+      mailboxAddress: mailboxAddress.trim() || null,
     };
     if (password) body.password = password;
     if (!isEdit && !password) {
@@ -174,6 +177,22 @@ export function UserForm({
                 className="slds-input"
                 style={inputStyle}
               />,
+            ],
+            [
+              "Email Center Mailbox",
+              <div key="mb">
+                <input
+                  type="email"
+                  value={mailboxAddress}
+                  onChange={(e) => setMailboxAddress(e.target.value)}
+                  placeholder="agent@coastaldebt.com"
+                  className="slds-input"
+                  style={inputStyle}
+                />
+                <p style={{ fontSize: 11, color: "#706e6b", marginTop: 4 }}>
+                  Inbound mail to this address lands in the user&apos;s Email Center inbox. Leave empty to disable.
+                </p>
+              </div>,
             ],
           ]}
         />
