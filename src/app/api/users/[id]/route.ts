@@ -57,7 +57,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     if (dupe) return NextResponse.json({ error: "Email already in use" }, { status: 409 });
   }
 
-  if (d.mailboxAddress && d.mailboxAddress !== before.mailboxAddress) {
+  if (d.mailboxAddress && d.mailboxAddress.toLowerCase() !== (before.mailboxAddress ?? "")) {
     const dupe = await prisma.user.findFirst({
       where: { mailboxAddress: { equals: d.mailboxAddress, mode: "insensitive" } },
     });

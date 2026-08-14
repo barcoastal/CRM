@@ -46,6 +46,7 @@ const createUserSchema = z.object({
   isActive: z.boolean().default(true),
   isCloser: z.boolean().default(false),
   five9Username: z.string().max(255).optional().nullable(),
+  mailboxAddress: z.string().email().max(255).optional().nullable(),
 });
 
 export async function POST(request: NextRequest) {
@@ -64,6 +65,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "A user with this email already exists" }, { status: 409 });
   }
 
+  if (d.mailboxAddress) {
+    const dupeMailbox = await prisma.user.findFirst({
+      where: { mailboxAddress: { equals: d.mailboxAddress, mode: "insensitive" } },
+    });
+    if (dupeMailbox) {
+      return NextResponse.json({ error: "Mailbox address already in use" }, { status: 409 });
+    }
+  }
+
   const passwordHash = await hash(d.password, 12);
   const user = await prisma.user.create({
     data: {
@@ -77,6 +87,7 @@ export async function POST(request: NextRequest) {
       isActive: d.isActive,
       isCloser: d.isCloser,
       five9Username: d.five9Username || null,
+      mailboxAddress: d.mailboxAddress ? d.mailboxAddress.toLowerCase() : null,
     },
     select: {
       id: true, name: true, email: true, role: true, isActive: true,
