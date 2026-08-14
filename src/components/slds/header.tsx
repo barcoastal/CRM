@@ -66,6 +66,7 @@ const TABS: TabItem[] = [
   { label: "Settlements", href: "/settlements", entity: "Settlement" },
   { label: "Fees", href: "/fees", entity: "Fee" },
   { label: "Emails", href: "/emails", entity: "Email" },
+  { label: "Email Center", href: "/email-center", entity: "Email" },
   { label: "SMS", href: "/sms", entity: "Sms" },
   { label: "Templates", href: "/email-templates", entity: "Email" },
   { label: "Files", href: "/files", entity: "ProgramPlan" },
