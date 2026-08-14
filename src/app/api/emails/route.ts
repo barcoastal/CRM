@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   if ("response" in r) return r.response;
   const url = new URL(req.url);
   const where: Record<string, unknown> = {};
-  for (const key of ["accountId", "contactId", "leadId", "opportunityId", "caseId", "ownerId", "status", "direction"] as const) {
+  for (const key of ["accountId", "contactId", "leadId", "opportunityId", "caseId", "ownerId", "status", "direction", "threadId"] as const) {
     const v = url.searchParams.get(key);
     if (v) where[key] = v;
   }
