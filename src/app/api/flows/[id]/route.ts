@@ -64,6 +64,33 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     patch.graph = body.graph as object;
   }
 
+  // Inactivity + re-entry fields
+  const REENTRY_POLICIES = ["ALWAYS", "ONCE", "COOLDOWN"] as const;
+  if (typeof body?.reentryPolicy === "string") {
+    if (!(REENTRY_POLICIES as readonly string[]).includes(body.reentryPolicy)) {
+      return NextResponse.json({ error: "Invalid reentryPolicy" }, { status: 400 });
+    }
+    patch.reentryPolicy = body.reentryPolicy;
+  }
+  if (body?.reentryCooldownDays !== undefined) {
+    const v = Number(body.reentryCooldownDays);
+    if (!Number.isFinite(v) || v < 1 || v > 3650) {
+      return NextResponse.json({ error: "reentryCooldownDays must be 1-3650" }, { status: 400 });
+    }
+    patch.reentryCooldownDays = Math.round(v);
+  }
+  if ("inactivityDays" in body) {
+    if (body.inactivityDays == null) {
+      patch.inactivityDays = null;
+    } else {
+      const v = Number(body.inactivityDays);
+      if (!Number.isFinite(v) || v < 1 || v > 3650) {
+        return NextResponse.json({ error: "inactivityDays must be 1-3650" }, { status: 400 });
+      }
+      patch.inactivityDays = Math.round(v);
+    }
+  }
+
   const flow = await prisma.flow.update({ where: { id }, data: patch });
   await auditWrite({
     userId: r.session.userId,

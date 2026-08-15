@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "@/components/icons/lucide";
-import { SUPPORTED_ENTITIES, TRIGGER_EVENTS } from "@/lib/flow/nodes";
+import { SUPPORTED_ENTITIES } from "@/lib/flow/nodes";
 
 export default function NewFlowPage() {
   const router = useRouter();
@@ -12,6 +12,9 @@ export default function NewFlowPage() {
   const [description, setDescription] = useState("");
   const [entityType, setEntityType] = useState<string>("Lead");
   const [triggerEvent, setTriggerEvent] = useState<string>("INSERT_OR_UPDATE");
+  const [inactivityDays, setInactivityDays] = useState<number>(14);
+  const [reentryPolicy, setReentryPolicy] = useState<string>("ALWAYS");
+  const [reentryCooldownDays, setReentryCooldownDays] = useState<number>(30);
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +36,9 @@ export default function NewFlowPage() {
           entityType,
           triggerEvent,
           isActive,
+          reentryPolicy,
+          reentryCooldownDays,
+          inactivityDays: triggerEvent === "INACTIVITY" ? inactivityDays : null,
         }),
       });
       const data = await res.json();
@@ -112,11 +118,52 @@ export default function NewFlowPage() {
               onChange={(e) => setTriggerEvent(e.target.value)}
               className="w-full px-3 py-2 text-[13px] border border-[#e0dfe6] rounded focus:border-[#3052ff] focus:outline-none bg-white"
             >
-              {TRIGGER_EVENTS.map((e) => (
-                <option key={e} value={e}>{e}</option>
-              ))}
+              <option value="INSERT">INSERT</option>
+              <option value="UPDATE">UPDATE</option>
+              <option value="INSERT_OR_UPDATE">INSERT_OR_UPDATE</option>
+              <option value="INACTIVITY">Inactivity (no touch in N days)</option>
             </select>
           </div>
+        </div>
+        {triggerEvent === "INACTIVITY" ? (
+          <div>
+            <label className="block text-[12px] font-semibold text-[#444656] mb-1">
+              Days without activity
+            </label>
+            <input
+              type="number"
+              min={1}
+              value={inactivityDays}
+              onChange={(e) => setInactivityDays(Math.max(1, Number(e.target.value)))}
+              className="w-full px-3 py-2 text-[13px] border border-[#e0dfe6] rounded focus:border-[#3052ff] focus:outline-none"
+            />
+          </div>
+        ) : null}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[12px] font-semibold text-[#444656] mb-1">Re-entry</label>
+            <select
+              value={reentryPolicy}
+              onChange={(e) => setReentryPolicy(e.target.value)}
+              className="w-full px-3 py-2 text-[13px] border border-[#e0dfe6] rounded focus:border-[#3052ff] focus:outline-none bg-white"
+            >
+              <option value="ALWAYS">Every trigger</option>
+              <option value="ONCE">Once per record</option>
+              <option value="COOLDOWN">Cooldown</option>
+            </select>
+          </div>
+          {reentryPolicy === "COOLDOWN" ? (
+            <div>
+              <label className="block text-[12px] font-semibold text-[#444656] mb-1">Cooldown days</label>
+              <input
+                type="number"
+                min={1}
+                value={reentryCooldownDays}
+                onChange={(e) => setReentryCooldownDays(Math.max(1, Number(e.target.value)))}
+                className="w-full px-3 py-2 text-[13px] border border-[#e0dfe6] rounded focus:border-[#3052ff] focus:outline-none"
+              />
+            </div>
+          ) : null}
         </div>
         <div>
           <label className="inline-flex items-center gap-2 text-[13px] text-[#444656]">

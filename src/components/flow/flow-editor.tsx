@@ -51,6 +51,9 @@ interface InitialFlow {
   entryCriteria: unknown;
   triggerOnFieldChanges: unknown;
   graph: unknown;
+  reentryPolicy?: string;
+  reentryCooldownDays?: number;
+  inactivityDays?: number | null;
 }
 
 type RfNode = Node<{ kind: NodeKind; label: string; config: Record<string, unknown> }>;
@@ -198,6 +201,9 @@ function FlowEditorInner({ initial }: { initial: InitialFlow }) {
     const arr = Array.isArray(initial.triggerOnFieldChanges) ? (initial.triggerOnFieldChanges as string[]) : [];
     return arr.join(", ");
   });
+  const [reentryPolicy, setReentryPolicy] = useState(initial.reentryPolicy ?? "ALWAYS");
+  const [reentryCooldownDays, setReentryCooldownDays] = useState(initial.reentryCooldownDays ?? 30);
+  const [inactivityDays, setInactivityDays] = useState<number>(initial.inactivityDays ?? 14);
   const [sampleRecord, setSampleRecord] = useState(() => JSON.stringify({ id: "sample-id", status: "Active", email: "test@example.com" }, null, 2));
   const [testResult, setTestResult] = useState<unknown>(null);
   const [saving, setSaving] = useState(false);
@@ -300,6 +306,9 @@ function FlowEditorInner({ initial }: { initial: InitialFlow }) {
           entryCriteria: parsedCriteria,
           triggerOnFieldChanges: triggerOnList,
           graph: toGraphPayload(nodes, edges),
+          reentryPolicy,
+          reentryCooldownDays,
+          inactivityDays: triggerEvent === "INACTIVITY" ? inactivityDays : null,
         }),
       });
       const data = await res.json();
@@ -501,11 +510,52 @@ function FlowEditorInner({ initial }: { initial: InitialFlow }) {
                     onChange={(e) => setTriggerEvent(e.target.value)}
                     className="w-full px-2 py-1.5 text-[12px] border border-[#e0dfe6] rounded bg-white"
                   >
-                    {TRIGGER_EVENTS.map((e) => (
-                      <option key={e} value={e}>{e}</option>
-                    ))}
+                    <option value="INSERT">INSERT</option>
+                    <option value="UPDATE">UPDATE</option>
+                    <option value="INSERT_OR_UPDATE">INSERT_OR_UPDATE</option>
+                    <option value="INACTIVITY">Inactivity (no touch in N days)</option>
                   </select>
                 </div>
+                {triggerEvent === "INACTIVITY" ? (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#444656] mb-1">
+                      Days without activity
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={inactivityDays}
+                      onChange={(e) => setInactivityDays(Math.max(1, Number(e.target.value)))}
+                      className="w-full px-2 py-1.5 text-[12px] border border-[#e0dfe6] rounded"
+                    />
+                  </div>
+                ) : null}
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#444656] mb-1">Re-entry</label>
+                  <select
+                    value={reentryPolicy}
+                    onChange={(e) => setReentryPolicy(e.target.value)}
+                    className="w-full px-2 py-1.5 text-[12px] border border-[#e0dfe6] rounded bg-white"
+                  >
+                    <option value="ALWAYS">Every trigger</option>
+                    <option value="ONCE">Once per record</option>
+                    <option value="COOLDOWN">Cooldown</option>
+                  </select>
+                </div>
+                {reentryPolicy === "COOLDOWN" ? (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#444656] mb-1">
+                      Cooldown days
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={reentryCooldownDays}
+                      onChange={(e) => setReentryCooldownDays(Math.max(1, Number(e.target.value)))}
+                      className="w-full px-2 py-1.5 text-[12px] border border-[#e0dfe6] rounded"
+                    />
+                  </div>
+                ) : null}
                 <div>
                   <label className="block text-[11px] font-semibold text-[#444656] mb-1">
                     Fire only when these fields change (comma separated, UPDATE only)

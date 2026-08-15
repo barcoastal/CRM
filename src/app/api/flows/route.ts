@@ -51,6 +51,19 @@ export async function POST(req: NextRequest) {
     : [];
   const graph = body?.graph ?? emptyGraph();
 
+  // Inactivity + re-entry fields
+  const REENTRY_POLICIES = ["ALWAYS", "ONCE", "COOLDOWN"] as const;
+  const reentryPolicyRaw = String(body?.reentryPolicy ?? "ALWAYS");
+  const reentryPolicy = (REENTRY_POLICIES as readonly string[]).includes(reentryPolicyRaw)
+    ? reentryPolicyRaw
+    : "ALWAYS";
+  const reentryCooldownDays = Math.min(3650, Math.max(1, Number(body?.reentryCooldownDays ?? 30)));
+  const inactivityDaysRaw = body?.inactivityDays;
+  const inactivityDays =
+    inactivityDaysRaw == null
+      ? null
+      : Math.min(3650, Math.max(1, Number(inactivityDaysRaw)));
+
   const flow = await prisma.flow.create({
     data: {
       name,
@@ -62,6 +75,9 @@ export async function POST(req: NextRequest) {
       triggerOnFieldChanges: triggerOnFieldChanges as object,
       graph: graph as object,
       createdById: r.session.userId,
+      reentryPolicy,
+      reentryCooldownDays,
+      ...(inactivityDays !== null ? { inactivityDays } : {}),
     },
   });
   await auditWrite({
