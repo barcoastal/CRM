@@ -14,7 +14,7 @@ export function normalizeEmail(raw: string): string {
 /**
  * Given a Resend webhook event type and its bounce payload, return the
  * suppression reason to record, or null when the event is not suppressing.
- * Soft bounces are transient (full mailbox etc) and do not suppress.
+ * Transient and Undetermined bounces are temporary or ambiguous and do not suppress.
  */
 export function decideSuppression(
   eventType: string,
@@ -22,7 +22,8 @@ export function decideSuppression(
 ): "HARD_BOUNCE" | "COMPLAINT" | null {
   if (eventType === "email.complained") return "COMPLAINT";
   if (eventType === "email.bounced") {
-    if (bounce?.type && bounce.type.toLowerCase() === "soft") return null;
+    const bt = bounce?.type?.toLowerCase();
+    if (bt === "transient" || bt === "undetermined") return null;
     return "HARD_BOUNCE";
   }
   return null;

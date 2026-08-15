@@ -79,7 +79,8 @@ export async function POST(request: NextRequest) {
   if (!mapping) return NextResponse.json({ ok: true, ignored: eventType });
 
   // Feed the suppression list for hard bounces and complaints.
-  const suppressReason = decideSuppression(eventType, body.data as { type?: string } | undefined);
+  const bounce = (body.data as Record<string, unknown> | undefined)?.bounce as { type?: string } | undefined;
+  const suppressReason = decideSuppression(eventType, bounce);
   if (suppressReason) {
     const toValues: string[] = Array.isArray((body.data as Record<string, unknown>)?.to)
       ? ((body.data as Record<string, unknown>).to as string[])

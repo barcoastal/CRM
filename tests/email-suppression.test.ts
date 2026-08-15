@@ -10,12 +10,13 @@ describe("normalizeEmail", () => {
 });
 
 describe("decideSuppression", () => {
-  it("maps Resend bounce and complaint events to reasons", () => {
-    expect(decideSuppression("email.bounced", { type: "hard" })).toBe("HARD_BOUNCE");
+  it("maps permanent bounces and complaints to reasons", () => {
+    expect(decideSuppression("email.bounced", { type: "Permanent" })).toBe("HARD_BOUNCE");
     expect(decideSuppression("email.complained", undefined)).toBe("COMPLAINT");
   });
-  it("ignores soft bounces and unrelated events", () => {
-    expect(decideSuppression("email.bounced", { type: "soft" })).toBeNull();
+  it("ignores transient and undetermined bounces and unrelated events", () => {
+    expect(decideSuppression("email.bounced", { type: "Transient" })).toBeNull();
+    expect(decideSuppression("email.bounced", { type: "Undetermined" })).toBeNull();
     expect(decideSuppression("email.delivered", undefined)).toBeNull();
     expect(decideSuppression("email.opened", undefined)).toBeNull();
   });
