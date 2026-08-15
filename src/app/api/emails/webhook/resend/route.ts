@@ -21,6 +21,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
+import { addEmailSuppression, decideSuppression } from "@/lib/email/suppression";
 
 function verifySvixSignature(rawBody: string, headers: Headers): boolean {
   const secret = process.env.RESEND_WEBHOOK_SECRET;
@@ -76,6 +77,19 @@ export async function POST(request: NextRequest) {
 
   const mapping = STATUS_MAP[eventType];
   if (!mapping) return NextResponse.json({ ok: true, ignored: eventType });
+
+  // Feed the suppression list for hard bounces and complaints.
+  const suppressReason = decideSuppression(eventType, body.data as { type?: string } | undefined);
+  if (suppressReason) {
+    const toValues: string[] = Array.isArray((body.data as Record<string, unknown>)?.to)
+      ? ((body.data as Record<string, unknown>).to as string[])
+      : (body.data as Record<string, unknown>)?.to
+      ? [String((body.data as Record<string, unknown>).to)]
+      : [];
+    for (const addr of toValues) {
+      await addEmailSuppression(addr, suppressReason, "resend-webhook").catch(() => undefined);
+    }
+  }
 
   const msg = await prisma.emailMessage.findFirst({
     where: { providerMessageId },
