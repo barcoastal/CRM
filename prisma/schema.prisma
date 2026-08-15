@@ -482,6 +482,17 @@ model SuppressionEntry {
   @@index([leadId])
 }
 
+// Email-channel suppression list (distinct from the phone DNC SuppressionEntry).
+// Automated sends (flows, later campaigns) skip these addresses. Fed by the
+// Resend webhook on hard bounces/complaints; Phase 1b unsubscribe writes here too.
+model EmailSuppression {
+  id        String   @id @default(cuid())
+  email     String   @unique // stored lowercase
+  reason    String // HARD_BOUNCE | COMPLAINT | UNSUBSCRIBE | MANUAL
+  source    String? // free text, e.g. "resend-webhook" or "flow:<id>"
+  createdAt DateTime @default(now())
+}
+
 // ============ CALL CADENCES (Five9 cadence equivalent) ============
 
 model CallCadence {
@@ -1966,6 +1977,11 @@ model EmailMessage {
   inReplyTo       String?
   readAt          DateTime? // inbox mark-read action (distinct from openedAt, which tracks recipient pixel fires)
 
+  // Flow attribution: which automation produced this send. Plain keys (no FK)
+  // so deleting a flow keeps the send history intact.
+  flowId    String?
+  flowRunId String?
+
   @@index([threadId, createdAt])
   @@index([subjectNorm])
   @@index([ownerId, direction])
@@ -1977,6 +1993,7 @@ model EmailMessage {
   @@index([massEmailId])
   @@index([trackingId])
   @@index([contactId])
+  @@index([flowId])
 }
 
 model MassEmail {
@@ -2748,6 +2765,14 @@ model Flow {
   // Entry criteria, same condition AST shape as ValidationRule
   entryCriteria         Json      @default("{\"kind\":\"and\",\"conditions\":[]}")
   isActive              Boolean   @default(true)
+  // Re-entry safety: ALWAYS = a record can start this flow every time the
+  // trigger fires; ONCE = only the first time ever; COOLDOWN = wait
+  // reentryCooldownDays after the last run before re-entering.
+  reentryPolicy       String @default("ALWAYS") // ALWAYS | ONCE | COOLDOWN
+  reentryCooldownDays Int    @default(30)
+  // For triggerEvent = INACTIVITY: fire when the record has no email/call/task
+  // activity in this many days. Evaluated by the /api/flow/sweep cron.
+  inactivityDays      Int?
   // JSON graph: { nodes, edges }
   graph                 Json      @default("{\"nodes\":[],\"edges\":[]}")
   createdById           String?
