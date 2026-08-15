@@ -720,6 +720,17 @@ function NodeInspector({
             />
             <div className="text-[10px] text-[#747474] mt-1">e.g. email, owner.email</div>
           </div>
+          <div>
+            <label className="block text-[11px] font-semibold text-[#444656] mb-1">Send from</label>
+            <select
+              value={String(config.fromMode ?? "owner")}
+              onChange={(e) => onConfigChange({ fromMode: e.target.value })}
+              className="w-full px-2 py-1.5 text-[12px] border border-[#e0dfe6] rounded bg-white"
+            >
+              <option value="owner">From record owner&apos;s mailbox</option>
+              <option value="company">From company default address</option>
+            </select>
+          </div>
         </>
       ) : null}
       {kind === "send_sms" ? (

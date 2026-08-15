@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { createContactSchema } from "@/lib/validations/contact";
+import { evaluateAndStartFlows } from "@/lib/flow/executor";
 
 export async function GET(req: NextRequest) {
   const r = await requireAuthOrRespond("Contact.View");
@@ -80,6 +81,8 @@ export async function POST(req: NextRequest) {
         .catch(() => undefined);
     }
   }
+
+  void evaluateAndStartFlows("Contact", "INSERT", contact as unknown as Record<string, unknown>).catch(() => undefined);
 
   return NextResponse.json(contact, { status: 201 });
 }

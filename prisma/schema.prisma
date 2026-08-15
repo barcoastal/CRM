@@ -1994,6 +1994,7 @@ model EmailMessage {
   @@index([trackingId])
   @@index([contactId])
   @@index([flowId])
+  @@index([flowRunId])
 }
 
 model MassEmail {
@@ -2800,6 +2801,7 @@ model FlowRun {
   errorMessage      String?
 
   @@index([flowId, startedAt])
+  @@index([flowId, entityId, startedAt])
   @@index([status])
   @@index([status, scheduledResumeAt])
 }

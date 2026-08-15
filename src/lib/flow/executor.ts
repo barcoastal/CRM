@@ -17,6 +17,9 @@
 import { prisma } from "@/lib/prisma";
 import { sendQueuedEmail } from "@/lib/email-sender";
 import { sendQueuedSms } from "@/lib/sms-sender";
+import { normalizeSubject } from "@/lib/email/threading";
+import { isEmailSuppressed } from "@/lib/email/suppression";
+import { buildFromAddress, ownerFieldFor } from "./email-node";
 import { evaluateCondition } from "./condition";
 import { shouldReenter } from "./reentry";
 import type {
@@ -165,34 +168,63 @@ async function execStep(
       const subjectTpl = String(node.config?.subject ?? "");
       const bodyTpl = String(node.config?.body ?? "");
       const toFieldPath = String(node.config?.toFieldPath ?? "email");
+      const fromMode = String(node.config?.fromMode ?? "owner");
       const toRaw = getPath(record, toFieldPath);
       const to = toRaw == null ? "" : String(toRaw);
       if (!to) return { ok: false, error: `No recipient at path "${toFieldPath}"` };
+
+      // Suppressed recipients skip the send but the flow continues.
+      if (!ctx.dryRun && (await isEmailSuppressed(to))) {
+        return { ok: true, output: { skipped: "suppressed", to } };
+      }
+
+      // Resolve the sending identity: record owner's mailbox, else company default.
+      const ownerField = ownerFieldFor(ctx.entityType);
+      const ownerId = ownerField ? ((record[ownerField] as string | null | undefined) ?? null) : null;
+      let fromAddress: string | null = null;
+      if (fromMode === "owner" && ownerId) {
+        const owner = await prisma.user.findUnique({
+          where: { id: ownerId },
+          select: { name: true, mailboxAddress: true, email: true },
+        });
+        fromAddress = buildFromAddress(owner);
+      }
+      if (!fromAddress) {
+        fromAddress = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
+      }
+
       const subject = mergeFlowTemplate(subjectTpl, record);
       const body = mergeFlowTemplate(bodyTpl, record);
       if (ctx.dryRun) {
-        return { ok: true, output: { dryRun: true, to, subject, templateId } };
+        return { ok: true, output: { dryRun: true, to, from: fromAddress, subject, templateId } };
       }
       try {
         const msgData: AnyRecord = {
           direction: "OUTBOUND",
           status: "QUEUED",
+          fromAddress,
           toAddresses: to,
           subject: subject || "(no subject)",
+          subjectNorm: normalizeSubject(subject || "(no subject)"),
           bodyHtml: body || null,
           bodyText: body || null,
           provider: "RESEND",
           templateId: templateId || null,
+          ownerId,
+          flowId: ctx.flowId,
+          flowRunId: ctx.runId,
         };
         if (ctx.entityType === "Lead") msgData.leadId = ctx.entityId;
+        else if (ctx.entityType === "Contact") msgData.contactId = ctx.entityId;
         else if (ctx.entityType === "Opportunity") msgData.opportunityId = ctx.entityId;
         else if (ctx.entityType === "Account") msgData.accountId = ctx.entityId;
         else if (ctx.entityType === "Case") msgData.caseId = ctx.entityId;
-        const msg = await prisma.emailMessage.create({ data: msgData as never });
+        const msg = await prisma.emailMessage.create({ data: msgData as never, select: { id: true } });
+        // New sends anchor their own conversation thread.
+        await prisma.emailMessage.update({ where: { id: msg.id }, data: { threadId: msg.id } });
         // Best-effort immediate send; queue drainer will retry on failure.
-        const id = (msg as { id: string }).id;
-        void sendQueuedEmail(id).catch(() => undefined);
-        return { ok: true, output: { emailMessageId: id, to } };
+        void sendQueuedEmail(msg.id).catch(() => undefined);
+        return { ok: true, output: { emailMessageId: msg.id, to, from: fromAddress } };
       } catch (e) {
         return { ok: false, error: e instanceof Error ? e.message : "email create failed" };
       }

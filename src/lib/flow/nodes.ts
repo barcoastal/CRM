@@ -86,6 +86,7 @@ export const DEFAULT_NODE_CONFIG: Record<NodeKind, Record<string, unknown>> = {
     subject: "",
     body: "",
     toFieldPath: "email",
+    fromMode: "owner", // "owner" = record owner's mailbox; "company" = EMAIL_FROM default
   },
   send_sms: {
     body: "",
@@ -124,6 +125,7 @@ export const NODE_TONES: Record<NodeKind, { bg: string; fg: string; border: stri
 
 export const SUPPORTED_ENTITIES = [
   "Lead",
+  "Contact",
   "Opportunity",
   "Account",
   "Case",
@@ -132,7 +134,7 @@ export const SUPPORTED_ENTITIES = [
 ] as const;
 export type FlowEntity = (typeof SUPPORTED_ENTITIES)[number];
 
-export const TRIGGER_EVENTS = ["INSERT", "UPDATE", "INSERT_OR_UPDATE"] as const;
+export const TRIGGER_EVENTS = ["INSERT", "UPDATE", "INSERT_OR_UPDATE", "INACTIVITY"] as const;
 export type FlowTriggerEvent = (typeof TRIGGER_EVENTS)[number];
 
 export function emptyGraph(): FlowGraph {
