@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { sendQueuedEmail } from "@/lib/email-sender";
 import { sendQueuedSms } from "@/lib/sms-sender";
 import { evaluateCondition } from "./condition";
+import { shouldReenter } from "./reentry";
 import type {
   ConditionGroup,
   FlowEdge,
@@ -474,6 +475,17 @@ export async function evaluateAndStartFlows(
 
       const criteria = (flow.entryCriteria as unknown as ConditionGroup | null) ?? null;
       if (!evaluateCondition(criteria, record)) continue;
+
+      if (flow.reentryPolicy !== "ALWAYS") {
+        const lastRun = await prisma.flowRun.findFirst({
+          where: { flowId: flow.id, entityId },
+          orderBy: { startedAt: "desc" },
+          select: { startedAt: true },
+        });
+        if (!shouldReenter(flow.reentryPolicy, flow.reentryCooldownDays, lastRun?.startedAt ?? null)) {
+          continue;
+        }
+      }
 
       try {
         await startFlow(flow.id, entityType, entityId, record);
