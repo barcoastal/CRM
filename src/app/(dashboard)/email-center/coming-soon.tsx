@@ -12,23 +12,24 @@ export function ComingSoon({
   existingHref?: string;
 }) {
   return (
-    <div style={{ padding: 40, maxWidth: 560 }}>
-      <div
-        style={{
-          background: "#fff",
-          border: "1px solid #e5e5e5",
-          borderRadius: 8,
-          padding: 24,
-        }}
-      >
-        <h1 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{title}</h1>
-        <p style={{ fontSize: 13, color: "#444", marginBottom: 12 }}>
-          Coming in {phase} of the Email Center build.
+    <div className="ec-soon-wrap" style={{ flex: 1 }}>
+      <div className="ec-soon-card">
+        <div className="ec-soon-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" />
+          </svg>
+        </div>
+        <div style={{ marginBottom: 10 }}>
+          <span className="ec-pill ec-pill-green">Coming in {phase}</span>
+        </div>
+        <h1 className="ec-soon-title">{title}</h1>
+        <p className="ec-soon-text">
+          This part of the Email Center is on the way. It will live right here when it ships.
         </p>
         {existingHref ? (
-          <p style={{ fontSize: 13 }}>
-            Until then, use <Link href={existingHref} style={{ color: "#0176d3" }}>{existingLabel}</Link>.
-          </p>
+          <Link className="ec-soon-link" href={existingHref}>
+            Until then, use {existingLabel} &rarr;
+          </Link>
         ) : null}
       </div>
     </div>

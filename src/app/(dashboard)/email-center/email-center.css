@@ -1,0 +1,850 @@
+/* Email Center design system. Klaviyo-inspired monochrome: near-black rail,
+   white surfaces, black actions, one lime accent. Scoped by .ec- prefixes so
+   nothing leaks into the SLDS chrome around it. */
+
+.ec-root {
+  --ec-forest: #161616;
+  --ec-forest-2: #1f1f1f;
+  --ec-forest-hover: #262626;
+  --ec-forest-active: #2e2e2e;
+  --ec-lime: #d9fe62;
+  --ec-green: #171717;
+  --ec-green-hover: #000000;
+  --ec-green-soft: #f0f0ee;
+  --ec-green-ink: #2b2b2b;
+  --ec-canvas: #f7f7f6;
+  --ec-card: #ffffff;
+  --ec-border: #e6e6e3;
+  --ec-border-soft: #f0f0ed;
+  --ec-ink: #131313;
+  --ec-muted: #6e6e6a;
+  --ec-faint: #9c9c97;
+  --ec-danger: #b3261e;
+  --ec-danger-soft: #fdeceb;
+  --ec-amber-soft: #f4f4f1;
+  --ec-amber-ink: #55554f;
+  --ec-radius: 12px;
+  --ec-shadow: 0 1px 2px rgba(19, 19, 19, 0.05), 0 4px 16px rgba(19, 19, 19, 0.06);
+  --ec-shadow-lift: 0 2px 4px rgba(19, 19, 19, 0.08), 0 10px 28px rgba(19, 19, 19, 0.1);
+}
+
+.ec-root {
+  display: flex;
+  height: calc(100vh - 90px);
+  background: var(--ec-canvas);
+  color: var(--ec-ink);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Left rail ---------- */
+
+.ec-rail {
+  width: 208px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ec-forest);
+  background-image: radial-gradient(120% 60% at 0% 0%, rgba(255, 255, 255, 0.05), transparent 60%);
+  padding: 18px 12px 14px;
+  overflow-y: auto;
+}
+
+.ec-rail-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 2px 8px 16px;
+}
+
+.ec-rail-brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--ec-lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ec-forest);
+  flex-shrink: 0;
+}
+
+.ec-rail-brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #f4f7f2;
+}
+
+.ec-rail-brand-sub {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(217, 254, 98, 0.75);
+}
+
+.ec-rail-section {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(244, 247, 242, 0.4);
+  padding: 12px 10px 6px;
+}
+
+.ec-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin: 1px 0;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(244, 247, 242, 0.78);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ec-tab:hover {
+  background: var(--ec-forest-hover);
+  color: #f4f7f2;
+}
+
+.ec-tab.ec-tab-active {
+  background: var(--ec-forest-active);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--ec-lime);
+}
+
+.ec-tab.ec-tab-active svg,
+.ec-tab:hover svg {
+  color: var(--ec-lime);
+}
+
+.ec-tab svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: rgba(244, 247, 242, 0.55);
+  transition: color 0.15s ease;
+}
+
+.ec-tab-soon {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(217, 254, 98, 0.12);
+  color: rgba(217, 254, 98, 0.85);
+}
+
+.ec-rail-foot {
+  margin-top: auto;
+  padding: 12px 10px 2px;
+  font-size: 11px;
+  color: rgba(244, 247, 242, 0.45);
+}
+
+/* ---------- Generic bits ---------- */
+
+.ec-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 9px 18px;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.ec-btn-primary {
+  background: var(--ec-green);
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.ec-btn-primary:hover:not(:disabled) {
+  background: var(--ec-green-hover);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
+  transform: translateY(-1px);
+}
+
+.ec-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ec-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ec-btn-ghost {
+  background: transparent;
+  color: var(--ec-muted);
+}
+
+.ec-btn-ghost:hover {
+  background: var(--ec-border-soft);
+  color: var(--ec-ink);
+}
+
+.ec-input,
+.ec-select,
+.ec-textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--ec-ink);
+  background: var(--ec-card);
+  border: 1px solid var(--ec-border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ec-input::placeholder,
+.ec-textarea::placeholder {
+  color: var(--ec-faint);
+}
+
+.ec-input:focus,
+.ec-select:focus,
+.ec-textarea:focus {
+  outline: none;
+  border-color: var(--ec-green);
+  box-shadow: 0 0 0 3px rgba(19, 19, 19, 0.1);
+}
+
+.ec-textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.ec-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ec-pill-green {
+  background: var(--ec-green-soft);
+  color: var(--ec-green-ink);
+}
+
+.ec-pill-neutral {
+  background: var(--ec-border-soft);
+  color: var(--ec-muted);
+}
+
+.ec-pill-amber {
+  background: var(--ec-amber-soft);
+  color: var(--ec-amber-ink);
+}
+
+.ec-count-badge {
+  min-width: 19px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ec-lime);
+  color: var(--ec-forest);
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ec-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.ec-error {
+  background: var(--ec-danger-soft);
+  color: var(--ec-danger);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  margin-bottom: 10px;
+}
+
+/* ---------- Inbox panes ---------- */
+
+.ec-inbox {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ec-folders {
+  width: 190px;
+  flex-shrink: 0;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--ec-border);
+  background: var(--ec-canvas);
+}
+
+.ec-folder-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 11px;
+  margin: 1px 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ec-muted);
+  cursor: pointer;
+  text-transform: capitalize;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ec-folder-btn:hover {
+  background: rgba(19, 19, 19, 0.05);
+  color: var(--ec-ink);
+}
+
+.ec-folder-btn.ec-folder-active {
+  background: #ffffff;
+  color: var(--ec-ink);
+  font-weight: 600;
+  box-shadow: var(--ec-shadow);
+}
+
+.ec-folder-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ec-faint);
+  padding: 16px 11px 6px;
+}
+
+.ec-mailbox-chip {
+  margin-top: auto;
+  padding: 10px 11px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid var(--ec-border);
+  font-size: 11.5px;
+  color: var(--ec-muted);
+  word-break: break-all;
+}
+
+.ec-mailbox-chip b {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ec-faint);
+  margin-bottom: 3px;
+}
+
+.ec-mailbox-warn {
+  margin-top: auto;
+  padding: 10px 11px;
+  border-radius: 10px;
+  background: var(--ec-amber-soft);
+  font-size: 11.5px;
+  color: var(--ec-amber-ink);
+}
+
+/* ---------- Thread list ---------- */
+
+.ec-threads {
+  width: 330px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: #ffffff;
+  border-right: 1px solid var(--ec-border);
+}
+
+.ec-threads-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #ffffff;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--ec-border-soft);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.ec-threads-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: capitalize;
+}
+
+.ec-threads-count {
+  font-size: 12px;
+  color: var(--ec-faint);
+}
+
+.ec-thread {
+  display: flex;
+  gap: 11px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--ec-border-soft);
+  background: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s ease;
+  animation: ec-fade-up 0.25s ease both;
+}
+
+.ec-thread:nth-child(2) { animation-delay: 0.02s; }
+.ec-thread:nth-child(3) { animation-delay: 0.04s; }
+.ec-thread:nth-child(4) { animation-delay: 0.06s; }
+.ec-thread:nth-child(5) { animation-delay: 0.08s; }
+.ec-thread:nth-child(6) { animation-delay: 0.1s; }
+
+.ec-thread:hover {
+  background: #fafaf7;
+}
+
+.ec-thread.ec-thread-selected {
+  background: var(--ec-green-soft);
+  box-shadow: inset 3px 0 0 var(--ec-green);
+}
+
+.ec-thread-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.ec-thread-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ec-thread-from {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ec-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ec-thread-unread .ec-thread-from {
+  font-weight: 700;
+}
+
+.ec-thread-time {
+  font-size: 11.5px;
+  color: var(--ec-faint);
+  flex-shrink: 0;
+}
+
+.ec-thread-subject {
+  font-size: 13px;
+  color: var(--ec-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+.ec-thread-unread .ec-thread-subject {
+  font-weight: 650;
+}
+
+.ec-thread-snippet {
+  font-size: 12.5px;
+  color: var(--ec-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+.ec-thread-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+}
+
+.ec-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ec-ink);
+  flex-shrink: 0;
+  margin-top: 14px;
+}
+
+/* ---------- Conversation ---------- */
+
+.ec-convo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ec-canvas);
+}
+
+.ec-convo-head {
+  padding: 16px 24px 14px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--ec-border);
+}
+
+.ec-convo-subject {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.ec-convo-chips {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.ec-chip-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ec-green-ink);
+  background: var(--ec-green-soft);
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.ec-chip-link:hover {
+  background: #e6e6e3;
+}
+
+.ec-msgs {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.ec-msg {
+  display: flex;
+  gap: 12px;
+  max-width: 760px;
+  margin-bottom: 16px;
+  animation: ec-fade-up 0.25s ease both;
+}
+
+.ec-msg-card {
+  flex: 1;
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid var(--ec-border);
+  border-radius: var(--ec-radius);
+  box-shadow: var(--ec-shadow);
+  overflow: hidden;
+}
+
+.ec-msg-out .ec-msg-card {
+  border-left: 3px solid var(--ec-green);
+}
+
+.ec-msg-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--ec-border-soft);
+  font-size: 12px;
+  color: var(--ec-muted);
+}
+
+.ec-msg-who {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ec-msg-who b {
+  color: var(--ec-ink);
+  font-weight: 650;
+}
+
+.ec-msg-when {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ec-msg-body {
+  padding: 14px 16px;
+  font-size: 13.5px;
+  color: var(--ec-ink);
+  overflow-wrap: break-word;
+}
+
+.ec-msg-body pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  margin: 0;
+}
+
+/* ---------- Reply bar + composer ---------- */
+
+.ec-replybar {
+  padding: 14px 24px 18px;
+  background: transparent;
+}
+
+.ec-replycard {
+  max-width: 760px;
+  background: #ffffff;
+  border: 1px solid var(--ec-border);
+  border-radius: var(--ec-radius);
+  box-shadow: var(--ec-shadow);
+  padding: 12px;
+}
+
+.ec-replycard .ec-textarea {
+  border: 0;
+  padding: 4px 6px 10px;
+  box-shadow: none;
+}
+
+.ec-replycard-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ec-border-soft);
+}
+
+.ec-replycard-hint {
+  font-size: 11.5px;
+  color: var(--ec-faint);
+}
+
+.ec-compose-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 24px;
+}
+
+.ec-compose {
+  max-width: 640px;
+  margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid var(--ec-border);
+  border-radius: 14px;
+  box-shadow: var(--ec-shadow-lift);
+  overflow: hidden;
+  animation: ec-fade-up 0.25s ease both;
+}
+
+.ec-compose-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--ec-forest);
+  color: #f4f7f2;
+}
+
+.ec-compose-title {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.ec-compose-body {
+  padding: 18px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ec-field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ec-faint);
+  margin-bottom: 5px;
+}
+
+/* ---------- Empty states ---------- */
+
+.ec-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--ec-faint);
+  padding: 30px;
+  text-align: center;
+}
+
+.ec-empty-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--ec-green-soft);
+  color: var(--ec-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ec-empty-title {
+  font-size: 14.5px;
+  font-weight: 650;
+  color: var(--ec-muted);
+}
+
+.ec-empty-sub {
+  font-size: 12.5px;
+  max-width: 260px;
+}
+
+/* ---------- Coming soon ---------- */
+
+.ec-soon-wrap {
+  padding: 44px 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.ec-soon-card {
+  max-width: 520px;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid var(--ec-border);
+  border-radius: 16px;
+  box-shadow: var(--ec-shadow);
+  padding: 30px 32px;
+  animation: ec-fade-up 0.3s ease both;
+}
+
+.ec-soon-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--ec-green-soft);
+  color: var(--ec-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.ec-soon-title {
+  font-size: 20px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.ec-soon-text {
+  font-size: 13.5px;
+  color: var(--ec-muted);
+  margin-bottom: 14px;
+}
+
+.ec-soon-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ec-green-ink);
+  text-decoration: none;
+}
+
+.ec-soon-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Misc ---------- */
+
+.ec-root ::-webkit-scrollbar {
+  width: 10px;
+}
+
+.ec-root ::-webkit-scrollbar-thumb {
+  background: rgba(27, 30, 27, 0.14);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.ec-root ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(27, 30, 27, 0.26);
+}
+
+.ec-select-sm {
+  font-size: 12.5px;
+  padding: 6px 9px;
+  border-radius: 8px;
+}
+
+.ec-skel {
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--ec-border-soft) 25%, #faf9f5 50%, var(--ec-border-soft) 75%);
+  background-size: 200% 100%;
+  animation: ec-shimmer 1.2s infinite linear;
+}
+
+@keyframes ec-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@keyframes ec-fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

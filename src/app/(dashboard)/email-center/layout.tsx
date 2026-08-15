@@ -1,48 +1,19 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
+import { Instrument_Sans } from "next/font/google";
+import { TabRail } from "./tab-rail";
+import "./email-center.css";
 
-const TABS = [
-  { href: "/email-center", label: "Inbox" },
-  { href: "/email-center/campaigns", label: "Campaigns" },
-  { href: "/email-center/flows", label: "Flows" },
-  { href: "/email-center/segments", label: "Segments" },
-  { href: "/email-templates", label: "Templates" },
-  { href: "/email-center/reports", label: "Reports" },
-  { href: "/email-center/domain-health", label: "Domain Health" },
-];
+const instrument = Instrument_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
 
 export default function EmailCenterLayout({ children }: { children: ReactNode }) {
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 90px)", background: "#f3f3f3" }}>
-      <nav
-        style={{
-          width: 180,
-          flexShrink: 0,
-          background: "#fff",
-          borderRight: "1px solid #e5e5e5",
-          padding: "12px 0",
-        }}
-      >
-        <div style={{ padding: "0 16px 10px", fontSize: 15, fontWeight: 700, color: "#181818" }}>
-          Email Center
-        </div>
-        {TABS.map((t) => (
-          <Link
-            key={t.href}
-            href={t.href}
-            style={{
-              display: "block",
-              padding: "7px 16px",
-              fontSize: 13,
-              color: "#181818",
-              textDecoration: "none",
-            }}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </nav>
-      <main style={{ flex: 1, minWidth: 0, overflow: "auto" }}>{children}</main>
+    <div className={`ec-root ${instrument.className}`}>
+      <TabRail />
+      <main style={{ flex: 1, minWidth: 0, display: "flex", overflow: "hidden" }}>{children}</main>
     </div>
   );
 }

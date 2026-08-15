@@ -9,8 +9,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-const FONT = '"Salesforce Sans", "Helvetica Neue", system-ui, -apple-system, sans-serif';
-
 type Folder = "inbox" | "sent" | "all";
 
 interface ThreadRow {
@@ -42,6 +40,49 @@ interface Message {
   bodyText: string | null;
   createdAt: string;
   threadId?: string | null;
+}
+
+/** "Jane Doe <jane@x.com>" -> "Jane Doe"; bare addresses -> local part. */
+function displayName(raw: string): string {
+  const m = raw.match(/^\s*"?([^"<]+?)"?\s*</);
+  if (m) return m[1].trim();
+  const at = raw.indexOf("@");
+  return at > 0 ? raw.slice(0, at) : raw;
+}
+
+function initials(raw: string): string {
+  const name = displayName(raw);
+  const parts = name.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+const AVATAR_COLORS = ["#171717", "#3c3c3c", "#5a5a5a", "#757570", "#2b2b2b", "#4a4a46"];
+
+function avatarColor(raw: string): string {
+  let h = 0;
+  for (const ch of raw) h = (h * 31 + ch.charCodeAt(0)) % 997;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+function relativeTime(iso: string): string {
+  const then = new Date(iso);
+  const mins = Math.floor((Date.now() - then.getTime()) / 60000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  return then.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function EmptyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 6h16v12H4z M4 7l8 6 8-6" />
+    </svg>
+  );
 }
 
 export function InboxClient({
@@ -169,38 +210,38 @@ export function InboxClient({
   const totalUnread = threads.reduce((n, t) => n + t.unreadCount, 0);
 
   return (
-    <div style={{ display: "flex", height: "100%", fontFamily: FONT, background: "#f3f3f3" }}>
+    <div className="ec-inbox">
       {/* Folder rail */}
-      <div style={{ width: 150, flexShrink: 0, background: "#fff", borderRight: "1px solid #e5e5e5", padding: "12px 0" }}>
+      <div className="ec-folders">
         <button
+          className="ec-btn ec-btn-primary"
+          style={{ width: "100%", marginBottom: 14 }}
           onClick={() => { setComposeOpen(true); setSelected(null); }}
-          style={{ display: "block", margin: "0 12px 12px", width: "calc(100% - 24px)", padding: "6px 0", background: "#0176d3", color: "#fff", border: 0, borderRadius: 4, fontSize: 13, cursor: "pointer" }}
         >
-          New Email
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" aria-hidden>
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Compose
         </button>
         {(["inbox", "sent", "all"] as Folder[]).map((f) => (
           <button
             key={f}
+            className={`ec-folder-btn${folder === f ? " ec-folder-active" : ""}`}
             onClick={() => { setFolder(f); setSelected(null); }}
-            style={{
-              display: "flex", justifyContent: "space-between", width: "100%", padding: "6px 16px",
-              background: folder === f ? "#f0f6fb" : "transparent", border: 0, fontSize: 13,
-              cursor: "pointer", textTransform: "capitalize", color: "#181818",
-            }}
           >
             <span>{f === "all" ? "All Mail" : f}</span>
             {f === "inbox" && totalUnread > 0 ? (
-              <span style={{ background: "#0176d3", color: "#fff", borderRadius: 10, fontSize: 11, padding: "0 6px" }}>{totalUnread}</span>
+              <span className="ec-count-badge">{totalUnread}</span>
             ) : null}
           </button>
         ))}
         {isAdmin ? (
-          <div style={{ padding: "14px 12px 0" }}>
-            <div style={{ fontSize: 11, color: "#706e6b", marginBottom: 4 }}>Viewing</div>
+          <>
+            <div className="ec-folder-label">Viewing</div>
             <select
+              className="ec-select ec-select-sm"
               value={viewUser}
               onChange={(e) => { setViewUser(e.target.value); setSelected(null); }}
-              style={{ width: "100%", fontSize: 12, padding: 4 }}
             >
               <option value={me.id}>My inbox</option>
               <option value="all">All users</option>
@@ -208,184 +249,235 @@ export function InboxClient({
                 <option key={u.id} value={u.id}>{u.name}</option>
               ))}
             </select>
-          </div>
+          </>
         ) : null}
         {me.mailboxAddress ? (
-          <div style={{ padding: "14px 16px 0", fontSize: 11, color: "#706e6b", wordBreak: "break-all" }}>
+          <div className="ec-mailbox-chip">
+            <b>Your address</b>
             {me.mailboxAddress}
           </div>
         ) : (
-          <div style={{ padding: "14px 16px 0", fontSize: 11, color: "#c23934" }}>
+          <div className="ec-mailbox-warn">
             No mailbox address set. Ask an admin to provision one in Settings &gt; Users.
           </div>
         )}
       </div>
 
       {/* Thread list */}
-      <div style={{ width: 340, flexShrink: 0, background: "#fff", borderRight: "1px solid #e5e5e5", overflowY: "auto" }}>
+      <div className="ec-threads">
+        <div className="ec-threads-head">
+          <span className="ec-threads-title">{folder === "all" ? "All Mail" : folder}</span>
+          <span className="ec-threads-count">
+            {loading ? "" : `${threads.length} conversation${threads.length === 1 ? "" : "s"}`}
+          </span>
+        </div>
         {loading ? (
-          <div style={{ padding: 16, fontSize: 13, color: "#706e6b" }}>Loading...</div>
+          <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div className="ec-skel" style={{ height: 58 }} />
+            <div className="ec-skel" style={{ height: 58 }} />
+            <div className="ec-skel" style={{ height: 58 }} />
+          </div>
         ) : threads.length === 0 ? (
-          <div style={{ padding: 16, fontSize: 13, color: "#706e6b" }}>No conversations.</div>
+          <div className="ec-empty" style={{ paddingTop: 70 }}>
+            <div className="ec-empty-icon"><EmptyIcon /></div>
+            <div className="ec-empty-title">Nothing here yet</div>
+            <div className="ec-empty-sub">
+              {folder === "inbox"
+                ? "Inbound mail to your address will show up here."
+                : "Messages you send will show up here."}
+            </div>
+          </div>
         ) : (
           threads.map((t) => (
             <button
               key={t.threadId}
+              className={[
+                "ec-thread",
+                t.unreadCount > 0 ? "ec-thread-unread" : "",
+                selected?.threadId === t.threadId ? "ec-thread-selected" : "",
+              ].join(" ")}
               onClick={() => { setComposeOpen(false); void openThread(t); }}
-              style={{
-                display: "block", width: "100%", textAlign: "left", padding: "10px 14px",
-                borderBottom: "1px solid #f0f0f0", cursor: "pointer", border: 0,
-                background: selected?.threadId === t.threadId ? "#f0f6fb" : "#fff",
-              }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: t.unreadCount > 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {t.subject}
+              <span className="ec-avatar" style={{ background: avatarColor(t.lastFrom) }}>
+                {initials(t.lastFrom)}
+              </span>
+              <span className="ec-thread-main">
+                <span className="ec-thread-top">
+                  <span className="ec-thread-from">{displayName(t.lastFrom)}</span>
+                  <span className="ec-thread-time">{relativeTime(t.lastAt)}</span>
                 </span>
-                <span style={{ fontSize: 11, color: "#706e6b", flexShrink: 0 }}>
-                  {new Date(t.lastAt).toLocaleDateString()}
+                <span className="ec-thread-subject" style={{ display: "block" }}>{t.subject}</span>
+                <span className="ec-thread-snippet" style={{ display: "block" }}>{t.snippet}</span>
+                <span className="ec-thread-meta">
+                  {t.messageCount > 1 ? (
+                    <span className="ec-pill ec-pill-neutral">{t.messageCount} messages</span>
+                  ) : null}
+                  {t.leadId ? <span className="ec-pill ec-pill-green">Lead</span> : null}
+                  {t.accountId ? <span className="ec-pill ec-pill-green">Account</span> : null}
+                  {isAdmin && viewUser !== me.id && t.ownerName ? (
+                    <span className="ec-pill ec-pill-neutral">{t.ownerName}</span>
+                  ) : null}
                 </span>
-              </div>
-              <div style={{ fontSize: 12, color: "#706e6b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {t.lastFrom}
-              </div>
-              <div style={{ fontSize: 12, color: "#9a9a9a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {t.snippet}
-              </div>
-              <div style={{ display: "flex", gap: 6, marginTop: 3 }}>
-                {t.messageCount > 1 ? (
-                  <span style={{ fontSize: 11, color: "#706e6b" }}>{t.messageCount} messages</span>
-                ) : null}
-                {t.unreadCount > 0 ? (
-                  <span style={{ fontSize: 11, color: "#0176d3", fontWeight: 700 }}>{t.unreadCount} new</span>
-                ) : null}
-                {t.leadId ? (
-                  <span style={{ fontSize: 11, color: "#0176d3" }}>Lead: {t.leadName ?? t.leadId}</span>
-                ) : null}
-              </div>
+              </span>
+              {t.unreadCount > 0 ? <span className="ec-unread-dot" /> : null}
             </button>
           ))
         )}
       </div>
 
       {/* Conversation / composer pane */}
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className="ec-convo">
         {composeOpen ? (
-          <div style={{ padding: 20, maxWidth: 680 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>New Email</h2>
-            {templates.length > 0 ? (
-              <select
-                value={compose.templateId}
-                onChange={(e) => setCompose((c) => ({ ...c, templateId: e.target.value }))}
-                style={{ display: "block", width: "100%", marginBottom: 8, padding: 8, fontSize: 13, border: "1px solid #ddd", borderRadius: 4 }}
-              >
-                <option value="">No template (write below)</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
-            ) : null}
-            <input
-              placeholder="To"
-              value={compose.to}
-              onChange={(e) => setCompose((c) => ({ ...c, to: e.target.value }))}
-              style={{ display: "block", width: "100%", marginBottom: 8, padding: 8, fontSize: 13, border: "1px solid #ddd", borderRadius: 4 }}
-            />
-            <input
-              placeholder="Subject"
-              value={compose.subject}
-              onChange={(e) => setCompose((c) => ({ ...c, subject: e.target.value }))}
-              style={{ display: "block", width: "100%", marginBottom: 8, padding: 8, fontSize: 13, border: "1px solid #ddd", borderRadius: 4 }}
-            />
-            <textarea
-              placeholder="Write your message..."
-              value={compose.body}
-              onChange={(e) => setCompose((c) => ({ ...c, body: e.target.value }))}
-              rows={10}
-              style={{ display: "block", width: "100%", marginBottom: 8, padding: 8, fontSize: 13, border: "1px solid #ddd", borderRadius: 4, resize: "vertical" }}
-            />
-            {error ? <div style={{ color: "#c23934", fontSize: 12, marginBottom: 8 }}>{error}</div> : null}
-            <button
-              onClick={() => void sendNew()}
-              disabled={sending || !compose.to.trim()}
-              style={{ padding: "7px 18px", background: "#0176d3", color: "#fff", border: 0, borderRadius: 4, fontSize: 13, cursor: "pointer", opacity: sending ? 0.6 : 1 }}
-            >
-              {sending ? "Sending..." : "Send"}
-            </button>
+          <div className="ec-compose-wrap">
+            <div className="ec-compose">
+              <div className="ec-compose-head">
+                <span className="ec-compose-title">New message</span>
+                <button className="ec-btn ec-btn-ghost" style={{ color: "rgba(244,247,242,0.7)", padding: "4px 10px" }} onClick={() => setComposeOpen(false)}>
+                  Close
+                </button>
+              </div>
+              <div className="ec-compose-body">
+                {templates.length > 0 ? (
+                  <div>
+                    <label className="ec-field-label">Template</label>
+                    <select
+                      className="ec-select"
+                      value={compose.templateId}
+                      onChange={(e) => setCompose((c) => ({ ...c, templateId: e.target.value }))}
+                    >
+                      <option value="">No template (write below)</option>
+                      {templates.map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
+                <div>
+                  <label className="ec-field-label">To</label>
+                  <input
+                    className="ec-input"
+                    placeholder="client@example.com"
+                    value={compose.to}
+                    onChange={(e) => setCompose((c) => ({ ...c, to: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="ec-field-label">Subject</label>
+                  <input
+                    className="ec-input"
+                    placeholder="Subject"
+                    value={compose.subject}
+                    onChange={(e) => setCompose((c) => ({ ...c, subject: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="ec-field-label">Message</label>
+                  <textarea
+                    className="ec-textarea"
+                    placeholder="Write your message..."
+                    value={compose.body}
+                    onChange={(e) => setCompose((c) => ({ ...c, body: e.target.value }))}
+                    rows={9}
+                  />
+                </div>
+                {error ? <div className="ec-error">{error}</div> : null}
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    className="ec-btn ec-btn-primary"
+                    onClick={() => void sendNew()}
+                    disabled={sending || !compose.to.trim()}
+                  >
+                    {sending ? "Sending..." : "Send"}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         ) : !selected ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#706e6b", fontSize: 13 }}>
-            Select a conversation
+          <div className="ec-empty">
+            <div className="ec-empty-icon"><EmptyIcon /></div>
+            <div className="ec-empty-title">Select a conversation</div>
+            <div className="ec-empty-sub">Pick a thread on the left, or hit Compose to start one.</div>
           </div>
         ) : (
           <>
-            <div style={{ padding: "12px 20px", borderBottom: "1px solid #e5e5e5", background: "#fff" }}>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>{selected.subject}</div>
-              <div style={{ fontSize: 12, color: "#706e6b", display: "flex", gap: 12, marginTop: 2 }}>
+            <div className="ec-convo-head">
+              <div className="ec-convo-subject">{selected.subject}</div>
+              <div className="ec-convo-chips">
                 {selected.leadId ? (
-                  <Link href={`/leads/${selected.leadId}`} style={{ color: "#0176d3" }}>
-                    Lead: {selected.leadName ?? "view"}
+                  <Link className="ec-chip-link" href={`/leads/${selected.leadId}`}>
+                    Lead · {selected.leadName ?? "view"}
                   </Link>
                 ) : null}
                 {selected.accountId ? (
-                  <Link href={`/accounts/${selected.accountId}`} style={{ color: "#0176d3" }}>
-                    Account: {selected.accountName ?? "view"}
+                  <Link className="ec-chip-link" href={`/accounts/${selected.accountId}`}>
+                    Account · {selected.accountName ?? "view"}
                   </Link>
                 ) : null}
                 {selected.contactId ? (
-                  <Link href={`/contacts/${selected.contactId}`} style={{ color: "#0176d3" }}>
-                    Contact: {selected.contactName ?? "view"}
+                  <Link className="ec-chip-link" href={`/contacts/${selected.contactId}`}>
+                    Contact · {selected.contactName ?? "view"}
                   </Link>
                 ) : null}
-                {isAdmin && selected.ownerName ? <span>Owner: {selected.ownerName}</span> : null}
+                {isAdmin && selected.ownerName ? (
+                  <span className="ec-pill ec-pill-neutral">Owner: {selected.ownerName}</span>
+                ) : null}
               </div>
             </div>
-            <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
+            <div className="ec-msgs">
               {messages.map((m) => (
-                <div
-                  key={m.id}
-                  style={{
-                    background: m.direction === "OUTBOUND" ? "#eef4fb" : "#fff",
-                    border: "1px solid #e5e5e5",
-                    borderRadius: 8,
-                    padding: 14,
-                    marginBottom: 12,
-                    maxWidth: 720,
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#706e6b", marginBottom: 8 }}>
-                    <span>
-                      <b style={{ color: "#181818" }}>{m.fromAddress}</b> to {m.toAddresses}
-                    </span>
-                    <span>
-                      {new Date(m.createdAt).toLocaleString()}
-                      {m.direction === "OUTBOUND" ? ` · ${m.status.toLowerCase()}` : ""}
-                    </span>
+                <div key={m.id} className={`ec-msg${m.direction === "OUTBOUND" ? " ec-msg-out" : ""}`}>
+                  <span className="ec-avatar" style={{ background: avatarColor(m.fromAddress), width: 30, height: 30, fontSize: 11 }}>
+                    {initials(m.fromAddress)}
+                  </span>
+                  <div className="ec-msg-card">
+                    <div className="ec-msg-head">
+                      <span className="ec-msg-who">
+                        <b>{displayName(m.fromAddress)}</b> to {m.toAddresses}
+                      </span>
+                      <span className="ec-msg-when">
+                        {m.direction === "OUTBOUND" ? (
+                          <span className="ec-pill ec-pill-green">{m.status.toLowerCase()}</span>
+                        ) : null}
+                        {new Date(m.createdAt).toLocaleString(undefined, {
+                          month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div className="ec-msg-body">
+                      {m.bodyHtml ? (
+                        <div dangerouslySetInnerHTML={{ __html: m.bodyHtml }} />
+                      ) : (
+                        <pre>{m.bodyText}</pre>
+                      )}
+                    </div>
                   </div>
-                  {m.bodyHtml ? (
-                    <div style={{ fontSize: 13 }} dangerouslySetInnerHTML={{ __html: m.bodyHtml }} />
-                  ) : (
-                    <pre style={{ fontSize: 13, whiteSpace: "pre-wrap", fontFamily: FONT, margin: 0 }}>{m.bodyText}</pre>
-                  )}
                 </div>
               ))}
             </div>
-            <div style={{ padding: "12px 20px", borderTop: "1px solid #e5e5e5", background: "#fff" }}>
-              <textarea
-                placeholder="Reply..."
-                value={reply}
-                onChange={(e) => setReply(e.target.value)}
-                rows={3}
-                style={{ display: "block", width: "100%", padding: 8, fontSize: 13, border: "1px solid #ddd", borderRadius: 4, resize: "vertical", marginBottom: 8 }}
-              />
-              {error ? <div style={{ color: "#c23934", fontSize: 12, marginBottom: 8 }}>{error}</div> : null}
-              <button
-                onClick={() => void sendReply()}
-                disabled={sending || !reply.trim()}
-                style={{ padding: "6px 16px", background: "#0176d3", color: "#fff", border: 0, borderRadius: 4, fontSize: 13, cursor: "pointer", opacity: sending ? 0.6 : 1 }}
-              >
-                {sending ? "Sending..." : "Reply"}
-              </button>
+            <div className="ec-replybar">
+              <div className="ec-replycard">
+                <textarea
+                  className="ec-textarea"
+                  placeholder={`Reply to ${displayName(selected.lastFrom)}...`}
+                  value={reply}
+                  onChange={(e) => setReply(e.target.value)}
+                  rows={3}
+                />
+                {error ? <div className="ec-error">{error}</div> : null}
+                <div className="ec-replycard-foot">
+                  <span className="ec-replycard-hint">
+                    Sends from {me.mailboxAddress ?? "your account email"}
+                  </span>
+                  <button
+                    className="ec-btn ec-btn-primary"
+                    onClick={() => void sendReply()}
+                    disabled={sending || !reply.trim()}
+                  >
+                    {sending ? "Sending..." : "Reply"}
+                  </button>
+                </div>
+              </div>
             </div>
           </>
         )}
