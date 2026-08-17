@@ -24,6 +24,8 @@ import {
   type ResendAttachment,
 } from "@/lib/email/template-attachments";
 import { notify } from "@/lib/notifications/notify";
+import { normalizeSubject } from "@/lib/email/threading";
+import { normalizeEmail } from "@/lib/email/suppression";
 
 const DEFAULT_CONCURRENCY = 5;
 
@@ -49,6 +51,7 @@ async function sendViaResend(args: {
   text?: string;
   replyTo?: string | null;
   attachments?: ResendAttachment[] | null;
+  headers?: Record<string, string> | null;
 }): Promise<{ ok: boolean; providerMessageId?: string; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return { ok: false, error: "RESEND_API_KEY not set" };
@@ -62,6 +65,7 @@ async function sendViaResend(args: {
   if (args.text) body.text = args.text;
   if (args.replyTo) body.reply_to = args.replyTo;
   if (args.attachments && args.attachments.length > 0) body.attachments = args.attachments;
+  if (args.headers && Object.keys(args.headers).length > 0) body.headers = args.headers;
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -284,6 +288,21 @@ export function instrumentBody(
   return { subject: mergedSubject, html, text };
 }
 
+/** Campaign footer: a plain unsubscribe link appended to the rendered HTML. */
+export function appendUnsubscribeFooter(html: string, unsubscribeUrl: string): string {
+  const footer = `<div style="margin-top:24px"><p style="font-size:11px;color:#9c9c97;margin:0">You are receiving this email from Coastal Debt. <a href="${unsubscribeUrl}" style="color:#9c9c97">Unsubscribe</a></p></div>`;
+  if (html.includes("</body>")) return html.replace("</body>", `${footer}</body>`);
+  return html + footer;
+}
+
+/** RFC 8058 one-click unsubscribe headers. */
+export function unsubscribeHeaders(unsubscribeUrl: string): Record<string, string> {
+  return {
+    "List-Unsubscribe": `<${unsubscribeUrl}>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
+}
+
 /** Run with at most `limit` simultaneous workers. */
 async function runWithConcurrency<T, R>(
   items: T[],
@@ -310,7 +329,6 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
       where: { id: massEmailId },
       include: {
         template: true,
-        fromUser: { select: { id: true, name: true, email: true } },
       },
     });
     if (!mass) return { ok: false, error: "MassEmail not found" };
@@ -319,25 +337,53 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
     const baseUrl = getTrackingBaseUrl();
     const defaultFrom = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
     const replyTo = process.env.EMAIL_REPLY_TO ?? null;
-    const fromAddress = mass.fromUser?.email
-      ? `${mass.fromUser.name ?? mass.fromUser.email} <${mass.fromUser.email}>`
+
+    const fromUserRow = mass.fromUserId
+      ? await prisma.user.findUnique({
+          where: { id: mass.fromUserId },
+          select: { name: true, email: true, mailboxAddress: true },
+        })
+      : null;
+    const senderAddr = fromUserRow?.mailboxAddress ?? fromUserRow?.email ?? null;
+    const fromAddress = senderAddr
+      ? `"${(fromUserRow?.name ?? senderAddr).replace(/"/g, '\\"')}" <${senderAddr}>`
       : defaultFrom;
 
     const audienceFilter = (mass.audienceFilter ?? {}) as AudienceFilter;
     const recipients = await resolveAudience(mass.audienceType, audienceFilter, mass.audienceIds, mass.audienceSources);
+
+    // Drop suppressed addresses in one query; count them for the report.
+    const emails = recipients.map((r) => normalizeEmail(r.email)).filter(Boolean);
+    const suppressedRows = emails.length
+      ? await prisma.emailSuppression.findMany({
+          where: { email: { in: emails } },
+          select: { email: true },
+        })
+      : [];
+    const suppressedSet = new Set(suppressedRows.map((s) => s.email));
+    const sendable = recipients.filter((r) => !suppressedSet.has(normalizeEmail(r.email)));
+    const suppressed = recipients.length - sendable.length;
+
+    if (sendable.length === 0) {
+      await prisma.massEmail.update({
+        where: { id: massEmailId },
+        data: { status: "FAILED", suppressedCount: suppressed },
+      });
+      return { ok: false, error: suppressed > 0 ? "All recipients are suppressed" : "Audience resolved to zero recipients" };
+    }
 
     // Load template attachments once; each send reuses the encoded buffer.
     const templateAttachments = await loadResendAttachmentsForTemplate(mass.templateId);
 
     await prisma.massEmail.update({
       where: { id: massEmailId },
-      data: { status: "SENDING", totalCount: recipients.length },
+      data: { status: "SENDING", totalCount: sendable.length, suppressedCount: suppressed },
     });
 
     let sent = 0;
     let failed = 0;
 
-    await runWithConcurrency(recipients, DEFAULT_CONCURRENCY, async (r) => {
+    await runWithConcurrency(sendable, DEFAULT_CONCURRENCY, async (r) => {
       const trackingId = newTrackingId();
       try {
         const rendered = instrumentBody(
@@ -349,6 +395,9 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
           baseUrl,
         );
 
+        const unsubscribeUrl = `${baseUrl}/api/emails/unsubscribe/${trackingId}`;
+        if (rendered.html) rendered.html = appendUnsubscribeFooter(rendered.html, unsubscribeUrl);
+
         const result = await sendViaResend({
           from: fromAddress,
           to: r.email,
@@ -357,9 +406,10 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
           text: rendered.text,
           replyTo,
           attachments: templateAttachments,
+          headers: unsubscribeHeaders(unsubscribeUrl),
         });
 
-        await prisma.emailMessage.create({
+        const created = await prisma.emailMessage.create({
           data: {
             direction: "OUTBOUND",
             status: result.ok ? "SENT" : "FAILED",
@@ -379,8 +429,11 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
             sentAt: result.ok ? new Date() : null,
             massEmailId,
             trackingId,
+            subjectNorm: normalizeSubject(rendered.subject),
           },
+          select: { id: true },
         });
+        await prisma.emailMessage.update({ where: { id: created.id }, data: { threadId: created.id } });
 
         if (result.ok) sent++;
         else failed++;
@@ -388,7 +441,7 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
         failed++;
         const msg = e instanceof Error ? e.message : "unknown error";
         try {
-          await prisma.emailMessage.create({
+          const catchCreated = await prisma.emailMessage.create({
             data: {
               direction: "OUTBOUND",
               status: "FAILED",
@@ -404,8 +457,15 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
               errorReason: msg,
               massEmailId,
               trackingId,
+              subjectNorm: normalizeSubject(mass.template!.subject),
             },
+            select: { id: true },
           });
+          try {
+            await prisma.emailMessage.update({ where: { id: catchCreated.id }, data: { threadId: catchCreated.id } });
+          } catch {
+            // swallow thread anchor failure
+          }
         } catch {
           // swallow — counters still updated
         }
