@@ -92,6 +92,7 @@ async function sourceIds(source: AudienceSource): Promise<{ entity: "Lead" | "Co
   const members = await prisma.campaignContact.findMany({
     where: { campaignId: source.id },
     select: { leadId: true },
+    take: 10000,
   });
   return { entity: "Lead", ids: members.map((m) => m.leadId) };
 }

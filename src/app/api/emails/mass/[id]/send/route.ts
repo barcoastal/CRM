@@ -25,6 +25,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
       audienceType: true,
       audienceFilter: true,
       audienceIds: true,
+      audienceSources: true,
       templateId: true,
     },
   });
@@ -37,7 +38,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
   }
 
   const filter = (mass.audienceFilter ?? {}) as Record<string, unknown>;
-  const count = await countAudience(mass.audienceType, filter as never, mass.audienceIds);
+  const count = await countAudience(mass.audienceType, filter as never, mass.audienceIds, mass.audienceSources);
   if (count === 0) {
     return NextResponse.json({ error: "No recipients match the audience" }, { status: 400 });
   }
