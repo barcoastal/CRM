@@ -13,6 +13,7 @@
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { mergeTokens } from "@/lib/email-sender";
+import { resolveSourcesAudience, countSourcesAudience } from "@/lib/email/audience";
 import {
   injectTrackingPixel,
   rewriteLinksForTracking,
@@ -207,7 +208,14 @@ export async function resolveAudience(
   audienceType: string,
   audienceFilter: AudienceFilter,
   audienceIds: string[],
+  audienceSources: unknown = [],
 ): Promise<Recipient[]> {
+  if (audienceType === "sources") {
+    return resolveSourcesAudience(audienceSources, {
+      leads: loadLeadsAsRecipients,
+      contacts: loadContactsAsRecipients,
+    }) as Promise<Recipient[]>;
+  }
   if (audienceType === "list") {
     const entityType = audienceFilter.entityType ?? "Lead";
     if (entityType === "Lead") return loadLeadsAsRecipients(audienceIds);
@@ -220,7 +228,12 @@ export async function countAudience(
   audienceType: string,
   audienceFilter: AudienceFilter,
   audienceIds: string[],
+  audienceSources: unknown = [],
 ): Promise<number> {
+  if (audienceType === "sources") {
+    const { total } = await countSourcesAudience(audienceSources);
+    return total;
+  }
   if (audienceType === "list") {
     const entityType = audienceFilter.entityType ?? "Lead";
     const ids = audienceIds;
@@ -311,7 +324,7 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
       : defaultFrom;
 
     const audienceFilter = (mass.audienceFilter ?? {}) as AudienceFilter;
-    const recipients = await resolveAudience(mass.audienceType, audienceFilter, mass.audienceIds);
+    const recipients = await resolveAudience(mass.audienceType, audienceFilter, mass.audienceIds, mass.audienceSources);
 
     // Load template attachments once; each send reuses the encoded buffer.
     const templateAttachments = await loadResendAttachmentsForTemplate(mass.templateId);

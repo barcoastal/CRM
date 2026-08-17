@@ -13,13 +13,15 @@ export async function POST(req: NextRequest) {
   if ("response" in r) return r.response;
 
   const body = (await req.json().catch(() => ({}))) as {
-    audienceType?: "filter" | "list";
+    audienceType?: "filter" | "list" | "sources";
     audienceFilter?: Record<string, unknown>;
     audienceIds?: string[];
+    audienceSources?: unknown[];
   };
-  const audienceType = body.audienceType === "list" ? "list" : "filter";
+  const audienceType = body.audienceType === "list" ? "list" : body.audienceType === "sources" ? "sources" : "filter";
   const audienceFilter = (body.audienceFilter ?? {}) as never;
   const audienceIds = Array.isArray(body.audienceIds) ? body.audienceIds : [];
-  const count = await countAudience(audienceType, audienceFilter, audienceIds);
+  const audienceSources = Array.isArray(body.audienceSources) ? body.audienceSources : [];
+  const count = await countAudience(audienceType, audienceFilter, audienceIds, audienceSources);
   return NextResponse.json({ count });
 }
