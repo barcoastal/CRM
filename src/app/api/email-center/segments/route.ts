@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { validateSegmentFilters } from "@/lib/email/segment-fields";
+import type { ListFilter } from "@/lib/list-views";
 
 export async function GET() {
   const r = await requireAuthOrRespond("Email.Send");
@@ -23,12 +25,15 @@ export async function POST(req: NextRequest) {
   };
   if (!body.name?.trim()) return NextResponse.json({ error: "name required" }, { status: 400 });
   const entity = body.entity === "Contact" ? "Contact" : "Lead";
+  const filters = (Array.isArray(body.filters) ? body.filters : []) as ListFilter[];
+  const fieldErr = validateSegmentFilters(filters, entity);
+  if (fieldErr) return NextResponse.json({ error: fieldErr }, { status: 400 });
   const seg = await prisma.segment.create({
     data: {
       name: body.name.trim(),
       description: body.description?.trim() || null,
       entity,
-      filters: (Array.isArray(body.filters) ? body.filters : []) as never,
+      filters: filters as never,
       createdById: r.session.userId,
     },
   });
