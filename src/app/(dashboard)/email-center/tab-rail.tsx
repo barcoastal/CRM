@@ -66,7 +66,7 @@ export function TabRail() {
           </Link>
         );
       })}
-      <div className="ec-rail-foot">Phase 1a · Inbox live</div>
+      <div className="ec-rail-foot">Inbox + Flows live</div>
     </nav>
   );
 }
