@@ -336,6 +336,16 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
     if (mass.status === "SENDING" || mass.status === "SENT") return { ok: false, error: `Already ${mass.status.toLowerCase()}` };
     if (!mass.template) return { ok: false, error: "Template missing" };
 
+    // Atomic claim: flip to SENDING *before* any slow work (resolveAudience, suppression query).
+    // Prevents double-send when two concurrent cron calls both read status=SCHEDULED before either flips it.
+    // The manual send route already pre-flips status before calling this function, so updateMany will
+    // match 0 rows for that path and this guard will be a no-op (it already returned above or below).
+    const claimed = await prisma.massEmail.updateMany({
+      where: { id: massEmailId, status: { notIn: ["SENDING", "SENT", "CANCELED"] } },
+      data: { status: "SENDING" },
+    });
+    if (claimed.count === 0) return { ok: false, error: "Already claimed by another worker" };
+
     const baseUrl = getTrackingBaseUrl();
     const defaultFrom = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
     const replyTo = process.env.EMAIL_REPLY_TO ?? null;
@@ -379,7 +389,7 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
 
     await prisma.massEmail.update({
       where: { id: massEmailId },
-      data: { status: "SENDING", totalCount: sendable.length, suppressedCount: suppressed },
+      data: { totalCount: sendable.length, suppressedCount: suppressed },
     });
 
     let sent = 0;
