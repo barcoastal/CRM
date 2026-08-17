@@ -1,9 +1,13 @@
 /**
- * POST /api/emails/mass/[id]/send — kicks off the blast.
+ * POST /api/emails/mass/[id]/send — kicks off the blast, or schedules it.
  *
- * Validates DRAFT status, caps audience to 500 (callers should batch larger
- * sends to avoid blocking the request too long), flips status to SENDING,
- * runs startMassEmailJob synchronously, then returns the final counts.
+ * Body: { scheduledAt?: string }
+ *   - If scheduledAt is a future ISO date: sets status=SCHEDULED and returns
+ *     { ok: true, scheduled: true } WITHOUT sending.
+ *   - Otherwise: validates DRAFT|SCHEDULED status, caps audience to 500,
+ *     runs startMassEmailJob synchronously, returns final counts.
+ *
+ * Returns 409 when status is not DRAFT or SCHEDULED.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -12,10 +16,12 @@ import { countAudience, startMassEmailJob } from "@/lib/email/mass-sender";
 
 const MAX_RECIPIENTS = 500;
 
-export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const r = await requireAuthOrRespond("Email.Send");
   if ("response" in r) return r.response;
   const { id } = await ctx.params;
+
+  const body = (await req.json().catch(() => ({}))) as { scheduledAt?: string };
 
   const mass = await prisma.massEmail.findUnique({
     where: { id },
@@ -30,11 +36,25 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
     },
   });
   if (!mass) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (mass.status !== "DRAFT") {
+
+  if (mass.status !== "DRAFT" && mass.status !== "SCHEDULED") {
     return NextResponse.json({ error: `Cannot send blast in status ${mass.status}` }, { status: 409 });
   }
+
   if (!mass.templateId) {
     return NextResponse.json({ error: "Template missing" }, { status: 400 });
+  }
+
+  // Scheduling: if scheduledAt is provided and is a future date, schedule without sending.
+  if (body.scheduledAt) {
+    const scheduledDate = new Date(body.scheduledAt);
+    if (!isNaN(scheduledDate.getTime()) && scheduledDate > new Date()) {
+      await prisma.massEmail.update({
+        where: { id },
+        data: { status: "SCHEDULED", scheduledAt: scheduledDate },
+      });
+      return NextResponse.json({ ok: true, scheduled: true });
+    }
   }
 
   const filter = (mass.audienceFilter ?? {}) as Record<string, unknown>;

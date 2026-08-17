@@ -332,6 +332,8 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
       },
     });
     if (!mass) return { ok: false, error: "MassEmail not found" };
+    if (mass.status === "CANCELED") return { ok: false, error: "Campaign canceled" };
+    if (mass.status === "SENDING" || mass.status === "SENT") return { ok: false, error: `Already ${mass.status.toLowerCase()}` };
     if (!mass.template) return { ok: false, error: "Template missing" };
 
     const baseUrl = getTrackingBaseUrl();
@@ -383,7 +385,12 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
     let sent = 0;
     let failed = 0;
 
-    await runWithConcurrency(sendable, DEFAULT_CONCURRENCY, async (r) => {
+    const throttle = mass.throttlePerMinute && mass.throttlePerMinute > 0 ? mass.throttlePerMinute : null;
+    const concurrency = throttle ? 1 : DEFAULT_CONCURRENCY;
+    const delayMs = throttle ? Math.ceil(60000 / throttle) : 0;
+
+    await runWithConcurrency(sendable, concurrency, async (r) => {
+      if (delayMs > 0) await new Promise((res) => setTimeout(res, delayMs));
       const trackingId = newTrackingId();
       try {
         const rendered = instrumentBody(

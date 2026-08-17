@@ -1,8 +1,8 @@
 /**
  * Mass Email collection endpoint.
  *
- *   GET  /api/emails/mass        — list recent blasts (newest first)
- *   POST /api/emails/mass        — create a draft blast
+ *   GET  /api/emails/mass        -- list recent blasts (newest first)
+ *   POST /api/emails/mass        -- create a draft blast
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -32,9 +32,11 @@ export async function POST(req: NextRequest) {
     name?: string;
     templateId?: string;
     fromUserId?: string;
-    audienceType?: "filter" | "list";
+    audienceType?: "filter" | "list" | "sources";
     audienceFilter?: Record<string, unknown>;
     audienceIds?: string[];
+    audienceSources?: unknown[];
+    throttlePerMinute?: number;
   };
 
   if (!body.name || !body.name.trim()) {
@@ -43,10 +45,22 @@ export async function POST(req: NextRequest) {
   if (!body.templateId) {
     return NextResponse.json({ error: "templateId required" }, { status: 400 });
   }
-  const audienceType = body.audienceType === "list" ? "list" : "filter";
+
+  const audienceType =
+    body.audienceType === "list"
+      ? "list"
+      : body.audienceType === "sources"
+        ? "sources"
+        : "filter";
 
   const tpl = await prisma.emailTemplate.findUnique({ where: { id: body.templateId }, select: { id: true } });
   if (!tpl) return NextResponse.json({ error: "Template not found" }, { status: 400 });
+
+  // Clamp throttlePerMinute to 1..600 or null.
+  let throttlePerMinute: number | null = null;
+  if (typeof body.throttlePerMinute === "number" && isFinite(body.throttlePerMinute)) {
+    throttlePerMinute = Math.max(1, Math.min(600, Math.round(body.throttlePerMinute)));
+  }
 
   const created = await prisma.massEmail.create({
     data: {
@@ -56,6 +70,8 @@ export async function POST(req: NextRequest) {
       audienceType,
       audienceFilter: (body.audienceFilter ?? {}) as object,
       audienceIds: Array.isArray(body.audienceIds) ? body.audienceIds : [],
+      audienceSources: (Array.isArray(body.audienceSources) ? body.audienceSources : []) as object,
+      throttlePerMinute,
       status: "DRAFT",
       createdById: r.session.userId,
     },
