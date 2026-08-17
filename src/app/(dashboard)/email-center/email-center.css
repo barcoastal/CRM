@@ -1000,3 +1000,78 @@
   padding-top: 14px;
   border-top: 1px solid var(--ec-border-soft);
 }
+
+/* ---------- Campaigns ---------- */
+
+.ec-pill-danger {
+  background: var(--ec-danger-soft);
+  color: var(--ec-danger);
+}
+
+.ec-source-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ec-source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--ec-border);
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ec-source-chip:hover {
+  border-color: #131313;
+}
+
+.ec-source-chip-on {
+  background: #131313;
+  color: #ffffff;
+  border-color: #131313;
+}
+
+.ec-source-chip-sub {
+  font-size: 10px;
+  color: var(--ec-faint);
+}
+
+.ec-source-chip-on .ec-source-chip-sub {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ec-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  max-width: 920px;
+}
+
+.ec-stat-card {
+  background: #ffffff;
+  border: 1px solid var(--ec-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.ec-stat-value {
+  font-size: 20px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.ec-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ec-faint);
+  margin-top: 2px;
+}

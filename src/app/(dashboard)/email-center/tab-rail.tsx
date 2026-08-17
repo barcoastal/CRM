@@ -31,7 +31,7 @@ const ICONS: Record<string, string> = {
 
 const TABS = [
   { href: "/email-center", label: "Inbox", icon: "inbox" },
-  { href: "/email-center/campaigns", label: "Campaigns", icon: "campaigns", soon: "1b" },
+  { href: "/email-center/campaigns", label: "Campaigns", icon: "campaigns" },
   { href: "/email-center/flows", label: "Flows", icon: "flows" },
   { href: "/email-center/segments", label: "Segments", icon: "segments" },
   { href: "/email-templates", label: "Templates", icon: "templates" },
