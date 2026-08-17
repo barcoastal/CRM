@@ -848,3 +848,126 @@
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ---------- Flows tab ---------- */
+
+.ec-flows-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px;
+}
+
+.ec-flows-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 920px;
+  margin-bottom: 18px;
+}
+
+.ec-flows-title {
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.ec-flows-sub {
+  font-size: 13px;
+  color: var(--ec-muted);
+  margin-top: 3px;
+}
+
+.ec-flows-list {
+  max-width: 920px;
+  background: #ffffff;
+  border: 1px solid var(--ec-border);
+  border-radius: 14px;
+  box-shadow: var(--ec-shadow);
+  overflow: hidden;
+}
+
+.ec-flow-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--ec-border-soft);
+  animation: ec-fade-up 0.25s ease both;
+}
+
+.ec-flow-row:last-child {
+  border-bottom: 0;
+}
+
+.ec-flow-main {
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: var(--ec-ink);
+}
+
+.ec-flow-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.ec-flow-main:hover .ec-flow-name {
+  text-decoration: underline;
+}
+
+.ec-flow-desc {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ec-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ec-flow-stat {
+  font-size: 12px;
+  color: var(--ec-muted);
+  flex-shrink: 0;
+}
+
+.ec-pill-live {
+  background: var(--ec-lime);
+  color: #131313;
+}
+
+.ec-switch {
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--ec-border);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.ec-switch-on {
+  background: #131313;
+}
+
+.ec-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.15s ease;
+}
+
+.ec-switch-on .ec-switch-knob {
+  transform: translateX(14px);
+}
+
+.ec-switch:disabled {
+  opacity: 0.5;
+}
