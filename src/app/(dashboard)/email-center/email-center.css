@@ -971,3 +971,32 @@
 .ec-switch:disabled {
   opacity: 0.5;
 }
+
+/* ---------- Segments builder ---------- */
+
+.ec-seg-editor {
+  max-width: 920px;
+  background: #ffffff;
+  border: 1px solid var(--ec-border);
+  border-radius: 14px;
+  box-shadow: var(--ec-shadow-lift);
+  padding: 20px;
+  margin-bottom: 18px;
+  animation: ec-fade-up 0.25s ease both;
+}
+
+.ec-seg-filter-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ec-seg-editor-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ec-border-soft);
+}
