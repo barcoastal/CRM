@@ -60,6 +60,7 @@ model User {
   casesApproved             Case[]                          @relation("CaseApprover")
   caseComments              CaseComment[]                   @relation("CaseCommentAuthor")
   listViews                 ListView[]                      @relation("ListViewOwner")
+  segmentsCreated           Segment[]                       @relation("SegmentCreatedBy")
   emailsOwned               EmailMessage[]                  @relation("EmailOwner")
   smsOwned                  SmsMessage[]                    @relation("SmsOwner")
   emailTemplates            EmailTemplate[]                 @relation("EmailTemplateAuthor")
@@ -2007,12 +2008,19 @@ model MassEmail {
   audienceType   String // "filter" | "list"
   audienceFilter Json           @default("{}") // { entityType, filters }
   audienceIds    String[]       @default([]) // if list type, the specific entity IDs
+  // Multi-source audiences (Email Center campaigns). When audienceType is
+  // "sources", this holds [{ type: "segment" | "listview" | "campaign", id }]
+  // resolved as a union deduped by email at send time.
+  audienceSources   Json @default("[]")
+  // Sends per minute cap. Null = full speed (DEFAULT_CONCURRENCY workers).
+  throttlePerMinute Int?
+  suppressedCount   Int  @default(0)
   totalCount     Int            @default(0)
   sentCount      Int            @default(0)
   failedCount    Int            @default(0)
   openCount      Int            @default(0)
   clickCount     Int            @default(0)
-  status         String         @default("DRAFT") // DRAFT | SENDING | SENT | FAILED
+  status         String         @default("DRAFT") // DRAFT | SCHEDULED | SENDING | SENT | FAILED | CANCELED
   scheduledAt    DateTime?
   sentAt         DateTime?
   createdById    String?
@@ -2247,6 +2255,23 @@ model ListView {
   @@unique([entity, developerName])
   @@index([entity, ownerId])
   @@index([entity, isShared])
+}
+
+// Saved audience segment for Email Center campaigns. filters use the same
+// ListFilter[] shape as ListView.filters and translate to Prisma where
+// clauses via src/lib/list-views.ts buildWhere.
+model Segment {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  entity      String // "Lead" | "Contact"
+  filters     Json     @default("[]") // ListFilter[]
+  createdById String?
+  createdBy   User?    @relation("SegmentCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entity])
 }
 
 // ============ MARKETING (inbound lead capture + outbound postbacks) ============
