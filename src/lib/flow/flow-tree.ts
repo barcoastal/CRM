@@ -136,6 +136,7 @@ function mapTree(node: FlowTreeNode, fn: (n: FlowTreeNode) => FlowTreeNode): Flo
 
 /** Insert newNode immediately after the linear node with id=afterId, before its (single) child. */
 export function insertStep(tree: FlowTreeNode, afterId: string, newNode: FlowTreeNode): FlowTreeNode {
+  if (newNode.kind === "decision") throw new Error("Use addSplit to insert a Conditional Split, not insertStep");
   return mapTree(tree, (n) => {
     if (n.id !== afterId) return n;
     const existingChild = n.children[0];
@@ -146,6 +147,7 @@ export function insertStep(tree: FlowTreeNode, afterId: string, newNode: FlowTre
 
 /** Insert a linear newNode at the top of a decision's branch ("true"/"false"), pushing the branch's current subtree beneath it. */
 export function insertStepOnBranch(tree: FlowTreeNode, decisionId: string, branch: string, newNode: FlowTreeNode): FlowTreeNode {
+  if (newNode.kind === "decision") throw new Error("Use addSplitOnBranch to insert a Conditional Split into a branch, not insertStepOnBranch");
   return mapTree(tree, (n) => {
     if (n.id !== decisionId) return n;
     return {

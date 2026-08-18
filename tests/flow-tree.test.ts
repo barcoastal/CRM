@@ -82,6 +82,18 @@ describe("mutations", () => {
     expect(decision.children.map((c) => c.branch).sort()).toEqual(["false", "true"]);
     expect(decision.children.every((c) => c.node.kind === "end")).toBe(true);
   });
+  it("addSplit moves a non-trivial existing subtree under the true branch", () => {
+    const t = graphToTree(linearGraph);
+    const emailId = t.children[0].node.id;
+    const withWait = insertStep(t, emailId, newTreeNode("wait"));
+    const t2 = addSplit(withWait, emailId);
+    const decision = t2.children[0].node.children[0].node;
+    expect(decision.kind).toBe("decision");
+    const trueBranch = decision.children.find((c) => c.branch === "true")!;
+    expect(trueBranch.node.kind).toBe("wait");
+    const falseBranch = decision.children.find((c) => c.branch === "false")!;
+    expect(falseBranch.node.kind).toBe("end");
+  });
   it("insertStepOnBranch adds into the true branch of a decision", () => {
     const t = addSplit(graphToTree(linearGraph), graphToTree(linearGraph).children[0].node.id);
     const decision = t.children[0].node.children[0].node;
