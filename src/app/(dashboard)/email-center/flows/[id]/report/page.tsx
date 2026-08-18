@@ -46,7 +46,7 @@ export default async function FlowReportPage({ params }: { params: Promise<{ id:
           <p className="ec-flows-sub">Flow performance · {flow.entityType} automation</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Link className="ec-btn ec-btn-ghost" href={`/automation/flows/${flow.id}`}>Edit</Link>
+          <Link className="ec-btn ec-btn-ghost" href={`/email-center/flows/${flow.id}`}>Edit</Link>
           <Link className="ec-btn ec-btn-ghost" href="/email-center/flows">Back</Link>
         </div>
       </div>

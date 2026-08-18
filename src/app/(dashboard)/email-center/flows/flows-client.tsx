@@ -2,7 +2,7 @@
 
 /**
  * Email Center Flows tab: Klaviyo-style list over the existing Flow builder.
- * Rows link into the full canvas editor at /automation/flows/[id]; the toggle
+ * Rows link into the vertical builder at /email-center/flows/[id]; the toggle
  * PATCHes isActive through the existing /api/flows/[id] route.
  */
 import { useState } from "react";
