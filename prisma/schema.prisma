@@ -1996,6 +1996,33 @@ model EmailMessage {
   @@index([contactId])
   @@index([flowId])
   @@index([flowRunId])
+
+  events EmailEvent[] @relation("EmailMessageEvents")
+}
+
+// Granular email engagement log. One row per open/click/delivery/bounce/etc.
+// The per-message openCount/clickCount fields stay as fast counters; this table
+// powers time-series, unique counts, and top-clicked-URL reports. Written by the
+// tracking pixel/click routes and the Resend webhook, best-effort.
+model EmailEvent {
+  id             String       @id @default(cuid())
+  emailMessageId String
+  emailMessage   EmailMessage @relation("EmailMessageEvents", fields: [emailMessageId], references: [id], onDelete: Cascade)
+  // DELIVERED | OPEN | CLICK | BOUNCE | COMPLAINT | UNSUBSCRIBE | FAILED
+  type           String
+  url            String?
+  userAgent      String?
+  ip             String?
+  massEmailId    String?
+  flowId         String?
+  ownerId        String?
+  occurredAt     DateTime     @default(now())
+
+  @@index([type, occurredAt])
+  @@index([massEmailId])
+  @@index([flowId])
+  @@index([ownerId, occurredAt])
+  @@index([emailMessageId])
 }
 
 model MassEmail {
