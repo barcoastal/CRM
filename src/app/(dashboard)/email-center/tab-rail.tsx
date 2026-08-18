@@ -35,7 +35,7 @@ const TABS = [
   { href: "/email-center/flows", label: "Flows", icon: "flows" },
   { href: "/email-center/segments", label: "Segments", icon: "segments" },
   { href: "/email-templates", label: "Templates", icon: "templates" },
-  { href: "/email-center/reports", label: "Reports", icon: "reports", soon: "1c" },
+  { href: "/email-center/reports", label: "Reports", icon: "reports" },
   { href: "/email-center/domain-health", label: "Domain Health", icon: "domain", soon: "1c" },
 ];
 

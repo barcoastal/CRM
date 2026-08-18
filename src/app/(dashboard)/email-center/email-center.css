@@ -1075,3 +1075,50 @@
   color: var(--ec-faint);
   margin-top: 2px;
 }
+
+/* ---------- Reports ---------- */
+
+.ec-report-block {
+  max-width: 920px;
+  margin-top: 20px;
+}
+
+.ec-report-block-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ec-ink);
+  margin-bottom: 10px;
+}
+
+.ec-trend {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 120px;
+  background: #ffffff;
+  border: 1px solid var(--ec-border);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: var(--ec-shadow);
+}
+
+.ec-trend-col {
+  flex: 1;
+  min-width: 2px;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.ec-trend-bar {
+  width: 100%;
+  min-height: 2px;
+  background: var(--ec-ink);
+  border-radius: 2px 2px 0 0;
+  transition: background 0.15s ease;
+}
+
+.ec-trend-col:hover .ec-trend-bar {
+  background: var(--ec-lime);
+}
