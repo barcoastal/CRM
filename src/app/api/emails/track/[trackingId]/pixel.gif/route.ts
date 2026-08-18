@@ -53,7 +53,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ trackingId:
           data: { openCount: { increment: 1 } },
         });
       }
-      await recordEmailEvent({
+      void recordEmailEvent({
         emailMessageId: msg.id,
         type: "OPEN",
         userAgent: req.headers.get("user-agent"),
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ trackingId:
         massEmailId: msg.massEmailId,
         flowId: msg.flowId,
         ownerId: msg.ownerId,
-      });
+      }).catch(() => undefined);
     }
   } catch {
     // swallow — pixel still returns 200

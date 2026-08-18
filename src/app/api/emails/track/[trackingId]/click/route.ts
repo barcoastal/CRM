@@ -44,7 +44,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ trackingId:
           data: { clickCount: { increment: 1 } },
         });
       }
-      await recordEmailEvent({
+      void recordEmailEvent({
         emailMessageId: msg.id,
         type: "CLICK",
         url: target,
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ trackingId:
         massEmailId: msg.massEmailId,
         flowId: msg.flowId,
         ownerId: msg.ownerId,
-      });
+      }).catch(() => undefined);
     }
   } catch {
     // swallow — still redirect the user
