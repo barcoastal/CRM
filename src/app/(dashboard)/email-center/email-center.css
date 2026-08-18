@@ -1161,3 +1161,39 @@
   color: rgba(244, 247, 242, 0.7);
   margin-top: 6px;
 }
+
+/* ---------- Flow builder ---------- */
+.ec-fb-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100%; position: relative; }
+.ec-fb-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: #fff; border-bottom: 1px solid var(--ec-border); }
+.ec-fb-name { font-size: 15px; font-weight: 700; margin-left: 12px; }
+.ec-fb-canvas { flex: 1; overflow: auto; background: var(--ec-canvas); padding: 28px; }
+.ec-fb-spine { display: flex; flex-direction: column; align-items: center; gap: 0; min-width: fit-content; margin: 0 auto; }
+.ec-fb-node { display: flex; flex-direction: column; align-items: center; }
+.ec-fb-trigger { width: 320px; background: var(--ec-forest); color: #fff; border-radius: 12px; padding: 14px 18px; box-shadow: var(--ec-shadow); }
+.ec-fb-trigger-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ec-lime); }
+.ec-fb-trigger-text { font-size: 14px; margin-top: 4px; }
+.ec-fb-trigger-meta { font-size: 11px; color: rgba(244,247,242,0.6); margin-top: 4px; }
+.ec-fb-cardwrap { display: flex; align-items: center; gap: 6px; position: relative; }
+.ec-fb-card { width: 320px; display: flex; gap: 12px; align-items: center; text-align: left; background: #fff; border: 1px solid var(--ec-border); border-radius: 12px; padding: 12px 14px; box-shadow: var(--ec-shadow); cursor: pointer; font-family: inherit; transition: border-color 0.15s ease; }
+.ec-fb-card:hover { border-color: var(--ec-ink); }
+.ec-fb-card-sel { border-color: var(--ec-ink); box-shadow: 0 0 0 2px var(--ec-lime); }
+.ec-fb-card-icon { width: 30px; height: 30px; border-radius: 8px; background: var(--ec-green-soft); color: var(--ec-ink); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ec-fb-card-main { min-width: 0; flex: 1; }
+.ec-fb-card-title { display: block; font-size: 13.5px; font-weight: 650; }
+.ec-fb-card-sum { display: block; font-size: 12px; color: var(--ec-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ec-fb-del { position: absolute; right: -26px; border: 0; background: transparent; color: var(--ec-faint); cursor: pointer; font-size: 14px; padding: 4px; }
+.ec-fb-del:hover { color: var(--ec-danger); }
+.ec-fb-add { position: relative; display: flex; flex-direction: column; align-items: center; }
+.ec-fb-add::before { content: ""; width: 2px; height: 14px; background: var(--ec-border); }
+.ec-fb-add-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--ec-border); background: #fff; color: var(--ec-ink); font-size: 16px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.ec-fb-add-btn:hover { border-color: var(--ec-ink); background: var(--ec-ink); color: #fff; }
+.ec-fb-add-menu { position: absolute; top: 40px; z-index: 5; background: #fff; border: 1px solid var(--ec-border); border-radius: 10px; box-shadow: var(--ec-shadow-lift); padding: 4px; width: 180px; }
+.ec-fb-add-item { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 8px 10px; font-size: 13px; border-radius: 6px; cursor: pointer; font-family: inherit; }
+.ec-fb-add-item:hover { background: var(--ec-border-soft); }
+.ec-fb-end { margin-top: 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ec-faint); padding: 6px 14px; border: 1px dashed var(--ec-border); border-radius: 999px; }
+.ec-fb-branches { display: flex; gap: 40px; align-items: flex-start; margin-top: 14px; }
+.ec-fb-branch { display: flex; flex-direction: column; align-items: center; }
+.ec-fb-branch-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ec-ink); background: var(--ec-lime); border-radius: 999px; padding: 2px 12px; margin-bottom: 8px; }
+.ec-fb-drawer { position: absolute; top: 0; right: 0; width: 360px; height: 100%; background: #fff; border-left: 1px solid var(--ec-border); box-shadow: -8px 0 24px rgba(19,19,19,0.06); z-index: 10; display: flex; flex-direction: column; overflow: hidden; }
+.ec-fb-drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--ec-border); font-size: 14px; font-weight: 700; }
+.ec-fb-drawer-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
