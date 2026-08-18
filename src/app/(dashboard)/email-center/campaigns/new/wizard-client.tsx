@@ -87,7 +87,8 @@ export function WizardClient({
     });
     const sent = await sendRes.json().catch(() => ({}));
     setBusy(false);
-    if (!sendRes.ok) {
+    // The send route can return 200 with ok:false when the job itself refused.
+    if (!sendRes.ok || (sent as { ok?: boolean }).ok === false) {
       setError((sent as { error?: string }).error ?? "Send failed");
       return;
     }

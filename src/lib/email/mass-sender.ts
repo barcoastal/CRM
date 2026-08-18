@@ -337,9 +337,9 @@ export async function startMassEmailJob(massEmailId: string): Promise<{ ok: bool
     if (!mass.template) return { ok: false, error: "Template missing" };
 
     // Atomic claim: flip to SENDING *before* any slow work (resolveAudience, suppression query).
-    // Prevents double-send when two concurrent cron calls both read status=SCHEDULED before either flips it.
-    // The manual send route already pre-flips status before calling this function, so updateMany will
-    // match 0 rows for that path and this guard will be a no-op (it already returned above or below).
+    // Prevents double-send when two concurrent cron calls both read status=SCHEDULED before either
+    // flips it. This function is the ONLY place that moves a blast into SENDING; callers must not
+    // pre-flip the status or the claim (and the guard above) would refuse the job.
     const claimed = await prisma.massEmail.updateMany({
       where: { id: massEmailId, status: { notIn: ["SENDING", "SENT", "CANCELED"] } },
       data: { status: "SENDING" },

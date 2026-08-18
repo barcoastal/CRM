@@ -71,7 +71,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     );
   }
 
-  await prisma.massEmail.update({ where: { id }, data: { status: "SENDING", totalCount: count } });
+  // Do NOT pre-flip status here: startMassEmailJob owns the atomic
+  // DRAFT/SCHEDULED -> SENDING claim (and would refuse an already-SENDING row).
   const result = await startMassEmailJob(id);
 
   const refreshed = await prisma.massEmail.findUnique({
