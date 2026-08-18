@@ -92,6 +92,9 @@ export function FlowsClient({ flows: initial }: { flows: FlowRow[] }) {
                   ? ` · last ${new Date(f.lastRunAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
                   : ""}
               </span>
+              <Link href={`/email-center/flows/${f.id}/report`} className="ec-btn ec-btn-ghost" style={{ padding: "4px 12px" }}>
+                Report
+              </Link>
               <span className={`ec-pill ${f.isActive ? "ec-pill-live" : "ec-pill-neutral"}`}>
                 {f.isActive ? "Live" : "Draft"}
               </span>
