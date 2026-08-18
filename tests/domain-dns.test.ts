@@ -25,6 +25,9 @@ describe("classifyDmarc", () => {
   it("UNKNOWN when absent", () => {
     expect(classifyDmarc(null).status).toBe("UNKNOWN");
   });
+  it("FAIL when only sp=reject is present (policy regex must not match inside sp=)", () => {
+    expect(classifyDmarc(["v=DMARC1; sp=reject"]).status).toBe("FAIL");
+  });
 });
 
 describe("reverseIpForDnsbl", () => {

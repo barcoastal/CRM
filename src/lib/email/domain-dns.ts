@@ -6,6 +6,14 @@
  */
 import { resolveTxt, resolve4, resolve as dnsResolve } from "node:dns/promises";
 
+/** Race a lookup against a timer so a dead resolver returns the fallback fast. */
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    p.catch(() => fallback),
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 export type AuthStatus = "PASS" | "FAIL" | "UNKNOWN";
 export interface AuthResult { status: AuthStatus; record?: string | null }
 
@@ -24,7 +32,7 @@ export function classifyDmarc(txt: string[] | null): AuthResult {
   if (!txt) return { status: "UNKNOWN" };
   const dmarc = txt.find((r) => r.toLowerCase().startsWith("v=dmarc1"));
   if (!dmarc) return { status: "FAIL", record: null };
-  const policy = /p=\s*(none|quarantine|reject)/i.exec(dmarc)?.[1]?.toLowerCase();
+  const policy = /(?:^|[;\s])p=\s*(none|quarantine|reject)/i.exec(dmarc)?.[1]?.toLowerCase();
   return { status: policy === "quarantine" || policy === "reject" ? "PASS" : "FAIL", record: dmarc };
 }
 
@@ -35,11 +43,12 @@ export function reverseIpForDnsbl(ip: string, zone: string): string | null {
 }
 
 async function txtOrNull(host: string): Promise<string[] | null> {
-  try {
-    return flattenTxt((await resolveTxt(host)) as unknown as string[][]);
-  } catch {
-    return null;
-  }
+  const records = await withTimeout(
+    resolveTxt(host).then((r) => r as unknown as string[][]).catch(() => null),
+    5000,
+    null,
+  );
+  return flattenTxt(records);
 }
 
 export async function checkSpf(domain: string): Promise<AuthResult> {
@@ -60,7 +69,7 @@ export async function checkDkim(domain: string, selectors: string[] = ["resend"]
     const txt = await txtOrNull(host);
     if (txt && txt.length > 0) return { status: "PASS", record: `${sel}._domainkey` };
     try {
-      const cname = await dnsResolve(host, "CNAME");
+      const cname = await withTimeout(dnsResolve(host, "CNAME").catch(() => [] as string[]), 5000, [] as string[]);
       if (cname && cname.length > 0) return { status: "PASS", record: `${sel}._domainkey (CNAME)` };
     } catch {
       // try next selector
@@ -81,7 +90,7 @@ export async function checkBlacklists(ip: string | null, zones: string[] = DEFAU
     const query = reverseIpForDnsbl(ip, zone);
     if (!query) { out.push({ zone, listed: false }); continue; }
     try {
-      const a = await resolve4(query);
+      const a = await withTimeout(resolve4(query).catch(() => [] as string[]), 5000, [] as string[]);
       out.push({ zone, listed: a.length > 0 });
     } catch {
       // NXDOMAIN (not listed) or resolver error -> treat as not listed
