@@ -29,7 +29,9 @@ const ICONS: Record<string, string> = {
   domain: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
 };
 
-const TABS = [
+type Tab = { href: string; label: string; icon: string; soon?: string };
+
+const TABS: Tab[] = [
   { href: "/email-center", label: "Inbox", icon: "inbox" },
   { href: "/email-center/campaigns", label: "Campaigns", icon: "campaigns" },
   { href: "/email-center/flows", label: "Flows", icon: "flows" },
@@ -66,7 +68,7 @@ export function TabRail() {
           </Link>
         );
       })}
-      <div className="ec-rail-foot">Inbox + Flows live</div>
+      <div className="ec-rail-foot">Full suite live</div>
     </nav>
   );
 }
