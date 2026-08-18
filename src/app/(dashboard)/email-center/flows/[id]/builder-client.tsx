@@ -28,6 +28,7 @@ import {
 import type { FlowGraph, NodeKind } from "@/lib/flow/nodes";
 import { TriggerCard } from "@/components/email/flow-builder/trigger-card";
 import { StepSpine } from "@/components/email/flow-builder/step-spine";
+import { AddStepMenu } from "@/components/email/flow-builder/add-step-menu";
 import { ConfigDrawer } from "@/components/email/flow-builder/config-drawer";
 
 interface Initial {
@@ -134,6 +135,9 @@ export function BuilderClient({ initial }: { initial: Initial }) {
             inactivityDays={initial.inactivityDays}
             reentryPolicy={initial.reentryPolicy}
           />
+          {/* Top-of-flow adder: inserts the first step right after the trigger,
+              even when the flow is empty (start -> end). */}
+          <AddStepMenu onPick={(k) => onAddAfter(tree.id, k)} />
           {tree.children[0] ? (
             <StepSpine
               node={tree.children[0].node}
