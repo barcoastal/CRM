@@ -12,14 +12,14 @@
 
 **Codebase facts the engineer needs:**
 - `EmailMessage` (schema ~line 1900) already tracks per-message analytics: `status` (QUEUED|SENT|DELIVERED|OPENED|CLICKED|BOUNCED|COMPLAINED|FAILED), `openCount`/`clickCount` (every-hit counters), `openedAt`/`clickedAt`/`firstClickedAt`, `deliveredAt`, `bouncedAt`, `trackingId` (unique), `massEmailId`, `flowId`/`flowRunId`, `leadId`/`contactId`/`accountId`/`opportunityId`/`caseId`, `ownerId`, `errorReason`, `createdAt`.
-- Open pixel: `src/app/api/emails/track/[trackingId]/pixel.gif/route.ts` — looks up EmailMessage by trackingId, increments openCount, sets openedAt/status on first open, bumps MassEmail.openCount on first open. Public, best-effort (try/catch swallow).
-- Click redirect: `src/app/api/emails/track/[trackingId]/click/route.ts` — decodes `?u=`, increments clickCount, sets firstClickedAt/clickedAt/status, bumps MassEmail.clickCount on first click, 302-redirects. Public.
-- Resend webhook: `src/app/api/emails/webhook/resend/route.ts` — verifies svix sig, maps `body.type` (email.delivered/opened/clicked/bounced/complained/failed) via STATUS_MAP with a RANK guard (never downgrades), finds EmailMessage by `providerMessageId` (= `body.data.email_id`), updates status + timestamp, and already feeds EmailSuppression on bounce/complaint. `body.data` also carries `to`, `reason`, `bounce`, and (for click events) `body.data.click.link`.
+- Open pixel: `src/app/api/emails/track/[trackingId]/pixel.gif/route.ts` - looks up EmailMessage by trackingId, increments openCount, sets openedAt/status on first open, bumps MassEmail.openCount on first open. Public, best-effort (try/catch swallow).
+- Click redirect: `src/app/api/emails/track/[trackingId]/click/route.ts` - decodes `?u=`, increments clickCount, sets firstClickedAt/clickedAt/status, bumps MassEmail.clickCount on first click, 302-redirects. Public.
+- Resend webhook: `src/app/api/emails/webhook/resend/route.ts` - verifies svix sig, maps `body.type` (email.delivered/opened/clicked/bounced/complained/failed) via STATUS_MAP with a RANK guard (never downgrades), finds EmailMessage by `providerMessageId` (= `body.data.email_id`), updates status + timestamp, and already feeds EmailSuppression on bounce/complaint. `body.data` also carries `to`, `reason`, `bounce`, and (for click events) `body.data.click.link`.
 - `EmailSuppression` model + `src/lib/email/suppression.ts` (from Flows build): reasons HARD_BOUNCE|COMPLAINT|UNSUBSCRIBE|MANUAL. Unsubscribe route writes UNSUBSCRIBE.
 - `MassEmail` (campaign) has totalCount/sentCount/failedCount/suppressedCount/openCount/clickCount; campaign detail page exists at `src/app/(dashboard)/email-center/campaigns/[id]/page.tsx` (stat cards + recipient rows).
 - `Flow`/`FlowRun`: flow runs at `prisma.flowRun` (flowId, entityId, status, startedAt). Flow email sends carry `flowId`/`flowRunId` on EmailMessage.
-- Cron auth (copy verbatim): `authorize(req)` in `src/app/api/flow/sweep/route.ts` — Bearer `FLOW_POLL_SECRET`, fallback `PROCESSOR_SYNC_SECRET`. A launchd job on the mini (`~/crm-cron/run.sh`) already calls `/api/flow/poll` + `/api/emails/mass/process-scheduled` each minute and `/api/flow/sweep` at 03:00; add the domain-health refresh to the 03:00 branch as a deploy note.
-- Email Center UI: `.ec-` classes in `src/app/(dashboard)/email-center/email-center.css` (monochrome: black rail `--ec-forest`/#161616, white cards, lime `--ec-lime` #d9fe62, `.ec-btn-primary` black, `.ec-pill`/`.ec-pill-neutral`/`.ec-pill-green`/`.ec-pill-danger`/`.ec-pill-live`/`.ec-pill-amber`, `.ec-flows-wrap`/`.ec-flows-head`/`.ec-flows-title`/`.ec-flows-sub`, `.ec-flows-list`/`.ec-flow-row`, `.ec-stat-grid`/`.ec-stat-card`/`.ec-stat-value`/`.ec-stat-label`, `.ec-empty`). Rail: `src/app/(dashboard)/email-center/tab-rail.tsx` — Reports and Domain Health entries carry `soon: "1c"` (remove per task). Placeholders to replace: `email-center/reports/page.tsx`, `email-center/domain-health/page.tsx`.
+- Cron auth (copy verbatim): `authorize(req)` in `src/app/api/flow/sweep/route.ts` - Bearer `FLOW_POLL_SECRET`, fallback `PROCESSOR_SYNC_SECRET`. A launchd job on the mini (`~/crm-cron/run.sh`) already calls `/api/flow/poll` + `/api/emails/mass/process-scheduled` each minute and `/api/flow/sweep` at 03:00; add the domain-health refresh to the 03:00 branch as a deploy note.
+- Email Center UI: `.ec-` classes in `src/app/(dashboard)/email-center/email-center.css` (monochrome: black rail `--ec-forest`/#161616, white cards, lime `--ec-lime` #d9fe62, `.ec-btn-primary` black, `.ec-pill`/`.ec-pill-neutral`/`.ec-pill-green`/`.ec-pill-danger`/`.ec-pill-live`/`.ec-pill-amber`, `.ec-flows-wrap`/`.ec-flows-head`/`.ec-flows-title`/`.ec-flows-sub`, `.ec-flows-list`/`.ec-flow-row`, `.ec-stat-grid`/`.ec-stat-card`/`.ec-stat-value`/`.ec-stat-label`, `.ec-empty`). Rail: `src/app/(dashboard)/email-center/tab-rail.tsx` - Reports and Domain Health entries carry `soon: "1c"` (remove per task). Placeholders to replace: `email-center/reports/page.tsx`, `email-center/domain-health/page.tsx`.
 - Admin gate: `requireAuthOrRespond("Email.Send")` returns `r.session.userId`/`r.session.role`; ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN", "MANAGER"]. Reuse the threads-route pattern: non-admins see only their own (ownerId) data, admins see all and may filter by user.
 - Lead detail page: `src/app/(dashboard)/leads/[id]/page.tsx` renders `src/components/leads/lead-detail-tabs.tsx` (tabs: overview/debts/calls/campaigns/documents/notes, plus an Activity Timeline block). The Email Activity panel is a shared component dropped into lead/account/contact detail pages.
 - Tests: vitest, `tests/*.test.ts`, `@` aliased to `./src`. Local DB: `postgresql://postgres:postgres@localhost:5432/crm_local` (repo .env is stale sqlite; ALWAYS override DATABASE_URL). psql at `/Applications/Postgres.app/Contents/Versions/latest/bin/psql` user `postgres`.
@@ -27,7 +27,7 @@
 
 ---
 
-## PART A — REPORTS
+## PART A - REPORTS
 
 ### Task 1: EmailEvent schema
 
@@ -862,7 +862,7 @@ Append to `email-center.css`:
 }
 ```
 
-- [ ] **Step 4: Rail — remove `soon: "1c"` from ONLY the Reports entry.**
+- [ ] **Step 4: Rail - remove `soon: "1c"` from ONLY the Reports entry.**
 
 - [ ] **Step 5: Verify + commit**
 
@@ -1126,7 +1126,7 @@ git commit -m "Reports: per-record Email Activity panel with source attribution"
 
 ---
 
-## PART B — DOMAIN HEALTH
+## PART B - DOMAIN HEALTH
 
 ### Task 8: DomainHealthSnapshot schema
 
@@ -1513,8 +1513,8 @@ export async function buildDomainHealthSnapshot(): Promise<{ id: string; score: 
 ```typescript
 // src/app/api/email-center/domain-health/route.ts
 /**
- * GET  — latest snapshot + a short history for the trend.
- * POST — "Re-check now": builds a fresh snapshot synchronously (admins only).
+ * GET  - latest snapshot + a short history for the trend.
+ * POST - "Re-check now": builds a fresh snapshot synchronously (admins only).
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
