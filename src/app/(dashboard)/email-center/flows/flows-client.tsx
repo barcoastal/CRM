@@ -57,7 +57,7 @@ export function FlowsClient({ flows: initial }: { flows: FlowRow[] }) {
             Automations that send email, create tasks, and update records. Built in the flow canvas.
           </p>
         </div>
-        <Link className="ec-btn ec-btn-primary" href="/automation/flows/new">
+        <Link className="ec-btn ec-btn-primary" href="/email-center/flows/new">
           New Flow
         </Link>
       </div>
@@ -78,7 +78,7 @@ export function FlowsClient({ flows: initial }: { flows: FlowRow[] }) {
               >
                 <span className="ec-switch-knob" />
               </button>
-              <Link href={`/automation/flows/${f.id}`} className="ec-flow-main">
+              <Link href={`/email-center/flows/${f.id}`} className="ec-flow-main">
                 <span className="ec-flow-name">{f.name}</span>
                 {f.description ? <span className="ec-flow-desc">{f.description}</span> : null}
               </Link>
