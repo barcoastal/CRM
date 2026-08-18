@@ -7,6 +7,7 @@ import { E } from "@/components/slds/field-helpers";
 import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activity-chatter-rail";
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { LeadTabs } from "@/components/leads/lead-tabs";
+import { RecordEmailActivity } from "@/components/email/record-email-activity";
 import { LeadHeaderButtons } from "@/components/leads/lead-header-buttons";
 import { LeadHealthCheckCard } from "@/components/leads/lead-health-check-card";
 import { PaymentCalculatorV2 } from "@/components/shared/payment-calculator-v2";
@@ -915,6 +916,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               "Payment Calculator": calc,
               Documents: documents,
               Related: related,
+              Emails: <RecordEmailActivity entity="lead" id={lead.id} />,
               Marketing: marketing,
               "All SF Fields": sfFields,
             }}

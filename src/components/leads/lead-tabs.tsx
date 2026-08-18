@@ -8,6 +8,7 @@ export type LeadTabKey =
   | "Payment Calculator"
   | "Documents"
   | "Related"
+  | "Emails"
   | "Marketing"
   | "All SF Fields";
 
@@ -21,6 +22,7 @@ const TABS: LeadTabKey[] = [
   "Payment Calculator",
   "Documents",
   "Related",
+  "Emails",
   "Marketing",
 ];
 
