@@ -29,6 +29,7 @@ import { LEAD_STATUSES } from "@/lib/validations/lead";
 import { EnrollmentDialog } from "@/components/clients/enrollment-dialog";
 import { ConvertToOpportunityDialog } from "@/components/opportunities/convert-to-opportunity-dialog";
 import Link from "next/link";
+import { RecordEmailActivity } from "@/components/email/record-email-activity";
 
 interface CallData {
   id: string;
@@ -397,6 +398,7 @@ export function LeadDetailTabs({ lead }: LeadDetailTabsProps) {
               { value: "debts", label: "Debts" },
               { value: "calls", label: `Calls (${lead.calls.length})` },
               { value: "campaigns", label: "Campaigns" },
+              { value: "emails", label: "Emails" },
               { value: "documents", label: "Documents" },
               { value: "notes", label: "Notes" },
             ].map((tab) => (
@@ -904,6 +906,19 @@ export function LeadDetailTabs({ lead }: LeadDetailTabsProps) {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* Emails Tab */}
+        <TabsContent value="emails" className="mt-0">
+          <div
+            className="rounded-xl p-6"
+            style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
+          >
+            <h3 className="text-base font-bold mb-4" style={{ fontFamily: "Manrope, sans-serif" }}>
+              Email Activity
+            </h3>
+            <RecordEmailActivity entity="lead" id={lead.id} />
+          </div>
         </TabsContent>
 
         {/* Documents Tab */}

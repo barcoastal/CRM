@@ -1978,9 +1978,11 @@ model EmailMessage {
   inReplyTo       String?
   readAt          DateTime? // inbox mark-read action (distinct from openedAt, which tracks recipient pixel fires)
 
-  // Flow attribution: which automation produced this send. Plain keys (no FK)
-  // so deleting a flow keeps the send history intact.
+  // Flow attribution: which automation produced this send.
+  // flowId has a nullable relation so the record-activity API can include flow.name.
+  // flowRunId stays a plain scalar (no FK needed).
   flowId    String?
+  flow      Flow?   @relation("FlowEmails", fields: [flowId], references: [id])
   flowRunId String?
 
   @@index([threadId, createdAt])
@@ -2833,6 +2835,7 @@ model Flow {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   runs                  FlowRun[]
+  emails                EmailMessage[] @relation("FlowEmails")
 
   @@index([entityType, isActive])
 }
