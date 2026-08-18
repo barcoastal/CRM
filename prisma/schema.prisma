@@ -2137,6 +2137,26 @@ model EmailTemplateAttachment {
   @@index([templateId])
 }
 
+// Point-in-time domain deliverability health. Refreshed by the domain-health
+// cron and on-demand via the "Re-check now" button. Keeps history for trends.
+model DomainHealthSnapshot {
+  id            String   @id @default(cuid())
+  domain        String
+  spf           String   @default("UNKNOWN")
+  dkim          String   @default("UNKNOWN")
+  dmarc         String   @default("UNKNOWN")
+  spfRecord     String?
+  dmarcRecord   String?
+  bounceRate    Float    @default(0)
+  complaintRate Float    @default(0)
+  openRate      Float    @default(0)
+  score         Int      @default(0)
+  blacklists    Json     @default("[]")
+  createdAt     DateTime @default(now())
+
+  @@index([domain, createdAt])
+}
+
 model IntegrationCredential {
   id          String    @id @default(cuid())
   provider    String // FIVE9 | TWILIO | TELNYX | DOCUSIGN | PARDOT | KLAVIYO | SENDGRID
