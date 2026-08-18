@@ -8,6 +8,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { recordEmailEvent } from "@/lib/email/events";
 
 // 1x1 transparent GIF, base64.
 const PIXEL_B64 = "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
@@ -26,7 +27,7 @@ function pixelResponse(): Response {
   });
 }
 
-export async function GET(_req: NextRequest, ctx: { params: Promise<{ trackingId: string }> }) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ trackingId: string }> }) {
   const { trackingId } = await ctx.params;
   if (!trackingId) return pixelResponse();
 
@@ -34,7 +35,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ trackingId
   try {
     const msg = await prisma.emailMessage.findUnique({
       where: { trackingId },
-      select: { id: true, openedAt: true, massEmailId: true },
+      select: { id: true, openedAt: true, firstClickedAt: true, massEmailId: true, flowId: true, ownerId: true },
     });
     if (msg) {
       const isFirst = !msg.openedAt;
@@ -52,6 +53,15 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ trackingId
           data: { openCount: { increment: 1 } },
         });
       }
+      await recordEmailEvent({
+        emailMessageId: msg.id,
+        type: "OPEN",
+        userAgent: req.headers.get("user-agent"),
+        ip: req.headers.get("x-forwarded-for"),
+        massEmailId: msg.massEmailId,
+        flowId: msg.flowId,
+        ownerId: msg.ownerId,
+      });
     }
   } catch {
     // swallow — pixel still returns 200

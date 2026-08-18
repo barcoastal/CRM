@@ -22,6 +22,8 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { addEmailSuppression, decideSuppression } from "@/lib/email/suppression";
+import { recordEmailEvent } from "@/lib/email/events";
+import type { EmailEventType } from "@/lib/email/events";
 
 function verifySvixSignature(rawBody: string, headers: Headers): boolean {
   const secret = process.env.RESEND_WEBHOOK_SECRET;
@@ -94,7 +96,7 @@ export async function POST(request: NextRequest) {
 
   const msg = await prisma.emailMessage.findFirst({
     where: { providerMessageId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, massEmailId: true, flowId: true, ownerId: true },
   });
   if (!msg) return NextResponse.json({ ok: true, skipped: "not-found" });
 
@@ -116,6 +118,26 @@ export async function POST(request: NextRequest) {
     where: { id: msg.id },
     data: update,
   });
+
+  const EVENT_FOR: Record<string, EmailEventType | undefined> = {
+    "email.delivered": "DELIVERED",
+    "email.opened": "OPEN",
+    "email.clicked": "CLICK",
+    "email.bounced": "BOUNCE",
+    "email.complained": "COMPLAINT",
+    "email.failed": "FAILED",
+  };
+  const evType = EVENT_FOR[eventType];
+  if (evType) {
+    await recordEmailEvent({
+      emailMessageId: msg.id,
+      type: evType,
+      url: eventType === "email.clicked" ? ((body.data as Record<string, unknown>)?.click as { link?: string } | undefined)?.link ?? null : null,
+      massEmailId: msg.massEmailId,
+      flowId: msg.flowId,
+      ownerId: msg.ownerId,
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { addEmailSuppression } from "@/lib/email/suppression";
 import { extractEmails } from "@/lib/email/threading";
+import { recordEmailEvent } from "@/lib/email/events";
 
 function escHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -16,12 +17,19 @@ function escHtml(s: string): string {
 async function suppressByTrackingId(trackingId: string): Promise<string | null> {
   const msg = await prisma.emailMessage.findUnique({
     where: { trackingId },
-    select: { toAddresses: true },
+    select: { id: true, toAddresses: true, massEmailId: true, flowId: true, ownerId: true },
   });
   if (!msg) return null;
   const email = extractEmails(msg.toAddresses)[0] ?? null;
   if (!email) return null;
   await addEmailSuppression(email, "UNSUBSCRIBE", "unsubscribe-link");
+  await recordEmailEvent({
+    emailMessageId: msg.id,
+    type: "UNSUBSCRIBE",
+    massEmailId: msg.massEmailId,
+    flowId: msg.flowId,
+    ownerId: msg.ownerId,
+  });
   return email;
 }
 

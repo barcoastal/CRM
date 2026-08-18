@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { decodeTrackedUrl } from "@/lib/email/tracking-rewrite";
+import { recordEmailEvent } from "@/lib/email/events";
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ trackingId: string }> }) {
   const { trackingId } = await ctx.params;
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ trackingId:
   try {
     const msg = await prisma.emailMessage.findUnique({
       where: { trackingId },
-      select: { id: true, firstClickedAt: true, massEmailId: true },
+      select: { id: true, openedAt: true, firstClickedAt: true, massEmailId: true, flowId: true, ownerId: true },
     });
     if (msg) {
       const isFirst = !msg.firstClickedAt;
@@ -43,6 +44,16 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ trackingId:
           data: { clickCount: { increment: 1 } },
         });
       }
+      await recordEmailEvent({
+        emailMessageId: msg.id,
+        type: "CLICK",
+        url: target,
+        userAgent: req.headers.get("user-agent"),
+        ip: req.headers.get("x-forwarded-for"),
+        massEmailId: msg.massEmailId,
+        flowId: msg.flowId,
+        ownerId: msg.ownerId,
+      });
     }
   } catch {
     // swallow — still redirect the user
