@@ -1122,3 +1122,42 @@
 .ec-trend-col:hover .ec-trend-bar {
   background: var(--ec-lime);
 }
+
+/* ---------- Domain Health ---------- */
+
+.ec-health-top {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  max-width: 920px;
+}
+
+.ec-health-gauge {
+  width: 160px;
+  flex-shrink: 0;
+  background: var(--ec-forest);
+  color: #fff;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  box-shadow: var(--ec-shadow);
+}
+
+.ec-health-score {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ec-lime);
+}
+
+.ec-health-grade {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(244, 247, 242, 0.7);
+  margin-top: 6px;
+}
