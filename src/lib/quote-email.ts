@@ -118,6 +118,8 @@ export function renderQuoteEmail(args: {
   const logo = `${base}/email/coastal-logo.png`;
   const tpBadge = `${base}/email/trustpilot-badge.png`;
   const bbbBadge = `${base}/email/bbb-badge.png`;
+  const videoPoster = `${base}/email/quote-video.jpg`;
+  const videoUrl = "https://youtu.be/i9kjtj532qs";
   const font =
     "'Aeonik','Helvetica Neue',Helvetica,Arial,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
   const m = QUOTE_MARKETING;
@@ -259,6 +261,14 @@ export function renderQuoteEmail(args: {
                 </td>
               </tr>
             </table>
+          </td></tr>
+
+          <!-- Video testimonial -->
+          <tr><td style="padding:20px 32px 4px;">
+            <div style="font-family:${font};font-size:17px;font-weight:800;color:#0b0b14;margin-bottom:10px;">Hear it from a client</div>
+            <a href="${videoUrl}" style="text-decoration:none;display:block;">
+              <img src="${videoPoster}" alt="Watch a Coastal Debt Resolve client story" width="576" style="display:block;width:100%;max-width:576px;height:auto;border:0;border-radius:12px;" />
+            </a>
           </td></tr>
 
           <!-- Testimonials -->
