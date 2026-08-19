@@ -64,6 +64,7 @@ model User {
   emailsOwned               EmailMessage[]                  @relation("EmailOwner")
   smsOwned                  SmsMessage[]                    @relation("SmsOwner")
   emailTemplates            EmailTemplate[]                 @relation("EmailTemplateAuthor")
+  smsTemplates              SmsTemplate[]                   @relation("SmsTemplateAuthor")
   emailAttachmentsUploaded  EmailTemplateAttachment[]       @relation("EmailAttachmentUploader")
   integrationCredentials    IntegrationCredential[]         @relation("IntegrationCredentialAuthor")
   paymentCalcsSaved         LeadPaymentCalculation[]        @relation("PaymentCalcSavedBy")
@@ -2123,6 +2124,23 @@ model EmailTemplate {
   cadenceSteps CadenceStep[]             @relation("CadenceStepEmailTemplate")
   massEmails   MassEmail[]               @relation("MassEmailTemplate")
   attachments  EmailTemplateAttachment[]
+}
+
+// SMS message template for the Email Center Templates hub. Body carries the
+// same {{token}} merge fields as email. Authored now; sendable when Phase 2
+// SMS campaigns/flows land.
+model SmsTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  body        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdById String?
+  createdBy   User?    @relation("SmsTemplateAuthor", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
 }
 
 model EmailTemplateAttachment {

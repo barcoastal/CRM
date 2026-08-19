@@ -36,7 +36,7 @@ const TABS: Tab[] = [
   { href: "/email-center/campaigns", label: "Campaigns", icon: "campaigns" },
   { href: "/email-center/flows", label: "Flows", icon: "flows" },
   { href: "/email-center/segments", label: "Segments", icon: "segments" },
-  { href: "/email-templates", label: "Templates", icon: "templates" },
+  { href: "/email-center/templates", label: "Templates", icon: "templates" },
   { href: "/email-center/reports", label: "Reports", icon: "reports" },
   { href: "/email-center/domain-health", label: "Domain Health", icon: "domain" },
 ];
