@@ -2,7 +2,7 @@
 
 import type { FlowTreeNode, FlowTreeBranch } from "@/lib/flow/flow-tree";
 import type { NodeKind } from "@/lib/flow/nodes";
-import { StepCard } from "./step-card";
+import { StepCard, type StepStats } from "./step-card";
 import { AddStepMenu } from "./add-step-menu";
 
 /**
@@ -12,10 +12,11 @@ import { AddStepMenu } from "./add-step-menu";
  * renders the terminal cap.
  */
 export function StepSpine({
-  node, selectedId, onSelect, onAddAfter, onAddOnBranch, onDelete,
+  node, selectedId, stats, onSelect, onAddAfter, onAddOnBranch, onDelete,
 }: {
   node: FlowTreeNode;
   selectedId: string | null;
+  stats: StepStats | null;
   onSelect: (id: string) => void;
   onAddAfter: (afterId: string, kind: NodeKind) => void;
   onAddOnBranch: (decisionId: string, branch: string, kind: NodeKind) => void;
@@ -24,12 +25,12 @@ export function StepSpine({
   if (node.kind === "end") {
     return <div className="ec-fb-end">End</div>;
   }
-  const common = { selectedId, onSelect, onAddAfter, onAddOnBranch, onDelete };
+  const common = { selectedId, stats, onSelect, onAddAfter, onAddOnBranch, onDelete };
   if (node.kind === "decision") {
     return (
       <div className="ec-fb-node">
         <div className="ec-fb-cardwrap">
-          <StepCard node={node} selected={selectedId === node.id} onClick={() => onSelect(node.id)} />
+          <StepCard node={node} selected={selectedId === node.id} stats={stats} onClick={() => onSelect(node.id)} />
           <button className="ec-fb-del" title="Delete branch" onClick={() => onDelete(node.id)}>x</button>
         </div>
         <div className="ec-fb-branches">
@@ -51,7 +52,7 @@ export function StepSpine({
   return (
     <div className="ec-fb-node">
       <div className="ec-fb-cardwrap">
-        <StepCard node={node} selected={selectedId === node.id} onClick={() => onSelect(node.id)} />
+        <StepCard node={node} selected={selectedId === node.id} stats={stats} onClick={() => onSelect(node.id)} />
         <button className="ec-fb-del" title="Delete step" onClick={() => onDelete(node.id)}>x</button>
       </div>
       <AddStepMenu onPick={(k) => onAddAfter(node.id, k)} />

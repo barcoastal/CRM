@@ -1197,3 +1197,14 @@
 .ec-fb-drawer { position: absolute; top: 0; right: 0; width: 360px; height: 100%; background: #fff; border-left: 1px solid var(--ec-border); box-shadow: -8px 0 24px rgba(19,19,19,0.06); z-index: 10; display: flex; flex-direction: column; overflow: hidden; }
 .ec-fb-drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--ec-border); font-size: 14px; font-weight: 700; }
 .ec-fb-drawer-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* ---------- Flow builder step stats ---------- */
+.ec-fb-card-stats {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ec-green-ink);
+  margin-top: 4px;
+}
+.ec-fb-card-stats b { color: var(--ec-ink); font-weight: 700; }
+.ec-fb-card-stats-muted { color: var(--ec-faint); }
+.ec-fb-stat-dot { margin: 0 5px; color: var(--ec-faint); }

@@ -9,7 +9,7 @@
  *   onAddAfter: decision kind -> addSplit; all other kinds -> insertStep
  *   onAddOnBranch: decision kind -> addSplitOnBranch; all other kinds -> insertStepOnBranch
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -28,6 +28,7 @@ import {
 import type { FlowGraph, NodeKind } from "@/lib/flow/nodes";
 import { TriggerCard } from "@/components/email/flow-builder/trigger-card";
 import { StepSpine } from "@/components/email/flow-builder/step-spine";
+import type { StepStats } from "@/components/email/flow-builder/step-card";
 import { AddStepMenu } from "@/components/email/flow-builder/add-step-menu";
 import { ConfigDrawer } from "@/components/email/flow-builder/config-drawer";
 
@@ -52,6 +53,16 @@ export function BuilderClient({ initial }: { initial: Initial }) {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<StepStats | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/email-center/flows/${initial.id}/step-stats`)
+      .then((res) => res.json())
+      .then((d) => { if (active) setStats({ emails: d.emails ?? {}, waiting: d.waiting ?? {} }); })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [initial.id]);
 
   const mutate = useCallback((fn: (t: FlowTreeNode) => FlowTreeNode) => {
     setTree((t) => fn(t));
@@ -142,6 +153,7 @@ export function BuilderClient({ initial }: { initial: Initial }) {
             <StepSpine
               node={tree.children[0].node}
               selectedId={selectedId}
+              stats={stats}
               onSelect={setSelectedId}
               onAddAfter={onAddAfter}
               onAddOnBranch={onAddOnBranch}

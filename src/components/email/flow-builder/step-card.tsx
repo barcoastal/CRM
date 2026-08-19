@@ -2,6 +2,11 @@
 
 import type { FlowTreeNode } from "@/lib/flow/flow-tree";
 
+export interface StepStats {
+  emails: Record<string, { sent: number; delivered: number; opened: number; clicked: number; openRate: number; clickRate: number }>;
+  waiting: Record<string, number>;
+}
+
 const ICONS: Record<string, string> = {
   send_email: "M4 6h16v12H4z M4 7l8 6 8-6",
   wait: "M12 8v4l3 2 M12 3a9 9 0 1 0 0.01 0z",
@@ -28,7 +33,31 @@ function summary(n: FlowTreeNode): string {
   }
 }
 
-export function StepCard({ node, selected, onClick }: { node: FlowTreeNode; selected: boolean; onClick: () => void }) {
+function StatLine({ node, stats }: { node: FlowTreeNode; stats: StepStats | null }) {
+  if (!stats) return null;
+  if (node.kind === "send_email") {
+    const e = stats.emails[node.id];
+    if (!e || e.sent === 0) return <span className="ec-fb-card-stats ec-fb-card-stats-muted">No sends yet</span>;
+    return (
+      <span className="ec-fb-card-stats">
+        <b>{e.sent}</b> sent<span className="ec-fb-stat-dot">·</span>
+        <b>{e.openRate}%</b> open<span className="ec-fb-stat-dot">·</span>
+        <b>{e.clickRate}%</b> click
+      </span>
+    );
+  }
+  if (node.kind === "wait") {
+    const w = stats.waiting[node.id] ?? 0;
+    return (
+      <span className="ec-fb-card-stats">
+        <b>{w}</b> {w === 1 ? "person" : "people"} waiting
+      </span>
+    );
+  }
+  return null;
+}
+
+export function StepCard({ node, selected, stats, onClick }: { node: FlowTreeNode; selected: boolean; stats: StepStats | null; onClick: () => void }) {
   return (
     <button className={`ec-fb-card${selected ? " ec-fb-card-sel" : ""}`} onClick={onClick}>
       <span className="ec-fb-card-icon">
@@ -39,6 +68,7 @@ export function StepCard({ node, selected, onClick }: { node: FlowTreeNode; sele
       <span className="ec-fb-card-main">
         <span className="ec-fb-card-title">{node.label}</span>
         <span className="ec-fb-card-sum">{summary(node)}</span>
+        <StatLine node={node} stats={stats} />
       </span>
     </button>
   );

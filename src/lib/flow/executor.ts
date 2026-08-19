@@ -213,6 +213,7 @@ async function execStep(
           ownerId,
           flowId: ctx.flowId,
           flowRunId: ctx.runId,
+          flowNodeId: node.id,
         };
         if (ctx.entityType === "Lead") msgData.leadId = ctx.entityId;
         else if (ctx.entityType === "Contact") msgData.contactId = ctx.entityId;

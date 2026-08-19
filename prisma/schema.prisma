@@ -1984,6 +1984,8 @@ model EmailMessage {
   flowId    String?
   flow      Flow?   @relation("FlowEmails", fields: [flowId], references: [id])
   flowRunId String?
+  // Which flow step (graph node id) produced this send, for per-step stats.
+  flowNodeId String?
 
   @@index([threadId, createdAt])
   @@index([subjectNorm])
@@ -1998,6 +2000,7 @@ model EmailMessage {
   @@index([contactId])
   @@index([flowId])
   @@index([flowRunId])
+  @@index([flowId, flowNodeId])
 
   events EmailEvent[] @relation("EmailMessageEvents")
 }
