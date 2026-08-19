@@ -62,28 +62,33 @@ export function computeQuote(input: QuoteInputs): QuoteFigures {
 }
 
 export const QUOTE_MARKETING = {
-  bbbRating: "A+",
+  // Trust band. Sourced from the company's public Trustpilot standing; swap
+  // ratingBadge/ratingSource to "A+" / "BBB Accredited" only if the business
+  // actually holds that grade.
+  ratingBadge: "Excellent",
+  ratingSource: "Rated on Trustpilot",
   reviewStars: 5,
-  reviewCount: "1,200+",
-  yearsHelping: "our clients since 2019",
+  reviewCount: "400+",
+  // Real verified client reviews pulled from coastaldebt.com/testimonials
+  // (2026-08-19). Lightly cleaned for punctuation only.
   testimonials: [
     {
       quote:
-        "Coastal took the pressure off overnight. My daily payments were draining the business and they got it down to something I could actually manage.",
-      name: "Marcus R.",
-      location: "Fort Lauderdale, FL",
+        "Sarah is phenomenal! She is always keeping me informed on any updates and showing support while being attentive to any concerns or questions I have. She has been a guiding light and I'm so pleased with my services!",
+      name: "Alisa Taylor",
+      location: "Verified client review",
     },
     {
       quote:
-        "I was getting calls every day and didn't know where to turn. Their team walked me through every step and I finally have room to breathe.",
-      name: "Denise K.",
-      location: "Houston, TX",
+        "Coastal has been there as promised every step of the way and took care of everything without us having to worry about what was being accomplished and when we would see results. Alecha kept in touch with me weekly and was always easy to reach when needed.",
+      name: "Jerome Armstead Jr.",
+      location: "Verified client review",
     },
     {
       quote:
-        "Honest people who did exactly what they said. I saved thousands and kept my doors open.",
-      name: "Sam T.",
-      location: "Columbus, OH",
+        "Timothy has been awesome helping me through this tough time in my business. He is very attentive and answers all of my questions. I highly recommend Coastal Debt Resolve to my colleagues.",
+      name: "Jamari Nicholas",
+      location: "Verified client review",
     },
   ],
 };
@@ -207,12 +212,12 @@ export function renderQuoteEmail(args: {
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F2F4F9;border-radius:10px;">
                 <tr>
                   <td width="50%" style="padding:16px;text-align:center;border-right:1px solid #e4e8f5;">
-                    <div style="font-family:${font};font-size:26px;font-weight:800;color:#0B5CAB;line-height:1;">${esc(m.bbbRating)}</div>
-                    <div style="font-family:${font};font-size:12px;color:#444;margin-top:4px;">BBB Rated &middot; Accredited Business</div>
+                    <div style="font-family:${font};font-size:22px;font-weight:800;color:#0B5CAB;line-height:1;">${esc(m.ratingBadge)}</div>
+                    <div style="font-family:${font};font-size:12px;color:#444;margin-top:4px;">${esc(m.ratingSource)}</div>
                   </td>
                   <td width="50%" style="padding:16px;text-align:center;">
                     <div style="font-family:${font};font-size:18px;color:#F5A623;letter-spacing:2px;line-height:1;">${stars}</div>
-                    <div style="font-family:${font};font-size:12px;color:#444;margin-top:6px;">${esc(m.reviewCount)} clients helped</div>
+                    <div style="font-family:${font};font-size:12px;color:#444;margin-top:6px;">${esc(m.reviewCount)} verified reviews</div>
                   </td>
                 </tr>
               </table>
