@@ -102,7 +102,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     businessName: q.businessName,
     note: body.note ?? null,
     figures: q.figures,
-    callPhone: process.env.QUOTE_CALL_PHONE ?? null,
+    callPhone: process.env.QUOTE_CALL_PHONE ?? "(888) 707-7177",
   });
 
   const from = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
