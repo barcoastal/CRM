@@ -14,6 +14,7 @@ import {
   type ForecastCategory,
 } from "@/lib/forecasting/categories";
 import { SubmitButton as SubmitForApprovalButton } from "@/components/approvals/submit-button";
+import { GetQuoteModal } from "@/components/opportunities/get-quote-modal";
 
 const btn: React.CSSProperties = {
   background: "#fff",
@@ -74,6 +75,7 @@ export function OppHeaderButtons({
   const [moreMenu, setMoreMenu] = useState(false);
   const [contractModal, setContractModal] = useState(false);
   const [packetModal, setPacketModal] = useState(false);
+  const [quoteModal, setQuoteModal] = useState(false);
 
   async function updateOpp() {
     router.push(`/opportunities/${opportunityId}/edit`);
@@ -87,6 +89,22 @@ export function OppHeaderButtons({
   return (
     <>
       <QuickActionsRow opportunityId={opportunityId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
+      <button
+        onClick={() => setQuoteModal(true)}
+        style={{
+          background: "#0b5cab",
+          border: "1px solid #0b5cab",
+          color: "#fff",
+          padding: "0 14px",
+          height: 32,
+          borderRadius: 4,
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+      >
+        Get Quote
+      </button>
       {/* SF opp header shows exactly: Disposition | Update Opportunity |
           Amend Opportunity, plus a chevron menu holding our extra actions. */}
       <div style={{ display: "inline-flex", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "visible", position: "relative" }}>
@@ -133,6 +151,11 @@ export function OppHeaderButtons({
         defaultSigner={{ name: defaultSignerName ?? null, email: defaultEmail ?? null }}
         open={packetModal}
         onClose={() => setPacketModal(false)}
+      />
+      <GetQuoteModal
+        opportunityId={opportunityId}
+        open={quoteModal}
+        onClose={() => setQuoteModal(false)}
       />
     </>
   );
