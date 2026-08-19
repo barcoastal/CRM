@@ -37,7 +37,6 @@ const APPS: AppTile[] = [
   { label: "Sign Docs", href: "/sign-docs", description: "Contracts, templates, signatures" },
   { label: "Dialer", href: "/dialer", description: "Power dialer + dispositions" },
   { label: "Approvals", href: "/approvals", description: "Review and submit approval requests" },
-  { label: "Automation", href: "/automation/flows", description: "Visual flow builder" },
   { label: "Admin", href: "/integrations", description: "Integrations + users" },
   { label: "Chatter", href: "/chatter", description: "Team feeds + groups + mentions" },
   { label: "Files", href: "/files", description: "Central content library" },
