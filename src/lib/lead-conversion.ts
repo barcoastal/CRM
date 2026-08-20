@@ -178,7 +178,12 @@ export async function convertLead(
         opts.opportunityRecordType && isOpportunityRecordType(opts.opportunityRecordType)
           ? opts.opportunityRecordType
           : "DEBT_SETTLEMENT";
-      const oppName = opts.opportunityName ?? defaultOpportunityName(account.name, oppRecordType);
+      // Opportunities are named after the person (the lead/contact), matching
+      // the org convention - NOT the company/account name.
+      const oppName =
+        opts.opportunityName?.trim() ||
+        lead.contactName?.trim() ||
+        defaultOpportunityName(account.name, oppRecordType);
       const opp = await tx.opportunity.create({
         data: {
           name: oppName,
