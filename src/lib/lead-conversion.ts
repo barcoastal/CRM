@@ -101,41 +101,23 @@ export async function convertLead(
     };
   }
 
-  // SF Validation Rule: Company and Debt Information are required and the call
-  // should be transferred from the fronter to convert a Lead.
+  // Conversion requires Company + Debt Information. (SF also gated on the call
+  // being transferred from a fronter, but the CRM is not the dialer and never
+  // has Five9 call/transfer data, so enforcing that here blocked every
+  // conversion. The fronter-transfer gate lives in the dialer, not here.)
   // - Company = Lead.businessName populated
-  // - Debt Information = at least one LeadDebt row OR Total_Debt_Amount__c > 0
-  // - Call transferred from fronter = at least one Call with a non-empty
-  //   transferredBy / fronter set on the lead's recent calls
+  // - Debt Information = at least one LeadDebt row OR a total-debt value > 0
   if (!opts.skipValidation) {
     const company = (lead.businessName ?? "").trim();
-    if (!company) {
-      throw new Error(
-        "Company and Debt Information are required and the call should be transferred from the fronter to convert a Lead",
-      );
-    }
     let sfData: Record<string, unknown> = {};
     try { sfData = lead.sfDataJson ? JSON.parse(lead.sfDataJson) as Record<string, unknown> : {}; } catch { /* */ }
     const totalDebt = Number(sfData.Total_Debt_Amount__c ?? sfData.Total_Debt__c ?? lead.totalDebtEst ?? 0);
     const hasDebt = lead.debts.length > 0 || totalDebt > 0;
-    if (!hasDebt) {
-      throw new Error(
-        "Company and Debt Information are required and the call should be transferred from the fronter to convert a Lead",
-      );
-    }
-    const fronterTransferred =
-      (sfData.Call_Transfer_Status__c &&
-        String(sfData.Call_Transfer_Status__c).toLowerCase().includes("transfer")) ||
-      !!sfData.Call_Transferred_DateTime__c ||
-      !!sfData.Call_Transferred_By_Lookup__c ||
-      lead.calls.some((c) =>
-        (c.disposition ?? "").toUpperCase().includes("TRANSFER") ||
-        (c.disposition ?? "").toUpperCase() === "QUALIFIED",
-      );
-    if (!fronterTransferred) {
-      throw new Error(
-        "Company and Debt Information are required and the call should be transferred from the fronter to convert a Lead",
-      );
+    if (!company || !hasDebt) {
+      const missing = [!company ? "Company" : null, !hasDebt ? "Debt Information" : null]
+        .filter(Boolean)
+        .join(" and ");
+      throw new Error(`${missing} ${!company && !hasDebt ? "are" : "is"} required to convert a Lead`);
     }
   }
 

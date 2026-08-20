@@ -58,8 +58,26 @@ const SOQL: Record<string, string> = {
   // or not done") so the CRM's live payment grid matches SF exactly.
   programplan: `SELECT Id, Client__c, Opportunity__c, Payment_Processor__c, First_Payment_Date__c, Payment_Term__c, Weekly_Draft_Amount__c, Setup_Fee__c, Program_Fee_Percentage__c, Completed_Drafts_Amount__c, Completed_Drafts_Count__c, Last_Completed_Draft_Date__c, Next_Draft_Date__c, Debit_Schedule_Id__c, DS_Total_Draft_Amount__c, DS_Total_Escrow_Amount__c, CreatedDate, LastModifiedDate FROM Program_Plan__c`,
   draft: `SELECT Id, Program_Plan__c, Account__c, Draft_Date__c, Draft_Amount__c, Draft_Total_Amount__c, Draft_Status__c, Sync_Status__c, Program_Fee__c, Retainer_Fee__c, Setup_Fee__c, Processor_Fee__c, Service_Fee__c, Citadel_Fee__c, DS_Escrow_Amount__c, Draft_Cleared_Date__c, External_SAS_Id__c, External_RAM_Id__c, Retainer_SetupFee_Draft__c, CreatedDate, LastModifiedDate FROM Draft__c`,
-  lead: `SELECT Id, FirstName, LastName, Company, Email, Phone, Status, LeadSource, Industry, AnnualRevenue, OwnerId, IsConverted, ConvertedDate, SSN__c,Title,Street,City,State,PostalCode,Country,Timezone__c,IP_Address__c,Keyword__c,Secured_Party__c,Call_ASAP__c,Hopper_Priority__c,Outbound_ANI_Date__c,Outbound_ANI_Identifier__c,Outbound_ANI_From__c,Hubspot_Id__c,Append_Leads_Counter__c,Call_counter__c,Has_Calendly_Event__c,Is_Archived__c,Archived_Date__c,IPQS_IsActive__c,IPQS_Active_Status__c,IPQS_Carrier__c,IPQS_Email__c,IPQS_Fraud_Score__c,IPQS_Is_Prepaid__c,IPQS_Line_Type__c,IPQS_Is_Risky__c,IPQS_Is_VOIP__c,IPQS_Is_Valid__c,Lead_Score__c,Ad_Click_Id__c,Sync_To_Account_Engagement__c,Facebook_Lead_Id__c,Total_Dial_Attempts__c,Eli_Ad_click__c,Business_Start_Date__c,EIN_Number_Tax_Id__c,Monthly_Revenue__c,UCC_filing_Date__c,MCA_Amount__c,Estimated_Total_Debt__c,Current_Total_Monthly_Payment_Formula__c,Current_Total_Daily_Payment__c,Current_Total_Weekly_Payment__c,Total_Debt_Amount__c,Payment_Amount__c,Setup_Fee__c,Retainer_Percentage__c,Payment_Term__c,Frequency__c,Monthly_Bank_Fee__c,Program_Fee_Percentage__c,Settlement_Percentage__c,Down_Payment__c,FronterLookup__c,CloserLookup__c,Call_Transferred_By_Lookup__c,Call_Received_By_Lookup__c,Call_Tranferred_DateTime__c,Call_Received_Date__c,Call_Transfer_Status__c,Transfer_Qualification__c,Outbound_Call_Priority__c,Agent_Location__c,Reason_for_Disqualification__c,Dialer_Group__c,five9_Disposition__c,five9_Last_Disposition__c,Five9_Time_To_Call__c,Add_to_f9list_Id__c,Delete_from_f9list_id__c,Five9_List_Id__c,Five9_List_Updated_by_Convoso_Batch__c,Five9_Final_Stage__c,Lead_Assignment_Date__c,Verified_Phone_Number__c,MCA_Lender_External_Id__c,MobilePhone,Work_Phone__c,Fax,Alternate_Email__c,Preferred_method_of_Contact__c,Legal_Plan_Required__c,External_ID_15_digit__c,Preferred_Language__c,Gender__c,Lenders__c,Description,Sub_Disposition__c,Last_Disposition__c FROM Lead`,
+  lead: `SELECT Id, FirstName, LastName, Company, Email, Phone, Status, LeadSource, Industry, AnnualRevenue, OwnerId, IsConverted, ConvertedDate, SSN__c,Title,Street,City,State,PostalCode,Country,Timezone__c,IP_Address__c,Keyword__c,Secured_Party__c,Call_ASAP__c,Hopper_Priority__c,Outbound_ANI_Date__c,Outbound_ANI_Identifier__c,Outbound_ANI_From__c,Hubspot_Id__c,Append_Leads_Counter__c,Call_counter__c,Has_Calendly_Event__c,Is_Archived__c,Archived_Date__c,IPQS_IsActive__c,IPQS_Active_Status__c,IPQS_Carrier__c,IPQS_Email__c,IPQS_Fraud_Score__c,IPQS_Is_Prepaid__c,IPQS_Line_Type__c,IPQS_Is_Risky__c,IPQS_Is_VOIP__c,IPQS_Is_Valid__c,Lead_Score__c,Ad_Click_Id__c,Sync_To_Account_Engagement__c,Facebook_Lead_Id__c,Total_Dial_Attempts__c,Eli_Ad_click__c,Business_Start_Date__c,EIN_Number_Tax_Id__c,Monthly_Revenue__c,UCC_filing_Date__c,MCA_Amount__c,Estimated_Total_Debt__c,Current_Total_Monthly_Payment_Formula__c,Current_Total_Daily_Payment__c,Current_Total_Weekly_Payment__c,Total_Debt_Amount__c,Payment_Amount__c,Setup_Fee__c,Retainer_Percentage__c,Payment_Term__c,Frequency__c,Monthly_Bank_Fee__c,Program_Fee_Percentage__c,Settlement_Percentage__c,Down_Payment__c,FronterLookup__c,CloserLookup__c,Call_Transferred_By_Lookup__c,Call_Received_By_Lookup__c,Call_Tranferred_DateTime__c,Call_Received_Date__c,Call_Transfer_Status__c,Transfer_Qualification__c,Outbound_Call_Priority__c,Agent_Location__c,Reason_for_Disqualification__c,Dialer_Group__c,five9_Disposition__c,five9_Last_Disposition__c,Five9_Time_To_Call__c,Add_to_f9list_Id__c,Delete_from_f9list_id__c,Five9_List_Id__c,Five9_List_Updated_by_Convoso_Batch__c,Five9_Final_Stage__c,Lead_Assignment_Date__c,Verified_Phone_Number__c,MCA_Lender_External_Id__c,MobilePhone,Work_Phone__c,Fax,Alternate_Email__c,Preferred_method_of_Contact__c,Legal_Plan_Required__c,External_ID_15_digit__c,Preferred_Language__c,Gender__c,Lenders__c,Description,Sub_Disposition__c,Last_Disposition__c FROM Lead WHERE RecordTypeId = '012VO000002NUlrYAG'`,
 };
+
+/**
+ * Effective SOQL for this run. When SF_SINCE is set (ISO 8601, e.g.
+ * 2026-08-18T00:00:00Z) the daily sync only pulls records changed on/after
+ * that cutoff, so it stays light instead of re-exporting every row nightly.
+ * Every standard + custom object here carries LastModifiedDate even when it
+ * is not in the SELECT, so the predicate is always valid. A full migration
+ * runs with SF_SINCE unset and pulls everything.
+ */
+function effectiveSoql(entity: string): string {
+  const base = SOQL[entity];
+  const since = process.env.SF_SINCE?.trim();
+  if (!base || !since) return base;
+  const pred = `LastModifiedDate >= ${since}`;
+  return / WHERE /i.test(base)
+    ? base.replace(/ WHERE /i, ` WHERE ${pred} AND `)
+    : `${base} WHERE ${pred}`;
+}
 
 const CSV_PATH = `/tmp/sf-${ENTITY}.csv`;
 
@@ -68,7 +86,7 @@ async function exportFromSF(): Promise<void> {
   if (process.env.SF_AUTH_URL) {
     // Containerized path (Railway): direct Bulk API 2.0 REST - no sf CLI.
     const { bulkQueryToCsv } = await import("../src/lib/sf-sync/bulk-export");
-    await bulkQueryToCsv(SOQL[ENTITY], CSV_PATH);
+    await bulkQueryToCsv(effectiveSoql(ENTITY), CSV_PATH);
   } else {
     // Local path: authenticated sf CLI.
     const result = spawnSync(
@@ -76,7 +94,7 @@ async function exportFromSF(): Promise<void> {
       [
         "data", "export", "bulk",
         "--target-org", "coastal",
-        "--query", SOQL[ENTITY],
+        "--query", effectiveSoql(ENTITY),
         "--result-format", "csv",
         "--output-file", CSV_PATH,
         "--wait", "120",
