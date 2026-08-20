@@ -967,13 +967,13 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     <RecordPage
       entity="Account"
       entityLabel="Account"
-      // SF Lightning shows the TOTAL DEBT dollar amount as the Account record
-      // title (verified against the live org); the account name is the
-      // subtitle since our chrome has no workspace tab to carry it.
-      recordTitle={headerTitle}
-      recordSubtitle={account.name}
+      // The Account record title is the account NAME (this is also what the
+      // console workspace tab carries). Total Debt moves into the highlights
+      // strip so the number is still visible without hijacking the title.
+      recordTitle={account.name || headerTitle}
       highlights={[
         // SF shows plain text in the highlights strip - no colored pills.
+        { label: "Total Debt", value: headerTitle },
         { label: "Client Status", value: account.clientStatus },
         { label: "Processor Status", value: processorStatusDisplay ?? "Not Synced" },
         { label: "Payment Status", value: account.paymentStatus },
