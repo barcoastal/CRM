@@ -74,7 +74,7 @@ export function defaultOpportunityName(accountName: string, recordType: Opportun
     RESTRUCTURE: "Restructure",
     LIMITED_ASSET_PROTECTION: "Limited Asset Protection",
   };
-  return `${accountName} — ${productLabel[recordType]}`;
+  return `${accountName} - ${productLabel[recordType]}`;
 }
 
 /**
@@ -181,6 +181,7 @@ export async function convertLead(
       const oppName = opts.opportunityName ?? defaultOpportunityName(account.name, oppRecordType);
       const opp = await tx.opportunity.create({
         data: {
+          name: oppName,
           recordType: oppRecordType,
           leadId: lead.id,
           accountId: account.id,
