@@ -15,22 +15,25 @@ interface TierGroup {
 
 const TIER_COLOR: Record<number, string> = { 1: "#7f8de1", 2: "#0176d3", 3: "#2e844a" };
 
-export function AvailableClosers({ showPopOut = false }: { showPopOut?: boolean }) {
+export function AvailableClosers({ showPopOut = false, apiToken = null }: { showPopOut?: boolean; apiToken?: string | null }) {
   const [tiers, setTiers] = useState<TierGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let alive = true;
+    const url = apiToken
+      ? `/api/dialer/available-closers?token=${encodeURIComponent(apiToken)}`
+      : "/api/dialer/available-closers";
     async function load() {
       try {
-        const r = await fetch("/api/dialer/available-closers");
+        const r = await fetch(url);
         if (r.ok && alive) setTiers((await r.json()).tiers ?? []);
       } catch { /* ignore */ } finally { if (alive) setLoading(false); }
     }
     void load();
     const id = setInterval(load, 4000);
     return () => { alive = false; clearInterval(id); };
-  }, []);
+  }, [apiToken]);
 
   const totalFree = tiers.reduce((s, t) => s + t.closers.length, 0);
 
