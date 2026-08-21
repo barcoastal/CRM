@@ -103,6 +103,24 @@ class SupervisorFeed {
   }
 
   /**
+   * Raw live state for an agent (by Five9 username/email, then full-name
+   * fallback), regardless of whether they are on a call. Used by transfer
+   * routing to tell READY (free) from ON_CALL / NOT_READY / ACW. Returns null
+   * when the agent is not in the live roster (e.g. logged out / feed down).
+   */
+  getStateFor(
+    username?: string | null,
+    name?: string | null,
+  ): { state: string; onCallSince: number | null } | null {
+    let id = username ? this.userIdByEmail.get(username.toLowerCase()) : undefined;
+    if (!id && name) id = this.idByFullName.get(name.trim().toLowerCase().replace(/\s+/g, " "));
+    if (!id) return null;
+    const call = this.agentCalls.get(id);
+    if (!call) return null;
+    return { state: call.state, onCallSince: call.onCallSince };
+  }
+
+  /**
    * Probe what the org has licensed (to decide whether Five9 already provides
    * transcription/AI we can read, vs needing VoiceStream + Deepgram). Reads the
    * application seats and the supervisor's permission list via the live session.

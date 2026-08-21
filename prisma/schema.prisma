@@ -20,6 +20,7 @@ model User {
   avatar            String?
   isActive          Boolean   @default(true)
   isCloser          Boolean   @default(false) // closers see the Five9 popup dialer
+  closerTier        Int?      // 1/2/3 tier for transfer routing; higher tier = bigger deals. null = unassigned
   mailboxAddress    String?   @unique // per-user CRM inbox address, e.g. bar@coastaldebt.com; provisioned by admins
   lastLoginAt       DateTime?
   createdAt         DateTime  @default(now())
@@ -3046,4 +3047,14 @@ model LeadListMember {
 
   @@unique([listId, leadId])
   @@index([listId])
+}
+
+// Singleton config for closer-tier transfer routing. tier1Max/tier2Max are the
+// upper debt bounds (USD) for tiers 1 and 2; anything above tier2Max is tier 3.
+// Editable on the Closer Tiers admin page.
+model CloserTierConfig {
+  id        String   @id @default("singleton")
+  tier1Max  Int      @default(100000)
+  tier2Max  Int      @default(250000)
+  updatedAt DateTime @updatedAt
 }
