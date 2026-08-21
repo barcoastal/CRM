@@ -5,7 +5,7 @@ import Link from "next/link";
 import { DispositionModal } from "@/components/leads/disposition-modal";
 import { LEAD_STATUSES, STAGE_TO_SUB_DISPOSITIONS, type LeadStatusV2 } from "@/lib/sf-canonical";
 import { CallTranscriber } from "./call-transcriber";
-import { TransferPanel } from "@/components/dialer/transfer-panel";
+import { AvailableClosers } from "@/components/dialer/available-closers";
 
 const FIVE9_AGENT_URL = "https://app-atl.five9.com/clients/agent/main.html?role=Agent";
 
@@ -234,20 +234,9 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
         )}
       </div>
 
-      {/* Transfer window - live free-closer routing beside the iframe */}
+      {/* Open closers by tier - who is free to transfer to right now */}
       <div>
-        <article style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden", minHeight: 600 }}>
-          <div style={{ padding: "10px 12px", borderBottom: "1px solid #e5e5e5", fontSize: 14, fontWeight: 700, color: "#181818" }}>
-            Transfer to a closer
-          </div>
-          {lead ? (
-            <TransferPanel leadId={lead.id} maxHeight={640} />
-          ) : (
-            <div style={{ padding: 20, fontSize: 12, color: "#747474", textAlign: "center" }}>
-              When a call connects, the eligible closer tier and who is free will show here.
-            </div>
-          )}
-        </article>
+        <AvailableClosers />
       </div>
     </div>
   );

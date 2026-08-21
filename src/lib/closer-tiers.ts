@@ -157,6 +157,21 @@ export async function closerScoreboard(): Promise<ScoreboardRow[]> {
     .sort((a, b) => b.wonCount - a.wonCount || b.wonDebt - a.wonDebt || a.name.localeCompare(b.name));
 }
 
+/** Currently-OPEN (Five9 READY) closers grouped by tier, for the dialer window. */
+export async function availableClosers(): Promise<{ tier: number; closers: string[] }[]> {
+  const closers = await prisma.user.findMany({
+    where: { isActive: true, closerTier: { not: null } },
+    select: { name: true, closerTier: true, five9Username: true, email: true },
+  });
+  const free = closers
+    .filter((u) => simplifyState(supervisorFeed.getStateFor(u.five9Username ?? u.email, u.name)?.state ?? null) === "READY")
+    .map((u) => ({ name: u.name, tier: u.closerTier as number }));
+  return [3, 2, 1].map((tier) => ({
+    tier,
+    closers: free.filter((c) => c.tier === tier).map((c) => c.name).sort((a, b) => a.localeCompare(b)),
+  }));
+}
+
 export interface OnCallCloser {
   id: string;
   name: string;
