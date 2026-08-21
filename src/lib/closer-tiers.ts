@@ -163,17 +163,19 @@ export interface OnCallCloser {
   tier: number | null;
   durationSec: number;
   clientName: string | null;
-  clientDebt: number | null;
+  clientDebt: number | null; // numeric (for sorting)
+  clientDebtLabel: string | null; // display (money or the range string the client picked)
   leadId: string | null;
 }
 
 const digits10 = (p: string | null | undefined) => (p ?? "").replace(/[^0-9]/g, "").slice(-10);
+const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
 
 /** Resolve the client a closer is talking to (by Five9 "customer") + their debt. */
 async function clientForCustomer(
   customer: string | null,
-): Promise<{ leadId: string | null; name: string | null; debt: number | null }> {
-  if (!customer) return { leadId: null, name: null, debt: null };
+): Promise<{ leadId: string | null; name: string | null; debt: number | null; debtLabel: string | null }> {
+  if (!customer) return { leadId: null, name: null, debt: null, debtLabel: null };
   // Strip non-printable/encoding junk Five9 sometimes appends.
   const trimmed = customer.replace(/[^\x20-\x7E]/g, " ").replace(/\s+/g, " ").trim();
   const sel = { id: true, contactName: true, businessName: true, totalDebtEst: true, sfDataJson: true } as const;
@@ -203,18 +205,31 @@ async function clientForCustomer(
       lead = await prisma.lead.findFirst({ where: { contactName: { contains: person, mode: "insensitive" } }, select: sel });
     }
   }
-  if (!lead) return { leadId: null, name: customer, debt: null };
+  if (!lead) return { leadId: null, name: customer, debt: null, debtLabel: null };
 
   const agg = await prisma.leadDebt.aggregate({ where: { leadId: lead.id }, _sum: { amount: true } });
   let debt = agg._sum.amount ?? 0;
   if (!debt) debt = lead.totalDebtEst ?? 0;
+  let debtLabel = debt ? money(debt) : null;
+
+  // Web leads store debt as a range picklist ("$100,000 - $500,000") in
+  // Estimated_Total_Debt__c, not a number. Show the range; use its midpoint for
+  // sorting/tiering.
   if (!debt) {
     try {
       const sf = lead.sfDataJson ? (JSON.parse(lead.sfDataJson) as Record<string, unknown>) : {};
-      debt = Number(sf.Estimated_Total_Debt__c ?? sf.Total_Debt_Amount__c ?? 0) || 0;
+      const est = sf.Estimated_Total_Debt__c ?? sf.Total_Debt_Amount__c;
+      if (est != null && String(est).trim()) {
+        const raw = String(est).trim();
+        const nums = (raw.match(/[\d,.]+/g) ?? []).map((n) => Number(n.replace(/,/g, ""))).filter((n) => n > 0);
+        if (nums.length) {
+          debt = nums.length > 1 ? (nums[0] + nums[nums.length - 1]) / 2 : nums[0];
+          debtLabel = /[-–]|to/i.test(raw) ? raw : money(nums[0]);
+        }
+      }
     } catch { /* ignore */ }
   }
-  return { leadId: lead.id, name: lead.contactName || lead.businessName || customer, debt: debt || null };
+  return { leadId: lead.id, name: lead.contactName || lead.businessName || customer, debt: debt || null, debtLabel };
 }
 
 /** Every agent currently ON a call, with the client + debt, tier badged if set. */
@@ -244,6 +259,7 @@ export async function closersOnCall(now = Date.now()): Promise<OnCallCloser[]> {
       durationSec: c.durationSec ?? (c.onCallSince ? Math.max(0, Math.floor((now - c.onCallSince) / 1000)) : 0),
       clientName: client.name,
       clientDebt: client.debt,
+      clientDebtLabel: client.debtLabel,
       leadId: client.leadId,
     });
   }

@@ -10,10 +10,9 @@ interface Row {
   durationSec: number;
   clientName: string | null;
   clientDebt: number | null;
+  clientDebtLabel: string | null;
   leadId: string | null;
 }
-
-const money = (n: number | null) => (n == null ? "-" : `$${Math.round(n).toLocaleString("en-US")}`);
 const dur = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 const TIER_COLOR: Record<number, string> = { 1: "#7f8de1", 2: "#0176d3", 3: "#2e844a" };
 
@@ -76,7 +75,7 @@ export default function ClosersOnCallPage() {
                     <Link href={`/leads/${r.leadId}`} style={{ color: "#0176d3", textDecoration: "none" }}>{r.clientName ?? "Unknown"}</Link>
                   ) : (r.clientName ?? <span style={{ color: "#a0a0a0" }}>No match</span>)}
                 </td>
-                <td style={{ ...td, textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{money(r.clientDebt)}</td>
+                <td style={{ ...td, textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{r.clientDebtLabel ?? <span style={{ color: "#a0a0a0", fontWeight: 400 }}>-</span>}</td>
                 <td style={{ ...td, textAlign: "right", fontVariantNumeric: "tabular-nums", color: "#747474" }}>{dur(r.durationSec)}</td>
               </tr>
             ))}
