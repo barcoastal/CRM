@@ -42,7 +42,7 @@ export default function ClosersOnCallPage() {
       <header style={{ background: "#fff", padding: "16px 24px", border: "1px solid #c9c9c9", borderRadius: 4, marginBottom: 16 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: "#181818", margin: 0 }}>Closers On Call</h1>
         <p style={{ fontSize: 13, color: "#747474", marginTop: 4 }}>
-          Every closer on a live call and the debt size of the client they are talking with. {rows.length} on call now · updates every 5s.
+          Every agent on a live call and the debt size of the client they are talking with (tier badged for assigned closers). {rows.length} on call now · updates every 5s.
         </p>
       </header>
 
@@ -81,7 +81,7 @@ export default function ClosersOnCallPage() {
               </tr>
             ))}
             {!loading && rows.length === 0 && (
-              <tr><td colSpan={5} style={{ ...td, textAlign: "center", color: "#747474", padding: 24 }}>No closers are on a call right now.</td></tr>
+              <tr><td colSpan={5} style={{ ...td, textAlign: "center", color: "#747474", padding: 24 }}>No agents are on a call right now.</td></tr>
             )}
             {loading && (
               <tr><td colSpan={5} style={{ ...td, textAlign: "center", color: "#747474", padding: 24 }}>Loading...</td></tr>
