@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { TransferPanel } from "./transfer-panel";
 
 /**
  * Persistent Five9 softphone dock. Rendered in the dashboard layout so it stays
@@ -33,6 +34,7 @@ export function PhoneDock() {
   const [now, setNow] = useState(0);
   const lastSinceRef = useRef<number | null>(null);
   const [poppedLeadId, setPoppedLeadId] = useState<string | null>(null);
+  const [showTransfer, setShowTransfer] = useState(false);
 
   useEffect(() => {
     setHydrated(true);
@@ -97,6 +99,11 @@ export function PhoneDock() {
     return () => clearInterval(id);
   }, [open]);
 
+  // Close the transfer helper once the call ends.
+  useEffect(() => {
+    if (!(call?.active && call?.onCallSince)) setShowTransfer(false);
+  }, [call?.active, call?.onCallSince]);
+
   if (!hydrated) return null;
   // The /dialer page has its own full Five9 desktop; rendering the dock there
   // too would log the agent into Five9 twice and kick one session on connect.
@@ -148,6 +155,12 @@ export function PhoneDock() {
           </span>
         )}
         <span style={{ marginLeft: "auto", display: "inline-flex", gap: 14, alignItems: "center" }}>
+          {onCall && (
+            <button onClick={() => setShowTransfer((t) => !t)} title="Show which closer tier is free to transfer to"
+              style={{ background: showTransfer ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.4)", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 4 }}>
+              ⇄ Transfer
+            </button>
+          )}
           <button onClick={() => setMaximized((m) => !m)} title={maximized ? "Restore" : "Maximize"}
             style={{ background: "transparent", border: "none", color: "#fff", cursor: "pointer", fontSize: 13, padding: 0 }}>
             {maximized ? "🗗 Restore" : "🗖 Bigger"}
@@ -158,6 +171,10 @@ export function PhoneDock() {
           </button>
         </span>
       </div>
+
+      {onCall && showTransfer && (
+        <TransferPanel leadId={poppedLeadId ?? call?.leadId ?? null} onClose={() => setShowTransfer(false)} />
+      )}
 
       {onCall && poppedLeadId && (
         <Link
