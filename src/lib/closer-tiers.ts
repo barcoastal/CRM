@@ -172,6 +172,54 @@ export async function availableClosers(): Promise<{ tier: number; closers: strin
   }));
 }
 
+export interface CloserStat {
+  id: string;
+  name: string;
+  tier: number | null;
+  state: CloserState;
+  free: boolean;
+  callsTaken: number; // handoffs assigned to this closer
+  debtAttempted: number; // sum of debt on assigned handoffs
+  closedCount: number; // handoffs marked CLOSED
+  debtClosed: number; // sum of closedDebt
+}
+
+/** Per-closer production stats for the floor manager (from CloserHandoff) + live state. */
+export async function closerStats(): Promise<CloserStat[]> {
+  const closers = await prisma.user.findMany({
+    where: { isActive: true, closerTier: { not: null } },
+    select: { id: true, name: true, closerTier: true, five9Username: true, email: true },
+  });
+  const ids = closers.map((c) => c.id);
+  if (ids.length === 0) return [];
+
+  const [assigned, closed] = await Promise.all([
+    prisma.closerHandoff.groupBy({ by: ["closerId"], where: { closerId: { in: ids } }, _count: { _all: true }, _sum: { debt: true } }),
+    prisma.closerHandoff.groupBy({ by: ["closerId"], where: { closerId: { in: ids }, status: "CLOSED" }, _count: { _all: true }, _sum: { closedDebt: true } }),
+  ]);
+  const aBy = new Map(assigned.map((a) => [a.closerId, { c: a._count._all, d: a._sum.debt ?? 0 }]));
+  const cBy = new Map(closed.map((x) => [x.closerId, { c: x._count._all, d: x._sum.closedDebt ?? 0 }]));
+
+  return closers
+    .map((u) => {
+      const state = simplifyState(supervisorFeed.getStateFor(u.five9Username ?? u.email, u.name)?.state ?? null);
+      const a = aBy.get(u.id);
+      const cl = cBy.get(u.id);
+      return {
+        id: u.id,
+        name: u.name,
+        tier: u.closerTier,
+        state,
+        free: state === "READY",
+        callsTaken: a?.c ?? 0,
+        debtAttempted: a?.d ?? 0,
+        closedCount: cl?.c ?? 0,
+        debtClosed: cl?.d ?? 0,
+      };
+    })
+    .sort((a, b) => (a.tier ?? 9) - (b.tier ?? 9) || b.closedCount - a.closedCount || a.name.localeCompare(b.name));
+}
+
 export interface OnCallCloser {
   id: string;
   name: string;
@@ -180,6 +228,7 @@ export interface OnCallCloser {
   clientName: string | null;
   clientDebt: number | null; // numeric (for sorting)
   clientDebtLabel: string | null; // display (money or the range string the client picked)
+  eligibleTier: number | null; // tier the client's debt qualifies for (for assignment)
   leadId: string | null;
 }
 
@@ -252,6 +301,8 @@ export async function closersOnCall(now = Date.now()): Promise<OnCallCloser[]> {
   const calls = supervisorFeed.liveCalls(now);
   if (calls.length === 0) return [];
 
+  const cfg = await getTierConfig();
+
   // Map Five9 login (username/email) -> CRM user (for display name + tier).
   const users = await prisma.user.findMany({
     select: { id: true, name: true, closerTier: true, five9Username: true, email: true },
@@ -275,6 +326,7 @@ export async function closersOnCall(now = Date.now()): Promise<OnCallCloser[]> {
       clientName: client.name,
       clientDebt: client.debt,
       clientDebtLabel: client.debtLabel,
+      eligibleTier: client.debt != null ? tierForDebt(client.debt, cfg) : null,
       leadId: client.leadId,
     });
   }

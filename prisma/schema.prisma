@@ -43,6 +43,9 @@ model User {
   calls                     Call[]
   campaigns                 CampaignAgent[]
   callFeedbacks             CallFeedback[]
+  handoffsAsFronter         CloserHandoff[]                 @relation("HandoffFronter")
+  handoffsAsCloser          CloserHandoff[]                 @relation("HandoffCloser")
+  handoffsAssigned          CloserHandoff[]                 @relation("HandoffAssignedBy")
   assignedClients           Client[]                        @relation("ClientNegotiator")
   negotiations              Negotiation[]
   uploadedDocuments         Document[]
@@ -865,6 +868,7 @@ model Lead {
   convertedAt            DateTime?
 
   calls               Call[]
+  handoffs            CloserHandoff[]
   campaignContacts    CampaignContact[]
   client              Client?
   opportunity         Opportunity?
@@ -3057,4 +3061,36 @@ model CloserTierConfig {
   tier1Max  Int      @default(100000)
   tier2Max  Int      @default(250000)
   updatedAt DateTime @updatedAt
+}
+
+// A floor-manager handoff: a fronter's qualified lead matched to a tier closer.
+// Backs the assignment console + per-closer production stats. One row per
+// lead handed to a closer.
+model CloserHandoff {
+  id           String    @id @default(cuid())
+  createdAt    DateTime  @default(now())
+
+  fronterId    String?
+  fronter      User?     @relation("HandoffFronter", fields: [fronterId], references: [id])
+  leadId       String?
+  lead         Lead?     @relation(fields: [leadId], references: [id])
+  clientName   String?
+  debt         Float? // numeric debt (midpoint of a range), for sorting/stats
+  debtLabel    String? // display label (e.g. "$100,000 - $500,000")
+  tier         Int? // eligible tier at assignment time
+
+  closerId     String?
+  closer       User?     @relation("HandoffCloser", fields: [closerId], references: [id])
+  assignedById String?
+  assignedBy   User?     @relation("HandoffAssignedBy", fields: [assignedById], references: [id])
+  assignedAt   DateTime?
+
+  // ASSIGNED (given to a closer) | CLOSED (won) | LOST
+  status       String    @default("ASSIGNED")
+  closedDebt   Float?
+  opportunityId String?
+
+  @@index([closerId, status])
+  @@index([fronterId])
+  @@index([status, createdAt])
 }
