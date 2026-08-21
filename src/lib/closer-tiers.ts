@@ -156,3 +156,77 @@ export async function closerScoreboard(): Promise<ScoreboardRow[]> {
     })
     .sort((a, b) => b.wonCount - a.wonCount || b.wonDebt - a.wonDebt || a.name.localeCompare(b.name));
 }
+
+export interface OnCallCloser {
+  id: string;
+  name: string;
+  tier: number | null;
+  durationSec: number;
+  clientName: string | null;
+  clientDebt: number | null;
+  leadId: string | null;
+}
+
+const digits10 = (p: string | null | undefined) => (p ?? "").replace(/[^0-9]/g, "").slice(-10);
+
+/** Resolve the client a closer is talking to (by Five9 "customer") + their debt. */
+async function clientForCustomer(
+  customer: string | null,
+): Promise<{ leadId: string | null; name: string | null; debt: number | null }> {
+  if (!customer) return { leadId: null, name: null, debt: null };
+  const trimmed = customer.trim();
+
+  let lead: { id: string; contactName: string | null; totalDebtEst: number | null; sfDataJson: string | null } | null = null;
+  const last10 = digits10(trimmed);
+  if (/\d/.test(trimmed) && last10.length >= 7) {
+    const rows = await prisma.$queryRaw<Array<{ id: string; contactName: string | null; totalDebtEst: number | null; sfDataJson: string | null }>>`
+      SELECT id, "contactName", "totalDebtEst", "sfDataJson" FROM "Lead"
+      WHERE regexp_replace(phone, '[^0-9]', '', 'g') LIKE ${"%" + last10}
+      LIMIT 1`;
+    lead = rows[0] ?? null;
+  }
+  if (!lead) {
+    lead = await prisma.lead.findFirst({
+      where: { contactName: { contains: trimmed.replace(/,/g, " ").trim(), mode: "insensitive" } },
+      select: { id: true, contactName: true, totalDebtEst: true, sfDataJson: true },
+    });
+  }
+  if (!lead) return { leadId: null, name: customer, debt: null };
+
+  const agg = await prisma.leadDebt.aggregate({ where: { leadId: lead.id }, _sum: { amount: true } });
+  let debt = agg._sum.amount ?? 0;
+  if (!debt) debt = lead.totalDebtEst ?? 0;
+  if (!debt) {
+    try {
+      const sf = lead.sfDataJson ? (JSON.parse(lead.sfDataJson) as Record<string, unknown>) : {};
+      debt = Number(sf.Estimated_Total_Debt__c ?? sf.Total_Debt_Amount__c ?? 0) || 0;
+    } catch { /* ignore */ }
+  }
+  return { leadId: lead.id, name: lead.contactName ?? customer, debt: debt || null };
+}
+
+/** Every tiered closer currently ON a call, with the client + debt they're on. */
+export async function closersOnCall(now = Date.now()): Promise<OnCallCloser[]> {
+  const closers = await prisma.user.findMany({
+    where: { isActive: true, closerTier: { not: null } },
+    select: { id: true, name: true, closerTier: true, five9Username: true, email: true },
+  });
+
+  const out: OnCallCloser[] = [];
+  for (const u of closers) {
+    const call =
+      supervisorFeed.getCallForUsername(u.five9Username ?? u.email) ?? supervisorFeed.getCallForName(u.name);
+    if (!call) continue;
+    const client = await clientForCustomer(call.customer);
+    out.push({
+      id: u.id,
+      name: u.name,
+      tier: u.closerTier,
+      durationSec: call.onCallSince ? Math.max(0, Math.floor((now - call.onCallSince) / 1000)) : 0,
+      clientName: client.name,
+      clientDebt: client.debt,
+      leadId: client.leadId,
+    });
+  }
+  return out.sort((a, b) => (b.clientDebt ?? 0) - (a.clientDebt ?? 0));
+}
