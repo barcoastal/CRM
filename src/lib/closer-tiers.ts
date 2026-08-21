@@ -101,3 +101,58 @@ export async function transferTargetsForDebt(debt: number): Promise<{
 
   return { debt, preferredTier, tierOrder, config, tiers };
 }
+
+export interface ScoreboardRow {
+  id: string;
+  name: string;
+  tier: number | null;
+  state: CloserState;
+  free: boolean;
+  assignedCount: number;
+  wonCount: number;
+  wonDebt: number;
+}
+
+/** Leaderboard of every closer: production (assigned + won opps) + live state. */
+export async function closerScoreboard(): Promise<ScoreboardRow[]> {
+  const closers = await prisma.user.findMany({
+    where: { isActive: true, OR: [{ isCloser: true }, { closerTier: { not: null } }] },
+    select: { id: true, name: true, closerTier: true, five9Username: true, email: true },
+  });
+  const ids = closers.map((c) => c.id);
+  if (ids.length === 0) return [];
+
+  const [assigned, won] = await Promise.all([
+    prisma.opportunity.groupBy({
+      by: ["assignedToId"],
+      where: { assignedToId: { in: ids } },
+      _count: { _all: true },
+    }),
+    prisma.opportunity.groupBy({
+      by: ["assignedToId"],
+      where: { assignedToId: { in: ids }, stage: { contains: "Closed Won" } },
+      _count: { _all: true },
+      _sum: { totalDebt: true },
+    }),
+  ]);
+  const assignedBy = new Map(assigned.map((a) => [a.assignedToId, a._count._all]));
+  const wonBy = new Map(won.map((w) => [w.assignedToId, { c: w._count._all, d: w._sum.totalDebt ?? 0 }]));
+
+  return closers
+    .map((u) => {
+      const s = supervisorFeed.getStateFor(u.five9Username ?? u.email, u.name);
+      const state = simplifyState(s?.state ?? null);
+      const w = wonBy.get(u.id);
+      return {
+        id: u.id,
+        name: u.name,
+        tier: u.closerTier,
+        state,
+        free: state === "READY",
+        assignedCount: assignedBy.get(u.id) ?? 0,
+        wonCount: w?.c ?? 0,
+        wonDebt: w?.d ?? 0,
+      };
+    })
+    .sort((a, b) => b.wonCount - a.wonCount || b.wonDebt - a.wonDebt || a.name.localeCompare(b.name));
+}
