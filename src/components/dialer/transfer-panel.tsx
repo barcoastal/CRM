@@ -31,7 +31,15 @@ const STATE_STYLE: Record<CloserAvailability["state"], { dot: string; label: str
   OFFLINE: { dot: "#c9c9c9", label: "Offline" },
 };
 
-export function TransferPanel({ leadId, onClose }: { leadId: string | null; onClose: () => void }) {
+export function TransferPanel({
+  leadId,
+  onClose,
+  maxHeight = 320,
+}: {
+  leadId: string | null;
+  onClose?: () => void;
+  maxHeight?: number;
+}) {
   const [data, setData] = useState<TargetsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -57,7 +65,7 @@ export function TransferPanel({ leadId, onClose }: { leadId: string | null; onCl
   const freeInPreferred = data?.tiers.find((t) => t.preferred)?.closers.some((c) => c.free);
 
   return (
-    <div style={{ background: "#fff", borderBottom: "1px solid #e5e5e5", padding: "10px 12px", maxHeight: 320, overflowY: "auto" }}>
+    <div style={{ background: "#fff", borderBottom: "1px solid #e5e5e5", padding: "10px 12px", maxHeight, overflowY: "auto" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: "#181818" }}>
           Transfer routing
@@ -67,7 +75,9 @@ export function TransferPanel({ leadId, onClose }: { leadId: string | null; onCl
             </span>
           )}
         </div>
-        <button onClick={onClose} aria-label="Close" style={{ background: "transparent", border: 0, color: "#747474", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+        {onClose && (
+          <button onClick={onClose} aria-label="Close" style={{ background: "transparent", border: 0, color: "#747474", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+        )}
       </div>
 
       {loading && <div style={{ fontSize: 12, color: "#747474" }}>Checking who is free...</div>}
