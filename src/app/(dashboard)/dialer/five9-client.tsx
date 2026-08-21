@@ -236,7 +236,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
 
       {/* Open closers by tier - who is free to transfer to right now */}
       <div>
-        <AvailableClosers />
+        <AvailableClosers showPopOut />
       </div>
     </div>
   );

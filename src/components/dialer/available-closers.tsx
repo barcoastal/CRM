@@ -15,7 +15,7 @@ interface TierGroup {
 
 const TIER_COLOR: Record<number, string> = { 1: "#7f8de1", 2: "#0176d3", 3: "#2e844a" };
 
-export function AvailableClosers() {
+export function AvailableClosers({ showPopOut = false }: { showPopOut?: boolean }) {
   const [tiers, setTiers] = useState<TierGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,9 +36,20 @@ export function AvailableClosers() {
 
   return (
     <article style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden", minHeight: 600 }}>
-      <div style={{ padding: "10px 12px", borderBottom: "1px solid #e5e5e5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ padding: "10px 12px", borderBottom: "1px solid #e5e5e5", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <span style={{ fontSize: 14, fontWeight: 700, color: "#181818" }}>Open closers</span>
-        <span style={{ fontSize: 12, color: "#2e844a", fontWeight: 700 }}>{totalFree} free</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 12, color: "#2e844a", fontWeight: 700 }}>{totalFree} free</span>
+          {showPopOut && (
+            <button
+              onClick={() => window.open("/closers-window", "openClosers", "width=340,height=720")}
+              title="Open in a separate window to dock next to Five9"
+              style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, padding: "2px 8px", fontSize: 12, fontWeight: 600, color: "#0176d3", cursor: "pointer" }}
+            >
+              Pop out ↗
+            </button>
+          )}
+        </span>
       </div>
 
       {loading && <div style={{ padding: 16, fontSize: 12, color: "#747474" }}>Loading...</div>}
