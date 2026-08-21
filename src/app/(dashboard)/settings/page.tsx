@@ -15,7 +15,7 @@ export default async function SettingsPage() {
   if (!session) redirect("/login");
 
   const feedbackCount = await prisma.feedback.count({ where: { status: "NEW" } });
-  const [users, profiles, roles, queues, permSets, integrations, templates, dispositions, listViews, pathGuidance, pageLayouts, fieldLabels, validationRules] = await Promise.all([
+  const [users, profiles, roles, queues, permSets, integrations, templates, dispositions, listViews, pathGuidance, pageLayouts, fieldLabels, validationRules, closers] = await Promise.all([
     prisma.user.count({ where: { isActive: true } }),
     prisma.profile.count({ where: { isActive: true } }),
     prisma.role.count(),
@@ -29,6 +29,7 @@ export default async function SettingsPage() {
     prisma.pageLayout.count(),
     prisma.objectFieldLabel.count(),
     prisma.validationRule.count({ where: { isActive: true } }),
+    prisma.user.count({ where: { isActive: true, closerTier: { not: null } } }),
   ]);
 
   const cards: { section: string; items: SettingsCard[] }[] = [
@@ -61,6 +62,12 @@ export default async function SettingsPage() {
       section: "Automation",
       items: [
         { href: "/settings/validation-rules", title: "Validation Rules", description: "Block writes that violate business rules. Author conditions per entity with a custom error message.", count: validationRules },
+      ],
+    },
+    {
+      section: "Dialer & Closers",
+      items: [
+        { href: "/settings/closer-tiers", title: "Closer Tiers", description: "Assign closers to tiers and set the debt cutoffs used for smart transfer routing.", count: closers },
       ],
     },
     {
