@@ -71,6 +71,7 @@ export function RecordPage({
         )}
       </div>
       <div
+        className="sf-record-grid"
         style={{
           display: "grid",
           // SF Lightning's right sidebar region is 1/3 of the content width

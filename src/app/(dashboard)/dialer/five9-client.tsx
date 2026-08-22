@@ -146,7 +146,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
   }, []);
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "320px minmax(0, 1fr) 320px", gap: 12, padding: 12 }}>
+    <div className="sf-dialer-grid" style={{ display: "grid", gridTemplateColumns: "320px minmax(0, 1fr) 320px", gap: 12, padding: 12 }}>
       {/* Lead context — slim left sidebar */}
       <div>
         <article style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, padding: 16, minHeight: 600 }}>

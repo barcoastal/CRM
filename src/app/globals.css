@@ -375,3 +375,44 @@
     transparent 7px
   );
 }
+
+/* ============================================================
+   Responsive foundation - keep the CRM usable on small laptops
+   and phones (the app is otherwise fixed-width / desktop-first).
+   ============================================================ */
+
+/* Media never pushes the page wider than the screen. */
+img, video, canvas { max-width: 100%; height: auto; }
+
+/* Wide tables/grids scroll horizontally inside their card instead of
+   overflowing the viewport. Targets the immediate card wrapper of a table. */
+@media (max-width: 1200px) {
+  main :is(div, article, section):has(> table) { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+  main table { min-width: max-content; }
+}
+
+/* Stack the two/three-column record + dialer layouts on narrow screens. */
+@media (max-width: 1024px) {
+  main { padding: 8px !important; }
+  .sf-record-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .sf-dialer-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .sf-split-hide { display: none !important; }
+  .sf-app-name { font-size: 14px; padding: 0 10px; }
+  .sf-search-wrap { max-width: 240px; }
+}
+
+/* Small tablet / large phone. */
+@media (max-width: 768px) {
+  .sf-nav-bar { height: 40px; }
+  .sf-tab { padding: 0 9px; font-size: 12px; }
+  .sf-search-wrap { max-width: 160px; }
+}
+
+/* Phones. */
+@media (max-width: 560px) {
+  html, body { font-size: 12px; }
+  main { padding: 6px !important; }
+  .sf-app-name { display: none; }
+  .sf-search-wrap { max-width: 120px; }
+  .sf-global-utilities { gap: 2px; }
+}
