@@ -220,6 +220,84 @@ export async function closerStats(): Promise<CloserStat[]> {
     .sort((a, b) => (a.tier ?? 9) - (b.tier ?? 9) || b.closedCount - a.closedCount || a.name.localeCompare(b.name));
 }
 
+export interface DashboardTransfer {
+  id: string;
+  at: string;
+  clientName: string | null;
+  debt: number | null;
+  debtLabel: string | null;
+  tier: number | null;
+  status: string;
+}
+export interface CloserDashboardRow {
+  id: string;
+  name: string;
+  tier: number | null;
+  todayCount: number;
+  todayDebt: number;
+  monthCount: number;
+  monthDebt: number;
+  transfers: DashboardTransfer[]; // this month's transfers, newest first
+}
+
+/**
+ * Admin closer dashboard: per closer, how many transfer calls they got today
+ * and this month, and the debt of each. `now` is injected so the caller
+ * controls the clock (route passes Date.now()).
+ */
+export async function closerDashboard(now: number): Promise<CloserDashboardRow[]> {
+  const closers = await prisma.user.findMany({
+    where: { isActive: true, closerTier: { not: null } },
+    select: { id: true, name: true, closerTier: true },
+  });
+  const ids = closers.map((c) => c.id);
+  if (ids.length === 0) return [];
+
+  const d = new Date(now);
+  const startOfToday = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+
+  const handoffs = await prisma.closerHandoff.findMany({
+    where: { closerId: { in: ids }, createdAt: { gte: startOfMonth } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, closerId: true, createdAt: true, clientName: true, debt: true, debtLabel: true, tier: true, status: true },
+  });
+
+  const byCloser = new Map<string, typeof handoffs>();
+  for (const h of handoffs) {
+    if (!h.closerId) continue;
+    const arr = byCloser.get(h.closerId) ?? [];
+    arr.push(h);
+    byCloser.set(h.closerId, arr);
+  }
+
+  return closers
+    .map((u) => {
+      const rows = byCloser.get(u.id) ?? [];
+      const today = rows.filter((h) => h.createdAt >= startOfToday);
+      const sum = (rs: typeof rows) => rs.reduce((s, h) => s + (h.debt ?? 0), 0);
+      return {
+        id: u.id,
+        name: u.name,
+        tier: u.closerTier,
+        todayCount: today.length,
+        todayDebt: sum(today),
+        monthCount: rows.length,
+        monthDebt: sum(rows),
+        transfers: rows.map((h) => ({
+          id: h.id,
+          at: h.createdAt.toISOString(),
+          clientName: h.clientName,
+          debt: h.debt,
+          debtLabel: h.debtLabel,
+          tier: h.tier,
+          status: h.status,
+        })),
+      };
+    })
+    .sort((a, b) => b.monthCount - a.monthCount || b.monthDebt - a.monthDebt || a.name.localeCompare(b.name));
+}
+
 export interface OnCallCloser {
   id: string;
   name: string;
