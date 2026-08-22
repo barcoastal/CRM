@@ -242,8 +242,9 @@ export interface CloserDashboardRow {
 
 /**
  * Admin closer dashboard: per closer, how many transfer calls they got today
- * and this month, and the debt of each. `now` is injected so the caller
- * controls the clock (route passes Date.now()).
+ * and this month, and the debt of each - sourced from the real opportunities
+ * assigned to them (assignedToId = the closer, verified vs CloserLookup__c).
+ * `now` is injected so the caller controls the clock.
  */
 export async function closerDashboard(now: number): Promise<CloserDashboardRow[]> {
   const closers = await prisma.user.findMany({
@@ -257,25 +258,27 @@ export async function closerDashboard(now: number): Promise<CloserDashboardRow[]
   const startOfToday = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
 
-  const handoffs = await prisma.closerHandoff.findMany({
-    where: { closerId: { in: ids }, createdAt: { gte: startOfMonth } },
+  // Every opportunity (= a transferred call) assigned to a tiered closer this month.
+  const opps = await prisma.opportunity.findMany({
+    where: { assignedToId: { in: ids }, createdAt: { gte: startOfMonth } },
     orderBy: { createdAt: "desc" },
-    select: { id: true, closerId: true, createdAt: true, clientName: true, debt: true, debtLabel: true, tier: true, status: true },
+    select: { id: true, name: true, assignedToId: true, totalDebt: true, createdAt: true, stage: true },
   });
 
-  const byCloser = new Map<string, typeof handoffs>();
-  for (const h of handoffs) {
-    if (!h.closerId) continue;
-    const arr = byCloser.get(h.closerId) ?? [];
-    arr.push(h);
-    byCloser.set(h.closerId, arr);
+  const byCloser = new Map<string, typeof opps>();
+  for (const o of opps) {
+    if (!o.assignedToId) continue;
+    const arr = byCloser.get(o.assignedToId) ?? [];
+    arr.push(o);
+    byCloser.set(o.assignedToId, arr);
   }
+  const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
 
   return closers
     .map((u) => {
       const rows = byCloser.get(u.id) ?? [];
-      const today = rows.filter((h) => h.createdAt >= startOfToday);
-      const sum = (rs: typeof rows) => rs.reduce((s, h) => s + (h.debt ?? 0), 0);
+      const today = rows.filter((o) => o.createdAt >= startOfToday);
+      const sum = (rs: typeof rows) => rs.reduce((s, o) => s + (o.totalDebt ?? 0), 0);
       return {
         id: u.id,
         name: u.name,
@@ -284,18 +287,18 @@ export async function closerDashboard(now: number): Promise<CloserDashboardRow[]
         todayDebt: sum(today),
         monthCount: rows.length,
         monthDebt: sum(rows),
-        transfers: rows.map((h) => ({
-          id: h.id,
-          at: h.createdAt.toISOString(),
-          clientName: h.clientName,
-          debt: h.debt,
-          debtLabel: h.debtLabel,
-          tier: h.tier,
-          status: h.status,
+        transfers: rows.map((o) => ({
+          id: o.id,
+          at: o.createdAt.toISOString(),
+          clientName: o.name,
+          debt: o.totalDebt,
+          debtLabel: o.totalDebt ? money(o.totalDebt) : null,
+          tier: u.closerTier,
+          status: o.stage,
         })),
       };
     })
-    .sort((a, b) => b.monthCount - a.monthCount || b.monthDebt - a.monthDebt || a.name.localeCompare(b.name));
+    .sort((a, b) => b.monthDebt - a.monthDebt || b.monthCount - a.monthCount || a.name.localeCompare(b.name));
 }
 
 export interface OnCallCloser {
