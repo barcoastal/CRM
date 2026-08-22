@@ -233,11 +233,11 @@ export interface CloserDashboardRow {
   id: string;
   name: string;
   tier: number | null;
-  todayCount: number;
-  todayDebt: number;
-  monthCount: number;
-  monthDebt: number;
-  transfers: DashboardTransfer[]; // this month's transfers, newest first
+  transferCount: number; // transfers received in range
+  transferDebt: number;
+  closedCount: number; // of those, Closed Won
+  closedDebt: number;
+  transfers: DashboardTransfer[]; // the range's transfers, newest first
 }
 
 /**
@@ -246,7 +246,9 @@ export interface CloserDashboardRow {
  * assigned to them (assignedToId = the closer, verified vs CloserLookup__c).
  * `now` is injected so the caller controls the clock.
  */
-export async function closerDashboard(now: number): Promise<CloserDashboardRow[]> {
+const isWon = (stage: string | null) => !!stage && /closed won/i.test(stage);
+
+export async function closerDashboard(fromMs: number, toMs: number): Promise<CloserDashboardRow[]> {
   const closers = await prisma.user.findMany({
     where: { isActive: true, closerTier: { not: null } },
     select: { id: true, name: true, closerTier: true },
@@ -254,13 +256,9 @@ export async function closerDashboard(now: number): Promise<CloserDashboardRow[]
   const ids = closers.map((c) => c.id);
   if (ids.length === 0) return [];
 
-  // Day/month boundaries in the business timezone (US Eastern), not the server's
-  // UTC - otherwise late-evening activity bleeds into the next "day".
-  const { startOfToday, startOfMonth } = easternBoundaries(now);
-
-  // Every opportunity (= a transferred call) assigned to a tiered closer this month.
+  // Transfers = opportunities assigned to a tiered closer, created in the range.
   const opps = await prisma.opportunity.findMany({
-    where: { assignedToId: { in: ids }, createdAt: { gte: startOfMonth } },
+    where: { assignedToId: { in: ids }, createdAt: { gte: new Date(fromMs), lt: new Date(toMs) } },
     orderBy: { createdAt: "desc" },
     select: { id: true, name: true, assignedToId: true, totalDebt: true, createdAt: true, stage: true },
   });
@@ -273,20 +271,20 @@ export async function closerDashboard(now: number): Promise<CloserDashboardRow[]
     byCloser.set(o.assignedToId, arr);
   }
   const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+  const sum = (rs: typeof opps) => rs.reduce((s, o) => s + (o.totalDebt ?? 0), 0);
 
   return closers
     .map((u) => {
       const rows = byCloser.get(u.id) ?? [];
-      const today = rows.filter((o) => o.createdAt >= startOfToday);
-      const sum = (rs: typeof rows) => rs.reduce((s, o) => s + (o.totalDebt ?? 0), 0);
+      const closed = rows.filter((o) => isWon(o.stage));
       return {
         id: u.id,
         name: u.name,
         tier: u.closerTier,
-        todayCount: today.length,
-        todayDebt: sum(today),
-        monthCount: rows.length,
-        monthDebt: sum(rows),
+        transferCount: rows.length,
+        transferDebt: sum(rows),
+        closedCount: closed.length,
+        closedDebt: sum(closed),
         transfers: rows.map((o) => ({
           id: o.id,
           at: o.createdAt.toISOString(),
@@ -298,7 +296,7 @@ export async function closerDashboard(now: number): Promise<CloserDashboardRow[]
         })),
       };
     })
-    .sort((a, b) => b.monthDebt - a.monthDebt || b.monthCount - a.monthCount || a.name.localeCompare(b.name));
+    .sort((a, b) => b.closedCount - a.closedCount || b.transferDebt - a.transferDebt || a.name.localeCompare(b.name));
 }
 
 export interface OnCallCloser {
