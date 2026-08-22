@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ClosersOnCallBoard } from "@/components/dialer/closers-on-call-board";
 
 interface Transfer { id: string; at: string; clientName: string | null; debt: number | null; debtLabel: string | null; tier: number | null; status: string; }
 interface Row {
@@ -81,7 +82,17 @@ export default function CloserDashboardPage() {
   return (
     <div>
       <h1 style={{ fontSize: 22, fontWeight: 800, color: "#16325c", margin: "0 0 4px" }}>Closer Dashboard</h1>
-      <p style={{ fontSize: 13, color: "#8a94a6", margin: "0 0 14px" }}>Transfers, closes, and debt per closer for the selected period. Live from opportunities.</p>
+      <p style={{ fontSize: 13, color: "#8a94a6", margin: "0 0 16px" }}>Transfers, closes, and debt per closer for the selected period. Live from opportunities.</p>
+
+      {/* Live calls happening right now */}
+      <div style={{ marginBottom: 22 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#b3261e", display: "inline-block" }} />
+          <h2 style={{ fontSize: 15, fontWeight: 800, color: "#16325c", margin: 0 }}>Live calls now</h2>
+          <span style={{ fontSize: 12, color: "#8a94a6" }}>fronters on a call, with the client and debt</span>
+        </div>
+        <ClosersOnCallBoard />
+      </div>
 
       {/* Date range controls */}
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
