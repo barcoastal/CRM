@@ -5,7 +5,6 @@ import Link from "next/link";
 import { DispositionModal } from "@/components/leads/disposition-modal";
 import { LEAD_STATUSES, STAGE_TO_SUB_DISPOSITIONS, type LeadStatusV2 } from "@/lib/sf-canonical";
 import { CallTranscriber } from "./call-transcriber";
-import { AvailableClosers } from "@/components/dialer/available-closers";
 import { MyAssignment } from "@/components/dialer/my-assignment";
 
 const FIVE9_AGENT_URL = "https://app-atl.five9.com/clients/agent/main.html?role=Agent";
@@ -235,10 +234,9 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
         )}
       </div>
 
-      {/* Open closers by tier + the manager's transfer assignment */}
+      {/* Fronter sees only the manager's assignment (not the open-closer list). */}
       <div>
         <MyAssignment />
-        <AvailableClosers showPopOut />
       </div>
     </div>
   );
