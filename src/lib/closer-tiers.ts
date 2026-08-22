@@ -254,9 +254,9 @@ export async function closerDashboard(now: number): Promise<CloserDashboardRow[]
   const ids = closers.map((c) => c.id);
   if (ids.length === 0) return [];
 
-  const d = new Date(now);
-  const startOfToday = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+  // Day/month boundaries in the business timezone (US Eastern), not the server's
+  // UTC - otherwise late-evening activity bleeds into the next "day".
+  const { startOfToday, startOfMonth } = easternBoundaries(now);
 
   // Every opportunity (= a transferred call) assigned to a tiered closer this month.
   const opps = await prisma.opportunity.findMany({
@@ -315,6 +315,26 @@ export interface OnCallCloser {
 
 const digits10 = (p: string | null | undefined) => (p ?? "").replace(/[^0-9]/g, "").slice(-10);
 const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+
+/**
+ * Start-of-today and start-of-month as UTC instants, computed in the business
+ * timezone (US Eastern). Avoids counting late-evening activity as the next day.
+ */
+export function easternBoundaries(now: number): { startOfToday: Date; startOfMonth: Date } {
+  const d = new Date(now);
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+    }).formatToParts(d).map((p) => [p.type, p.value]),
+  );
+  const h = Number(parts.hour) % 24;
+  const elapsedMs = ((h * 3600) + Number(parts.minute) * 60 + Number(parts.second)) * 1000 + d.getMilliseconds();
+  const startOfToday = new Date(d.getTime() - elapsedMs);
+  const startOfMonth = new Date(startOfToday.getTime() - (Number(parts.day) - 1) * 86_400_000);
+  return { startOfToday, startOfMonth };
+}
 
 /** Resolve the client a closer is talking to (by Five9 "customer") + their debt. */
 async function clientForCustomer(
