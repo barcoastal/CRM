@@ -53,6 +53,34 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true, id: handoff.id, closerName: closer.name });
 }
 
+const Patch = z.object({
+  id: z.string(),
+  status: z.enum(["ASSIGNED", "CLOSED", "LOST"]),
+  closedDebt: z.number().nullable().optional(),
+});
+
+/** Update a handoff outcome (mark CLOSED/LOST). Feeds the closed-deal stats. */
+export async function PATCH(req: NextRequest) {
+  const r = await requireAuthOrRespond();
+  if ("response" in r) return r.response;
+  const parsed = Patch.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  const { id, status, closedDebt } = parsed.data;
+
+  const existing = await prisma.closerHandoff.findUnique({ where: { id }, select: { debt: true } });
+  if (!existing) return NextResponse.json({ error: "Handoff not found" }, { status: 404 });
+
+  await prisma.closerHandoff.update({
+    where: { id },
+    data: {
+      status,
+      // On close, default the closed amount to the attempted debt if none given.
+      closedDebt: status === "CLOSED" ? (closedDebt ?? existing.debt ?? null) : status === "LOST" ? null : undefined,
+    },
+  });
+  return NextResponse.json({ ok: true });
+}
+
 export async function GET() {
   const r = await requireAuthOrRespond();
   if ("response" in r) return r.response;
