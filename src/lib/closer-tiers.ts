@@ -233,11 +233,12 @@ export interface CloserDashboardRow {
   id: string;
   name: string;
   tier: number | null;
-  transferCount: number; // transfers received in range
+  transferCount: number; // transfers received (created) in range
   transferDebt: number;
-  closedCount: number; // of those, Closed Won
+  closedCount: number; // deals SIGNED (Closed Won) in range
   closedDebt: number;
-  transfers: DashboardTransfer[]; // the range's transfers, newest first
+  firstPaymentCount: number; // of those, first payment completed
+  transfers: DashboardTransfer[]; // the range's received transfers, newest first
 }
 
 /**
@@ -256,12 +257,25 @@ export async function closerDashboard(fromMs: number, toMs: number): Promise<Clo
   const ids = closers.map((c) => c.id);
   if (ids.length === 0) return [];
 
-  // Transfers = opportunities assigned to a tiered closer, created in the range.
+  const from = new Date(fromMs);
+  const to = new Date(toMs);
+  // Opps that either came in (created) OR were signed in the range. Metrics are
+  // counted by their own event date: transfers by created, closes/first-payment
+  // by contract-signed date.
   const opps = await prisma.opportunity.findMany({
-    where: { assignedToId: { in: ids }, createdAt: { gte: new Date(fromMs), lt: new Date(toMs) } },
+    where: {
+      assignedToId: { in: ids },
+      OR: [
+        { createdAt: { gte: from, lt: to } },
+        { firstContractSignedDateOpp: { gte: from, lt: to } },
+      ],
+    },
     orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, assignedToId: true, totalDebt: true, createdAt: true, stage: true },
+    select: { id: true, name: true, assignedToId: true, totalDebt: true, createdAt: true, firstContractSignedDateOpp: true, stage: true },
   });
+
+  const inRange = (d: Date | null) => !!d && d >= from && d < to;
+  const paidStage = (s: string | null) => !!s && /first payment completed/i.test(s);
 
   const byCloser = new Map<string, typeof opps>();
   for (const o of opps) {
@@ -276,16 +290,19 @@ export async function closerDashboard(fromMs: number, toMs: number): Promise<Clo
   return closers
     .map((u) => {
       const rows = byCloser.get(u.id) ?? [];
-      const closed = rows.filter((o) => isWon(o.stage));
+      const received = rows.filter((o) => inRange(o.createdAt)); // transfers this period
+      const signed = rows.filter((o) => inRange(o.firstContractSignedDateOpp) && isWon(o.stage)); // closed this period
+      const paid = signed.filter((o) => paidStage(o.stage)); // of those, first payment done
       return {
         id: u.id,
         name: u.name,
         tier: u.closerTier,
-        transferCount: rows.length,
-        transferDebt: sum(rows),
-        closedCount: closed.length,
-        closedDebt: sum(closed),
-        transfers: rows.map((o) => ({
+        transferCount: received.length,
+        transferDebt: sum(received),
+        closedCount: signed.length,
+        closedDebt: sum(signed),
+        firstPaymentCount: paid.length,
+        transfers: received.map((o) => ({
           id: o.id,
           at: o.createdAt.toISOString(),
           clientName: o.name,
@@ -296,7 +313,7 @@ export async function closerDashboard(fromMs: number, toMs: number): Promise<Clo
         })),
       };
     })
-    .sort((a, b) => b.closedCount - a.closedCount || b.transferDebt - a.transferDebt || a.name.localeCompare(b.name));
+    .sort((a, b) => b.closedCount - a.closedCount || b.closedDebt - a.closedDebt || a.name.localeCompare(b.name));
 }
 
 export interface OnCallCloser {

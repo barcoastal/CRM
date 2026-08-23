@@ -9,6 +9,7 @@ interface Row {
   id: string; name: string; tier: number | null;
   transferCount: number; transferDebt: number;
   closedCount: number; closedDebt: number;
+  firstPaymentCount: number;
   transfers: Transfer[];
 }
 
@@ -69,7 +70,13 @@ export default function CloserDashboardPage() {
     return () => { alive = false; clearInterval(id); };
   }, [from, to]);
 
-  const t = rows.reduce((a, r) => ({ tr: a.tr + r.transferCount, cl: a.cl + r.closedCount, trD: a.trD + r.transferDebt, clD: a.clD + r.closedDebt }), { tr: 0, cl: 0, trD: 0, clD: 0 });
+  const t = rows.reduce((a, r) => ({ tr: a.tr + r.transferCount, cl: a.cl + r.closedCount, fp: a.fp + r.firstPaymentCount, trD: a.trD + r.transferDebt, clD: a.clD + r.closedDebt }), { tr: 0, cl: 0, fp: 0, trD: 0, clD: 0 });
+  const rangeLabel = (() => {
+    const opt: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
+    const f = from.toLocaleDateString("en-US", opt);
+    const tt = new Date(to.getTime() - 1).toLocaleDateString("en-US", opt);
+    return f === tt ? f : `${from.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${tt}`;
+  })();
 
   const card: React.CSSProperties = { background: "#fff", border: "1px solid #d8dde6", borderRadius: 8, padding: "16px 18px", flex: 1, minWidth: 150 };
   const cLbl: React.CSSProperties = { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#5c6b7a" };
@@ -113,12 +120,18 @@ export default function CloserDashboardPage() {
         )}
       </div>
 
+      {/* Range being viewed */}
+      <div style={{ fontSize: 13, color: "#16325c", fontWeight: 600, margin: "0 0 12px" }}>
+        Showing <span style={{ color: "#0176d3" }}>{rangeLabel}</span>
+        <span style={{ color: "#8a94a6", fontWeight: 400 }}> · {rows.length} tiered closers</span>
+      </div>
+
       {/* Summary */}
       <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
         <div style={card}><div style={cLbl}>Transfers</div><div style={cNum}>{t.tr}</div><div style={cSub}>{compact(t.trD)} in debt</div></div>
-        <div style={card}><div style={cLbl}>Closed</div><div style={{ ...cNum, color: "#2e844a" }}>{t.cl}</div><div style={cSub}>{t.tr ? Math.round((t.cl / t.tr) * 100) : 0}% close rate</div></div>
-        <div style={card}><div style={cLbl}>Debt closed</div><div style={{ ...cNum, color: "#2e844a" }}>{compact(t.clD)}</div><div style={cSub}>of {compact(t.trD)} transferred</div></div>
-        <div style={card}><div style={cLbl}>Closers</div><div style={cNum}>{rows.length}</div><div style={cSub}>tiered</div></div>
+        <div style={card}><div style={cLbl}>Closed</div><div style={{ ...cNum, color: "#2e844a" }}>{t.cl}</div><div style={cSub}>signed this period</div></div>
+        <div style={card}><div style={cLbl}>First payment</div><div style={{ ...cNum, color: "#0176d3" }}>{t.fp}</div><div style={cSub}>{t.cl ? Math.round((t.fp / t.cl) * 100) : 0}% of closed paid</div></div>
+        <div style={card}><div style={cLbl}>Debt closed</div><div style={{ ...cNum, color: "#2e844a" }}>{compact(t.clD)}</div><div style={cSub}>signed this period</div></div>
       </div>
 
       {/* Per-closer table */}
@@ -133,6 +146,7 @@ export default function CloserDashboardPage() {
               <th style={{ ...th, textAlign: "right" }}>Transfers</th>
               <th style={{ ...th, textAlign: "right" }}>Debt</th>
               <th style={{ ...th, textAlign: "right" }}>Closed</th>
+              <th style={{ ...th, textAlign: "right" }}>1st payment</th>
               <th style={{ ...th, textAlign: "right" }}>Debt closed</th>
               <th style={{ ...th, textAlign: "right" }}>Close %</th>
             </tr>
@@ -151,6 +165,7 @@ export default function CloserDashboardPage() {
                     <td style={{ ...num, fontWeight: 700 }}>{r.transferCount}</td>
                     <td style={num}>{compact(r.transferDebt)}</td>
                     <td style={{ ...num, fontWeight: 800, color: "#2e844a" }}>{r.closedCount}</td>
+                    <td style={{ ...num, fontWeight: 700, color: "#0176d3" }}>{r.firstPaymentCount}</td>
                     <td style={{ ...num, color: "#2e844a", fontWeight: 700 }}>{compact(r.closedDebt)}</td>
                     <td style={num}>{rate}%</td>
                   </tr>
@@ -160,14 +175,14 @@ export default function CloserDashboardPage() {
                       <td style={{ ...td, fontSize: 12 }}><Link href={`/opportunities/${x.id}`} style={{ color: "#0176d3", textDecoration: "none", fontWeight: 600 }}>{x.clientName ?? "Opportunity"}</Link></td>
                       <td style={{ ...td, fontSize: 12, color: "#8a94a6" }}>{fmtDate(x.at)}</td>
                       <td style={{ ...num, fontSize: 13, fontWeight: 700 }} colSpan={2}>{x.debtLabel ?? "-"}</td>
-                      <td style={{ ...td, fontSize: 12 }} colSpan={3}><span style={{ fontWeight: 700, color: won(x.status) ? "#2e844a" : "#5c6b7a" }}>{x.status}</span></td>
+                      <td style={{ ...td, fontSize: 12 }} colSpan={4}><span style={{ fontWeight: 700, color: won(x.status) ? "#2e844a" : "#5c6b7a" }}>{x.status}</span></td>
                     </tr>
                   ))}
                 </Fragment>
               );
             })}
-            {!loading && rows.length === 0 && <tr><td colSpan={9} style={{ ...td, textAlign: "center", color: "#8a94a6", padding: 28 }}>No transfers in this period.</td></tr>}
-            {loading && <tr><td colSpan={9} style={{ ...td, textAlign: "center", color: "#8a94a6", padding: 28 }}>Loading...</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={10} style={{ ...td, textAlign: "center", color: "#8a94a6", padding: 28 }}>No transfers in this period.</td></tr>}
+            {loading && <tr><td colSpan={10} style={{ ...td, textAlign: "center", color: "#8a94a6", padding: 28 }}>Loading...</td></tr>}
           </tbody>
         </table>
       </div>
