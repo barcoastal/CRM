@@ -123,7 +123,7 @@ export default function CloserDashboardPage() {
       {/* Range being viewed */}
       <div style={{ fontSize: 13, color: "#16325c", fontWeight: 600, margin: "0 0 12px" }}>
         Showing <span style={{ color: "#0176d3" }}>{rangeLabel}</span>
-        <span style={{ color: "#8a94a6", fontWeight: 400 }}> · {rows.length} tiered closers</span>
+        <span style={{ color: "#8a94a6", fontWeight: 400 }}> · {rows.length} closers</span>
       </div>
 
       {/* Summary */}

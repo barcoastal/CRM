@@ -250,21 +250,13 @@ export interface CloserDashboardRow {
 const isWon = (stage: string | null) => !!stage && /closed won/i.test(stage);
 
 export async function closerDashboard(fromMs: number, toMs: number): Promise<CloserDashboardRow[]> {
-  const closers = await prisma.user.findMany({
-    where: { isActive: true, closerTier: { not: null } },
-    select: { id: true, name: true, closerTier: true },
-  });
-  const ids = closers.map((c) => c.id);
-  if (ids.length === 0) return [];
-
   const from = new Date(fromMs);
   const to = new Date(toMs);
-  // Opps that either came in (created) OR were signed in the range. Metrics are
-  // counted by their own event date: transfers by created, closes/first-payment
-  // by contract-signed date.
+  // Every opp that came in (created) OR was signed in the range, for ANY
+  // assignee - so the board shows the whole floor, not just the tiered 11.
   const opps = await prisma.opportunity.findMany({
     where: {
-      assignedToId: { in: ids },
+      assignedToId: { not: null },
       OR: [
         { createdAt: { gte: from, lt: to } },
         { firstContractSignedDateOpp: { gte: from, lt: to } },
@@ -284,10 +276,19 @@ export async function closerDashboard(fromMs: number, toMs: number): Promise<Clo
     arr.push(o);
     byCloser.set(o.assignedToId, arr);
   }
+
+  // Names + tiers for everyone who had activity in the period.
+  const assigneeIds = [...byCloser.keys()];
+  if (assigneeIds.length === 0) return [];
+  const users = await prisma.user.findMany({
+    where: { id: { in: assigneeIds } },
+    select: { id: true, name: true, closerTier: true },
+  });
+
   const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
   const sum = (rs: typeof opps) => rs.reduce((s, o) => s + (o.totalDebt ?? 0), 0);
 
-  return closers
+  return users
     .map((u) => {
       const rows = byCloser.get(u.id) ?? [];
       const received = rows.filter((o) => inRange(o.createdAt)); // transfers this period
