@@ -8,6 +8,7 @@ interface Transfer { id: string; at: string; clientName: string | null; debt: nu
 interface Row {
   id: string; name: string; tier: number | null;
   transferCount: number; transferDebt: number;
+  contractSentCount: number;
   closedCount: number; closedDebt: number;
   firstPaymentCount: number;
   transfers: Transfer[];
@@ -145,6 +146,7 @@ export default function CloserDashboardPage() {
               <th style={th}>Tier</th>
               <th style={{ ...th, textAlign: "right" }}>Transfers</th>
               <th style={{ ...th, textAlign: "right" }}>Debt</th>
+              <th style={{ ...th, textAlign: "right" }}>Contract sent</th>
               <th style={{ ...th, textAlign: "right" }}>Closed</th>
               <th style={{ ...th, textAlign: "right" }}>1st payment</th>
               <th style={{ ...th, textAlign: "right" }}>Debt closed</th>
@@ -164,6 +166,7 @@ export default function CloserDashboardPage() {
                     <td style={td}>{tr ? <span style={{ background: tr.c, color: "#fff", padding: "2px 9px", borderRadius: 10, fontSize: 11, fontWeight: 700 }}>{tr.label}</span> : "-"}</td>
                     <td style={{ ...num, fontWeight: 700 }}>{r.transferCount}</td>
                     <td style={num}>{compact(r.transferDebt)}</td>
+                    <td style={{ ...num, fontWeight: 700, color: "#c07a00" }}>{r.contractSentCount}</td>
                     <td style={{ ...num, fontWeight: 800, color: "#2e844a" }}>{r.closedCount}</td>
                     <td style={{ ...num, fontWeight: 700, color: "#0176d3" }}>{r.firstPaymentCount}</td>
                     <td style={{ ...num, color: "#2e844a", fontWeight: 700 }}>{compact(r.closedDebt)}</td>
@@ -175,14 +178,14 @@ export default function CloserDashboardPage() {
                       <td style={{ ...td, fontSize: 12 }}><Link href={`/opportunities/${x.id}`} style={{ color: "#0176d3", textDecoration: "none", fontWeight: 600 }}>{x.clientName ?? "Opportunity"}</Link></td>
                       <td style={{ ...td, fontSize: 12, color: "#8a94a6" }}>{fmtDate(x.at)}</td>
                       <td style={{ ...num, fontSize: 13, fontWeight: 700 }} colSpan={2}>{x.debtLabel ?? "-"}</td>
-                      <td style={{ ...td, fontSize: 12 }} colSpan={4}><span style={{ fontWeight: 700, color: won(x.status) ? "#2e844a" : "#5c6b7a" }}>{x.status}</span></td>
+                      <td style={{ ...td, fontSize: 12 }} colSpan={5}><span style={{ fontWeight: 700, color: won(x.status) ? "#2e844a" : "#5c6b7a" }}>{x.status}</span></td>
                     </tr>
                   ))}
                 </Fragment>
               );
             })}
-            {!loading && rows.length === 0 && <tr><td colSpan={10} style={{ ...td, textAlign: "center", color: "#8a94a6", padding: 28 }}>No transfers in this period.</td></tr>}
-            {loading && <tr><td colSpan={10} style={{ ...td, textAlign: "center", color: "#8a94a6", padding: 28 }}>Loading...</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={11} style={{ ...td, textAlign: "center", color: "#8a94a6", padding: 28 }}>No transfers in this period.</td></tr>}
+            {loading && <tr><td colSpan={11} style={{ ...td, textAlign: "center", color: "#8a94a6", padding: 28 }}>Loading...</td></tr>}
           </tbody>
         </table>
       </div>

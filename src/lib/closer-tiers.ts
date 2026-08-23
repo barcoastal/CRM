@@ -235,6 +235,7 @@ export interface CloserDashboardRow {
   tier: number | null;
   transferCount: number; // transfers received (created) in range
   transferDebt: number;
+  contractSentCount: number; // of the received, currently at "Contract Sent"
   closedCount: number; // deals SIGNED (Closed Won) in range
   closedDebt: number;
   firstPaymentCount: number; // of those, first payment completed
@@ -292,6 +293,7 @@ export async function closerDashboard(fromMs: number, toMs: number): Promise<Clo
     .map((u) => {
       const rows = byCloser.get(u.id) ?? [];
       const received = rows.filter((o) => inRange(o.createdAt)); // transfers this period
+      const sent = received.filter((o) => /contract sent/i.test(o.stage ?? "")); // contract out for signature
       const signed = rows.filter((o) => inRange(o.firstContractSignedDateOpp) && isWon(o.stage)); // closed this period
       const paid = signed.filter((o) => paidStage(o.stage)); // of those, first payment done
       return {
@@ -300,6 +302,7 @@ export async function closerDashboard(fromMs: number, toMs: number): Promise<Clo
         tier: u.closerTier,
         transferCount: received.length,
         transferDebt: sum(received),
+        contractSentCount: sent.length,
         closedCount: signed.length,
         closedDebt: sum(signed),
         firstPaymentCount: paid.length,
