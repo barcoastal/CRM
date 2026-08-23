@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { ObjectIcon } from "./icon";
@@ -101,6 +101,8 @@ export function SldsHeader({
   const [profileOpen, setProfileOpen] = useState(false);
   const [launcherOpen, setLauncherOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [morePos, setMorePos] = useState<{ top: number; right: number } | null>(null);
+  const moreBtnRef = useRef<HTMLButtonElement>(null);
   const [quickOpen, setQuickOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [editNavOpen, setEditNavOpen] = useState(false);
@@ -242,18 +244,29 @@ export function SldsHeader({
           {visibleTabs.length > 11 && (
             <span style={{ position: "relative", display: "inline-flex", alignItems: "stretch" }}>
               <button
+                ref={moreBtnRef}
                 className={`sf-tab ${visibleTabs.slice(11).some((t) => pathname.startsWith(t.href)) ? "sf-tab-active" : ""}`}
                 style={{ background: moreOpen ? "#f3f2f2" : undefined, border: 0, cursor: "pointer", height: "100%", display: "inline-flex", alignItems: "center" }}
-                onClick={() => setMoreOpen((v) => !v)}
+                onClick={() => {
+                  setMoreOpen((v) => {
+                    if (!v && moreBtnRef.current) {
+                      const r = moreBtnRef.current.getBoundingClientRect();
+                      setMorePos({ top: r.bottom, right: Math.max(8, window.innerWidth - r.right) });
+                    }
+                    return !v;
+                  });
+                }}
               >
                 More
                 <svg className="sf-tab-chev" aria-hidden="true">
                   <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#down" />
                 </svg>
               </button>
-              {moreOpen && (
+              {moreOpen && morePos && (
                 <span
-                  style={{ position: "absolute", top: "100%", right: 0, zIndex: 9100, background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, boxShadow: "0 2px 6px rgba(0,0,0,0.15)", minWidth: 200, maxHeight: 480, overflowY: "auto", display: "block", padding: "4px 0" }}
+                  // Fixed position (not absolute) so the nav's overflow-x:auto
+                  // scroll container doesn't clip the dropdown below the bar.
+                  style={{ position: "fixed", top: morePos.top, right: morePos.right, zIndex: 9100, background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, boxShadow: "0 2px 6px rgba(0,0,0,0.15)", minWidth: 200, maxHeight: "70vh", overflowY: "auto", display: "block", padding: "4px 0" }}
                   onMouseLeave={() => setMoreOpen(false)}
                 >
                   {visibleTabs.slice(11).map((t) => (
