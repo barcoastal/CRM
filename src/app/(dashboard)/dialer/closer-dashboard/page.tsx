@@ -51,12 +51,23 @@ export default function CloserDashboardPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [drill, setDrill] = useState<Record<string, Transfer[]>>({});
   const [preset, setPreset] = useState<Preset>("month");
   const today = ymd(new Date());
   const [cf, setCf] = useState(today);
   const [ct, setCt] = useState(today);
 
   const { from, to } = useMemo(() => rangeFor(preset, cf, ct), [preset, cf, ct]);
+
+  function toggle(r: Row) {
+    setOpen((p) => ({ ...p, [r.id]: !p[r.id] }));
+    if (!drill[r.id] && r.transferCount > 0) {
+      fetch(`/api/dialer/closer-transfers?closerId=${r.id}&from=${encodeURIComponent(iso(from))}&to=${encodeURIComponent(iso(to))}`)
+        .then((res) => (res.ok ? res.json() : { transfers: [] }))
+        .then((d) => setDrill((p) => ({ ...p, [r.id]: d.transfers ?? [] })))
+        .catch(() => {});
+    }
+  }
 
   useEffect(() => {
     let alive = true;
@@ -66,6 +77,7 @@ export default function CloserDashboardPage() {
         if (r.ok && alive) setRows((await r.json()).rows ?? []);
       } catch { /* ignore */ } finally { if (alive) setLoading(false); }
     }
+    setDrill({}); setOpen({});
     void load();
     const id = setInterval(load, 30000);
     return () => { alive = false; clearInterval(id); };
@@ -159,8 +171,8 @@ export default function CloserDashboardPage() {
               const rate = r.transferCount ? Math.round((r.closedCount / r.transferCount) * 100) : 0;
               return (
                 <Fragment key={r.id}>
-                  <tr onClick={() => setOpen((p) => ({ ...p, [r.id]: !p[r.id] }))} style={{ cursor: r.transfers.length ? "pointer" : "default" }} className="cd-row">
-                    <td style={{ ...td, color: "#b0bac9", textAlign: "center" }}>{r.transfers.length ? (open[r.id] ? "▾" : "▸") : ""}</td>
+                  <tr onClick={() => toggle(r)} style={{ cursor: r.transferCount ? "pointer" : "default" }} className="cd-row">
+                    <td style={{ ...td, color: "#b0bac9", textAlign: "center" }}>{r.transferCount ? (open[r.id] ? "▾" : "▸") : ""}</td>
                     <td style={{ ...td, color: "#b0bac9", fontWeight: 700 }}>{i + 1}</td>
                     <td style={{ ...td, fontWeight: 700 }}>{r.name}</td>
                     <td style={td}>{tr ? <span style={{ background: tr.c, color: "#fff", padding: "2px 9px", borderRadius: 10, fontSize: 11, fontWeight: 700 }}>{tr.label}</span> : "-"}</td>
@@ -172,7 +184,7 @@ export default function CloserDashboardPage() {
                     <td style={{ ...num, color: "#2e844a", fontWeight: 700 }}>{compact(r.closedDebt)}</td>
                     <td style={num}>{rate}%</td>
                   </tr>
-                  {open[r.id] && r.transfers.map((x) => (
+                  {open[r.id] && (drill[r.id] ?? []).map((x) => (
                     <tr key={x.id} style={{ background: "#f7f9fc" }}>
                       <td style={td} colSpan={2}></td>
                       <td style={{ ...td, fontSize: 12 }}><Link href={`/opportunities/${x.id}`} style={{ color: "#0176d3", textDecoration: "none", fontWeight: 600 }}>{x.clientName ?? "Opportunity"}</Link></td>

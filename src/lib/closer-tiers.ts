@@ -198,38 +198,39 @@ export async function closerStats(): Promise<CloserStat[]> {
   if (ids.length === 0) return [];
 
   const { startOfMonth } = easternBoundaries(Date.now());
-  const opps = await prisma.opportunity.findMany({
-    where: {
-      assignedToId: { in: ids },
-      OR: [{ createdAt: { gte: startOfMonth } }, { firstContractSignedDateOpp: { gte: startOfMonth } }],
-    },
-    select: { assignedToId: true, totalDebt: true, createdAt: true, firstContractSignedDateOpp: true, stage: true },
-  });
-  const byCloser = new Map<string, typeof opps>();
-  for (const o of opps) {
-    if (!o.assignedToId) continue;
-    const arr = byCloser.get(o.assignedToId) ?? [];
-    arr.push(o);
-    byCloser.set(o.assignedToId, arr);
-  }
-  const sum = (rs: typeof opps) => rs.reduce((s, o) => s + (o.totalDebt ?? 0), 0);
+  // DB-side aggregation (indexed) - fast, no row fetching or OR scan.
+  const [transfers, closed] = await Promise.all([
+    prisma.opportunity.groupBy({
+      by: ["assignedToId"],
+      where: { assignedToId: { in: ids }, createdAt: { gte: startOfMonth } },
+      _count: { _all: true },
+      _sum: { totalDebt: true },
+    }),
+    prisma.opportunity.groupBy({
+      by: ["assignedToId"],
+      where: { assignedToId: { in: ids }, firstContractSignedDateOpp: { gte: startOfMonth }, stage: { contains: "Closed Won" } },
+      _count: { _all: true },
+      _sum: { totalDebt: true },
+    }),
+  ]);
+  const tBy = new Map(transfers.map((t) => [t.assignedToId, { c: t._count._all, d: t._sum.totalDebt ?? 0 }]));
+  const cBy = new Map(closed.map((x) => [x.assignedToId, { c: x._count._all, d: x._sum.totalDebt ?? 0 }]));
 
   return closers
     .map((u) => {
       const state = simplifyState(supervisorFeed.getStateFor(u.five9Username ?? u.email, u.name)?.state ?? null);
-      const rows = byCloser.get(u.id) ?? [];
-      const received = rows.filter((o) => o.createdAt >= startOfMonth);
-      const signed = rows.filter((o) => o.firstContractSignedDateOpp && o.firstContractSignedDateOpp >= startOfMonth && isWon(o.stage));
+      const t = tBy.get(u.id);
+      const cl = cBy.get(u.id);
       return {
         id: u.id,
         name: u.name,
         tier: u.closerTier,
         state,
         free: state === "READY",
-        callsTaken: received.length,
-        debtAttempted: sum(received),
-        closedCount: signed.length,
-        debtClosed: sum(signed),
+        callsTaken: t?.c ?? 0,
+        debtAttempted: t?.d ?? 0,
+        closedCount: cl?.c ?? 0,
+        debtClosed: cl?.d ?? 0,
       };
     })
     .sort((a, b) => (a.tier ?? 9) - (b.tier ?? 9) || b.closedCount - a.closedCount || a.name.localeCompare(b.name));
@@ -268,71 +269,64 @@ const isWon = (stage: string | null) => !!stage && /closed won/i.test(stage);
 export async function closerDashboard(fromMs: number, toMs: number): Promise<CloserDashboardRow[]> {
   const from = new Date(fromMs);
   const to = new Date(toMs);
-  // Every opp that came in (created) OR was signed in the range, for ANY
-  // assignee - so the board shows the whole floor, not just the tiered 11.
-  const opps = await prisma.opportunity.findMany({
-    where: {
-      assignedToId: { not: null },
-      OR: [
-        { createdAt: { gte: from, lt: to } },
-        { firstContractSignedDateOpp: { gte: from, lt: to } },
-      ],
-    },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, assignedToId: true, totalDebt: true, createdAt: true, firstContractSignedDateOpp: true, stage: true },
-  });
+  const base = { assignedToId: { not: null }, createdAt: { gte: from, lt: to } } as const;
+  const baseSigned = { assignedToId: { not: null }, firstContractSignedDateOpp: { gte: from, lt: to } } as const;
 
-  const inRange = (d: Date | null) => !!d && d >= from && d < to;
-  const paidStage = (s: string | null) => !!s && /first payment completed/i.test(s);
+  // All fast, indexed DB aggregations - no row fetching, no OR scan.
+  const [transfers, contractSent, closed, firstPayment] = await Promise.all([
+    prisma.opportunity.groupBy({ by: ["assignedToId"], where: base, _count: { _all: true }, _sum: { totalDebt: true } }),
+    prisma.opportunity.groupBy({ by: ["assignedToId"], where: { ...base, stage: { contains: "Contract Sent" } }, _count: { _all: true } }),
+    prisma.opportunity.groupBy({ by: ["assignedToId"], where: { ...baseSigned, stage: { contains: "Closed Won" } }, _count: { _all: true }, _sum: { totalDebt: true } }),
+    prisma.opportunity.groupBy({ by: ["assignedToId"], where: { ...baseSigned, stage: { contains: "First Payment Completed" } }, _count: { _all: true } }),
+  ]);
 
-  const byCloser = new Map<string, typeof opps>();
-  for (const o of opps) {
-    if (!o.assignedToId) continue;
-    const arr = byCloser.get(o.assignedToId) ?? [];
-    arr.push(o);
-    byCloser.set(o.assignedToId, arr);
-  }
+  const trBy = new Map(transfers.map((t) => [t.assignedToId, { c: t._count._all, d: t._sum.totalDebt ?? 0 }]));
+  const csBy = new Map(contractSent.map((t) => [t.assignedToId, t._count._all]));
+  const clBy = new Map(closed.map((t) => [t.assignedToId, { c: t._count._all, d: t._sum.totalDebt ?? 0 }]));
+  const fpBy = new Map(firstPayment.map((t) => [t.assignedToId, t._count._all]));
 
-  // Names + tiers for everyone who had activity in the period.
-  const assigneeIds = [...byCloser.keys()];
+  const assigneeIds = [...new Set([...trBy.keys(), ...clBy.keys()].filter((x): x is string => !!x))];
   if (assigneeIds.length === 0) return [];
-  const users = await prisma.user.findMany({
-    where: { id: { in: assigneeIds } },
-    select: { id: true, name: true, closerTier: true },
-  });
-
-  const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
-  const sum = (rs: typeof opps) => rs.reduce((s, o) => s + (o.totalDebt ?? 0), 0);
+  const users = await prisma.user.findMany({ where: { id: { in: assigneeIds } }, select: { id: true, name: true, closerTier: true } });
 
   return users
     .map((u) => {
-      const rows = byCloser.get(u.id) ?? [];
-      const received = rows.filter((o) => inRange(o.createdAt)); // transfers this period
-      const sent = received.filter((o) => /contract sent/i.test(o.stage ?? "")); // contract out for signature
-      const signed = rows.filter((o) => inRange(o.firstContractSignedDateOpp) && isWon(o.stage)); // closed this period
-      const paid = signed.filter((o) => paidStage(o.stage)); // of those, first payment done
+      const tr = trBy.get(u.id);
+      const cl = clBy.get(u.id);
       return {
         id: u.id,
         name: u.name,
         tier: u.closerTier,
-        transferCount: received.length,
-        transferDebt: sum(received),
-        contractSentCount: sent.length,
-        closedCount: signed.length,
-        closedDebt: sum(signed),
-        firstPaymentCount: paid.length,
-        transfers: received.map((o) => ({
-          id: o.id,
-          at: o.createdAt.toISOString(),
-          clientName: o.name,
-          debt: o.totalDebt,
-          debtLabel: o.totalDebt ? money(o.totalDebt) : null,
-          tier: u.closerTier,
-          status: o.stage,
-        })),
+        transferCount: tr?.c ?? 0,
+        transferDebt: tr?.d ?? 0,
+        contractSentCount: csBy.get(u.id) ?? 0,
+        closedCount: cl?.c ?? 0,
+        closedDebt: cl?.d ?? 0,
+        firstPaymentCount: fpBy.get(u.id) ?? 0,
+        transfers: [], // drill-down loaded lazily via closerTransfers()
       };
     })
     .sort((a, b) => b.closedCount - a.closedCount || b.closedDebt - a.closedDebt || a.name.localeCompare(b.name));
+}
+
+/** Drill-down: one closer's transfers (received opps) in the range. */
+export async function closerTransfers(closerId: string, fromMs: number, toMs: number): Promise<DashboardTransfer[]> {
+  const opps = await prisma.opportunity.findMany({
+    where: { assignedToId: closerId, createdAt: { gte: new Date(fromMs), lt: new Date(toMs) } },
+    orderBy: { createdAt: "desc" },
+    take: 300,
+    select: { id: true, name: true, totalDebt: true, createdAt: true, stage: true },
+  });
+  const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+  return opps.map((o) => ({
+    id: o.id,
+    at: o.createdAt.toISOString(),
+    clientName: o.name,
+    debt: o.totalDebt,
+    debtLabel: o.totalDebt ? money(o.totalDebt) : null,
+    tier: null,
+    status: o.stage,
+  }));
 }
 
 export interface OnCallCloser {
@@ -382,10 +376,12 @@ async function clientForCustomer(
 
   let lead: L | null = null;
   const last10 = digits10(trimmed);
-  if (/\d/.test(trimmed) && last10.length >= 7) {
+  if (/\d/.test(trimmed) && last10.length === 10) {
+    // Equality on the last-10-digits functional index (Lead_phone_last10_idx),
+    // not a leading-wildcard LIKE that scans all 7M leads.
     const rows = await prisma.$queryRaw<L[]>`
       SELECT id, "contactName", "businessName", "totalDebtEst", "sfDataJson" FROM "Lead"
-      WHERE regexp_replace(phone, '[^0-9]', '', 'g') LIKE ${"%" + last10}
+      WHERE right(regexp_replace(phone, '[^0-9]', '', 'g'), 10) = ${last10}
       LIMIT 1`;
     lead = rows[0] ?? null;
   }

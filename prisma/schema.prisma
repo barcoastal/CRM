@@ -1161,6 +1161,9 @@ model Opportunity {
   @@index([recordType])
   @@index([accountId])
   @@index([primaryContactId])
+  @@index([assignedToId])
+  @@index([createdAt])
+  @@index([firstContractSignedDateOpp])
   // trigram index: global search does ILIKE %q% on this column
   @@index([name(ops: raw("gin_trgm_ops"))], type: Gin)
   // trigram index: global search does ILIKE %q% on this column
