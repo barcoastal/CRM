@@ -16,27 +16,51 @@ interface Row {
 
 const compact = (n: number) => (n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `$${Math.round(n / 1000)}K` : `$${Math.round(n || 0).toLocaleString()}`);
 const TIER = { 1: { c: "#7f8de1", label: "T1" }, 2: { c: "#0176d3", label: "T2" }, 3: { c: "#2e844a", label: "T3" } } as Record<number, { c: string; label: string }>;
-const fmtDate = (iso: string) => new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const fmtDate = (iso: string) => new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
 const won = (s: string) => /closed won/i.test(s);
 const iso = (d: Date) => d.toISOString();
-const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+// --- US Eastern (the business timezone) date helpers, so the filters mean the
+// same "day/week/month" no matter where the viewer is (e.g. Israel). ---
+const TZ = "America/New_York";
+function eParts(d: Date) {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", weekday: "short", hour12: false })
+      .formatToParts(d).map((x) => [x.type, x.value]),
+  );
+  const dow: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { y: +p.year, m: +p.month, day: +p.day, h: (+p.hour) % 24, mi: +p.minute, s: +p.second, dow: dow[p.weekday as string] ?? 0 };
+}
+// UTC instant of Eastern midnight for a given Y-M-D (handles EDT/EST).
+function eMidnight(y: number, m: number, day: number): Date {
+  const noon = new Date(Date.UTC(y, m - 1, day, 12, 0, 0));
+  const p = eParts(noon);
+  const off = Date.UTC(p.y, p.m - 1, p.day, p.h, p.mi, p.s) - noon.getTime(); // eastern-as-utc minus utc (negative)
+  return new Date(Date.UTC(y, m - 1, day, 0, 0, 0) - off);
+}
+const ymd = (d: Date) => { const p = eParts(d); return `${p.y}-${String(p.m).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`; };
 
 type Preset = "today" | "yesterday" | "week" | "month" | "last" | "custom";
 
-// Range boundaries in the viewer's local time (Eastern for the US floor).
+// Range boundaries in US Eastern (the call-floor's business day).
 function rangeFor(preset: Preset, cf: string, ct: string): { from: Date; to: Date } {
   const now = new Date();
-  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const e = eParts(now);
+  const today = eMidnight(e.y, e.m, e.day);
   switch (preset) {
-    case "today": return { from: startToday, to: now };
-    case "yesterday": return { from: new Date(startToday.getTime() - 86400000), to: startToday };
-    case "week": { const dow = now.getDay(); return { from: new Date(startToday.getTime() - dow * 86400000), to: now }; }
-    case "month": return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: now };
-    case "last": return { from: new Date(now.getFullYear(), now.getMonth() - 1, 1), to: new Date(now.getFullYear(), now.getMonth(), 1) };
+    case "today": return { from: today, to: now };
+    case "yesterday": return { from: new Date(today.getTime() - 86400000), to: today };
+    case "week": return { from: new Date(today.getTime() - e.dow * 86400000), to: now };
+    case "month": return { from: eMidnight(e.y, e.m, 1), to: now };
+    case "last": {
+      const firstThis = eMidnight(e.y, e.m, 1);
+      const prev = eParts(new Date(firstThis.getTime() - 86400000));
+      return { from: eMidnight(prev.y, prev.m, 1), to: firstThis };
+    }
     case "custom": {
-      const from = cf ? new Date(cf + "T00:00:00") : new Date(now.getFullYear(), now.getMonth(), 1);
-      const to = ct ? new Date(ct + "T23:59:59") : now;
-      return { from, to };
+      const [fy, fm, fd] = (cf || ymd(now)).split("-").map(Number);
+      const [ty, tm, td] = (ct || ymd(now)).split("-").map(Number);
+      return { from: eMidnight(fy, fm, fd), to: new Date(eMidnight(ty, tm, td).getTime() + 86400000) };
     }
   }
 }
@@ -85,10 +109,10 @@ export default function CloserDashboardPage() {
 
   const t = rows.reduce((a, r) => ({ tr: a.tr + r.transferCount, cl: a.cl + r.closedCount, fp: a.fp + r.firstPaymentCount, trD: a.trD + r.transferDebt, clD: a.clD + r.closedDebt }), { tr: 0, cl: 0, fp: 0, trD: 0, clD: 0 });
   const rangeLabel = (() => {
-    const opt: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
+    const opt: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric", timeZone: TZ };
     const f = from.toLocaleDateString("en-US", opt);
     const tt = new Date(to.getTime() - 1).toLocaleDateString("en-US", opt);
-    return f === tt ? f : `${from.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${tt}`;
+    return f === tt ? f : `${from.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: TZ })} - ${tt}`;
   })();
 
   const card: React.CSSProperties = { background: "#fff", border: "1px solid #d8dde6", borderRadius: 8, padding: "16px 18px", flex: 1, minWidth: 150 };
