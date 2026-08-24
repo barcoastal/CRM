@@ -178,13 +178,17 @@ export interface CloserStat {
   tier: number | null;
   state: CloserState;
   free: boolean;
-  callsTaken: number; // handoffs assigned to this closer
-  debtAttempted: number; // sum of debt on assigned handoffs
-  closedCount: number; // handoffs marked CLOSED
-  debtClosed: number; // sum of closedDebt
+  callsTaken: number; // transfers received this month
+  debtAttempted: number; // sum of debt on those
+  closedCount: number; // signed (Closed Won) this month
+  debtClosed: number; // sum of debt on closed
 }
 
-/** Per-closer production stats for the floor manager (from CloserHandoff) + live state. */
+/**
+ * Per-closer production for the floor manager, from REAL opportunity data
+ * (this month, US Eastern) + live free/on-call state - not the manual handoff
+ * table. Calls = transfers received; closed = signed this month.
+ */
 export async function closerStats(): Promise<CloserStat[]> {
   const closers = await prisma.user.findMany({
     where: { isActive: true, closerTier: { not: null } },
@@ -193,28 +197,39 @@ export async function closerStats(): Promise<CloserStat[]> {
   const ids = closers.map((c) => c.id);
   if (ids.length === 0) return [];
 
-  const [assigned, closed] = await Promise.all([
-    prisma.closerHandoff.groupBy({ by: ["closerId"], where: { closerId: { in: ids } }, _count: { _all: true }, _sum: { debt: true } }),
-    prisma.closerHandoff.groupBy({ by: ["closerId"], where: { closerId: { in: ids }, status: "CLOSED" }, _count: { _all: true }, _sum: { closedDebt: true } }),
-  ]);
-  const aBy = new Map(assigned.map((a) => [a.closerId, { c: a._count._all, d: a._sum.debt ?? 0 }]));
-  const cBy = new Map(closed.map((x) => [x.closerId, { c: x._count._all, d: x._sum.closedDebt ?? 0 }]));
+  const { startOfMonth } = easternBoundaries(Date.now());
+  const opps = await prisma.opportunity.findMany({
+    where: {
+      assignedToId: { in: ids },
+      OR: [{ createdAt: { gte: startOfMonth } }, { firstContractSignedDateOpp: { gte: startOfMonth } }],
+    },
+    select: { assignedToId: true, totalDebt: true, createdAt: true, firstContractSignedDateOpp: true, stage: true },
+  });
+  const byCloser = new Map<string, typeof opps>();
+  for (const o of opps) {
+    if (!o.assignedToId) continue;
+    const arr = byCloser.get(o.assignedToId) ?? [];
+    arr.push(o);
+    byCloser.set(o.assignedToId, arr);
+  }
+  const sum = (rs: typeof opps) => rs.reduce((s, o) => s + (o.totalDebt ?? 0), 0);
 
   return closers
     .map((u) => {
       const state = simplifyState(supervisorFeed.getStateFor(u.five9Username ?? u.email, u.name)?.state ?? null);
-      const a = aBy.get(u.id);
-      const cl = cBy.get(u.id);
+      const rows = byCloser.get(u.id) ?? [];
+      const received = rows.filter((o) => o.createdAt >= startOfMonth);
+      const signed = rows.filter((o) => o.firstContractSignedDateOpp && o.firstContractSignedDateOpp >= startOfMonth && isWon(o.stage));
       return {
         id: u.id,
         name: u.name,
         tier: u.closerTier,
         state,
         free: state === "READY",
-        callsTaken: a?.c ?? 0,
-        debtAttempted: a?.d ?? 0,
-        closedCount: cl?.c ?? 0,
-        debtClosed: cl?.d ?? 0,
+        callsTaken: received.length,
+        debtAttempted: sum(received),
+        closedCount: signed.length,
+        debtClosed: sum(signed),
       };
     })
     .sort((a, b) => (a.tier ?? 9) - (b.tier ?? 9) || b.closedCount - a.closedCount || a.name.localeCompare(b.name));

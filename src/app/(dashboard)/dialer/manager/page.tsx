@@ -207,7 +207,7 @@ export default function FloorManagerPage() {
 
       {/* Closer stats */}
       <div style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden" }}>
-        <div style={{ padding: "10px 12px", borderBottom: "1px solid #e5e5e5", fontSize: 14, fontWeight: 700 }}>Closer stats</div>
+        <div style={{ padding: "10px 12px", borderBottom: "1px solid #e5e5e5", fontSize: 14, fontWeight: 700 }}>Closer stats <span style={{ fontWeight: 400, color: "#747474", fontSize: 12 }}>· this month</span></div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
