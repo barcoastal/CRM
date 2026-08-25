@@ -161,7 +161,7 @@ export default function FloorManagerPage() {
                 </tr>
               );
             })}
-            {scheduled.length === 0 && <tr><td colSpan={5} style={{ ...td, textAlign: "center", color: "#747474", padding: 20 }}>No scheduled calls. Send a booking link from an opportunity.</td></tr>}
+            {scheduled.length === 0 && <tr><td colSpan={5} style={{ ...td, textAlign: "center", color: "#747474", padding: 20 }}>No scheduled calls. Bookings from your scheduling link appear here. <Link href="/dialer/meetings" style={{ color: "#0176d3", textDecoration: "none" }}>See all meetings</Link>.</td></tr>}
           </tbody>
         </table>
       </div>

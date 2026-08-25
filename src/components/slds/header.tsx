@@ -47,6 +47,7 @@ const TABS: TabItem[] = [
   { label: "Contacts", href: "/contacts", entity: "Contact" },
   { label: "Opportunities", href: "/opportunities", entity: "Opportunity" },
   { label: "Cases", href: "/cases", entity: "Case" },
+  { label: "Meetings", href: "/dialer/meetings" },
   { label: "Floor Manager", href: "/dialer/manager" },
   { label: "Closer Dashboard", href: "/dialer/closer-dashboard" },
   { label: "Closers On Call", href: "/dialer/on-call" },
