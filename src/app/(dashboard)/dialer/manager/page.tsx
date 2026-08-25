@@ -39,25 +39,38 @@ interface HandoffRow {
   status: string;
 }
 
+interface SchedRow { id: string; clientName: string | null; debt: number | null; debtLabel: string | null; tier: number | null; requestedAt: string | null; status: string; closerName: string | null; opportunityId: string | null; }
+
 export default function FloorManagerPage() {
   const [onCall, setOnCall] = useState<OnCallRow[]>([]);
   const [stats, setStats] = useState<StatRow[]>([]);
   const [handoffs, setHandoffs] = useState<HandoffRow[]>([]);
+  const [scheduled, setScheduled] = useState<SchedRow[]>([]);
   const [assigned, setAssigned] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const [a, b, h] = await Promise.all([
+      const [a, b, h, s] = await Promise.all([
         fetch("/api/dialer/closers-on-call").then((r) => (r.ok ? r.json() : { rows: [] })),
         fetch("/api/dialer/closer-stats").then((r) => (r.ok ? r.json() : { rows: [] })),
         fetch("/api/dialer/assign").then((r) => (r.ok ? r.json() : { rows: [] })),
+        fetch("/api/dialer/scheduled-calls").then((r) => (r.ok ? r.json() : { rows: [] })),
       ]);
       setOnCall(a.rows ?? []);
       setStats(b.rows ?? []);
       setHandoffs(h.rows ?? []);
+      setScheduled(s.rows ?? []);
     } catch { /* ignore */ }
   }, []);
+
+  async function assignScheduled(callId: string, closerId: string) {
+    setBusy(callId);
+    try {
+      await fetch("/api/dialer/scheduled-calls/assign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: callId, closerId }) });
+      await load();
+    } finally { setBusy(null); }
+  }
 
   async function mark(id: string, status: "CLOSED" | "LOST") {
     setBusy(id);
@@ -110,6 +123,48 @@ export default function FloorManagerPage() {
           Assign each fronter&apos;s qualified lead to a closer in the right tier. Live, updates every 5s.
         </p>
       </header>
+
+      {/* Scheduled calls - client booked a time, assign a closer */}
+      <div style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden", marginBottom: 20 }}>
+        <div style={{ padding: "10px 12px", borderBottom: "1px solid #e5e5e5", fontSize: 14, fontWeight: 700 }}>Scheduled calls <span style={{ fontWeight: 400, color: "#747474", fontSize: 12 }}>· clients who booked a time</span></div>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              <th style={th}>When</th>
+              <th style={th}>Client</th>
+              <th style={th}>Debt</th>
+              <th style={th}>Needs tier</th>
+              <th style={th}>Closer</th>
+            </tr>
+          </thead>
+          <tbody>
+            {scheduled.map((c) => {
+              const when = c.requestedAt ? new Date(c.requestedAt).toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "-";
+              const opts = c.tier ? stats.filter((s) => s.tier === c.tier) : stats;
+              return (
+                <tr key={c.id}>
+                  <td style={{ ...td, fontWeight: 600 }}>{when}</td>
+                  <td style={td}>{c.opportunityId ? <Link href={`/opportunities/${c.opportunityId}`} style={{ color: "#0176d3", textDecoration: "none" }}>{c.clientName ?? "?"}</Link> : (c.clientName ?? "?")}</td>
+                  <td style={{ ...td, fontWeight: 700 }}>{c.debtLabel ?? "-"}</td>
+                  <td style={td}>{c.tier ? <span style={{ background: TIER_COLOR[c.tier], color: "#fff", padding: "1px 7px", borderRadius: 9, fontSize: 11, fontWeight: 700 }}>Tier {c.tier}</span> : "-"}</td>
+                  <td style={td}>
+                    {c.status === "ASSIGNED" ? (
+                      <span style={{ color: "#2e844a", fontWeight: 700 }}>→ {c.closerName}</span>
+                    ) : (
+                      <select defaultValue="" disabled={busy === c.id} onChange={(e) => { if (e.target.value) void assignScheduled(c.id, e.target.value); }}
+                        style={{ border: "1px solid #c9c9c9", borderRadius: 4, padding: "5px 8px", fontSize: 13 }}>
+                        <option value="" disabled>Assign a closer...</option>
+                        {opts.map((o) => <option key={o.id} value={o.id}>{o.name} (T{o.tier})</option>)}
+                      </select>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {scheduled.length === 0 && <tr><td colSpan={5} style={{ ...td, textAlign: "center", color: "#747474", padding: 20 }}>No scheduled calls. Send a booking link from an opportunity.</td></tr>}
+          </tbody>
+        </table>
+      </div>
 
       {/* Live floor - assign a closer */}
       <div style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden", marginBottom: 20 }}>

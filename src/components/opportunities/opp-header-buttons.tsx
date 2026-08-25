@@ -76,6 +76,17 @@ export function OppHeaderButtons({
   const [contractModal, setContractModal] = useState(false);
   const [packetModal, setPacketModal] = useState(false);
   const [quoteModal, setQuoteModal] = useState(false);
+  const [bookingBusy, setBookingBusy] = useState(false);
+
+  async function sendBookingLink() {
+    setBookingBusy(true);
+    try {
+      const res = await fetch(`/api/opportunities/${opportunityId}/book-link`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) alert(`Booking link emailed to ${d.sentTo}. The client can now pick a time.`);
+      else alert(`${d.error ?? "Could not send booking link."}${d.url ? `\n\nLink: ${d.url}` : ""}`);
+    } finally { setBookingBusy(false); }
+  }
 
   async function updateOpp() {
     router.push(`/opportunities/${opportunityId}/edit`);
@@ -104,6 +115,13 @@ export function OppHeaderButtons({
         }}
       >
         Get Quote
+      </button>
+      <button
+        onClick={() => void sendBookingLink()}
+        disabled={bookingBusy}
+        style={{ background: "#fff", border: "1px solid #0b5cab", color: "#0b5cab", padding: "0 14px", height: 32, borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: bookingBusy ? 0.6 : 1 }}
+      >
+        {bookingBusy ? "Sending..." : "Book Call"}
       </button>
       {/* SF opp header shows exactly: Disposition | Update Opportunity |
           Amend Opportunity, plus a chevron menu holding our extra actions. */}

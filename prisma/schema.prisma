@@ -3097,3 +3097,30 @@ model CloserHandoff {
   @@index([fronterId])
   @@index([status, createdAt])
 }
+
+// A scheduled call booked by a client from a link the CRM emails them. The
+// floor manager then assigns a closer, who gets a calendar (.ics) invite.
+// No Prisma relations - ids are stored + key data snapshotted for display.
+model ScheduledCall {
+  id           String    @id @default(cuid())
+  createdAt    DateTime  @default(now())
+  token        String    @unique // public booking link token
+  opportunityId String?
+  leadId       String?
+  clientName   String?
+  clientEmail  String?
+  clientPhone  String?
+  debt         Float? // snapshot at send time
+  debtLabel    String?
+  tier         Int? // eligible tier from debt
+  requestedAt  DateTime? // the slot the client picked
+  // SENT (link emailed) | REQUESTED (client booked) | ASSIGNED | DONE | CANCELED
+  status       String    @default("SENT")
+  closerId     String?
+  closerName   String?
+  assignedById String?
+  assignedAt   DateTime?
+
+  @@index([status, requestedAt])
+  @@index([opportunityId])
+}
