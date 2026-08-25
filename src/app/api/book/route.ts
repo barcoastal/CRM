@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { availableSlots, matchClientForBooking } from "@/lib/scheduled-calls";
+import { availableSlots, matchClientForBooking, calendarLinks } from "@/lib/scheduled-calls";
+import { renderBookingConfirmationHtml, sendESignEmail } from "@/lib/esign/send-email";
 
 /** Public GET - available slots for the generic (Calendly-style) booking page. */
 export async function GET() {
@@ -49,5 +50,23 @@ export async function POST(req: NextRequest) {
       status: "REQUESTED",
     },
   });
+
+  // Confirmation email to the client (best-effort - never fail the booking).
+  if (email) {
+    try {
+      const whenLabel = when.toLocaleString("en-US", {
+        timeZone: "America/New_York", weekday: "short", year: "numeric",
+        month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+      }) + " ET";
+      const cal = calendarLinks("Debt Relief Call - Coastal Debt Resolve", when.toISOString(), "A Coastal Debt Resolve specialist will call you about your debt relief options.");
+      await sendESignEmail({
+        from: process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>",
+        to: email,
+        subject: `Your Debt Relief Call is scheduled - ${whenLabel}`,
+        html: renderBookingConfirmationHtml({ clientName: name, whenLabel, googleUrl: cal.google, outlookUrl: cal.outlook }),
+      });
+    } catch { /* confirmation is best-effort */ }
+  }
+
   return NextResponse.json({ ok: true });
 }

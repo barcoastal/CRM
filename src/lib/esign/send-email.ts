@@ -179,6 +179,49 @@ export function renderSenderNotificationHtml(args: {
 }
 
 /**
+ * Render the client-facing "your call is booked" confirmation email. Sent right
+ * after a client self-books via the /book (Calendly-style) link. Includes
+ * one-click add-to-calendar links; no attachment so Resend payloads stay small.
+ */
+export function renderBookingConfirmationHtml(args: {
+  clientName: string;
+  whenLabel: string; // e.g. "Wed, Aug 26, 2026, 9:30 AM ET"
+  googleUrl: string;
+  outlookUrl: string;
+}): string {
+  const greeting = `Hi ${args.clientName.split(" ")[0] || "there"},`;
+  return `<!doctype html>
+<html>
+  <body style="margin:0;padding:24px;background:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#080707;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;margin:0 auto;background:#fff;border-radius:6px;border:1px solid #dddbda;">
+      <tr>
+        <td style="padding:24px;">
+          <h1 style="margin:0 0 12px 0;font-size:18px;color:#080707;">Your call is scheduled</h1>
+          <p style="margin:0 0 12px 0;font-size:14px;line-height:1.5;">${greeting}</p>
+          <p style="margin:0 0 16px 0;font-size:14px;line-height:1.5;">
+            Your Debt Relief Call with Coastal Debt Resolve is booked for:
+          </p>
+          <p style="margin:0 0 20px 0;font-size:16px;font-weight:600;color:#0b5cab;">${args.whenLabel}</p>
+          <p style="margin:0 0 20px 0;font-size:14px;line-height:1.5;">
+            One of our specialists will call you at that time. Add it to your calendar so you do not miss it:
+          </p>
+          <p style="margin:0 0 8px 0;">
+            <a href="${args.googleUrl}" style="display:inline-block;background:#0070d2;color:#fff;text-decoration:none;padding:10px 18px;border-radius:4px;font-size:14px;font-weight:600;">
+              Add to Google Calendar
+            </a>
+            <a href="${args.outlookUrl}" style="display:inline-block;margin-left:8px;color:#0070d2;text-decoration:none;padding:10px 18px;border-radius:4px;font-size:14px;font-weight:600;border:1px solid #0070d2;">
+              Add to Outlook
+            </a>
+          </p>
+        </td>
+      </tr>
+    </table>
+    <p style="text-align:center;margin:16px auto 0;font-size:11px;color:#706e6b;">Coastal Debt Resolve</p>
+  </body>
+</html>`;
+}
+
+/**
  * Render the signer-facing "you declined" / "we voided" notification email.
  * Used by both the decline and void flows.
  */
