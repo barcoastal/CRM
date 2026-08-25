@@ -117,29 +117,34 @@ export async function matchClientForBooking(email: string | null, phone: string 
   return { opportunityId: null, leadId: null, debt: null, debtLabel: null, tier: null };
 }
 
+export interface BookingSlot { iso: string; dateKey: string; timeLabel: string; label: string }
+
 /** Available 30-min slots for the next N business days (9am-6pm Eastern). */
-export function availableSlots(days = 5): { iso: string; label: string }[] {
-  const out: { iso: string; label: string }[] = [];
+export function availableSlots(days = 14): BookingSlot[] {
+  const out: BookingSlot[] = [];
   const now = Date.now();
-  for (let d = 0; d < days * 2 && out.length < 60; d++) {
-    // Build slots per day in Eastern business hours.
+  for (let d = 0; d < days + 4 && out.length < 400; d++) {
     const day = new Date(now + d * 86400000);
     const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(day);
     const p = Object.fromEntries(parts.map((x) => [x.type, x.value]));
     if (p.weekday === "Sat" || p.weekday === "Sun") continue;
+    const dateKey = `${p.year}-${p.month}-${p.day}`;
     for (let h = 9; h < 18; h++) {
       for (const min of [0, 30]) {
         // Eastern wall clock -> approximate UTC (EDT -4). Good enough for display + booking.
         const slot = new Date(`${p.year}-${p.month}-${p.day}T${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:00-04:00`);
         if (slot.getTime() <= now + 3600000) continue; // at least 1h out
+        const timeLabel = slot.toLocaleString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
         out.push({
           iso: slot.toISOString(),
+          dateKey,
+          timeLabel,
           label: slot.toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
         });
       }
     }
   }
-  return out.slice(0, 80);
+  return out;
 }
 
 /** Google Calendar + Outlook "add event" links for the closer invite. */
