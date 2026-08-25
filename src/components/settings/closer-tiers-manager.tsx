@@ -53,7 +53,7 @@ export function CloserTiersManager({
 
   async function save() {
     setMsg(null);
-    if (tier2Max <= tier1Max) { setMsg("Tier 2 cutoff must be greater than Tier 1 cutoff."); return; }
+    if (tier2Max <= tier1Max) { setMsg("Big-deal cutoff must be greater than the small-deal cutoff."); return; }
     setSaving(true);
     try {
       const assignments = users.map((u) => ({ userId: u.id, tier: tiers[u.id] ?? null }));
@@ -84,16 +84,17 @@ export function CloserTiersManager({
       <div style={card}>
         <h2 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 4px" }}>Debt cutoffs</h2>
         <p style={{ fontSize: 12, color: "#747474", margin: "0 0 12px" }}>
-          A deal routes to <strong>Tier 1</strong> under {money(tier1Max)}, <strong>Tier 2</strong> from{" "}
-          {money(tier1Max)} to {money(tier2Max)}, and <strong>Tier 3</strong> at {money(tier2Max)} and above.
+          <strong>Tier 1</strong> is the top tier for the biggest deals. A deal routes to{" "}
+          <strong>Tier 1</strong> at {money(tier2Max)} and above, <strong>Tier 2</strong> from{" "}
+          {money(tier1Max)} to {money(tier2Max)}, and <strong>Tier 3</strong> under {money(tier1Max)}.
         </p>
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           <div>
-            <label style={label}>Tier 1 upper limit</label>
+            <label style={label}>Small-deal cutoff (Tier 3 below)</label>
             <input style={input} type="number" value={tier1Max} onChange={(e) => setTier1Max(Number(e.target.value))} />
           </div>
           <div>
-            <label style={label}>Tier 2 upper limit</label>
+            <label style={label}>Big-deal cutoff (Tier 1 at/above)</label>
             <input style={input} type="number" value={tier2Max} onChange={(e) => setTier2Max(Number(e.target.value))} />
           </div>
         </div>

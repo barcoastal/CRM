@@ -20,23 +20,27 @@ export async function getTierConfig(): Promise<TierConfig> {
   return row ? { tier1Max: row.tier1Max, tier2Max: row.tier2Max } : DEFAULT_CONFIG;
 }
 
-/** Preferred tier for a debt amount. */
+/**
+ * Preferred tier for a debt amount. Tier 1 is the top tier (biggest deals),
+ * Tier 3 the smallest. The two config cutoffs are the small/mid and mid/large
+ * boundaries (defaults $100K and $250K).
+ */
 export function tierForDebt(debt: number, cfg: TierConfig): 1 | 2 | 3 {
-  if (debt >= cfg.tier2Max) return 3;
-  if (debt >= cfg.tier1Max) return 2;
-  return 1;
+  if (debt >= cfg.tier2Max) return 1; // large -> top tier
+  if (debt >= cfg.tier1Max) return 2; // mid
+  return 3; // small -> bottom tier
 }
 
 /**
  * Order tiers to try: preferred first, then the rest by closeness to it
- * (ties broken toward the more senior tier). So a $300K deal tries 3 → 2 → 1,
- * a $50K deal tries 1 → 2 → 3.
+ * (ties broken toward the more senior tier, which is now Tier 1). So a $300K
+ * deal tries 1 → 2 → 3, a $50K deal tries 3 → 2 → 1.
  */
 export function tierFallbackOrder(preferred: 1 | 2 | 3): number[] {
   return [1, 2, 3].sort((a, b) => {
     const da = Math.abs(a - preferred);
     const db = Math.abs(b - preferred);
-    return da === db ? b - a : da - db;
+    return da === db ? a - b : da - db;
   });
 }
 

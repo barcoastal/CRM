@@ -898,9 +898,7 @@ model Lead {
   @@index([contactName(ops: raw("gin_trgm_ops"))], type: Gin)
   // trigram index: global search does ILIKE %q% on this column
   @@index([businessName(ops: raw("gin_trgm_ops"))], type: Gin)
-  // trigram index: booking match does a case-insensitive lookup on this column
-  @@index([email(ops: raw("gin_trgm_ops"))], type: Gin)
-  // trigram index: global search does ILIKE %q% on this column
+  // trigram index: global search + booking match do a case-insensitive lookup on this column
   @@index([email(ops: raw("gin_trgm_ops"))], type: Gin)
   // trigram index: global search does ILIKE %q% on this column
   @@index([phone(ops: raw("gin_trgm_ops"))], type: Gin)
