@@ -28,6 +28,16 @@ export default function GenericBookPage() {
     }).catch(() => {});
   }, []);
 
+  // Prefill from Pardot merge fields passed on the link
+  // (e.g. /book?name=%%first_name%%%20%%last_name%%&email=%%email%%&phone=%%phone%%).
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const nm = (q.get("name") ?? [q.get("first"), q.get("last")].filter(Boolean).join(" ")).trim();
+    if (nm) setName(nm);
+    const em = q.get("email"); if (em) setEmail(em.trim());
+    const ph = q.get("phone"); if (ph) setPhone(ph.trim());
+  }, []);
+
   const byDate = useMemo(() => {
     const m = new Map<string, Slot[]>();
     for (const s of slots) { const a = m.get(s.dateKey) ?? []; a.push(s); m.set(s.dateKey, a); }
