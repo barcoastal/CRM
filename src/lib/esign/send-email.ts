@@ -222,6 +222,50 @@ export function renderBookingConfirmationHtml(args: {
 }
 
 /**
+ * Render the internal "new call booked" alert for the floor manager. Sent to
+ * the team inbox so a closer can be assigned promptly. Links into the Floor
+ * Manager queue.
+ */
+export function renderBookingTeamAlertHtml(args: {
+  clientName: string;
+  clientEmail: string | null;
+  clientPhone: string | null;
+  debtLabel: string | null;
+  tier: number | null;
+  whenLabel: string;
+  managerUrl: string;
+}): string {
+  const row = (k: string, v: string) =>
+    `<tr><td style="padding:4px 12px 4px 0;font-size:13px;color:#706e6b;white-space:nowrap;">${k}</td><td style="padding:4px 0;font-size:13px;color:#080707;font-weight:600;">${v}</td></tr>`;
+  return `<!doctype html>
+<html>
+  <body style="margin:0;padding:24px;background:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#080707;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;margin:0 auto;background:#fff;border-radius:6px;border:1px solid #dddbda;">
+      <tr>
+        <td style="padding:24px;">
+          <h1 style="margin:0 0 16px 0;font-size:18px;color:#080707;">New call booked</h1>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            ${row("Client", args.clientName)}
+            ${args.clientEmail ? row("Email", args.clientEmail) : ""}
+            ${args.clientPhone ? row("Phone", args.clientPhone) : ""}
+            ${row("Time", args.whenLabel)}
+            ${args.debtLabel ? row("Debt", args.debtLabel) : ""}
+            ${args.tier ? row("Tier", `Tier ${args.tier}`) : ""}
+          </table>
+          <p style="margin:20px 0 0 0;">
+            <a href="${args.managerUrl}" style="display:inline-block;background:#0070d2;color:#fff;text-decoration:none;padding:10px 18px;border-radius:4px;font-size:14px;font-weight:600;">
+              Assign a closer
+            </a>
+          </p>
+        </td>
+      </tr>
+    </table>
+    <p style="text-align:center;margin:16px auto 0;font-size:11px;color:#706e6b;">Coastal Debt Resolve</p>
+  </body>
+</html>`;
+}
+
+/**
  * Render the signer-facing "you declined" / "we voided" notification email.
  * Used by both the decline and void flows.
  */
