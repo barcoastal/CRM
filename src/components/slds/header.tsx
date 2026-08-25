@@ -8,7 +8,7 @@ import { ObjectIcon } from "./icon";
 import { AppLauncher } from "./app-launcher";
 import { GlobalSearch } from "./global-search";
 import { FeedbackButton } from "@/components/slds/feedback-button";
-import { ConsoleNav, readNavMode } from "@/components/slds/console-nav";
+import { ConsoleNav, readNavMode, setNavMode } from "@/components/slds/console-nav";
 import { EditNavModal, applyNavPrefs, type NavItem } from "./edit-nav-modal";
 import { avatarFor } from "@/lib/avatars";
 import { NotificationsPanel, useNotificationsCount } from "@/components/notifications/notifications-panel";
@@ -293,6 +293,13 @@ export function SldsHeader({
           <svg className="sf-util-icon" aria-hidden="true">
             <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#edit" />
           </svg>
+        </button>
+        <button
+          title="Switch to Console view"
+          onClick={() => { setNavMode("console"); setNavModeState("console"); }}
+          style={{ marginLeft: "auto", border: "1px solid #c9c9c9", background: "#fff", color: "#0176d3", borderRadius: 4, padding: "0 12px", height: 28, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
+        >
+          Console view
         </button>
       </div>
       )}
