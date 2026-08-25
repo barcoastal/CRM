@@ -63,6 +63,60 @@ export async function createBookingLink(opportunityId: string): Promise<{ token:
   return { token, url: `${appBaseUrl()}/book/${token}`, call: { clientName: ctx.clientName, clientEmail: ctx.clientEmail } };
 }
 
+const digits10 = (p: string | null | undefined) => (p ?? "").replace(/[^0-9]/g, "").slice(-10);
+
+/**
+ * Match a self-booking client (generic Calendly-style link) to their record by
+ * email or phone, to snapshot the debt + tier for the floor manager.
+ */
+export async function matchClientForBooking(email: string | null, phone: string | null): Promise<{
+  opportunityId: string | null; leadId: string | null; debt: number | null; debtLabel: string | null; tier: number | null;
+}> {
+  const cfg = await getTierConfig();
+  const finish = (debt: number, oppId: string | null, leadId: string | null) => ({
+    opportunityId: oppId, leadId, debt: debt || null,
+    debtLabel: debt ? money(debt) : null, tier: debt ? tierForDebt(debt, cfg) : null,
+  });
+
+  // Prefer an opportunity (has numeric debt) matched by email.
+  if (email) {
+    const opp = await prisma.opportunity.findFirst({
+      where: { OR: [{ oppEmail: { equals: email, mode: "insensitive" } }, { lead: { email: { equals: email, mode: "insensitive" } } }, { primaryContact: { email: { equals: email, mode: "insensitive" } } }] },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, totalDebt: true, debts: { select: { originalBalance: true } } },
+    });
+    if (opp) {
+      const debt = opp.debts.reduce((s, d) => s + (d.originalBalance ?? 0), 0) || opp.totalDebt || 0;
+      return finish(debt, opp.id, null);
+    }
+  }
+  // Fall back to a lead by phone (indexed last-10) or email.
+  const last10 = digits10(phone);
+  let lead: { id: string; totalDebtEst: number | null; sfDataJson: string | null } | null = null;
+  if (last10.length === 10) {
+    const rows = await prisma.$queryRaw<Array<{ id: string; totalDebtEst: number | null; sfDataJson: string | null }>>`
+      SELECT id, "totalDebtEst", "sfDataJson" FROM "Lead"
+      WHERE right(regexp_replace(phone, '[^0-9]', '', 'g'), 10) = ${last10} LIMIT 1`;
+    lead = rows[0] ?? null;
+  }
+  if (!lead && email) {
+    lead = await prisma.lead.findFirst({ where: { email: { equals: email, mode: "insensitive" } }, select: { id: true, totalDebtEst: true, sfDataJson: true } });
+  }
+  if (lead) {
+    let debt = lead.totalDebtEst ?? 0;
+    let label: string | null = debt ? money(debt) : null;
+    if (!debt) {
+      try {
+        const sf = lead.sfDataJson ? (JSON.parse(lead.sfDataJson) as Record<string, unknown>) : {};
+        const est = sf.Estimated_Total_Debt__c;
+        if (est) { const nums = (String(est).match(/[\d,]+/g) ?? []).map((n) => Number(n.replace(/,/g, ""))); if (nums.length) { debt = nums.length > 1 ? (nums[0] + nums[nums.length - 1]) / 2 : nums[0]; label = String(est); } }
+      } catch { /* ignore */ }
+    }
+    return { opportunityId: null, leadId: lead.id, debt: debt || null, debtLabel: label, tier: debt ? tierForDebt(debt, cfg) : null };
+  }
+  return { opportunityId: null, leadId: null, debt: null, debtLabel: null, tier: null };
+}
+
 /** Available 30-min slots for the next N business days (9am-6pm Eastern). */
 export function availableSlots(days = 5): { iso: string; label: string }[] {
   const out: { iso: string; label: string }[] = [];
