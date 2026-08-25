@@ -16,13 +16,14 @@ const Body = z.object({
   name: z.string().min(1),
   email: z.string().email().nullable().optional(),
   phone: z.string().nullable().optional(),
+  smsPhone: z.string().nullable().optional(),
   slot: z.string(),
 });
 
 export async function POST(req: NextRequest) {
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "Please enter your name and pick a time." }, { status: 400 });
-  const { name, email, phone, slot } = parsed.data;
+  const { name, email, phone, smsPhone, slot } = parsed.data;
   const when = new Date(slot);
   if (Number.isNaN(when.getTime()) || when.getTime() < Date.now()) {
     return NextResponse.json({ error: "Pick a valid future time." }, { status: 400 });
@@ -81,7 +82,8 @@ export async function POST(req: NextRequest) {
       replyTo: email ?? null,
       subject: `New call booked${match.debtLabel ? ` - ${match.debtLabel}` : ""} - ${name}`,
       html: renderBookingTeamAlertHtml({
-        clientName: name, clientEmail: email ?? null, clientPhone: phone ?? null,
+        clientName: name, clientEmail: email ?? null,
+        clientPhone: phone ?? null, smsPhone: smsPhone ?? null,
         debtLabel: match.debtLabel, tier: match.tier, whenLabel,
         managerUrl: `${appBaseUrl()}/dialer/manager`,
       }),

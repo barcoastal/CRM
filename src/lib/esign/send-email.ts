@@ -230,6 +230,7 @@ export function renderBookingTeamAlertHtml(args: {
   clientName: string;
   clientEmail: string | null;
   clientPhone: string | null;
+  smsPhone?: string | null;
   debtLabel: string | null;
   tier: number | null;
   whenLabel: string;
@@ -248,6 +249,7 @@ export function renderBookingTeamAlertHtml(args: {
             ${row("Client", args.clientName)}
             ${args.clientEmail ? row("Email", args.clientEmail) : ""}
             ${args.clientPhone ? row("Phone", args.clientPhone) : ""}
+            ${args.smsPhone && args.smsPhone !== args.clientPhone ? row("Text", args.smsPhone) : ""}
             ${row("Time", args.whenLabel)}
             ${args.debtLabel ? row("Debt", args.debtLabel) : ""}
             ${args.tier ? row("Tier", `Tier ${args.tier}`) : ""}
