@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { availableSlots, matchClientForBooking, calendarLinks } from "@/lib/scheduled-calls";
 import { renderBookingConfirmationHtml, renderBookingTeamAlertHtml, sendESignEmail } from "@/lib/esign/send-email";
 import { appBaseUrl } from "@/lib/document-request";
+import { sendSmsNow } from "@/lib/sms-sender";
 
 /** Public GET - available slots for the generic (Calendly-style) booking page. */
 export async function GET() {
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     matchClientForBooking(email ?? null, phone ?? null).catch(() => noMatch),
     new Promise<typeof noMatch>((resolve) => setTimeout(() => resolve(noMatch), 5000)),
   ]);
-  await prisma.scheduledCall.create({
+  const call = await prisma.scheduledCall.create({
     data: {
       token: `self_${Date.now().toString(36)}${Math.floor((Date.now() * (email?.length || 1)) % 1e6)}`,
       opportunityId: match.opportunityId,
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
       clientName: name,
       clientEmail: email ?? null,
       clientPhone: phone ?? null,
+      clientSmsPhone: smsPhone ?? phone ?? null,
       debt: match.debt,
       debtLabel: match.debtLabel,
       tier: match.tier,
@@ -89,6 +91,19 @@ export async function POST(req: NextRequest) {
       }),
     });
   } catch { /* best-effort */ }
+
+  // 3) Confirmation TEXT to the client (SMS Magic, best-effort).
+  const smsTo = smsPhone ?? phone ?? null;
+  if (smsTo) {
+    try {
+      const shortWhen = when.toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      await sendSmsNow({
+        to: smsTo,
+        body: `Coastal Debt: your call is booked for ${shortWhen} ET. A specialist will call you then. Reply STOP to opt out.`,
+        leadId: match.leadId, accountId: null,
+      });
+    } catch { /* best-effort */ }
+  }
 
   return NextResponse.json({ ok: true });
 }

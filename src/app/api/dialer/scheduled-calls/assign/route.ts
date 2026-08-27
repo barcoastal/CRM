@@ -4,6 +4,7 @@ import { requireAuthOrRespond } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { sendESignEmail } from "@/lib/esign/send-email";
 import { calendarLinks } from "@/lib/scheduled-calls";
+import { sendSmsNow } from "@/lib/sms-sender";
 
 /**
  * POST /api/dialer/scheduled-calls/assign - floor manager assigns a closer to a
@@ -20,13 +21,22 @@ export async function POST(req: NextRequest) {
 
   const call = await prisma.scheduledCall.findUnique({ where: { id: parsed.data.id } });
   if (!call || !call.requestedAt) return NextResponse.json({ error: "Call not found or no time set" }, { status: 404 });
-  const closer = await prisma.user.findUnique({ where: { id: parsed.data.closerId }, select: { name: true, email: true } });
+  const closer = await prisma.user.findUnique({ where: { id: parsed.data.closerId }, select: { name: true, email: true, mobile: true } });
   if (!closer) return NextResponse.json({ error: "Closer not found" }, { status: 404 });
 
   await prisma.scheduledCall.update({
     where: { id: call.id },
     data: { closerId: parsed.data.closerId, closerName: closer.name, assignedById: r.session.userId, assignedAt: new Date(), status: "ASSIGNED" },
   });
+
+  // Text the closer's mobile too (best-effort, in addition to the email).
+  if (closer.mobile) {
+    const whenShort = call.requestedAt.toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    await sendSmsNow({
+      to: closer.mobile,
+      body: `New call assigned: ${call.clientName ?? "Client"}${call.debtLabel ? ` (${call.debtLabel}${call.tier ? `, T${call.tier}` : ""})` : ""} at ${whenShort} ET. Phone: ${call.clientPhone ?? "n/a"}.`,
+    }).catch(() => undefined);
+  }
 
   // Invite the closer (best-effort).
   if (closer.email) {

@@ -3110,6 +3110,7 @@ model ScheduledCall {
   clientName   String?
   clientEmail  String?
   clientPhone  String?
+  clientSmsPhone String? // "Send text messages to" number from the booking form
   debt         Float? // snapshot at send time
   debtLabel    String?
   tier         Int? // eligible tier from debt
@@ -3120,6 +3121,7 @@ model ScheduledCall {
   closerName   String?
   assignedById String?
   assignedAt   DateTime?
+  smsRemindedAt DateTime? // set once the pre-call reminder text is sent
 
   @@index([status, requestedAt])
   @@index([opportunityId])
