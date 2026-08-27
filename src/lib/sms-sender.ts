@@ -38,50 +38,49 @@ async function sendViaSmsMagic(args: {
   from?: string;
   to: string;
   body: string;
-  externalId: string;
 }): Promise<SendResult> {
   const apiKey = process.env.SMS_MAGIC_API_KEY;
   const senderId = args.from || process.env.SMS_MAGIC_SENDER_ID;
   const base = process.env.SMS_MAGIC_BASE_URL ?? "https://api.sms-magic.com";
-  const callback = process.env.SMS_MAGIC_CALLBACK_URL;
 
   if (!apiKey) return { ok: false, error: "SMS_MAGIC_API_KEY not set" };
   if (!senderId) return { ok: false, error: "SMS_MAGIC_SENDER_ID not set (and no fromNumber on row)" };
 
-  const body: Record<string, unknown> = {
+  // Real single-message API (https://api.sms-magic.com/doc/):
+  //   POST /v1/sms/send   header apikey   body {sms_text, sender_id, mobile_number}
+  //   200 -> { status: "submitted", message: "queued", id: "<uuid>" }
+  //   401 -> { message: "REQ-API-KEY" }
+  // There is no external_id param; we correlate delivery reports by the returned
+  // id (stored as providerMessageId). Delivery/inbound are pushed to the URL
+  // registered in the SMS Magic portal, not passed per request.
+  const body = {
+    sms_text: args.body,
     sender_id: senderId,
-    to: [toE164(args.to)],
-    text: args.body,
-    external_id: args.externalId,
+    mobile_number: toE164(args.to),
   };
-  if (callback) body.callback_url = callback;
 
   try {
-    const res = await fetch(`${base}/v1/send-message`, {
+    const res = await fetch(`${base}/v1/sms/send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ApiKey: apiKey,
+        apikey: apiKey,
       },
       body: JSON.stringify(body),
     });
-    // SMS Magic returns 200 on success:
-    //   { status: "queued", message_id: "<uuid>", to: "+15551234567", ... }
-    // On failure: { error: "...", code: 4xx }
     const data = (await res.json().catch(() => ({}))) as {
-      message_id?: string;
+      id?: string;
       status?: string;
-      error?: string;
-      code?: number;
+      message?: string;
     };
-    if (!res.ok || data.error) {
+    if (!res.ok || !data.id || (data.status && data.status !== "submitted")) {
       return {
         ok: false,
-        error: data.error ?? `HTTP ${res.status}`,
-        errorCode: data.code ? String(data.code) : undefined,
+        error: data.message ?? data.status ?? `HTTP ${res.status}`,
+        errorCode: res.status === 401 ? "AUTH" : undefined,
       };
     }
-    return { ok: true, providerMessageId: data.message_id };
+    return { ok: true, providerMessageId: data.id };
   } catch (e: unknown) {
     return { ok: false, error: e instanceof Error ? e.message : "send failed" };
   }
@@ -144,7 +143,6 @@ export async function sendQueuedSms(msgId: string): Promise<SendResult> {
     from: msg.fromNumber || undefined,
     to: msg.toNumber,
     body,
-    externalId: msg.id,
   });
 
   await prisma.smsMessage.update({
@@ -183,4 +181,49 @@ export async function drainSmsQueue(limit = 50): Promise<{ sent: number; failed:
     else failed++;
   }
   return { sent, failed };
+}
+
+/** Verify the SMS Magic API key + fetch the remaining credit balance. Used by
+ *  the settings "test connection" action. */
+export async function checkSmsMagic(): Promise<{ ok: boolean; smsCredits?: string; mmsCredits?: string; error?: string }> {
+  const apiKey = process.env.SMS_MAGIC_API_KEY;
+  const base = process.env.SMS_MAGIC_BASE_URL ?? "https://api.sms-magic.com";
+  if (!apiKey) return { ok: false, error: "SMS_MAGIC_API_KEY not set" };
+  try {
+    const v = await fetch(`${base}/v1/api_key/validate`, { headers: { apikey: apiKey } });
+    if (!v.ok) return { ok: false, error: v.status === 401 ? "Invalid API key" : `Validate HTTP ${v.status}` };
+    const c = await fetch(`${base}/api/v2/unified/getCredits`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ apiKey }),
+    });
+    const cd = (await c.json().catch(() => ({}))) as { responseText?: { sms_credits?: string; mms_credits?: string } };
+    return { ok: true, smsCredits: cd.responseText?.sms_credits, mmsCredits: cd.responseText?.mms_credits };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "check failed" };
+  }
+}
+
+/**
+ * Send an ad-hoc outbound SMS immediately (not from the queue) and log it as an
+ * SmsMessage. Used by programmatic senders like booking confirmations.
+ */
+export async function sendSmsNow(args: {
+  to: string;
+  body: string;
+  from?: string | null;
+  leadId?: string | null;
+  accountId?: string | null;
+  contactId?: string | null;
+}): Promise<SendResult & { smsId: string }> {
+  const hasUnicode = /[^\x00-\x7F]/.test(args.body);
+  const segments = Math.max(1, Math.ceil(args.body.length / (hasUnicode ? 70 : 160)));
+  const row = await prisma.smsMessage.create({
+    data: {
+      direction: "OUTBOUND", status: "QUEUED", provider: "SMS_MAGIC",
+      toNumber: args.to, fromNumber: args.from ?? process.env.SMS_MAGIC_SENDER_ID ?? "", body: args.body, segments,
+      leadId: args.leadId ?? null, accountId: args.accountId ?? null, contactId: args.contactId ?? null,
+    },
+    select: { id: true },
+  });
+  const result = await sendQueuedSms(row.id);
+  return { ...result, smsId: row.id };
 }

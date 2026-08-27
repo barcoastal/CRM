@@ -1,44 +1,37 @@
 /**
- * SMS Magic webhook — handles both delivery status callbacks AND inbound SMS.
+ * SMS Magic push webhook - handles both delivery reports AND inbound SMS.
+ * Payloads match the real API (https://api.sms-magic.com/doc/), pushed from
+ * IP 34.197.38.71 to the URL you register in the SMS Magic portal.
  *
- * Configure in the SMS Magic portal:
- *   - Set Callback URL on your sender → /api/sms/webhook/sms-magic
- *   - Inbound webhook → same URL
+ * Register this URL for BOTH:
+ *   - Delivery reports  -> POST { id, delivery_status, timestamp, mobile_number, label }
+ *   - Incoming messages -> POST { id, sent_from, sent_to, msg, timestamp }
  *
- * Auth: SMS Magic sends an `Authorization` header equal to your account's
- * API key OR a shared-secret header `x-sms-magic-secret`. Set
- * SMS_MAGIC_WEBHOOK_SECRET to require that header.
+ * `id` on a delivery report is the message id we stored as providerMessageId
+ * when we sent (there is no external_id in the send API).
  *
- * Payload (status):
- *   { event: "delivery_status", message_id, status: "delivered|failed|sent|queued",
- *     external_id, to, from, error_message?, error_code? }
- *
- * Payload (inbound):
- *   { event: "inbound", message_id, from, to, text, received_at }
- *
- * On inbound: create direction=INBOUND SmsMessage AND port the SF
- * SMSMagicTriggerHandler logic — bump lastContactedAt on the related
- * Lead / Account / Opportunity.
+ * Auth: optionally require a shared secret via SMS_MAGIC_WEBHOOK_SECRET, sent
+ * as `x-sms-magic-secret` or a bearer Authorization header. SMS Magic itself
+ * does not sign requests, so also whitelist their IP at the edge if possible.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const STATUS_MAP: Record<string, string> = {
-  queued: "QUEUED",
-  sent: "SENT",
+// delivery_status values seen: "success", "failed", "undelivered", "expired", "rejected"
+const DELIVERY_MAP: Record<string, string> = {
+  success: "DELIVERED",
   delivered: "DELIVERED",
+  sent: "SENT",
+  submitted: "SENT",
+  queued: "QUEUED",
   failed: "FAILED",
   undelivered: "FAILED",
+  expired: "FAILED",
+  rejected: "FAILED",
 };
 
-const STATUS_RANK: Record<string, number> = {
-  QUEUED: 0,
-  SENT: 1,
-  DELIVERED: 2,
-  FAILED: 5,
-  RECEIVED: 0,
-};
+const STATUS_RANK: Record<string, number> = { QUEUED: 0, RECEIVED: 0, SENT: 1, DELIVERED: 2, FAILED: 5 };
 
 function checkAuth(headers: Headers): boolean {
   const required = process.env.SMS_MAGIC_WEBHOOK_SECRET;
@@ -50,10 +43,9 @@ function checkAuth(headers: Headers): boolean {
   return got === required;
 }
 
-function normalizePhone(raw: string | null | undefined): string {
+function last10(raw: string | null | undefined): string {
   if (!raw) return "";
   const digits = raw.replace(/[^0-9]/g, "");
-  if (digits.startsWith("1") && digits.length === 11) return digits.slice(1);
   return digits.length > 10 ? digits.slice(-10) : digits;
 }
 
@@ -69,22 +61,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const event = body.event ?? body.type ?? "";
-
   // -------------------- Inbound SMS --------------------
-  if (event === "inbound" || (body.text && body.from && body.to)) {
-    const from = body.from ?? "";
-    const to = body.to ?? "";
-    const text = body.text ?? "";
-    const messageId = body.message_id ?? null;
+  // { id, sent_from, sent_to, msg, timestamp }
+  if (body.msg !== undefined && body.sent_from) {
+    const from = body.sent_from ?? "";
+    const to = body.sent_to ?? "";
+    const text = body.msg ?? "";
+    const messageId = body.id ?? null;
 
-    // Match inbound number against Lead.phone (10-digit key)
-    const phoneKey = normalizePhone(from);
-    const lead = phoneKey
+    const key = last10(from);
+    const lead = key
       ? await prisma.lead.findFirst({
-          where: { phone: { contains: phoneKey } },
+          where: { phone: { contains: key } },
           orderBy: { updatedAt: "desc" },
-          select: { id: true, convertedAccountId: true, convertedOpportunityId: true },
+          select: { id: true, convertedAccountId: true },
         })
       : null;
 
@@ -102,42 +92,31 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Port of SF SMSMagicTriggerHandler — bump lastContactedAt on the
-    // related Lead and Account
+    // Port of SF SMSMagicTriggerHandler - bump lastContactedAt on the related record.
     const now = new Date();
     if (lead) {
       await prisma.lead.update({ where: { id: lead.id }, data: { lastContactedAt: now } }).catch(() => undefined);
       if (lead.convertedAccountId) {
-        await prisma.account.update({
-          where: { id: lead.convertedAccountId },
-          data: { updatedAt: now },
-        }).catch(() => undefined);
+        await prisma.account.update({ where: { id: lead.convertedAccountId }, data: { updatedAt: now } }).catch(() => undefined);
       }
     }
 
     return NextResponse.json({ ok: true, action: "inbound", leadId: lead?.id ?? null });
   }
 
-  // -------------------- Status callback --------------------
-  const messageId = body.message_id ?? null;
-  const externalId = body.external_id ?? null;
-  const incomingStatus = (body.status ?? "").toLowerCase();
-  const newStatus = STATUS_MAP[incomingStatus] ?? null;
-  if (!newStatus) return NextResponse.json({ ok: true, ignored: incomingStatus });
+  // -------------------- Delivery report --------------------
+  // { id, delivery_status, timestamp, mobile_number, label }
+  const messageId = body.id ?? null;
+  const raw = (body.delivery_status ?? "").toLowerCase();
+  // status can be "failed : INVALID-MOBILE-NUMBER"; take the leading word
+  const statusWord = raw.split(/[:\s]/)[0];
+  const newStatus = DELIVERY_MAP[statusWord] ?? null;
+  if (!messageId || !newStatus) return NextResponse.json({ ok: true, ignored: raw || "no-id" });
 
-  // Prefer external_id (our SmsMessage.id) for lookup; fall back to providerMessageId
-  const existing = externalId
-    ? await prisma.smsMessage.findUnique({
-        where: { id: externalId },
-        select: { id: true, status: true },
-      })
-    : messageId
-      ? await prisma.smsMessage.findFirst({
-          where: { providerMessageId: messageId },
-          select: { id: true, status: true },
-        })
-      : null;
-
+  const existing = await prisma.smsMessage.findFirst({
+    where: { providerMessageId: messageId },
+    select: { id: true, status: true },
+  });
   if (!existing) return NextResponse.json({ ok: true, skipped: "not-found" });
   if (STATUS_RANK[newStatus] < STATUS_RANK[existing.status]) {
     return NextResponse.json({ ok: true, skipped: "lower-rank" });
@@ -146,13 +125,7 @@ export async function POST(request: NextRequest) {
   const update: Record<string, unknown> = { status: newStatus };
   if (newStatus === "SENT") update.sentAt = new Date();
   if (newStatus === "DELIVERED") update.deliveredAt = new Date();
-  if (newStatus === "FAILED") {
-    update.errorReason = body.error_message ?? "SMS Magic delivery failure";
-    update.errorCode = body.error_code ?? null;
-  }
-  if (!messageId && existing.id === externalId && body.message_id) {
-    update.providerMessageId = body.message_id;
-  }
+  if (newStatus === "FAILED") update.errorReason = raw || "SMS Magic delivery failure";
 
   await prisma.smsMessage.update({ where: { id: existing.id }, data: update });
   return NextResponse.json({ ok: true });
