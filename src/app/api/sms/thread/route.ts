@@ -15,11 +15,14 @@ export async function GET(req: NextRequest) {
   const key = number.replace(/[^0-9]/g, "").slice(-10);
   if (key.length < 7) return NextResponse.json({ messages: [] });
 
-  const rows = await prisma.smsMessage.findMany({
-    where: { OR: [{ toNumber: { contains: key } }, { fromNumber: { contains: key } }] },
-    orderBy: { createdAt: "asc" },
-    take: 300,
-    select: { id: true, direction: true, status: true, body: true, createdAt: true, errorReason: true },
-  });
+  // Match on digits-only (last 10) so a formatted stored number like
+  // "+1 (904) 881-0033" still matches the digit key "9048810033".
+  const rows = await prisma.$queryRaw<Array<{ id: string; direction: string; status: string; body: string; createdAt: Date; errorReason: string | null }>>`
+    SELECT id, direction, status, body, "createdAt", "errorReason"
+    FROM "SmsMessage"
+    WHERE right(regexp_replace("toNumber", '[^0-9]', '', 'g'), 10) = ${key}
+       OR right(regexp_replace("fromNumber", '[^0-9]', '', 'g'), 10) = ${key}
+    ORDER BY "createdAt" ASC
+    LIMIT 300`;
   return NextResponse.json({ messages: rows });
 }

@@ -220,7 +220,7 @@ export async function sendSmsNow(args: {
   const row = await prisma.smsMessage.create({
     data: {
       direction: "OUTBOUND", status: "QUEUED", provider: "SMS_MAGIC",
-      toNumber: args.to, fromNumber: args.from ?? process.env.SMS_MAGIC_SENDER_ID ?? "", body: args.body, segments,
+      toNumber: toE164(args.to), fromNumber: args.from ?? process.env.SMS_MAGIC_SENDER_ID ?? "", body: args.body, segments,
       leadId: args.leadId ?? null, accountId: args.accountId ?? null, contactId: args.contactId ?? null,
       opportunityId: args.opportunityId ?? null,
     },
