@@ -956,7 +956,18 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               notes={chainNotes.map((n) => ({ id: n.id, body: n.body, author: n.author, createdAt: n.createdAt.toISOString(), source: n.source }))}
               attach={{ leadId: lead.id }}
             />
-            <ActivityChatterRail activities={activity} chatter={chatter} leadId={lead.id} defaultEmail={emailVal} />
+            <ActivityChatterRail
+              activities={activity}
+              chatter={chatter}
+              leadId={lead.id}
+              defaultEmail={emailVal}
+              phones={[
+                ...(phoneVal ? [{ label: lead.contactName ?? "Lead", number: phoneVal }] : []),
+                ...(mobileVal && mobileVal.replace(/[^0-9]/g, "").slice(-10) !== (phoneVal ?? "").replace(/[^0-9]/g, "").slice(-10)
+                  ? [{ label: "Mobile", number: mobileVal }]
+                  : []),
+              ]}
+            />
         </>
       }
     />

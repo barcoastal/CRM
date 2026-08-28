@@ -213,6 +213,7 @@ export async function sendSmsNow(args: {
   leadId?: string | null;
   accountId?: string | null;
   contactId?: string | null;
+  opportunityId?: string | null;
 }): Promise<SendResult & { smsId: string }> {
   const hasUnicode = /[^\x00-\x7F]/.test(args.body);
   const segments = Math.max(1, Math.ceil(args.body.length / (hasUnicode ? 70 : 160)));
@@ -221,6 +222,7 @@ export async function sendSmsNow(args: {
       direction: "OUTBOUND", status: "QUEUED", provider: "SMS_MAGIC",
       toNumber: args.to, fromNumber: args.from ?? process.env.SMS_MAGIC_SENDER_ID ?? "", body: args.body, segments,
       leadId: args.leadId ?? null, accountId: args.accountId ?? null, contactId: args.contactId ?? null,
+      opportunityId: args.opportunityId ?? null,
     },
     select: { id: true },
   });

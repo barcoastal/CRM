@@ -1087,7 +1087,30 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
               notes={chainNotes.map((n) => ({ id: n.id, body: n.body, author: n.author, createdAt: n.createdAt.toISOString(), source: n.source }))}
               attach={{ leadId: opp.lead?.id ?? null, opportunityId: opp.id, accountId: opp.account?.id ?? null }}
             />
-            <ActivityChatterRail activities={activity} chatter={chatter} opportunityId={opp.id} defaultEmail={opp.oppEmail ?? opp.lead?.email ?? null} />
+            <ActivityChatterRail
+              activities={activity}
+              chatter={chatter}
+              opportunityId={opp.id}
+              accountId={opp.account?.id}
+              defaultEmail={opp.oppEmail ?? opp.lead?.email ?? null}
+              phones={(() => {
+                const seen = new Set<string>();
+                const list: { label: string; number: string }[] = [];
+                const push = (label: string, raw?: string | null) => {
+                  if (!raw) return;
+                  const key = raw.replace(/[^0-9]/g, "").slice(-10);
+                  if (key.length < 7 || seen.has(key)) return;
+                  seen.add(key);
+                  list.push({ label, number: raw });
+                };
+                push("Opportunity", opp.oppPhone ?? phoneDisplay);
+                push(opp.lead?.contactName ?? "Lead", opp.lead?.phone);
+                for (const rel of opp.account?.contacts ?? []) {
+                  push(rel.contact.fullName ?? "Contact", rel.contact.phone);
+                }
+                return list;
+              })()}
+            />
           </>
         }
       />

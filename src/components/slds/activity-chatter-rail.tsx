@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ActivityRail, type ActivityItem } from "./activity-rail";
 import { ActivityComposerButtons } from "./activity-composer-buttons";
+import { SmsRailPanel, type SmsPhone } from "./sms-rail-panel";
 
 export type ChatterPost = {
   id: string;
@@ -22,6 +23,7 @@ export function ActivityChatterRail({
   accountId,
   contactId,
   defaultEmail,
+  phones = [],
 }: {
   activities: readonly ActivityItem[];
   chatter: readonly ChatterPost[];
@@ -30,6 +32,7 @@ export function ActivityChatterRail({
   accountId?: string;
   contactId?: string;
   defaultEmail?: string | null;
+  phones?: readonly SmsPhone[];
 }) {
   const [tab, setTab] = useState<TabKey>("Activity");
 
@@ -96,9 +99,13 @@ export function ActivityChatterRail({
             No Five9 call logs yet for this record.
           </div>
         ) : (
-          <div style={{ padding: 24, textAlign: "center", color: "#747474", fontSize: 13 }}>
-            No SMS messages yet.
-          </div>
+          <SmsRailPanel
+            phones={phones}
+            opportunityId={opportunityId}
+            leadId={leadId}
+            accountId={accountId}
+            contactId={contactId}
+          />
         )}
       </div>
     </div>

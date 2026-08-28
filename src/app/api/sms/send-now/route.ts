@@ -14,6 +14,7 @@ const Body = z.object({
   leadId: z.string().cuid().nullable().optional(),
   accountId: z.string().cuid().nullable().optional(),
   contactId: z.string().cuid().nullable().optional(),
+  opportunityId: z.string().cuid().nullable().optional(),
   from: z.string().nullable().optional(),
 });
 
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
     leadId: parsed.data.leadId ?? null,
     accountId: parsed.data.accountId ?? null,
     contactId: parsed.data.contactId ?? null,
+    opportunityId: parsed.data.opportunityId ?? null,
   });
 
   if (!result.ok) {
