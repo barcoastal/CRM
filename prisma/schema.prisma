@@ -2120,6 +2120,20 @@ model SmsMessage {
   @@index([direction, status])
 }
 
+// Registered SMS Magic sender numbers the agent can send "From". Seeded from
+// the SMS Magic account (was the Salesforce smagicinteract__SMS_SenderId__c set).
+model SmsSender {
+  id        String   @id @default(cuid())
+  number    String   @unique // digits, country code, no plus (e.g. 17543244290)
+  label     String? // optional friendly name
+  isActive  Boolean  @default(true)
+  isDefault Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([isActive])
+}
+
 // Outbound bulk SMS blast to a segment/list, mirrors email Campaigns.
 model SmsCampaign {
   id          String    @id @default(cuid())

@@ -40,6 +40,8 @@ export function SmsRailPanel({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [senders, setSenders] = useState<{ number: string; label: string | null; isDefault: boolean }[]>([]);
+  const [from, setFrom] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async (n: string, quiet = false) => {
@@ -70,6 +72,17 @@ export function SmsRailPanel({
   }, []);
 
   useEffect(() => {
+    fetch("/api/sms/senders")
+      .then((r) => (r.ok ? r.json() : { senders: [] }))
+      .then((d) => {
+        const list: { number: string; label: string | null; isDefault: boolean }[] = d.senders ?? [];
+        setSenders(list);
+        setFrom((prev) => prev || (list.find((s) => s.isDefault)?.number ?? list[0]?.number ?? ""));
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages.length, loading]);
 
@@ -84,6 +97,7 @@ export function SmsRailPanel({
         body: JSON.stringify({
           to: number,
           body: body.trim(),
+          from: from || null,
           opportunityId: opportunityId ?? null,
           leadId: leadId ?? null,
           accountId: accountId ?? null,
@@ -116,20 +130,38 @@ export function SmsRailPanel({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: 420 }}>
-      {/* To-number selector */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: 6, borderBottom: "1px solid #f3f3f3" }}>
-        <span style={{ fontSize: 12, color: "#444", fontWeight: 600 }}>To:</span>
-        <select
-          value={number}
-          onChange={(e) => setNumber(e.target.value)}
-          style={{ flex: 1, fontSize: 12, border: "1px solid #c9c9c9", borderRadius: 4, padding: "4px 6px", background: "#fff" }}
-        >
-          {phones.map((p) => (
-            <option key={p.number} value={p.number}>
-              {p.label} · {p.number}
-            </option>
-          ))}
-        </select>
+      {/* To + From selectors */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 5, paddingBottom: 6, borderBottom: "1px solid #f3f3f3" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 12, color: "#444", fontWeight: 600, width: 34 }}>To:</span>
+          <select
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
+            style={{ flex: 1, fontSize: 12, border: "1px solid #c9c9c9", borderRadius: 4, padding: "4px 6px", background: "#fff" }}
+          >
+            {phones.map((p) => (
+              <option key={p.number} value={p.number}>
+                {p.label} · {p.number}
+              </option>
+            ))}
+          </select>
+        </div>
+        {senders.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 12, color: "#444", fontWeight: 600, width: 34 }}>From:</span>
+            <select
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              style={{ flex: 1, fontSize: 12, border: "1px solid #c9c9c9", borderRadius: 4, padding: "4px 6px", background: "#fff" }}
+            >
+              {senders.map((s) => (
+                <option key={s.number} value={s.number}>
+                  {s.label ? `${s.label} · ${s.number}` : s.number}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Thread */}

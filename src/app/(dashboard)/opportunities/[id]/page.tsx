@@ -456,8 +456,10 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   // SF stores phone/email as *_Formula__c fields on Opportunity (formulas pull
   // the canonical value from the linked Account/Contact). Fall back to the raw
   // Phone__c/Email__c variants for older snapshots.
-  const phoneDisplay = oppSf("Phone_Formula__c") ?? oppSf("Formatted_Phone__c") ?? oppSf("Phone__c") ?? oppSf("Phone");
-  const emailDisplay = oppSf("Email_Formula__c") ?? oppSf("Email__c") ?? oppSf("Email");
+  // CRM-edited values must win over the synced SF snapshot, otherwise an
+  // inline edit saves but the row keeps showing the stale formula value.
+  const phoneDisplay = opp.oppPhone ?? oppSf("Phone_Formula__c") ?? oppSf("Formatted_Phone__c") ?? oppSf("Phone__c") ?? oppSf("Phone");
+  const emailDisplay = opp.oppEmail ?? oppSf("Email_Formula__c") ?? oppSf("Email__c") ?? oppSf("Email");
 
   const detailsPanel = (
     <>
