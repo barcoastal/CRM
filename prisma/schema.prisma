@@ -69,6 +69,7 @@ model User {
   smsOwned                  SmsMessage[]                    @relation("SmsOwner")
   emailTemplates            EmailTemplate[]                 @relation("EmailTemplateAuthor")
   smsTemplates              SmsTemplate[]                   @relation("SmsTemplateAuthor")
+  smsCampaigns              SmsCampaign[]                   @relation("SmsCampaignAuthor")
   emailAttachmentsUploaded  EmailTemplateAttachment[]       @relation("EmailAttachmentUploader")
   integrationCredentials    IntegrationCredential[]         @relation("IntegrationCredentialAuthor")
   paymentCalcsSaved         LeadPaymentCalculation[]        @relation("PaymentCalcSavedBy")
@@ -2095,6 +2096,10 @@ model SmsMessage {
   ownerId String?
   owner   User?   @relation("SmsOwner", fields: [ownerId], references: [id])
 
+  // Scalar links (no relation back-refs needed): opportunity + SMS campaign.
+  opportunityId String?
+  smsCampaignId String?
+
   providerMessageId String?
   provider          String?
   errorReason       String?
@@ -2110,6 +2115,30 @@ model SmsMessage {
   @@index([accountId])
   @@index([leadId])
   @@index([contactId])
+  @@index([opportunityId])
+  @@index([smsCampaignId])
+  @@index([direction, status])
+}
+
+// Outbound bulk SMS blast to a segment/list, mirrors email Campaigns.
+model SmsCampaign {
+  id          String    @id @default(cuid())
+  name        String
+  body        String
+  templateId  String?
+  entity      String    @default("Lead") // Lead | Contact
+  segmentId   String? // optional saved Segment; null = whole entity with a phone
+  status      String    @default("DRAFT") // DRAFT | SENDING | SENT | FAILED
+  total       Int       @default(0)
+  sent        Int       @default(0)
+  failed      Int       @default(0)
+  createdById String?
+  createdBy   User?     @relation("SmsCampaignAuthor", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  sentAt      DateTime?
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model EmailTemplate {

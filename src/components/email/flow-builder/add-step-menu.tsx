@@ -5,6 +5,7 @@ import type { NodeKind } from "@/lib/flow/nodes";
 
 const OPTIONS: { kind: NodeKind; label: string }[] = [
   { kind: "send_email", label: "Send Email" },
+  { kind: "send_sms", label: "Send SMS" },
   { kind: "wait", label: "Wait" },
   { kind: "update_record", label: "Update Record" },
   { kind: "create_task", label: "Create Task" },

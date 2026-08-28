@@ -27,6 +27,7 @@ const ICONS: Record<string, string> = {
   templates: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 2v6h6M9 13h6M9 17h6",
   reports: "M3 21h18M7 21V9m5 12V4m5 17v-9",
   domain: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  sms: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
 };
 
 type Tab = { href: string; label: string; icon: string; soon?: string };
@@ -39,6 +40,12 @@ const TABS: Tab[] = [
   { href: "/email-center/templates", label: "Templates", icon: "templates" },
   { href: "/email-center/reports", label: "Reports", icon: "reports" },
   { href: "/email-center/domain-health", label: "Domain Health", icon: "domain" },
+];
+
+const SMS_TABS: Tab[] = [
+  { href: "/email-center/sms/campaigns", label: "Campaigns", icon: "campaigns" },
+  { href: "/email-center/sms/flows", label: "Flows", icon: "flows" },
+  { href: "/email-center/sms/reports", label: "Reports", icon: "reports" },
 ];
 
 export function TabRail() {
@@ -59,12 +66,24 @@ export function TabRail() {
       <div className="ec-rail-section">Messaging</div>
       {TABS.map((t) => {
         const active =
-          t.href === "/email-center" ? pathname === "/email-center" : pathname.startsWith(t.href);
+          t.href === "/email-center"
+            ? pathname === "/email-center"
+            : pathname.startsWith(t.href) && !pathname.startsWith("/email-center/sms");
         return (
           <Link key={t.href} href={t.href} className={`ec-tab${active ? " ec-tab-active" : ""}`}>
             <Icon d={ICONS[t.icon]} />
             <span>{t.label}</span>
             {t.soon ? <span className="ec-tab-soon">{t.soon}</span> : null}
+          </Link>
+        );
+      })}
+      <div className="ec-rail-section">SMS</div>
+      {SMS_TABS.map((t) => {
+        const active = pathname.startsWith(t.href);
+        return (
+          <Link key={t.href} href={t.href} className={`ec-tab${active ? " ec-tab-active" : ""}`}>
+            <Icon d={ICONS[t.icon]} />
+            <span>{t.label}</span>
           </Link>
         );
       })}

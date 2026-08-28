@@ -26,6 +26,7 @@ export function ConfigDrawer({
   onClose: () => void;
 }) {
   const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
+  const [smsTemplates, setSmsTemplates] = useState<{ id: string; name: string; body: string }[]>([]);
 
   useEffect(() => {
     if (node.kind !== "send_email") return;
@@ -41,6 +42,14 @@ export function ConfigDrawer({
         );
       })
       .catch(() => setTemplates([]));
+  }, [node.kind]);
+
+  useEffect(() => {
+    if (node.kind !== "send_sms") return;
+    fetch("/api/email-center/sms-templates")
+      .then((r) => r.json())
+      .then((d) => setSmsTemplates((d.items ?? []).map((t: { id: string; name: string; body: string }) => ({ id: t.id, name: t.name, body: t.body }))))
+      .catch(() => setSmsTemplates([]));
   }, [node.kind]);
 
   const c = node.config as Record<string, unknown>;
@@ -104,6 +113,45 @@ export function ConfigDrawer({
               <input
                 className="ec-input"
                 value={String(c.toFieldPath ?? "email")}
+                onChange={(e) => onChange({ toFieldPath: e.target.value })}
+              />
+            </div>
+          </>
+        ) : null}
+
+        {node.kind === "send_sms" ? (
+          <>
+            <div>
+              <label className="ec-field-label">SMS template</label>
+              <select
+                className="ec-select"
+                value=""
+                onChange={(e) => { const t = smsTemplates.find((x) => x.id === e.target.value); if (t) onChange({ body: t.body }); }}
+              >
+                <option value="">Insert from template...</option>
+                {smsTemplates.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="ec-field-label">Message</label>
+              <textarea
+                className="ec-textarea"
+                rows={5}
+                value={String(c.body ?? "")}
+                onChange={(e) => onChange({ body: e.target.value })}
+                placeholder="Hi {{firstName}}, ..."
+              />
+              <div style={{ fontSize: 11, color: "#8a94a6", marginTop: 4 }}>
+                {String(c.body ?? "").length} chars · ~{Math.max(1, Math.ceil(String(c.body ?? "").length / 160))} segment(s). Supports {"{{firstName}}"} merge fields.
+              </div>
+            </div>
+            <div>
+              <label className="ec-field-label">Recipient field</label>
+              <input
+                className="ec-input"
+                value={String(c.toFieldPath ?? "phone")}
                 onChange={(e) => onChange({ toFieldPath: e.target.value })}
               />
             </div>
