@@ -62,7 +62,7 @@ export const isSettlementRecordType = (v: string): v is SettlementRecordType =>
 export const isFeeRecordType = (v: string): v is FeeRecordType =>
   (FEE_RECORD_TYPES as readonly string[]).includes(v);
 
-export const TASK_RECORD_TYPES = ["ACTIVITY", "DISPOSITION"] as const;
+export const TASK_RECORD_TYPES = ["ACTIVITY", "DISPOSITION", "CHECKLIST"] as const;
 export type TaskRecordType = typeof TASK_RECORD_TYPES[number];
 export const isTaskRecordType = (v: string): v is TaskRecordType =>
   (TASK_RECORD_TYPES as readonly string[]).includes(v);

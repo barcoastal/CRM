@@ -3,6 +3,8 @@
  * (SF Task record type Checklist_Item), with the "N of M tasks completed"
  * footer exactly like the org's widget.
  */
+import { ChecklistNewTask } from "./checklist-new-task";
+
 export interface ChecklistItem {
   id: string;
   subject: string;
@@ -11,8 +13,7 @@ export interface ChecklistItem {
   done: boolean;
 }
 
-export function ChecklistCard({ stage, items }: { stage: string; items: ChecklistItem[] }) {
-  if (items.length === 0) return null;
+export function ChecklistCard({ stage, items, accountId }: { stage: string; items: ChecklistItem[]; accountId?: string }) {
   const doneCount = items.filter((i) => i.done).length;
   return (
     <article
@@ -32,8 +33,12 @@ export function ChecklistCard({ stage, items }: { stage: string; items: Checklis
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#181818" }}>Checklist - {stage}</div>
         </div>
+        {accountId ? <ChecklistNewTask accountId={accountId} /> : null}
       </header>
       <div style={{ maxHeight: 260, overflowY: "auto" }}>
+        {items.length === 0 ? (
+          <div style={{ padding: "18px 14px", textAlign: "center", color: "#747474", fontSize: 12 }}>No tasks yet. Add one with &ldquo;+ New Task&rdquo;.</div>
+        ) : (
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
             <tr style={{ background: "#fafaf9", borderBottom: "1px solid #e5e5e5" }}>
@@ -59,6 +64,7 @@ export function ChecklistCard({ stage, items }: { stage: string; items: Checklis
             ))}
           </tbody>
         </table>
+        )}
       </div>
       <footer style={{ padding: "8px 14px", borderTop: "1px solid #e5e5e5", fontSize: 12, color: "#444444", textAlign: "center" }}>
         {doneCount} of {items.length} tasks are completed.
