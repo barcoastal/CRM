@@ -204,14 +204,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
 
   // SF Account Details — field pairs verified against docs/sf-screenshots/sf-account-detail.png
   // (Dakota Enterprises LLC). Even index = left col, odd index = right col.
-  const ratingDisplay = acctSf("Rating");
-  const ownerFullNameDisplay = acctSf("Owner_Full_Name__c") ?? ownerName;
   const processorStatusDisplay = account.processorStatus ?? acctSf("Status__c") ?? acctSf("Processor_Status__c");
   const faxDisplay = acctSf("Fax");
   const websiteDisplay = account.website ?? acctSf("Website");
-  const tickerSymbolDisplay = acctSf("TickerSymbol");
-  const ownershipDisplay = acctSf("Ownership");
-  const employeesDisplay = account.numberOfEmployees ?? acctSf("NumberOfEmployees");
   const sicCodeDisplay = acctSf("Sic") ?? acctSf("SicCode");
   const totalDebtSfDisplay = acctSfDollar("Total_Debt__c") ?? `$${totalDebt.toLocaleString()}`;
   const currentBalanceDisplay = acctSfDollar("Current_Total_Debt_Amount__c") ?? acctSfDollar("Current_Balance__c");
@@ -261,15 +256,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       ].filter(Boolean).join("\n") || ""}
     </div>
   );
-  const shippingAddressNode = (
-    <div key="sa" style={{ color: "#0176d3", whiteSpace: "pre-line" }}>
-      {[
-        acctSf("ShippingStreet"),
-        [acctSf("ShippingCity"), acctSf("ShippingState"), acctSf("ShippingPostalCode")].filter(Boolean).join(", "),
-        acctSf("ShippingCountry"),
-      ].filter(Boolean).join("\n") || ""}
-    </div>
-  );
   const billingCountyDisplay = acctSf("BillingCounty__c");
   const createdByDisplay = `${acctSf("CreatedBy_Full_Name__c") ?? ""}${acctSf("CreatedBy_Full_Name__c") ? `, ${account.createdAt.toLocaleString()}` : account.createdAt.toLocaleString()}`;
   const lastModifiedByDisplay = `${acctSf("LastModifiedBy_Full_Name__c") ?? ""}${acctSf("LastModifiedBy_Full_Name__c") ? `, ${account.updatedAt.toLocaleString()}` : account.updatedAt.toLocaleString()}`;
@@ -302,10 +288,10 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           entityType="account"
           entityId={account.id}
           fields={[
-            // Row 1: Account Name | Rating
+            // Row 1: Account Name | (Rating removed)
             E("Account Name", account.name ?? acctSf("Name"), "name", "text", { rawValue: account.name }),
-            E("Rating", ratingDisplay, "Rating"),
-            // Row 2: Account Owner | Owner Full Name
+            ["", null],
+            // Row 2: Account Owner | (duplicate Owner Full Name removed)
             E(
               "Account Owner",
               account.ownerId
@@ -315,37 +301,33 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
               "select",
               { rawValue: account.ownerId ?? null, options: ownerOptions },
             ),
-            // SF renders the owner as a user link (admins land on the user's
-            // record page with owned records + logs).
-            ["Owner Full Name", account.ownerId
-              ? <Link key="own" href={`/settings/users/${account.ownerId}`} style={{ color: "#0176d3" }}>{ownerFullNameDisplay}</Link>
-              : ownerFullNameDisplay],
+            ["", null],
             // Row 3: Parent Account | Processor Status
             ["Parent Account", parentAcctNode],
             ["Processor Status", processorStatusDisplay],
-            // Row 4: Account Number | Phone
-            ["Account Number", acctSf("AccountNumber")],
+            // Row 4: (Account Number removed) | Phone
+            ["", null],
             [
               "Phone",
               // SF renders the number as a plain blue link - clicking dials.
               phoneVal ? <CallButton key="ph" phone={phoneVal} accountId={account.id} variant="link" label={phoneVal} /> : null,
               { fieldKey: "phone", type: "phone", rawValue: account.phone ?? phoneVal },
             ],
-            // Row 5: Account Site | Fax
-            E("Account Site", acctSf("Site"), "Site"),
+            // Row 5: (Account Site removed) | Fax
+            ["", null],
             E("Fax", faxDisplay, "Fax"),
-            // Row 6: Type | Website
-            E("Type", acctSf("Type"), "type", "text"),
+            // Row 6: (Type removed) | Website
+            ["", null],
             E("Website", websiteDisplay, "website", "text", { rawValue: account.website }),
-            // Row 7: Industry | Ticker Symbol
+            // Row 7: Industry | (Ticker Symbol removed)
             E("Industry", account.industry ?? acctSf("Industry"), "industry", "text", { rawValue: account.industry }),
-            E("Ticker Symbol", tickerSymbolDisplay, "TickerSymbol"),
-            // Row 8: Annual Revenue | Ownership
+            ["", null],
+            // Row 8: Annual Revenue | (Ownership removed)
             E("Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : acctSfDollar("AnnualRevenue"), "annualRevenue", "number", { rawValue: account.annualRevenue ?? null }),
-            E("Ownership", ownershipDisplay, "Ownership"),
-            // Row 9: SSN | Employees
+            ["", null],
+            // Row 9: SSN | (Employees removed)
             E("SSN", acctSf("SSN__c"), "SSN__c"),
-            E("Employees", employeesDisplay, "numberOfEmployees", "number", { rawValue: account.numberOfEmployees ?? null }),
+            ["", null],
             // Row 10: EIN Number / Tax Id | SIC Code
             E("EIN Number / Tax Id", account.ein ?? acctSf("EIN_Number_Tax_Id__c"), "ein", "text", { rawValue: account.ein }),
             E("SIC Code", sicCodeDisplay, "Sic"),
@@ -406,9 +388,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             // Row 28: Work Phone | Legal Network Sync Status
             E("Work Phone", acctSf("Work_Phone__c"), "Work_Phone__c", "phone"),
             ["Legal Network Sync Status", legalNetworkSyncStatusDisplay],
-            // Row 29: Billing Address | Shipping Address
+            // Row 29: Billing Address | (Shipping Address removed)
             ["Billing Address", billingAddressNode],
-            ["Shipping Address", shippingAddressNode],
+            ["", null],
             // Row 30: Billing County | (empty right)
             E("Billing County", billingCountyDisplay, "BillingCounty__c"),
             ["", null],
