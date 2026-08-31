@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const DIALER_MODES = ["POWER", "PREVIEW", "MANUAL"] as const;
+export const DIALER_MODES = ["POWER", "PREVIEW", "MANUAL", "AI"] as const;
 export const CAMPAIGN_STATUSES = ["DRAFT", "ACTIVE", "PAUSED", "COMPLETED"] as const;
 
 export type DialerMode = (typeof DIALER_MODES)[number];
@@ -14,6 +14,10 @@ export const createCampaignSchema = z.object({
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   timezone: z.string().default("America/New_York"),
+  aiEnabled: z.boolean().default(false),
+  aiAgentId: z.string().min(1).optional(),
+  aiMaxConcurrency: z.number().int().min(1).max(100).default(10),
+  meetingDurationMin: z.number().int().min(15).max(120).default(30),
 });
 
 export const updateCampaignSchema = z.object({
@@ -25,6 +29,10 @@ export const updateCampaignSchema = z.object({
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   timezone: z.string().optional(),
+  aiEnabled: z.boolean().optional(),
+  aiAgentId: z.string().min(1).nullable().optional(),
+  aiMaxConcurrency: z.number().int().min(1).max(100).optional(),
+  meetingDurationMin: z.number().int().min(15).max(120).optional(),
 });
 
 export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;

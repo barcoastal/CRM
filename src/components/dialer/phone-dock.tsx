@@ -107,7 +107,7 @@ export function PhoneDock() {
   if (!hydrated) return null;
   // The /dialer page has its own full Five9 desktop; rendering the dock there
   // too would log the agent into Five9 twice and kick one session on connect.
-  if (pathname?.startsWith("/dialer")) return null;
+  if (pathname?.startsWith("/dialer") || pathname?.startsWith("/ai-dialer")) return null;
 
   const onCall = !!call?.active && !!call?.onCallSince;
   const durSec = onCall && call?.onCallSince ? Math.max(0, Math.floor((now - call.onCallSince) / 1000)) : 0;

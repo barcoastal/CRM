@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const INTEGRATION_PROVIDERS = [
-  "FIVE9", "TWILIO", "TELNYX", "DOCUSIGN", "PARDOT", "KLAVIYO", "SENDGRID", "POSTMARK", "MAILGUN",
+  "FIVE9", "TWILIO", "RETELL", "GOOGLE_CALENDAR", "TELNYX", "DOCUSIGN", "PARDOT", "KLAVIYO", "SENDGRID", "POSTMARK", "MAILGUN",
 ] as const;
 
 export const createIntegrationCredentialSchema = z.object({

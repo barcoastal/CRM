@@ -826,6 +826,14 @@ model Lead {
   scoreReason     String?
   notes           String?
 
+  // Verifiable permission for automated / AI voice outreach. AI campaigns
+  // refuse to dial unless all four evidence fields below are present.
+  aiCallConsent       Boolean   @default(false)
+  aiCallConsentAt     DateTime?
+  aiCallConsentSource String?
+  aiCallConsentText   String?
+  aiCallConsentIp     String?
+
   // Marketing Attribution
   utmSource   String?
   utmMedium   String?
@@ -886,6 +894,7 @@ model Lead {
   suppressionEntries  SuppressionEntry[]       @relation("LeadSuppressionEntries")
   cadenceEnrollments  CadenceEnrollment[]      @relation("LeadCadenceEnrollments")
   leadLists           LeadListMember[]         @relation("LeadListsForLead")
+  aiCalls             AiCall[]
 
   @@index([recordType])
   @@index([convertedAccountId])
@@ -932,21 +941,77 @@ model CallTranscript {
 // ============ CAMPAIGNS ============
 
 model Campaign {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  dialerMode  String   @default("POWER") // POWER, PREVIEW, MANUAL
-  status      String   @default("DRAFT") // DRAFT, ACTIVE, PAUSED, COMPLETED
-  script      String?
-  startTime   String? // "09:00"
-  endTime     String? // "20:00"
-  timezone    String   @default("America/New_York")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  name               String
+  description        String?
+  dialerMode         String   @default("POWER") // POWER, PREVIEW, MANUAL, AI
+  status             String   @default("DRAFT") // DRAFT, ACTIVE, PAUSED, COMPLETED
+  script             String?
+  startTime          String? // "09:00"
+  endTime            String? // "20:00"
+  timezone           String   @default("America/New_York")
+  aiEnabled          Boolean  @default(false)
+  aiAgentId          String?
+  aiMaxConcurrency   Int      @default(10)
+  meetingDurationMin Int      @default(30)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   contacts CampaignContact[]
   agents   CampaignAgent[]
   calls    Call[]
+  aiCalls  AiCall[]
+}
+
+// Company-owned caller IDs used for local/state presence. These must be
+// imported into Retell from Twilio and must route callbacks to the company.
+model AiOutboundNumber {
+  id             String   @id @default(cuid())
+  phoneNumber    String   @unique
+  state          String? // null = national/default fallback
+  retellNumberId String?
+  label          String?
+  isActive       Boolean  @default(true)
+  priority       Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  calls AiCall[]
+
+  @@index([state, isActive, priority])
+}
+
+// AI calls are separate from Call because Call.agentId intentionally requires
+// a human agent. A warm transfer can still identify the receiving human below.
+model AiCall {
+  id                  String            @id @default(cuid())
+  retellCallId        String            @unique
+  leadId              String
+  lead                Lead              @relation(fields: [leadId], references: [id])
+  campaignId          String?
+  campaign            Campaign?         @relation(fields: [campaignId], references: [id])
+  outboundNumberId    String?
+  outboundNumber      AiOutboundNumber? @relation(fields: [outboundNumberId], references: [id])
+  status              String            @default("REGISTERED") // REGISTERED | IN_PROGRESS | ENDED | ANALYZED | FAILED
+  outcome             String? // QUALIFIED | NOT_QUALIFIED | MEETING_BOOKED | TRANSFERRED | DNC | NO_ANSWER | VOICEMAIL
+  fromNumber          String
+  toNumber            String
+  disconnectionReason String?
+  durationMs          Int?
+  transcript          String?
+  summary             String?
+  analysis            Json?
+  metadata            Json?
+  transferred         Boolean           @default(false)
+  meetingAt           DateTime?
+  startedAt           DateTime?
+  endedAt             DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([campaignId, status])
+  @@index([leadId, createdAt])
+  @@index([outcome, createdAt])
 }
 
 model CampaignContact {

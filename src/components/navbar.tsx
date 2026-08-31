@@ -17,6 +17,7 @@ import {
   LogOut,
   ChevronDown,
   Menu,
+  Sparkles,
 } from "@/components/icons/lucide";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -44,6 +45,7 @@ const navItems = [
   { label: "Opportunities", href: "/opportunities", icon: Target },
   { label: "Clients", href: "/clients", icon: Briefcase },
   { label: "Dialer", href: "/dialer", icon: Phone },
+  { label: "AI Dialer", href: "/ai-dialer", icon: Sparkles },
   { label: "Campaigns", href: "/campaigns", icon: Megaphone },
   { label: "Calls", href: "/calls", icon: PhoneCall },
   { label: "Calculator", href: "/calculator", icon: Calculator },

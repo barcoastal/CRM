@@ -48,6 +48,11 @@ const DIALER_INFO: Record<
       "Review contact details before dialing. Ideal for complex accounts requiring preparation.",
     icon: <Eye className="size-[18px] text-[#3052ff]" />,
   },
+  AI: {
+    label: "AI Voice Qualifier",
+    description: "Call consented leads, qualify them, book Google Calendar meetings, and warm-transfer qualified answers.",
+    icon: <Zap className="size-[18px] text-[#3052ff]" />,
+  },
 };
 
 const inputClass =
@@ -78,6 +83,10 @@ export default function NewCampaignPage() {
       startTime: (formData.get("startTime") as string) || undefined,
       endTime: (formData.get("endTime") as string) || undefined,
       timezone: formData.get("timezone") as string,
+      aiEnabled: selectedMode === "AI",
+      aiAgentId: selectedMode === "AI" ? (formData.get("aiAgentId") as string) : undefined,
+      aiMaxConcurrency: selectedMode === "AI" ? Number(formData.get("aiMaxConcurrency") || 10) : 10,
+      meetingDurationMin: selectedMode === "AI" ? Number(formData.get("meetingDurationMin") || 30) : 30,
       status: launch ? "ACTIVE" : "DRAFT",
     };
 
@@ -137,7 +146,7 @@ export default function NewCampaignPage() {
           </button>
           <button
             disabled={loading}
-            onClick={(e) => {
+            onClick={() => {
               const form = document.getElementById(
                 "campaign-form"
               ) as HTMLFormElement;
@@ -275,6 +284,33 @@ export default function NewCampaignPage() {
                 })}
               </div>
             </div>
+
+            {selectedMode === "AI" && (
+              <div className="bg-white rounded-xl p-6" style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}>
+                <h2 className="text-[16px] font-bold text-[#131b2e] mb-[18px]" style={{ fontFamily: "Manrope, sans-serif" }}>
+                  AI Voice Settings
+                </h2>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="aiAgentId" className={labelClass}>Published Retell Agent ID</label>
+                    <input id="aiAgentId" name="aiAgentId" required placeholder="agent_..." className={inputClass} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3.5">
+                    <div>
+                      <label htmlFor="aiMaxConcurrency" className={labelClass}>Concurrent Calls</label>
+                      <input id="aiMaxConcurrency" name="aiMaxConcurrency" type="number" min="1" max="100" defaultValue="10" className={inputClass} />
+                    </div>
+                    <div>
+                      <label htmlFor="meetingDurationMin" className={labelClass}>Meeting Minutes</label>
+                      <input id="meetingDurationMin" name="meetingDurationMin" type="number" min="15" max="120" defaultValue="30" className={inputClass} />
+                    </div>
+                  </div>
+                  <p className="text-[12.5px] leading-relaxed text-[#8a6d00] bg-[#fff8dd] rounded-lg p-3">
+                    AI dialing is blocked unless every lead has stored automated-call consent and passes DNC and local-time checks.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Schedule */}
             <div

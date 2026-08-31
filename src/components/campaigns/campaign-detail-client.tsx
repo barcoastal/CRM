@@ -125,6 +125,10 @@ interface Campaign {
   startTime: string | null;
   endTime: string | null;
   timezone: string;
+  aiEnabled: boolean;
+  aiAgentId: string | null;
+  aiMaxConcurrency: number;
+  meetingDurationMin: number;
   createdAt: string;
   updatedAt: string;
   contacts: CampaignContact[];
@@ -162,6 +166,24 @@ export function CampaignDetailClient({
   const [addLeadsOpen, setAddLeadsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [launchingAi, setLaunchingAi] = useState(false);
+  const [aiLaunchMessage, setAiLaunchMessage] = useState("");
+
+  async function launchAiBatch() {
+    setLaunchingAi(true);
+    setAiLaunchMessage("");
+    try {
+      const res = await fetch(`/api/ai-dialer/campaigns/${campaign.id}/launch`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: campaign.aiMaxConcurrency }),
+      });
+      const data = await res.json();
+      if (!res.ok) setAiLaunchMessage(data.error ?? "AI batch could not start");
+      else setAiLaunchMessage(`Started ${data.launched} call(s); ${data.skipped?.length ?? 0} lead(s) blocked or skipped.`);
+      await refreshCampaign();
+    } catch { setAiLaunchMessage("AI batch could not start"); }
+    finally { setLaunchingAi(false); }
+  }
 
   async function refreshCampaign() {
     const res = await fetch(`/api/campaigns/${campaign.id}`);
@@ -213,6 +235,10 @@ export function CampaignDetailClient({
       startTime: (formData.get("startTime") as string) || undefined,
       endTime: (formData.get("endTime") as string) || undefined,
       timezone: formData.get("timezone") as string,
+      aiEnabled: formData.get("aiEnabled") === "on",
+      aiAgentId: (formData.get("aiAgentId") as string) || null,
+      aiMaxConcurrency: Number(formData.get("aiMaxConcurrency") || 10),
+      meetingDurationMin: Number(formData.get("meetingDurationMin") || 30),
     };
 
     try {
@@ -290,14 +316,22 @@ export function CampaignDetailClient({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href={`/dialer?campaignId=${campaign.id}`}
+          {campaign.dialerMode === "AI" ? <button
+            onClick={launchAiBatch}
+            disabled={launchingAi || campaign.status !== "ACTIVE"}
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded text-white text-[13px] font-semibold shadow-[0_8px_24px_rgba(48,82,255,0.25)]"
             style={{ background: "linear-gradient(135deg, #0034e4, #3052ff)" }}
           >
             <Phone className="size-4" />
-            Launch Dialer
-          </Link>
+            {launchingAi ? "Starting..." : `Launch ${campaign.aiMaxConcurrency} AI Calls`}
+          </button> : <Link
+              href={`/dialer?campaignId=${campaign.id}`}
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded text-white text-[13px] font-semibold shadow-[0_8px_24px_rgba(48,82,255,0.25)]"
+              style={{ background: "linear-gradient(135deg, #0034e4, #3052ff)" }}
+            >
+              <Phone className="size-4" />
+              Launch Dialer
+            </Link>}
           {campaign.status !== "COMPLETED" && (
             <button
               onClick={toggleStatus}
@@ -327,6 +361,8 @@ export function CampaignDetailClient({
           </button>
         </div>
       </div>
+
+      {aiLaunchMessage && <div className="rounded-lg bg-[#f2f3ff] px-4 py-3 text-[13px] text-[#444656]">{aiLaunchMessage}</div>}
 
       {/* Stat Cards */}
       <div className="grid grid-cols-5 gap-3.5">
@@ -747,6 +783,27 @@ export function CampaignDetailClient({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="rounded-lg bg-[#f2f3ff] p-4 space-y-4">
+              <label className="flex items-center gap-2 text-[13px] font-semibold text-[#131b2e]">
+                <input type="checkbox" name="aiEnabled" defaultChecked={campaign.aiEnabled} />
+                Enable consent-gated AI calling
+              </label>
+              <div className="space-y-1.5">
+                <Label htmlFor="settings-aiAgentId" className="text-[12.5px] font-semibold text-[#444656]">Published Retell Agent ID</Label>
+                <Input id="settings-aiAgentId" name="aiAgentId" defaultValue={campaign.aiAgentId ?? ""} placeholder="agent_..." className="bg-white border-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="settings-aiMaxConcurrency" className="text-[12.5px] font-semibold text-[#444656]">Concurrent Calls</Label>
+                  <Input id="settings-aiMaxConcurrency" name="aiMaxConcurrency" type="number" min={1} max={100} defaultValue={campaign.aiMaxConcurrency} className="bg-white border-none" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="settings-meetingDurationMin" className="text-[12.5px] font-semibold text-[#444656]">Meeting Minutes</Label>
+                  <Input id="settings-meetingDurationMin" name="meetingDurationMin" type="number" min={15} max={120} defaultValue={campaign.meetingDurationMin} className="bg-white border-none" />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-1.5">

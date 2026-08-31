@@ -34,6 +34,13 @@ export default async function IntegrationsPage() {
   return (
     <>
       <div style={{ padding: "10px 16px 0", fontSize: 13 }}>
+        <Link
+          href="/api/integrations/google-calendar/connect"
+          prefetch={false}
+          style={{ color: "#0176d3", marginRight: 20 }}
+        >
+          Connect Google Calendar →
+        </Link>
         <Link href="/integrations/processor-log" style={{ color: "#0176d3" }}>
           Processor Sync Journal (SAS/RAM outbound payloads) →
         </Link>

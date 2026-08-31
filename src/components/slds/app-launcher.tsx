@@ -36,6 +36,7 @@ const APPS: AppTile[] = [
   { label: "Mass Email", href: "/emails/mass", description: "Bulk send + open/click tracking" },
   { label: "Sign Docs", href: "/sign-docs", description: "Contracts, templates, signatures" },
   { label: "Dialer", href: "/dialer", description: "Power dialer + dispositions" },
+  { label: "AI Dialer", href: "/ai-dialer", description: "AI qualification + meeting booking" },
   { label: "Approvals", href: "/approvals", description: "Review and submit approval requests" },
   { label: "Admin", href: "/integrations", description: "Integrations + users" },
   { label: "Chatter", href: "/chatter", description: "Team feeds + groups + mentions" },
@@ -72,6 +73,7 @@ const ITEMS: ItemTile[] = [
   { label: "Envelopes", href: "/envelopes", entity: "ProgramPlan" },
   { label: "Integrations", href: "/integrations", entity: "Settings" },
   { label: "Dialer", href: "/dialer", entity: "Dialer" },
+  { label: "AI Dialer", href: "/ai-dialer", entity: "Dialer" },
   { label: "Campaigns", href: "/campaigns", entity: "Campaign" },
   { label: "Marketing", href: "/marketing", entity: "Campaign" },
   { label: "Engagement", href: "/marketing/engagement", entity: "Campaign" },
@@ -86,9 +88,8 @@ const ITEMS: ItemTile[] = [
 export function AppLauncher({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState("");
 
-  // Reset query on open, close on Esc
+  // Close on Esc while the launcher is open.
   useEffect(() => {
-    if (open) setQuery("");
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     if (open) window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
