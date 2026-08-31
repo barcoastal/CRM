@@ -510,27 +510,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         </div>
       </Section>
 
-      <Section title="Financial Summary Information" defaultOpen={false}>
-        <FieldGrid
-          fields={[
-            ["Operating Expenses", account.operatingExpenses != null ? `$${account.operatingExpenses.toLocaleString()}` : null],
-            ["Operating Expense", acctSfDollar("Operating_Expense__c")],
-            ["Direct Expenses", acctSfDollar("Direct_Expenses__c")],
-            ["Gross Profit", account.grossProfit != null ? `$${account.grossProfit.toLocaleString()}` : null],
-            ["Net Profit", account.netProfit != null ? `$${account.netProfit.toLocaleString()}` : null],
-            ["Profit", acctSfDollar("Profit__c")],
-            ["Debt Payments", account.debtPayments != null ? `$${account.debtPayments.toLocaleString()}` : null],
-            ["EBITDA", account.ebitda != null ? `$${account.ebitda.toLocaleString()}` : null],
-            ["Buyout Program Weekly Payment", account.buyoutProgramWeeklyPayment != null ? `$${account.buyoutProgramWeeklyPayment.toLocaleString()}` : null],
-            ["Buyout Program Monthly Payment", account.buyoutProgramMonthlyPayment != null ? `$${account.buyoutProgramMonthlyPayment.toLocaleString()}` : null],
-            ["Created", account.createdAt.toLocaleString()],
-            ["Last Modified", account.updatedAt.toLocaleString()],
-          ]}
-        />
-        {account.financialDescription && (
-          <div style={{ marginTop: 12, fontSize: 13, whiteSpace: "pre-wrap" }}>{account.financialDescription}</div>
-        )}
-      </Section>
     </>
   );
 
