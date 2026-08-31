@@ -504,6 +504,9 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
               { fieldKey: "oppEmail", type: "email", rawValue: opp.oppEmail ?? emailDisplay ?? null },
             ],
             E("Current Total Debt", currentTotalDebtDisplay, "currentTotalDebt", "number", { rawValue: opp.currentTotalDebt ?? null }),
+            // Contact-on-opportunity fields (moved off the Contact object)
+            E("Individual", opp.individualName, "individualName", "text", { rawValue: opp.individualName ?? null }),
+            E("Alternative #", opp.alternatePhone, "alternatePhone", "phone", { rawValue: opp.alternatePhone ?? null }),
             // Row 8: Preferred method of Contact | Secured Party
             E("Preferred method of Contact", oppSf("Preferred_Method_Of_Contact__c") ?? oppSf("Preferred_method_of_Contact__c"), "preferredMethodOfContact"),
             E("Secured Party", oppSf("Secured_Party__c"), "securedParty"),

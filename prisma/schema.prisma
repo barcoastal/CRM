@@ -1161,6 +1161,8 @@ model Opportunity {
   // Contact info (denormalized from primary contact / lead)
   oppPhone                    String? // SF Phone__c
   oppEmail                    String? // SF Email__c
+  alternatePhone              String? // "Alternative #" - secondary contact number
+  individualName              String? // "Individual" - the person to contact on this opp
   // Sub-disposition + call flow
   subDisposition              String?
   fronter                     String?
