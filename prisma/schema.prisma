@@ -159,6 +159,7 @@ model User {
   state          String?
   postalCode     String?
   feedback       Feedback[] @relation("FeedbackUser")
+  gmailSync      GmailSync? @relation("GmailSyncUser")
 }
 
 // ============ ACCESS CONTROL (SF parity: Role hierarchy, Profile, PermissionSet) ============
@@ -2052,6 +2053,8 @@ model EmailMessage {
   threadId        String?
   subjectNorm     String?
   messageIdHeader String?
+  // Gmail message id for mailbox-synced rows (provider = "GMAIL"); unique for dedup.
+  gmailMessageId  String? @unique
   inReplyTo       String?
   readAt          DateTime? // inbox mark-read action (distinct from openedAt, which tracks recipient pixel fires)
 
@@ -2105,6 +2108,24 @@ model EmailEvent {
   @@index([flowId])
   @@index([ownerId, occurredAt])
   @@index([emailMessageId])
+}
+
+// Per-rep Gmail mailbox sync state (domain-wide delegation). One row = one
+// opted-in rep. historyId is Gmail's incremental cursor; null = needs backfill.
+model GmailSync {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  user         User      @relation("GmailSyncUser", fields: [userId], references: [id])
+  emailAddress String
+  status       String    @default("ACTIVE") // ACTIVE | PAUSED | ERROR
+  historyId    String?
+  lastSyncedAt DateTime?
+  lastError    String?
+  syncedCount  Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([status])
 }
 
 model MassEmail {
