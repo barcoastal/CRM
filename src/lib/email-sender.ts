@@ -15,12 +15,21 @@
  * EmailTemplate-supplied vars. Tokens that don't resolve become empty string.
  */
 
+import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import type { EmailMessage } from "@/generated/prisma/client";
 import {
   loadResendAttachmentsForTemplate,
   type ResendAttachment,
 } from "@/lib/email/template-attachments";
+import { normalizeMessageId } from "@/lib/email/threading";
+
+/** RFC 5322 Message-ID we control, so a Gmail-synced copy of a CRM send dedups. */
+export function generateMessageId(domain: string): string {
+  const rand = randomBytes(12).toString("hex");
+  const stamp = Date.now().toString(36);
+  return `<${stamp}.${rand}@${domain}>`;
+}
 
 interface SendResult {
   ok: boolean;
@@ -185,8 +194,20 @@ export async function sendQueuedEmail(msgId: string): Promise<SendResult> {
   // Pull template attachments (if any) so they ride along with this send.
   const attachments = await loadResendAttachmentsForTemplate(msg.templateId);
 
+  // Stamp our own RFC 5322 Message-ID so the Gmail-synced copy of this send
+  // dedups against the stored row (existsByMessageIdHeader check in gmail-sync).
+  const fromAddress = msg.fromAddress || defaultFrom;
+  const sendDomain = fromAddress.match(/@([a-z0-9.-]+)/i)?.[1] ?? "coastaldebt.com";
+  const rfcMessageId = generateMessageId(sendDomain);
+
+  // Merge the Message-ID into any existing threading headers (In-Reply-To / References).
+  const threadingHeaders: Record<string, string> = msg.inReplyTo
+    ? { "In-Reply-To": `<${msg.inReplyTo}>`, References: `<${msg.inReplyTo}>` }
+    : {};
+  const outboundHeaders: Record<string, string> = { "Message-ID": rfcMessageId, ...threadingHeaders };
+
   const result = await sendViaResend({
-    from: msg.fromAddress || defaultFrom,
+    from: fromAddress,
     to: splitCsv(msg.toAddresses),
     cc: splitCsv(msg.cc),
     bcc: splitCsv(msg.bcc),
@@ -194,10 +215,7 @@ export async function sendQueuedEmail(msgId: string): Promise<SendResult> {
     html: rendered.html ?? null,
     text: rendered.text ?? null,
     replyTo,
-    // inReplyTo is stored without angle brackets; RFC 5322 requires them.
-    headers: msg.inReplyTo
-      ? { "In-Reply-To": `<${msg.inReplyTo}>`, References: `<${msg.inReplyTo}>` }
-      : null,
+    headers: outboundHeaders,
     attachments,
   });
 
@@ -212,6 +230,9 @@ export async function sendQueuedEmail(msgId: string): Promise<SendResult> {
           bodyText: rendered.text ?? msg.bodyText,
           bodyHtml: rendered.html ?? msg.bodyHtml,
           subject: rendered.subject,
+          // Persist the Message-ID we stamped so dedup and threading work.
+          // Don't overwrite an existing header (replies already have one set).
+          ...(msg.messageIdHeader ? {} : { messageIdHeader: normalizeMessageId(rfcMessageId) }),
         }
       : {
           status: "FAILED",
