@@ -24,6 +24,8 @@ export async function PATCH(
   if (typeof body.currentBalance === "number") data.currentBalance = body.currentBalance;
   if (typeof body.enrolledBalance === "number") data.enrolledBalance = body.enrolledBalance;
   if (typeof body.status === "string") data.status = body.status;
+  if (typeof body.legalStatus === "string" || body.legalStatus === null) data.legalStatus = body.legalStatus || null;
+  if (typeof body.negotiationStatus === "string" || body.negotiationStatus === null) data.negotiationStatus = body.negotiationStatus || null;
   if (typeof body.notes === "string" || body.notes === null) data.notes = body.notes || null;
 
   const updated = await prisma.debt.update({ where: { id }, data });

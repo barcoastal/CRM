@@ -21,6 +21,7 @@ import { ContactRolesList } from "@/components/accounts/contact-roles-list";
 import { AddContactButton } from "@/components/contacts/add-contact-button";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
+import { DebtStatusSelect, LEGAL_STATUS_OPTIONS, NEGOTIATION_STATUS_OPTIONS } from "@/components/debts/debt-status-select";
 import { RescheduleCalculator } from "@/components/shared/reschedule-calculator";
 import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-list";
 import { CallButton } from "@/components/dialer/call-button";
@@ -722,21 +723,20 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         title="Debt Details (Account)"
         items={allDebts}
         header={
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr 1fr 1fr 1fr 1fr 1fr", gap: 8, fontWeight: 700, fontSize: 11, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4 }}>
-            <div>Debt Amount</div><div>Creditor Name</div><div>Account #</div><div>Payment</div><div>Legal Status</div><div>Negotiation</div><div>Lien Position</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr 1fr 1fr 1.2fr 1.2fr", gap: 8, fontWeight: 700, fontSize: 11, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4 }}>
+            <div>Debt Amount</div><div>Creditor Name</div><div>Account #</div><div>Payment</div><div>Legal Status</div><div>Negotiation</div>
           </div>
         }
         renderItem={(d) => (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr 1fr 1fr 1fr 1fr 1fr", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr 1fr 1fr 1.2fr 1.2fr", gap: 8, alignItems: "center" }}>
             <Link href={`/debts/${d.id}`} style={{ color: "#0176d3" }}>
               ${d.currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </Link>
             <span>{d.creditorName}</span>
             <span>{d.accountNumber ?? "-"}</span>
             <span>{d.paymentAmount != null ? `$${d.paymentAmount.toLocaleString()}` : "-"}</span>
-            <span>{d.legalStatus ?? "-"}</span>
-            <span>{d.negotiationStatus ?? "-"}</span>
-            <span>{d.lienPosition ?? "-"}</span>
+            <DebtStatusSelect debtId={d.id} field="legalStatus" value={d.legalStatus} options={LEGAL_STATUS_OPTIONS} />
+            <DebtStatusSelect debtId={d.id} field="negotiationStatus" value={d.negotiationStatus} options={NEGOTIATION_STATUS_OPTIONS} />
           </div>
         )}
         emptyHint="No debts."
