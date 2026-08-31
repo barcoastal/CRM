@@ -33,7 +33,7 @@ import { NotesRailCard } from "@/components/shared/notes-rail-card";
 import { fetchChainNotes } from "@/lib/notes";
 import { genericTone } from "@/lib/slds/status-tones";
 import { LeadHistoryCard } from "@/components/leads/lead-history-card";
-import { FilesCard, NotesCard } from "@/components/accounts/files-notes-cards";
+import { NotesCard } from "@/components/accounts/files-notes-cards";
 
 const PATH = ACCOUNT_STAGES.map((s) => ({ label: s }));
 
@@ -653,15 +653,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       };
     }),
   );
-  const fileTiles = fileDocs.slice(0, 6).map((f) => ({
-    id: f.id,
-    name: f.name,
-    ext: f.name.split(".").pop()?.toLowerCase() ?? "",
-    href: `/api/accounts/${account.id}/documents/${f.id}?view=1`,
-    date: f.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-  }));
-
-
   const activitiesPanel = (
     <>
     <NotesCard notes={noteTiles} total={noteDocs.length} />
@@ -803,9 +794,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         )}
         emptyHint="No opportunities."
       />
-      <AccountTeamCard ownerName={account.owner?.name ?? null} ownerEmail={account.owner?.email ?? null} members={teamMembers} />
-      <FilesCard files={fileTiles} total={fileDocs.length} />
-      <NotesCard notes={noteTiles} total={noteDocs.length} />
+      {/* Account Team, Files, and Notes intentionally omitted here - they live
+          on the Details, Documents, and Activities tabs respectively. */}
       <LeadHistoryCard
         rows={account.history.map((h) => ({
           id: h.id,
