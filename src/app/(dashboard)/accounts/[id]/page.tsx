@@ -818,45 +818,18 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         entityLabel="Account History"
         emptyHint="No history."
       />
-    </>
-  );
-
-  const paymentSummaryLines = await prisma.paymentSummaryLine.findMany({
-    where: { accountId: account.id },
-    orderBy: { sortOrder: "asc" },
-  });
-
-  const paymentSummariesPanel = (
-    <>
-      <RelatedList
-        entity="Draft"
-        title="Payment Summaries (Related Record)"
-        items={paymentSummaryLines}
-        header={
-          <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1.3fr 1fr 1fr 1fr 1fr", gap: 8, fontWeight: 700, fontSize: 11, color: "#444444", textTransform: "uppercase", letterSpacing: 0.4 }}>
-            <div>Payment Type</div><div>Recipient</div><div>Total Amount</div><div>Amount In Schedule</div><div>Amount Collected</div><div>Outstanding Amount</div>
-          </div>
-        }
-        renderItem={(l) => (
-          <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1.3fr 1fr 1fr 1fr 1fr", gap: 8 }}>
-            <span>{l.paymentType}</span>
-            <span>{l.recipient ?? "-"}</span>
-            <span>${l.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span>${l.amountInSchedule.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span>${l.amountCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span>${l.outstandingAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          </div>
-        )}
-        emptyHint="No payment summaries synced yet."
-      />
       <SasDetailsPanel accountId={account.id} />
     </>
   );
 
-  const settlementsPanel = (
-    <Section title="Settlements">
+  // Debt Info tab: mirrors the Opportunity's debt details on the Account -
+  // enrolled creditors, per-creditor payment amount + frequency, and the
+  // cumulative Total Weekly Payment (Daily x5 business days). Replaces the old
+  // Payment Summaries tab.
+  const debtInfoPanel = (
+    <Section title="Debt Info">
       {allDebts.length === 0 ? (
-        <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>No debt records yet.</div>
+        <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>No enrolled creditors yet.</div>
       ) : (
         <OppDebtInformation
           opportunityId={account.opportunities[0]?.id ?? ""}
@@ -1020,8 +993,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             Activities: activitiesPanel,
             Documents: documentsPanel,
             "Related Records": relatedPanel,
-            "Payment Summaries": paymentSummariesPanel,
-            Settlements: settlementsPanel,
+            "Debt Info": debtInfoPanel,
             Opportunities: opportunitiesPanel,
             Contacts: contactsPanel,
             Team: teamPanel,

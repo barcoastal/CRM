@@ -8,29 +8,28 @@ export type AccountTabKey =
   | "Activities"
   | "Documents"
   | "Related Records"
-  | "Payment Summaries"
-  | "Settlements"
+  | "Debt Info"
   | "Opportunities"
   | "Contacts"
   | "Team"
   | "Marketing"
   | "All SF Fields";
 
-// SF Debt Settlement app Account record page tab order (verified against the
-// live app screenshot): Details | Payment Calculator | Activities | Documents
-// | Related Records | Payment Summaries | More. Details is the default.
-// "All SF Fields" is intentionally NOT in the tab strip; it's reachable via
-// a footer link on the Details tab.
+// Account record page tab order: Details | Payment Calculator | Activities |
+// Documents | Related Records | Debt Info | More. Details is the default.
+// "Debt Info" replaced the old "Payment Summaries" tab - it mirrors the
+// Opportunity debt details (enrolled creditors, payment amount + frequency,
+// cumulative weekly obligation). "All SF Fields" is reachable via a footer
+// link on the Details tab.
 const PRIMARY_TABS: AccountTabKey[] = [
   "Details",
   "Payment Calculator",
   "Activities",
   "Documents",
   "Related Records",
-  "Payment Summaries",
+  "Debt Info",
 ];
 const MORE_TABS: AccountTabKey[] = [
-  "Settlements",
   "Opportunities",
   "Contacts",
   "Team",
