@@ -8,6 +8,8 @@ export const createAccountSchema = z.object({
   ein: z.string().optional().nullable(),
   ssnLast4: z.string().regex(/^\d{4}$/, "Last 4 must be 4 digits").optional().nullable(),
   phone: z.string().optional().nullable(),
+  alternatePhone: z.string().optional().nullable(),
+  individualName: z.string().optional().nullable(),
   email: z.string().email().optional().nullable(),
   website: z.string().url().optional().nullable(),
   industry: z.string().optional().nullable(),

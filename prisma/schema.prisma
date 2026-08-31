@@ -338,6 +338,8 @@ model Account {
   ssn               String?
   ssnLast4          String?
   phone             String?
+  alternatePhone    String? // "Alternative #" - secondary contact number
+  individualName    String? // "Individual" - the person to contact on this account
   email             String?
   website           String?
   industry          String?

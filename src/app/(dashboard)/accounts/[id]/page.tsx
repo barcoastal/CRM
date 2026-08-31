@@ -292,6 +292,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             // Row 1: Account Name | (Rating removed)
             E("Account Name", account.name ?? acctSf("Name"), "name", "text", { rawValue: account.name }),
             ["", null],
+            // Contact-on-account fields (moved off the Contact object)
+            E("Individual", account.individualName, "individualName", "text", { rawValue: account.individualName ?? null }),
+            E("Alternative #", account.alternatePhone, "alternatePhone", "phone", { rawValue: account.alternatePhone ?? null }),
             // Row 2: Account Owner | (duplicate Owner Full Name removed)
             E(
               "Account Owner",
@@ -998,25 +1001,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
               </div>
             )}
             emptyHint="No opportunities."
-          />
-          <RelatedList
-            entity="Contact"
-            title="Contacts"
-            items={account.contacts}
-            renderItem={(rel) => (
-              <div>
-                <Link href={`/contacts/${rel.contact.id}`} style={{ color: "#0176d3", fontWeight: 600 }}>
-                  {rel.contact.fullName}
-                </Link>
-                {rel.contact.email && (
-                  <div style={{ fontSize: 11, color: "#747474" }}>{rel.contact.email}</div>
-                )}
-                {rel.contact.phone && (
-                  <div style={{ fontSize: 11, color: "#747474" }}>{rel.contact.phone}</div>
-                )}
-              </div>
-            )}
-            emptyHint="No contacts."
           />
           <AccountTeamCard
             ownerName={account.owner?.name ?? null}
