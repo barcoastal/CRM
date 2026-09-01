@@ -40,6 +40,7 @@ const TABS: Tab[] = [
   { href: "/email-center/templates", label: "Templates", icon: "templates" },
   { href: "/email-center/reports", label: "Reports", icon: "reports" },
   { href: "/email-center/domain-health", label: "Domain Health", icon: "domain" },
+  { href: "/email-center/settings/gmail", label: "Mailbox Sync", icon: "inbox" },
 ];
 
 const SMS_TABS: Tab[] = [
