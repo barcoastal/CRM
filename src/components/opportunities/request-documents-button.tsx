@@ -28,15 +28,18 @@ const INFO_FIELD_OPTIONS = [
 
 export function RequestDocumentsButton({
   opportunityId,
+  endpoint,
   defaultEmail,
   defaultName,
   kind = "DOCUMENTS",
 }: {
-  opportunityId: string;
+  opportunityId?: string;
+  endpoint?: string;
   defaultEmail?: string | null;
   defaultName?: string | null;
   kind?: "DOCUMENTS" | "INFO";
 }) {
+  const postUrl = endpoint ?? `/api/opportunities/${opportunityId}/document-requests`;
   const copy = COPY[kind];
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState(defaultEmail ?? "");
@@ -50,7 +53,7 @@ export function RequestDocumentsButton({
     setBusy(true);
     setResult(null);
     try {
-      const res = await fetch(`/api/opportunities/${opportunityId}/document-requests`, {
+      const res = await fetch(postUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

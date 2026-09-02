@@ -22,6 +22,7 @@ import { AddContactButton } from "@/components/contacts/add-contact-button";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
 import { DebtStatusSelect, LEGAL_STATUS_OPTIONS, NEGOTIATION_STATUS_OPTIONS } from "@/components/debts/debt-status-select";
+import { RequestDocumentsButton } from "@/components/opportunities/request-documents-button";
 import { RescheduleCalculator } from "@/components/shared/reschedule-calculator";
 import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-list";
 import { CallButton } from "@/components/dialer/call-button";
@@ -652,27 +653,30 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const documentsPanel = (
     <>
       <Section title={`Files (${fileDocs.length})`}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-          {fileDocs.map((f) => (
-            <a
-              key={f.id}
-              href={`/api/accounts/${account.id}/documents/${f.id}?view=1`}
-              target="_blank"
-              style={{ display: "flex", gap: 10, alignItems: "center", border: "1px solid #e5e5e5", borderRadius: 6, padding: "8px 10px", textDecoration: "none", background: "#fff" }}
-            >
-              <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 6, background: (f.name.toLowerCase().endsWith(".pdf") ? "#ea001e" : "#0176d3"), color: "#fff", fontSize: 9, fontWeight: 700, textTransform: "uppercase", flexShrink: 0 }}>
-                {f.name.split(".").pop()?.slice(0, 4) ?? "file"}
-              </span>
-              <span style={{ minWidth: 0 }}>
-                <span style={{ display: "block", color: "#0176d3", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.name}</span>
-                <span style={{ color: "#747474", fontSize: 11 }}>{f.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-              </span>
-            </a>
-          ))}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 12 }}>
+          <RequestDocumentsButton
+            endpoint={`/api/accounts/${account.id}/document-requests`}
+            kind="INFO"
+            defaultEmail={account.email ?? account.primaryContact?.email ?? undefined}
+            defaultName={account.individualName ?? account.primaryContact?.fullName ?? undefined}
+          />
+          <RequestDocumentsButton
+            endpoint={`/api/accounts/${account.id}/document-requests`}
+            defaultEmail={account.email ?? account.primaryContact?.email ?? undefined}
+            defaultName={account.individualName ?? account.primaryContact?.fullName ?? undefined}
+          />
         </div>
         <DocumentsUpload
           endpoint={`/api/accounts/${account.id}/documents`}
-          items={[]}
+          items={fileDocs.map((d) => ({
+            id: d.id,
+            name: d.name,
+            type: d.type,
+            fileSize: d.fileSize,
+            createdAt: d.createdAt.toISOString(),
+            uploadedBy: d.uploadedBy ? { name: d.uploadedBy.name } : null,
+            hasAnalysis: d.analyzedAt != null,
+          }))}
         />
       </Section>
       <EnvelopesRelatedList
