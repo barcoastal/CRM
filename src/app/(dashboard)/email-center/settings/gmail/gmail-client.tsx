@@ -17,6 +17,7 @@ export function GmailSyncClient({ configured }: { configured: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [syncProgress, setSyncProgress] = useState<{ done: number; total: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +49,19 @@ export function GmailSyncClient({ configured }: { configured: boolean }) {
     await load();
     setBusy(null);
   }
+  async function syncAll() {
+    const active = rows.filter((row) => row.gmailSync?.status === "ACTIVE");
+    if (active.length === 0) return;
+    setBusy("syncall");
+    setSyncProgress({ done: 0, total: active.length });
+    for (let i = 0; i < active.length; i++) {
+      await fetch(`/api/email-center/gmail/mailboxes/${active[i].id}`, { method: "POST" }).catch(() => undefined);
+      setSyncProgress({ done: i + 1, total: active.length });
+    }
+    setSyncProgress(null);
+    await load();
+    setBusy(null);
+  }
 
   return (
     <div className="ec-flows-wrap">
@@ -56,7 +70,16 @@ export function GmailSyncClient({ configured }: { configured: boolean }) {
           <h1 className="ec-flows-title">Mailbox Sync</h1>
           <p className="ec-flows-sub">Connect reps&apos; Google mailboxes so their client email flows into the CRM. Only mail matching a lead, contact, or account is stored.</p>
         </div>
-        <button className="ec-btn ec-btn-primary" disabled={busy === "bulk"} onClick={() => void bulkEnable()}>Enable all reps</button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            className="ec-btn"
+            disabled={!configured || busy !== null || rows.every((row) => row.gmailSync?.status !== "ACTIVE")}
+            onClick={() => void syncAll()}
+          >
+            {busy === "syncall" && syncProgress ? `Syncing ${syncProgress.done}/${syncProgress.total}...` : "Sync all reps now"}
+          </button>
+          <button className="ec-btn ec-btn-primary" disabled={busy === "bulk"} onClick={() => void bulkEnable()}>Enable all reps</button>
+        </div>
       </div>
       {!configured ? (
         <div className="ec-pill ec-pill-amber" style={{ marginBottom: 14 }}>
