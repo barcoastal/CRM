@@ -942,7 +942,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         <>
         <PathSidePanelServer
           entityType="Account"
-          stage={account.stage}
+          stage={account.clientStatus ?? account.stage}
           record={account as unknown as Record<string, unknown>}
         />
         <AccountTabs
@@ -1026,7 +1026,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             </article>
           )}
           <ChecklistCard
-            stage={account.stage}
+            stage={account.clientStatus ?? account.stage}
             accountId={account.id}
             items={checklistTasks.map((t) => ({
               id: t.id,
