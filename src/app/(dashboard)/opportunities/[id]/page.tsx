@@ -150,7 +150,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           contacts: { include: { contact: { select: { id: true, fullName: true, title: true, email: true, phone: true } } } },
         },
       },
-      primaryContact: { select: { id: true, fullName: true, email: true } },
+      primaryContact: { select: { id: true, fullName: true, email: true, phone: true, birthdate: true, ssn: true } },
       assignedTo: { select: { id: true, name: true } },
       client: true,
       debts: {
@@ -507,8 +507,8 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             // Contact-on-opportunity fields (moved off the Contact object)
             E("Individual", opp.individualName, "individualName", "text", { rawValue: opp.individualName ?? null }),
             E("Alternative #", opp.alternatePhone, "alternatePhone", "phone", { rawValue: opp.alternatePhone ?? null }),
-            E("Date of Birth", opp.dateOfBirth?.toLocaleDateString() ?? oppSf("Date_of_Birth__c") ?? oppSf("DOB__c"), "dateOfBirth", "date", { rawValue: opp.dateOfBirth ?? null }),
-            E("SSN", opp.contactSsn ?? oppSf("SSN__c"), "contactSsn", "text", { rawValue: opp.contactSsn ?? null }),
+            E("Date of Birth", (opp.dateOfBirth ?? opp.primaryContact?.birthdate)?.toLocaleDateString() ?? oppSf("Date_of_Birth__c") ?? oppSf("DOB__c"), "dateOfBirth", "date", { rawValue: opp.dateOfBirth ?? opp.primaryContact?.birthdate ?? null }),
+            E("SSN", opp.contactSsn ?? opp.primaryContact?.ssn ?? oppSf("SSN__c"), "contactSsn", "text", { rawValue: opp.contactSsn ?? opp.primaryContact?.ssn ?? null }),
             E("Mailing Street", opp.mailingStreet ?? oppSf("MailingStreet"), "mailingStreet", "text", { rawValue: opp.mailingStreet ?? null }),
             E("Mailing City", opp.mailingCity ?? oppSf("MailingCity"), "mailingCity", "text", { rawValue: opp.mailingCity ?? null }),
             E("Mailing State", opp.mailingState ?? oppSf("MailingState"), "mailingState", "text", { rawValue: opp.mailingState ?? null }),

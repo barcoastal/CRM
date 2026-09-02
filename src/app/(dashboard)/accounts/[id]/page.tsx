@@ -50,7 +50,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     where: { id },
     include: {
       owner: { select: { id: true, name: true, email: true } },
-      primaryContact: { select: { id: true, fullName: true, email: true, phone: true, title: true } },
+      primaryContact: { select: { id: true, fullName: true, email: true, phone: true, title: true, birthdate: true, ssn: true } },
       contacts: { include: { contact: true }, orderBy: { createdAt: "asc" } },
       opportunities: {
         include: {
@@ -317,7 +317,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             // Contact-on-account fields (moved off the Contact object)
             E("Individual", account.individualName, "individualName", "text", { rawValue: account.individualName ?? null }),
             E("Alternative #", account.alternatePhone, "alternatePhone", "phone", { rawValue: account.alternatePhone ?? null }),
-            E("Date of Birth", account.dateOfBirth?.toLocaleDateString() ?? acctSf("Date_of_Birth__c") ?? acctSf("DOB__c"), "dateOfBirth", "date", { rawValue: account.dateOfBirth ?? null }),
+            E("Date of Birth", (account.dateOfBirth ?? account.primaryContact?.birthdate)?.toLocaleDateString() ?? acctSf("Date_of_Birth__c") ?? acctSf("DOB__c"), "dateOfBirth", "date", { rawValue: account.dateOfBirth ?? account.primaryContact?.birthdate ?? null }),
             ["", null],
             // Row 2: Account Owner | (duplicate Owner Full Name removed)
             E(
@@ -354,7 +354,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             E("Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : acctSfDollar("AnnualRevenue"), "annualRevenue", "number", { rawValue: account.annualRevenue ?? null }),
             ["", null],
             // Row 9: SSN | (Employees removed)
-            E("SSN", acctSf("SSN__c"), "SSN__c"),
+            E("SSN", acctSf("SSN__c") ?? account.primaryContact?.ssn, "SSN__c"),
             ["", null],
             // Row 10: EIN Number / Tax Id | SIC Code
             E("EIN Number / Tax Id", account.ein ?? acctSf("EIN_Number_Tax_Id__c"), "ein", "text", { rawValue: account.ein }),
