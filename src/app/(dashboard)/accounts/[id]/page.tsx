@@ -854,25 +854,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     </Section>
   );
 
-  const contactsPanel = (
-    <ContactRolesList
-      action={<AddContactButton accountId={account.id} />}
-      rows={account.contacts.map((rel) => ({
-        id: rel.id,
-        role: rel.role,
-        isPrimary: rel.contact.id === account.primaryContactId,
-        contact: {
-          id: rel.contact.id,
-          fullName: rel.contact.fullName,
-          title: rel.contact.title,
-          email: rel.contact.email,
-          phone: rel.contact.phone,
-        },
-      }))}
-    />
-  );
-
-
   const teamPanel = (
     <Section title="Account Team">
       <FieldGrid
@@ -948,7 +929,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             "Related Records": relatedPanel,
             "Debt Info": debtInfoPanel,
             Opportunities: opportunitiesPanel,
-            Contacts: contactsPanel,
             Team: teamPanel,
             Marketing: marketingPanel,
             "All SF Fields": sfFieldsPanel,

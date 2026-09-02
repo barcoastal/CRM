@@ -954,30 +954,6 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     <SfDataSection sfDataJson={opp.sfDataJson} sfId={opp.sfId} />
   );
 
-  const contactsPanel = opp.account ? (
-    <ContactRolesList
-      action={<AddContactButton accountId={opp.account.id} />}
-      rows={opp.account.contacts.map((rel) => ({
-        id: rel.id,
-        role: rel.role,
-        isPrimary: rel.contact.id === (opp.primaryContactId ?? opp.account?.primaryContactId),
-        contact: {
-          id: rel.contact.id,
-          fullName: rel.contact.fullName,
-          title: rel.contact.title,
-          email: rel.contact.email,
-          phone: rel.contact.phone,
-        },
-      }))}
-    />
-  ) : (
-    <Section title="Contacts">
-      <div style={{ padding: 16, fontSize: 13, color: "#747474" }}>
-        No account is linked to this opportunity yet.
-      </div>
-    </Section>
-  );
-
   const marketingPanel = (
     <Section title="Marketing Attribution">
       <FieldGrid
@@ -1035,7 +1011,6 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
                 Details: detailsPanel,
                 Activities: activitiesPanel,
                 "Debt Information": debtPanel,
-                Contacts: contactsPanel,
                 "Payment Calculator": calcPanel,
                 Settlements: settlementsPanel,
                 Documents: documentsPanel,

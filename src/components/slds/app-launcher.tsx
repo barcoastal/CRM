@@ -48,7 +48,6 @@ const ITEMS: ItemTile[] = [
   { label: "Dashboards", href: "/dashboards", entity: "Dashboard" },
   { label: "Leads", href: "/leads", entity: "Lead" },
   { label: "Accounts", href: "/accounts", entity: "Account" },
-  { label: "Contacts", href: "/contacts", entity: "Contact" },
   { label: "Opportunities", href: "/opportunities", entity: "Opportunity" },
   { label: "Forecasting", href: "/forecasting", entity: "Opportunity" },
   { label: "Clients", href: "/clients", entity: "Client" },

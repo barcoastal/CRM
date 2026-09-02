@@ -10,7 +10,6 @@ export type AccountTabKey =
   | "Related Records"
   | "Debt Info"
   | "Opportunities"
-  | "Contacts"
   | "Team"
   | "Marketing"
   | "All SF Fields";
@@ -31,7 +30,6 @@ const PRIMARY_TABS: AccountTabKey[] = [
 ];
 const MORE_TABS: AccountTabKey[] = [
   "Opportunities",
-  "Contacts",
   "Team",
   "Marketing",
 ];
