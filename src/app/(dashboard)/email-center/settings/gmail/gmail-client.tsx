@@ -55,7 +55,11 @@ export function GmailSyncClient({ configured }: { configured: boolean }) {
     setBusy("syncall");
     setSyncProgress({ done: 0, total: active.length });
     for (let i = 0; i < active.length; i++) {
-      await fetch(`/api/email-center/gmail/mailboxes/${active[i].id}`, { method: "POST" }).catch(() => undefined);
+      await fetch(`/api/email-center/gmail/mailboxes/${active[i].id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full: true }),
+      }).catch(() => undefined);
       setSyncProgress({ done: i + 1, total: active.length });
     }
     setSyncProgress(null);
@@ -68,7 +72,7 @@ export function GmailSyncClient({ configured }: { configured: boolean }) {
       <div className="ec-flows-head">
         <div>
           <h1 className="ec-flows-title">Mailbox Sync</h1>
-          <p className="ec-flows-sub">Connect reps&apos; Google mailboxes so their client email flows into the CRM. Only mail matching a lead, contact, or account is stored.</p>
+          <p className="ec-flows-sub">Connect reps&apos; Google mailboxes so their email flows into the CRM. All mail is captured; each message links to a lead, contact, or account when the address matches one.</p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button

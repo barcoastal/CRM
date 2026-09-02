@@ -21,8 +21,10 @@ export interface SyncDeps {
 export interface MailboxRef { repEmail: string; repUserId: string; historyId: string | null }
 export interface SyncResult { stored: number; scanned: number; newHistoryId: string | null; reseeded: boolean }
 
-const BACKFILL_QUERY = "newer_than:30d";
-const BACKFILL_MAX = 300;
+// Capture the whole mailbox (minus Google Chat), not just recent client mail.
+// One list page; Gmail caps maxResults at 500. Deeper history would need paging.
+const BACKFILL_QUERY = "-in:chats";
+const BACKFILL_MAX = 500;
 
 export async function syncOneMailbox(mb: MailboxRef, client: GmailClient, deps: SyncDeps): Promise<SyncResult> {
   let messageIds: string[] = [];
@@ -55,8 +57,9 @@ export async function syncOneMailbox(mb: MailboxRef, client: GmailClient, deps: 
       const direction = detectDirection(mb.repEmail, h.from);
       const counterparty = pickCounterparty(direction, h.from, h.to);
       if (!counterparty) continue;
+      // Store every message; link it to a CRM record when the counterparty
+      // matches a lead/contact/account, otherwise store it unlinked.
       const match = await deps.matchByEmail(counterparty);
-      if (!match) continue; // CRM-match-only
 
       const msgHeader = h.messageId ? normalizeMessageId(h.messageId) : null;
       if (msgHeader && (await deps.existsByMessageIdHeader(msgHeader))) continue; // collapse with CRM-sent copy
@@ -77,9 +80,9 @@ export async function syncOneMailbox(mb: MailboxRef, client: GmailClient, deps: 
         bodyText: extractPlainBody(m.payload) || null,
         messageIdHeader: msgHeader,
         inReplyTo: h.inReplyTo ? normalizeMessageId(h.inReplyTo) : null,
-        leadId: match.leadId,
-        contactId: match.contactId,
-        accountId: match.accountId,
+        leadId: match?.leadId ?? null,
+        contactId: match?.contactId ?? null,
+        accountId: match?.accountId ?? null,
         ownerId: mb.repUserId,
         threadId, // null -> the caller self-anchors after create
       });

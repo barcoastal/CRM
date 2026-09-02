@@ -50,17 +50,20 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ userId: s
   return NextResponse.json({ ok: true });
 }
 
-export async function POST(_req: NextRequest, ctx: { params: Promise<{ userId: string }> }) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ userId: string }> }) {
   const r = await requireAuthOrRespond("Email.Send");
   if ("response" in r) return r.response;
   if (!ADMIN_ROLES.includes(r.session.role)) return NextResponse.json({ error: "Admins only" }, { status: 403 });
   if (!gmailConfigured()) return NextResponse.json({ error: "Google not configured" }, { status: 400 });
   const { userId } = await ctx.params;
+  // { full: true } forces a full-mailbox backfill by ignoring the saved history
+  // cursor for this run (dedup keeps it idempotent); default is incremental.
+  const body = (await req.json().catch(() => ({}))) as { full?: boolean };
   const row = await prisma.gmailSync.findUnique({ where: { userId } });
   if (!row || row.status === "PAUSED") return NextResponse.json({ error: "Not enabled" }, { status: 400 });
   try {
     const client = makeGmailClient(row.emailAddress);
-    const res = await syncOneMailbox({ repEmail: row.emailAddress, repUserId: userId, historyId: row.historyId }, client, makeDeps());
+    const res = await syncOneMailbox({ repEmail: row.emailAddress, repUserId: userId, historyId: body.full ? null : row.historyId }, client, makeDeps());
     await prisma.gmailSync.update({ where: { userId }, data: { historyId: res.newHistoryId, lastSyncedAt: new Date(), lastError: null, status: "ACTIVE", syncedCount: { increment: res.stored } } });
     return NextResponse.json({ ok: true, stored: res.stored });
   } catch (e) {

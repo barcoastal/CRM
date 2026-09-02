@@ -38,18 +38,23 @@ function makeDeps(created: Record<string, unknown>[], seenGmailIds = new Set<str
 }
 
 describe("syncOneMailbox", () => {
-  it("stores only messages that match a CRM record", async () => {
+  it("stores every message, linking to a CRM record only when it matches", async () => {
     const created: Record<string, unknown>[] = [];
     const client = fakeClient([
-      msg("g1", "Client X <client@brightpath.com>", "rep@coastaldebt.com", "Re: offer", "<a@x.com>"), // match
-      msg("g2", "Random <nobody@gmail.com>", "rep@coastaldebt.com", "Lunch?", "<b@x.com>"), // no match -> skip
+      msg("g1", "Client X <client@brightpath.com>", "rep@coastaldebt.com", "Re: offer", "<a@x.com>"), // match -> linked
+      msg("g2", "Random <nobody@gmail.com>", "rep@coastaldebt.com", "Lunch?", "<b@x.com>"), // no match -> stored unlinked
     ]);
     const res = await syncOneMailbox({ repEmail: "rep@coastaldebt.com", repUserId: "rep1", historyId: "999" }, client, makeDeps(created));
-    expect(created).toHaveLength(1);
-    expect(created[0].gmailMessageId).toBe("g1");
-    expect(created[0].provider).toBe("GMAIL");
-    expect(created[0].leadId).toBe("lead1");
-    expect(res.stored).toBe(1);
+    expect(created).toHaveLength(2);
+    const g1 = created.find((c) => c.gmailMessageId === "g1")!;
+    const g2 = created.find((c) => c.gmailMessageId === "g2")!;
+    expect(g1.provider).toBe("GMAIL");
+    expect(g1.leadId).toBe("lead1");
+    expect(g2.leadId).toBeNull();
+    expect(g2.contactId).toBeNull();
+    expect(g2.accountId).toBeNull();
+    expect(g2.ownerId).toBe("rep1");
+    expect(res.stored).toBe(2);
     expect(res.newHistoryId).toBe("1001");
   });
   it("sets direction OUTBOUND when the rep sent it", async () => {
