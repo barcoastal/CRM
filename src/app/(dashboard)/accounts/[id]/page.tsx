@@ -17,6 +17,7 @@ import { EscrowBalanceCard } from "@/components/accounts/escrow-balance-card";
 import { SasDetailsPanel } from "@/components/accounts/sas-details-panel";
 import { AccountTeamCard } from "@/components/accounts/account-team-card";
 import { ChecklistCard } from "@/components/accounts/checklist-card";
+import { SmsRailPanel } from "@/components/slds/sms-rail-panel";
 import { ContactRolesList } from "@/components/accounts/contact-roles-list";
 import { AddContactButton } from "@/components/contacts/add-contact-button";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
@@ -191,6 +192,26 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
 
   const phoneVal = account.phone ?? acctSf("Phone");
   const emailVal = account.email ?? acctSf("Email__c");
+
+  // Phone numbers the agent can text the client on (deduped by last 10 digits).
+  const smsPhones = (() => {
+    const raw = [
+      { label: "Account", number: account.phone ?? phoneVal },
+      { label: "Alternative", number: account.alternatePhone },
+      { label: "Primary Contact", number: account.primaryContact?.phone ?? null },
+    ];
+    const seen = new Set<string>();
+    const out: { label: string; number: string }[] = [];
+    for (const p of raw) {
+      const num = (p.number ?? "").trim();
+      if (!num) continue;
+      const key = num.replace(/[^0-9]/g, "").slice(-10);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ label: p.label, number: num });
+    }
+    return out;
+  })();
   const ownerName = account.owner?.name ?? acctSf("Owner_Full_Name__c") ?? acctSf("OwnerName");
   // Active users for the Account Owner inline-edit select (SF: change owner).
   const ownerOptions = (
@@ -991,6 +1012,19 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             ownerEmail={account.owner?.email ?? null}
             members={teamMembers}
           />
+          {smsPhones.length > 0 && (
+            <article style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, marginBottom: 8, overflow: "hidden", boxShadow: "0 2px 2px 0 rgba(0,0,0,.05)" }}>
+              <header style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderBottom: "1px solid #e5e5e5" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 4, background: "#0176d3" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                </span>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#181818" }}>Text the client</div>
+              </header>
+              <div style={{ padding: "8px 12px 12px" }}>
+                <SmsRailPanel phones={smsPhones} accountId={account.id} />
+              </div>
+            </article>
+          )}
           <ChecklistCard
             stage={account.stage}
             accountId={account.id}
