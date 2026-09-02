@@ -40,8 +40,6 @@ const TAB_LABEL: Partial<Record<AccountTabKey, string>> = {};
 
 export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNode> }) {
   const [tab, setTab] = useState<AccountTabKey>("Details");
-  const [moreOpen, setMoreOpen] = useState(false);
-  const moreActive = MORE_TABS.includes(tab);
   return (
     <div
       style={{
@@ -62,15 +60,12 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
           overflowX: "auto",
         }}
       >
-        {PRIMARY_TABS.map((t) => {
+        {TABS.map((t) => {
           const active = tab === t;
           return (
             <button
               key={t}
-              onClick={() => {
-                setTab(t);
-                setMoreOpen(false);
-              }}
+              onClick={() => setTab(t)}
               style={{
                 background: "transparent",
                 border: 0,
@@ -88,72 +83,6 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
             </button>
           );
         })}
-        <div style={{ position: "relative" }}>
-          <button
-            onClick={() => setMoreOpen((o) => !o)}
-            style={{
-              background: "transparent",
-              border: 0,
-              padding: "8px 16px",
-              fontSize: 16,
-              fontWeight: moreActive ? 700 : 400,
-              color: moreActive ? "#181818" : "#444444",
-              borderBottom: moreActive ? "3px solid #0176d3" : "3px solid transparent",
-              marginBottom: -1,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            {moreActive ? (TAB_LABEL[tab] ?? tab) : "More"}
-            <svg width="9" height="9" viewBox="0 0 10 10" style={{ fill: "currentColor" }}>
-              <path d="M0 2l5 6 5-6z" />
-            </svg>
-          </button>
-          {moreOpen && (
-            <div
-              style={{
-                position: "absolute",
-                top: "100%",
-                left: 0,
-                background: "#fff",
-                border: "1px solid #c9c9c9",
-                borderRadius: 4,
-                boxShadow: "0 2px 4px 0 rgba(0,0,0,.16)",
-                minWidth: 180,
-                zIndex: 10,
-                padding: "4px 0",
-              }}
-            >
-              {MORE_TABS.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => {
-                    setTab(t);
-                    setMoreOpen(false);
-                  }}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    textAlign: "left",
-                    background: "transparent",
-                    border: 0,
-                    padding: "8px 16px",
-                    fontSize: 13,
-                    color: "#181818",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f2f2")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
       <div style={{ padding: "12px 16px 16px" }}>
         {panels[tab]}
