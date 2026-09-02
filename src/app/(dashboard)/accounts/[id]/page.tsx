@@ -317,6 +317,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             // Contact-on-account fields (moved off the Contact object)
             E("Individual", account.individualName, "individualName", "text", { rawValue: account.individualName ?? null }),
             E("Alternative #", account.alternatePhone, "alternatePhone", "phone", { rawValue: account.alternatePhone ?? null }),
+            E("Date of Birth", account.dateOfBirth?.toLocaleDateString() ?? acctSf("Date_of_Birth__c") ?? acctSf("DOB__c"), "dateOfBirth", "date", { rawValue: account.dateOfBirth ?? null }),
+            ["", null],
             // Row 2: Account Owner | (duplicate Owner Full Name removed)
             E(
               "Account Owner",

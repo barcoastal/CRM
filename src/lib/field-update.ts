@@ -132,6 +132,7 @@ export const ACCOUNT_COLUMNS: Record<string, ColumnSpec> = {
   phone: { kind: "string", mirrorSfKey: "Phone" },
   alternatePhone: { kind: "string" },
   individualName: { kind: "string" },
+  dateOfBirth: { kind: "date" },
   email: { kind: "string" },
   website: { kind: "string", mirrorSfKey: "Website" },
   industry: { kind: "string", mirrorSfKey: "Industry" },
