@@ -80,11 +80,6 @@ export function AccountHeaderButtons({
         <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9" }} onClick={sync} disabled={syncing}>
           {syncing ? "Syncing" : "Sync to Payment Processor"}
         </button>
-        <button style={{ ...groupBtn, borderLeft: "1px solid #c9c9c9", padding: "0 10px" }} aria-label="More" title="More">
-          <svg width="11" height="11" viewBox="0 0 10 10" style={{ fill: "#0176d3" }}>
-            <path d="M0 2l5 6 5-6z" />
-          </svg>
-        </button>
       </div>
       <RecordEditModal
         recordTitle={accountName ?? "Account"}
