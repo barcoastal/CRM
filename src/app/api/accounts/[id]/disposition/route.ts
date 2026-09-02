@@ -51,8 +51,10 @@ export async function POST(
     },
   });
 
+  // Keep stage and clientStatus aligned: clientStatus is the field the record
+  // path + header read (synced from SF), stage is the CRM-native column.
   const ctx = makeCtx(session.userId, [`Account:${id}:task`]);
-  await triggerUpdate("account", id, { stage }, ctx);
+  await triggerUpdate("account", id, { stage, clientStatus: stage }, ctx);
 
   return NextResponse.json({ ok: true, taskId: task.id, stage });
 }

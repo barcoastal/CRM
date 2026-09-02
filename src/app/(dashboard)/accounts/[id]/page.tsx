@@ -915,7 +915,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         <AccountHeaderButtons
           accountId={account.id}
           accountName={account.name}
-          currentStage={account.stage}
+          currentStage={account.clientStatus ?? account.stage}
           defaultEmail={emailVal}
           defaultPhone={phoneVal}
           editFields={[
@@ -937,7 +937,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         />
       }
       pathStages={PATH}
-      pathCurrentIndex={accountPathIndex(account.stage)}
+      pathCurrentIndex={accountPathIndex(account.clientStatus ?? account.stage)}
       details={
         <>
         <PathSidePanelServer
