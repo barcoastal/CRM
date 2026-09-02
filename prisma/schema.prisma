@@ -1163,6 +1163,12 @@ model Opportunity {
   oppEmail                    String? // SF Email__c
   alternatePhone              String? // "Alternative #" - secondary contact number
   individualName              String? // "Individual" - the person to contact on this opp
+  dateOfBirth                 DateTime? // contact DOB (moved off the Contact object)
+  contactSsn                  String? // contact SSN
+  mailingStreet               String?
+  mailingCity                 String?
+  mailingState                String?
+  mailingZip                  String?
   // Sub-disposition + call flow
   subDisposition              String?
   fronter                     String?

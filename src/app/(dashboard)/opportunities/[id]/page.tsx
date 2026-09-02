@@ -507,6 +507,12 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             // Contact-on-opportunity fields (moved off the Contact object)
             E("Individual", opp.individualName, "individualName", "text", { rawValue: opp.individualName ?? null }),
             E("Alternative #", opp.alternatePhone, "alternatePhone", "phone", { rawValue: opp.alternatePhone ?? null }),
+            E("Date of Birth", opp.dateOfBirth?.toLocaleDateString() ?? oppSf("Date_of_Birth__c") ?? oppSf("DOB__c"), "dateOfBirth", "date", { rawValue: opp.dateOfBirth ?? null }),
+            E("SSN", opp.contactSsn ?? oppSf("SSN__c"), "contactSsn", "text", { rawValue: opp.contactSsn ?? null }),
+            E("Mailing Street", opp.mailingStreet ?? oppSf("MailingStreet"), "mailingStreet", "text", { rawValue: opp.mailingStreet ?? null }),
+            E("Mailing City", opp.mailingCity ?? oppSf("MailingCity"), "mailingCity", "text", { rawValue: opp.mailingCity ?? null }),
+            E("Mailing State", opp.mailingState ?? oppSf("MailingState"), "mailingState", "text", { rawValue: opp.mailingState ?? null }),
+            E("Mailing Zip", opp.mailingZip ?? oppSf("MailingPostalCode"), "mailingZip", "text", { rawValue: opp.mailingZip ?? null }),
             // Row 8: Preferred method of Contact | Secured Party
             E("Preferred method of Contact", oppSf("Preferred_Method_Of_Contact__c") ?? oppSf("Preferred_method_of_Contact__c"), "preferredMethodOfContact"),
             E("Secured Party", oppSf("Secured_Party__c"), "securedParty"),
