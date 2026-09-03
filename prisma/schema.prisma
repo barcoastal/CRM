@@ -2064,6 +2064,9 @@ model EmailMessage {
   messageIdHeader String?
   // Gmail message id for mailbox-synced rows (provider = "GMAIL"); unique for dedup.
   gmailMessageId  String? @unique
+  // Gmail thread id for synced/sent Gmail rows; lets replies land in the exact
+  // same Gmail conversation when we send.
+  gmailThreadId   String?
   inReplyTo       String?
   readAt          DateTime? // inbox mark-read action (distinct from openedAt, which tracks recipient pixel fires)
 
@@ -2091,7 +2094,8 @@ model EmailMessage {
   @@index([flowRunId])
   @@index([flowId, flowNodeId])
 
-  events EmailEvent[] @relation("EmailMessageEvents")
+  events      EmailEvent[]      @relation("EmailMessageEvents")
+  attachments EmailAttachment[] @relation("EmailMessageAttachments")
 }
 
 // Granular email engagement log. One row per open/click/delivery/bounce/etc.
@@ -3265,4 +3269,20 @@ model ScheduledCall {
 
   @@index([status, requestedAt])
   @@index([opportunityId])
+}
+
+model EmailAttachment {
+  id           String       @id @default(cuid())
+  messageId    String
+  message      EmailMessage @relation("EmailMessageAttachments", fields: [messageId], references: [id], onDelete: Cascade)
+  filename     String
+  contentType  String
+  byteSize     Int
+  // OUTBOUND: file saved on the /data volume (relative path under attachmentsDir()).
+  storagePath  String?
+  // INBOUND: fetched from Gmail on demand via users.messages.attachments.get.
+  gmailAttachmentId String?
+  createdAt    DateTime     @default(now())
+
+  @@index([messageId])
 }
