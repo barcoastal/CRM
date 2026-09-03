@@ -40,7 +40,10 @@ interface Message {
   bodyText: string | null;
   createdAt: string;
   threadId?: string | null;
+  attachments?: { id: string; filename: string; byteSize: number }[];
 }
+
+type PendingAttachment = { storagePath: string; filename: string; contentType: string; byteSize: number };
 
 /** "Jane Doe <jane@x.com>" -> "Jane Doe"; bare addresses -> local part. */
 function displayName(raw: string): string {
@@ -106,6 +109,11 @@ export function InboxClient({
   const [compose, setCompose] = useState({ to: "", subject: "", body: "", templateId: "" });
   const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [composeCc, setComposeCc] = useState("");
+  const [replyToId, setReplyToId] = useState<string | null>(null);
+  const [forwardId, setForwardId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/email-templates")
@@ -156,23 +164,60 @@ export function InboxClient({
     }
   }, []);
 
+  async function onPickFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    for (const file of Array.from(files)) {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/emails/attachments", { method: "POST", body: fd });
+      if (res.ok) {
+        const uploaded = (await res.json()) as PendingAttachment;
+        setAttachments((prev) => [...prev, uploaded]);
+      }
+    }
+    setUploading(false);
+  }
+  function removeAttachment(storagePath: string) {
+    setAttachments((prev) => prev.filter((a) => a.storagePath !== storagePath));
+  }
+  function splitAddrs(s: string): string[] {
+    return s.split(",").map((x) => x.trim()).filter(Boolean);
+  }
+
+  function openComposer(prefill: { to?: string; cc?: string; subject?: string; replyToId?: string | null; forwardId?: string | null }) {
+    setCompose({ to: prefill.to ?? "", subject: prefill.subject ?? "", body: "", templateId: "" });
+    setComposeCc(prefill.cc ?? "");
+    setReplyToId(prefill.replyToId ?? null);
+    setForwardId(prefill.forwardId ?? null);
+    setAttachments([]);
+    setError(null);
+    setComposeOpen(true);
+    setSelected(null);
+  }
+
   async function sendReply() {
     if (!selected || !reply.trim()) return;
     setSending(true);
     setError(null);
     const last = messages[messages.length - 1];
-    const res = await fetch("/api/emails/compose", {
+    // Reply to the counterparty: inbound -> its From; outbound -> its To.
+    const replyTo = last && last.direction === "INBOUND" ? [last.fromAddress] : splitAddrs(last?.toAddresses ?? selected.lastFrom);
+    const subject = /^re:/i.test(selected.subject) ? selected.subject : `Re: ${selected.subject}`;
+    const res = await fetch("/api/emails/gmail/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        replyToMessageId: last?.id ?? selected.threadId,
+        to: replyTo,
+        subject,
         bodyHtml: `<p>${reply.replace(/\n/g, "<br/>")}</p>`,
         bodyText: reply,
+        replyToMessageId: last?.id,
       }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     setSending(false);
-    if (!res.ok || data.error) {
+    if (!res.ok || data.error || data.ok === false) {
       setError(data.error ?? "Send failed");
       return;
     }
@@ -182,28 +227,33 @@ export function InboxClient({
   }
 
   async function sendNew() {
-    if (!compose.to.trim()) return;
+    const toList = splitAddrs(compose.to);
+    if (toList.length === 0 && !forwardId) return;
     setSending(true);
     setError(null);
-    const res = await fetch("/api/emails/compose", {
+    const res = await fetch("/api/emails/gmail/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        to: compose.to,
-        subject: compose.subject || undefined,
+        to: toList,
+        cc: composeCc ? splitAddrs(composeCc) : undefined,
+        subject: compose.subject || "",
         bodyHtml: compose.body ? `<p>${compose.body.replace(/\n/g, "<br/>")}</p>` : undefined,
         bodyText: compose.body || undefined,
-        templateId: compose.templateId || undefined,
+        attachments,
+        replyToMessageId: replyToId ?? undefined,
+        forwardMessageId: forwardId ?? undefined,
       }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     setSending(false);
-    if (!res.ok || data.error) {
+    if (!res.ok || data.error || data.ok === false) {
       setError(data.error ?? "Send failed");
       return;
     }
     setComposeOpen(false);
     setCompose({ to: "", subject: "", body: "", templateId: "" });
+    setComposeCc(""); setReplyToId(null); setForwardId(null); setAttachments([]);
     setFolder("sent");
   }
 
@@ -216,7 +266,7 @@ export function InboxClient({
         <button
           className="ec-btn ec-btn-primary"
           style={{ width: "100%", marginBottom: 14 }}
-          onClick={() => { setComposeOpen(true); setSelected(null); }}
+          onClick={() => { openComposer({}); }}
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" aria-hidden>
             <path d="M12 5v14M5 12h14" />
@@ -331,7 +381,7 @@ export function InboxClient({
           <div className="ec-compose-wrap">
             <div className="ec-compose">
               <div className="ec-compose-head">
-                <span className="ec-compose-title">New message</span>
+                <span className="ec-compose-title">{forwardId ? "Forward" : replyToId ? "Reply" : "New message"}</span>
                 <button className="ec-btn ec-btn-ghost" style={{ color: "rgba(244,247,242,0.7)", padding: "4px 10px" }} onClick={() => setComposeOpen(false)}>
                   Close
                 </button>
@@ -362,6 +412,10 @@ export function InboxClient({
                   />
                 </div>
                 <div>
+                  <label className="ec-field-label">Cc</label>
+                  <input className="ec-input" placeholder="cc@example.com, ..." value={composeCc} onChange={(e) => setComposeCc(e.target.value)} />
+                </div>
+                <div>
                   <label className="ec-field-label">Subject</label>
                   <input
                     className="ec-input"
@@ -380,12 +434,25 @@ export function InboxClient({
                     rows={9}
                   />
                 </div>
+                <div className="ec-attach-row">
+                  <label className="ec-btn ec-btn-ghost">
+                    Attach files
+                    <input type="file" multiple hidden onChange={(e) => void onPickFiles(e.target.files)} />
+                  </label>
+                  {uploading ? <span className="ec-attach-status">Uploading...</span> : null}
+                  {attachments.map((a) => (
+                    <span key={a.storagePath} className="ec-attach-chip">
+                      {a.filename} ({Math.ceil(a.byteSize / 1024)} KB)
+                      <button type="button" aria-label="Remove" onClick={() => removeAttachment(a.storagePath)}>×</button>
+                    </span>
+                  ))}
+                </div>
                 {error ? <div className="ec-error">{error}</div> : null}
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <button
                     className="ec-btn ec-btn-primary"
                     onClick={() => void sendNew()}
-                    disabled={sending || !compose.to.trim()}
+                    disabled={sending || (splitAddrs(compose.to).length === 0 && !forwardId)}
                   >
                     {sending ? "Sending..." : "Send"}
                   </button>
@@ -423,6 +490,20 @@ export function InboxClient({
                   <span className="ec-pill ec-pill-neutral">Owner: {selected.ownerName}</span>
                 ) : null}
               </div>
+              <div className="ec-thread-actions">
+                <button className="ec-btn" onClick={() => {
+                  const last = messages[messages.length - 1];
+                  const to = last && last.direction === "INBOUND" ? last.fromAddress : (last?.toAddresses ?? selected.lastFrom);
+                  const cc = Array.from(new Set([...(splitAddrs(last?.toAddresses ?? ""))]))
+                    .filter((a) => a.toLowerCase() !== (me.mailboxAddress ?? "").toLowerCase())
+                    .join(", ");
+                  openComposer({ to, cc, subject: /^re:/i.test(selected.subject) ? selected.subject : `Re: ${selected.subject}`, replyToId: last?.id });
+                }}>Reply all</button>
+                <button className="ec-btn" onClick={() => {
+                  const last = messages[messages.length - 1];
+                  openComposer({ subject: /^fwd:/i.test(selected.subject) ? selected.subject : `Fwd: ${selected.subject}`, forwardId: last?.id });
+                }}>Forward</button>
+              </div>
             </div>
             <div className="ec-msgs">
               {messages.map((m) => (
@@ -451,6 +532,15 @@ export function InboxClient({
                         <pre>{m.bodyText}</pre>
                       )}
                     </div>
+                    {m.attachments?.length ? (
+                      <div className="ec-msg-attachments">
+                        {m.attachments.map((a) => (
+                          <a key={a.id} className="ec-attach-chip" href={`/api/emails/${m.id}/attachments/${a.id}`}>
+                            {a.filename} ({Math.ceil(a.byteSize / 1024)} KB)
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               ))}

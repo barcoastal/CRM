@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
     include: {
       owner: { select: { id: true, name: true } },
       template: { select: { id: true, name: true } },
+      attachments: { select: { id: true, filename: true, byteSize: true } },
     },
   });
   return NextResponse.json({ items });

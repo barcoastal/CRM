@@ -1208,3 +1208,11 @@
 .ec-fb-card-stats b { color: var(--ec-ink); font-weight: 700; }
 .ec-fb-card-stats-muted { color: var(--ec-faint); }
 .ec-fb-stat-dot { margin: 0 5px; color: var(--ec-faint); }
+
+/* ---------- Attachments + thread actions (Task 7 Gmail send) ---------- */
+.ec-attach-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.ec-attach-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border: 1px solid var(--ec-border, #e5e5e5); border-radius: 999px; font-size: 12px; text-decoration: none; color: inherit; }
+.ec-attach-chip button { border: none; background: none; cursor: pointer; font-size: 14px; line-height: 1; }
+.ec-attach-status { font-size: 12px; opacity: 0.7; }
+.ec-thread-actions { display: flex; gap: 8px; margin-top: 8px; }
+.ec-msg-attachments { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
