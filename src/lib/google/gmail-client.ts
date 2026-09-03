@@ -70,3 +70,44 @@ export function makeGmailClient(repEmail: string): GmailClient {
     },
   };
 }
+
+export interface GmailWriteClient {
+  /** Send a base64url raw message; threadId groups it into an existing Gmail thread. */
+  sendRaw(rawBase64url: string, threadId?: string | null): Promise<{ id: string; threadId: string | null }>;
+  /** Add/remove Gmail label ids on a message (markRead = remove UNREAD, archive = remove INBOX). */
+  modifyLabels(messageId: string, opts: { add?: string[]; remove?: string[] }): Promise<void>;
+  /** Download one attachment's bytes. */
+  getAttachment(messageId: string, attachmentId: string): Promise<Buffer>;
+}
+
+/** Build a read/write Gmail client (mail.google.com scope) impersonating one rep. */
+export function makeGmailWriteClient(repEmail: string): GmailWriteClient {
+  const jwt = new google.auth.JWT({
+    email: process.env.GOOGLE_SA_CLIENT_EMAIL,
+    key: (process.env.GOOGLE_SA_PRIVATE_KEY ?? "").replace(/\\n/g, "\n"),
+    scopes: ["https://mail.google.com/"],
+    subject: repEmail,
+  });
+  const gmail = google.gmail({ version: "v1", auth: jwt });
+
+  return {
+    async sendRaw(rawBase64url, threadId) {
+      const res = await gmail.users.messages.send({
+        userId: "me",
+        requestBody: { raw: rawBase64url, threadId: threadId ?? undefined },
+      });
+      return { id: res.data.id ?? "", threadId: res.data.threadId ?? null };
+    },
+    async modifyLabels(messageId, opts) {
+      await gmail.users.messages.modify({
+        userId: "me",
+        id: messageId,
+        requestBody: { addLabelIds: opts.add, removeLabelIds: opts.remove },
+      });
+    },
+    async getAttachment(messageId, attachmentId) {
+      const res = await gmail.users.messages.attachments.get({ userId: "me", messageId, id: attachmentId });
+      return Buffer.from(res.data.data ?? "", "base64url");
+    },
+  };
+}
