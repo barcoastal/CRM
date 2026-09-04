@@ -1218,3 +1218,10 @@
 .ec-msg-attachments { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 
 .ec-msg-iframe { width: 100%; min-height: 320px; max-height: 640px; border: 0; background: #fff; border-radius: 6px; }
+
+.ec-reply-modes { display: flex; gap: 6px; margin-bottom: 8px; }
+.ec-reply-fields { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.ec-reply-field { display: flex; align-items: center; gap: 8px; }
+.ec-reply-field .ec-field-label { width: 34px; margin: 0; }
+.ec-reply-field .ec-input { flex: 1; }
+.ec-linkbtn { background: none; border: none; color: #555; cursor: pointer; font-size: 12px; text-decoration: underline; align-self: flex-start; padding: 0; }

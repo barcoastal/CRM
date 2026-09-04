@@ -36,6 +36,7 @@ interface Message {
   fromAddress: string;
   toAddresses: string;
   subject: string;
+  cc?: string | null;
   bodyHtml: string | null;
   bodyText: string | null;
   createdAt: string;
@@ -44,6 +45,22 @@ interface Message {
 }
 
 type PendingAttachment = { storagePath: string; filename: string; contentType: string; byteSize: number };
+
+/** "Name <a@b.com>" -> "a@b.com"; bare address -> itself. */
+function extractEmail(token: string): string {
+  const m = token.match(/<([^>]+)>/);
+  return (m ? m[1] : token).trim();
+}
+/** Split a comma list and reduce each entry to a bare email. */
+function splitAddrs(s: string): string[] {
+  return s.split(",").map((x) => extractEmail(x)).filter(Boolean);
+}
+/** Plaintext of a message, for quoting when forwarding. */
+function messageToText(m: { bodyText: string | null; bodyHtml: string | null }): string {
+  if (m.bodyText) return m.bodyText;
+  if (m.bodyHtml) return m.bodyHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return "";
+}
 
 /** "Jane Doe <jane@x.com>" -> "Jane Doe"; bare addresses -> local part. */
 function displayName(raw: string): string {
@@ -113,6 +130,12 @@ export function InboxClient({
   const [composeCc, setComposeCc] = useState("");
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [forwardId, setForwardId] = useState<string | null>(null);
+  // Inline conversation composer (reply / reply-all / forward, no pane switch).
+  const [replyMode, setReplyMode] = useState<"reply" | "replyall" | "forward">("reply");
+  const [replyTo, setReplyTo] = useState("");
+  const [replyCc, setReplyCc] = useState("");
+  const [showReplyCc, setShowReplyCc] = useState(false);
+  const [activeMsgId, setActiveMsgId] = useState<string | null>(null);
 
   const loadThreads = useCallback(async () => {
     setLoading(true);
@@ -140,6 +163,20 @@ export function InboxClient({
       .filter((m) => (m.threadId ?? m.id) === t.threadId)
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     setMessages(inThread);
+    // Prime the inline composer as a plain reply to the latest message.
+    const last = inThread[inThread.length - 1];
+    const counterparty = last
+      ? last.direction === "INBOUND"
+        ? extractEmail(last.fromAddress)
+        : extractEmail(last.toAddresses.split(",")[0] ?? "")
+      : extractEmail(t.lastFrom);
+    setReplyMode("reply");
+    setActiveMsgId(last?.id ?? null);
+    setReplyTo(counterparty);
+    setReplyCc("");
+    setShowReplyCc(false);
+    setAttachments([]);
+    setError(null);
     if (t.unreadCount > 0) {
       await fetch("/api/email-center/threads/read", {
         method: "POST",
@@ -172,13 +209,6 @@ export function InboxClient({
   function removeAttachment(storagePath: string) {
     setAttachments((prev) => prev.filter((a) => a.storagePath !== storagePath));
   }
-  function extractEmail(token: string): string {
-    const m = token.match(/<([^>]+)>/);
-    return (m ? m[1] : token).trim();
-  }
-  function splitAddrs(s: string): string[] {
-    return s.split(",").map((x) => extractEmail(x)).filter(Boolean);
-  }
 
   function openComposer(prefill: { to?: string; cc?: string; subject?: string; replyToId?: string | null; forwardId?: string | null }) {
     setCompose({ to: prefill.to ?? "", subject: prefill.subject ?? "", body: "" });
@@ -191,23 +221,64 @@ export function InboxClient({
     setSelected(null);
   }
 
-  async function sendReply() {
-    if (!selected || !reply.trim()) return;
+  /** Switch the inline composer between reply / reply-all / forward, prefilling
+   *  recipients + (for forward) a quoted copy of the latest message. */
+  function startReply(mode: "reply" | "replyall" | "forward") {
+    if (!selected) return;
+    const last = messages[messages.length - 1];
+    const counterparty = last
+      ? last.direction === "INBOUND"
+        ? extractEmail(last.fromAddress)
+        : extractEmail(last.toAddresses.split(",")[0] ?? "")
+      : extractEmail(selected.lastFrom);
+    setReplyMode(mode);
+    setActiveMsgId(last?.id ?? null);
+    setError(null);
+    setAttachments([]);
+    if (mode === "forward") {
+      setReplyTo("");
+      setReplyCc("");
+      setShowReplyCc(false);
+      const orig = last ? messageToText(last) : "";
+      setReply(`\n\n---------- Forwarded message ----------\nFrom: ${last?.fromAddress ?? ""}\nSubject: ${last?.subject ?? selected.subject}\n\n${orig}`);
+    } else {
+      setReplyTo(counterparty);
+      setReply("");
+      if (mode === "replyall") {
+        const mine = (me.mailboxAddress ?? "").toLowerCase();
+        const cc = Array.from(new Set([...splitAddrs(last?.toAddresses ?? ""), ...splitAddrs(last?.cc ?? "")]))
+          .filter((a) => a.toLowerCase() !== mine && a.toLowerCase() !== counterparty.toLowerCase());
+        setReplyCc(cc.join(", "));
+        setShowReplyCc(cc.length > 0);
+      } else {
+        setReplyCc("");
+        setShowReplyCc(false);
+      }
+    }
+  }
+
+  async function sendInline() {
+    if (!selected) return;
+    const toList = splitAddrs(replyTo);
+    if (toList.length === 0) { setError("Enter at least one recipient"); return; }
+    if (!reply.trim() && attachments.length === 0) return;
     setSending(true);
     setError(null);
-    const last = messages[messages.length - 1];
-    // Reply to the counterparty: inbound -> its From; outbound -> its To.
-    const replyTo = last && last.direction === "INBOUND" ? [extractEmail(last.fromAddress)] : splitAddrs(last?.toAddresses ?? selected.lastFrom);
-    const subject = /^re:/i.test(selected.subject) ? selected.subject : `Re: ${selected.subject}`;
+    const subject = replyMode === "forward"
+      ? (/^fwd:/i.test(selected.subject) ? selected.subject : `Fwd: ${selected.subject}`)
+      : (/^re:/i.test(selected.subject) ? selected.subject : `Re: ${selected.subject}`);
     const res = await fetch("/api/emails/gmail/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        to: replyTo,
+        to: toList,
+        cc: showReplyCc && replyCc ? splitAddrs(replyCc) : undefined,
         subject,
-        bodyHtml: `<p>${reply.replace(/\n/g, "<br/>")}</p>`,
-        bodyText: reply,
-        replyToMessageId: last?.id,
+        bodyHtml: reply ? `<p>${reply.replace(/\n/g, "<br/>")}</p>` : undefined,
+        bodyText: reply || undefined,
+        attachments,
+        replyToMessageId: replyMode !== "forward" ? (activeMsgId ?? undefined) : undefined,
+        forwardMessageId: replyMode === "forward" ? (activeMsgId ?? undefined) : undefined,
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -217,6 +288,10 @@ export function InboxClient({
       return;
     }
     setReply("");
+    setAttachments([]);
+    setReplyCc("");
+    setShowReplyCc(false);
+    setReplyMode("reply");
     await openThread(selected);
     await loadThreads();
   }
@@ -470,20 +545,6 @@ export function InboxClient({
                   <span className="ec-pill ec-pill-neutral">Owner: {selected.ownerName}</span>
                 ) : null}
               </div>
-              <div className="ec-thread-actions">
-                <button className="ec-btn" onClick={() => {
-                  const last = messages[messages.length - 1];
-                  const to = last && last.direction === "INBOUND" ? extractEmail(last.fromAddress) : extractEmail(last?.toAddresses ?? selected.lastFrom);
-                  const cc = Array.from(new Set([...(splitAddrs(last?.toAddresses ?? ""))]))
-                    .filter((a) => extractEmail(a).toLowerCase() !== (me.mailboxAddress ?? "").toLowerCase())
-                    .join(", ");
-                  openComposer({ to, cc, subject: /^re:/i.test(selected.subject) ? selected.subject : `Re: ${selected.subject}`, replyToId: last?.id });
-                }}>Reply all</button>
-                <button className="ec-btn" onClick={() => {
-                  const last = messages[messages.length - 1];
-                  openComposer({ subject: /^fwd:/i.test(selected.subject) ? selected.subject : `Fwd: ${selected.subject}`, forwardId: last?.id });
-                }}>Forward</button>
-              </div>
             </div>
             <div className="ec-msgs">
               {messages.map((m) => (
@@ -530,24 +591,70 @@ export function InboxClient({
             </div>
             <div className="ec-replybar">
               <div className="ec-replycard">
+                <div className="ec-reply-modes">
+                  {(["reply", "replyall", "forward"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      className={`ec-btn${replyMode === mode ? " ec-btn-primary" : ""}`}
+                      onClick={() => startReply(mode)}
+                    >
+                      {mode === "reply" ? "Reply" : mode === "replyall" ? "Reply all" : "Forward"}
+                    </button>
+                  ))}
+                </div>
+                <div className="ec-reply-fields">
+                  <div className="ec-reply-field">
+                    <label className="ec-field-label">To</label>
+                    <input
+                      className="ec-input"
+                      placeholder="recipient@example.com"
+                      value={replyTo}
+                      onChange={(e) => setReplyTo(e.target.value)}
+                    />
+                  </div>
+                  {showReplyCc ? (
+                    <div className="ec-reply-field">
+                      <label className="ec-field-label">Cc</label>
+                      <input
+                        className="ec-input"
+                        placeholder="cc@example.com, ..."
+                        value={replyCc}
+                        onChange={(e) => setReplyCc(e.target.value)}
+                      />
+                    </div>
+                  ) : (
+                    <button type="button" className="ec-linkbtn" onClick={() => setShowReplyCc(true)}>Add Cc</button>
+                  )}
+                </div>
                 <textarea
                   className="ec-textarea"
-                  placeholder={`Reply to ${displayName(selected.lastFrom)}...`}
+                  placeholder={replyMode === "forward" ? "Add a note (optional)..." : `Reply to ${displayName(selected.lastFrom)}...`}
                   value={reply}
                   onChange={(e) => setReply(e.target.value)}
-                  rows={3}
+                  rows={4}
                 />
+                <div className="ec-attach-row">
+                  <label className="ec-btn ec-btn-ghost">
+                    Attach files
+                    <input type="file" multiple hidden onChange={(e) => void onPickFiles(e.target.files)} />
+                  </label>
+                  {uploading ? <span className="ec-attach-status">Uploading...</span> : null}
+                  {attachments.map((a) => (
+                    <span key={a.storagePath} className="ec-attach-chip">
+                      {a.filename} ({Math.ceil(a.byteSize / 1024)} KB)
+                      <button type="button" aria-label="Remove" onClick={() => removeAttachment(a.storagePath)}>×</button>
+                    </span>
+                  ))}
+                </div>
                 {error ? <div className="ec-error">{error}</div> : null}
                 <div className="ec-replycard-foot">
-                  <span className="ec-replycard-hint">
-                    Sends from {me.mailboxAddress ?? "your account email"}
-                  </span>
+                  <span className="ec-replycard-hint">Sends from your Gmail</span>
                   <button
                     className="ec-btn ec-btn-primary"
-                    onClick={() => void sendReply()}
-                    disabled={sending || !reply.trim()}
+                    onClick={() => void sendInline()}
+                    disabled={sending || (!reply.trim() && attachments.length === 0)}
                   >
-                    {sending ? "Sending..." : "Reply"}
+                    {sending ? "Sending..." : replyMode === "forward" ? "Forward" : replyMode === "replyall" ? "Reply all" : "Reply"}
                   </button>
                 </div>
               </div>
