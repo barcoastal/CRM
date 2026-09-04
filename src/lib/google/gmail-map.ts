@@ -67,7 +67,41 @@ export function extractPlainBody(payload: unknown): string {
   const plain = walk(p, "text/plain");
   if (plain) return plain;
   const html = walk(p, "text/html");
-  if (html) return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  if (html) return stripHtmlToText(html);
   if (p.body?.data) return decodeBase64Url(p.body.data);
   return "";
+}
+
+/**
+ * Turn HTML into a readable plaintext snippet. Removes <style>/<script>/<head>
+ * blocks and comments FIRST so their contents (CSS rules, conditional-comment
+ * markup) don't leak into the text, then strips remaining tags. Without this,
+ * marketing emails dump their entire stylesheet as "body text".
+ */
+export function stripHtmlToText(html: string): string {
+  return html
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<head[\s\S]*?<\/head>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Walk a Gmail payload tree and return the decoded text/html part, or "". */
+export function extractHtmlBody(payload: unknown): string {
+  type Part = { mimeType?: string; body?: { data?: string }; parts?: Part[] };
+  const p = payload as Part | undefined;
+  if (!p) return "";
+  const walk = (part: Part): string | null => {
+    if (part.mimeType === "text/html" && part.body?.data) return decodeBase64Url(part.body.data);
+    for (const child of part.parts ?? []) {
+      const found = walk(child);
+      if (found) return found;
+    }
+    return null;
+  };
+  return walk(p) ?? "";
 }

@@ -43,9 +43,15 @@ function checkAuth(headers: Headers): boolean {
   return got === required;
 }
 
-function last10(raw: string | null | undefined): string {
-  if (!raw) return "";
-  const digits = raw.replace(/[^0-9]/g, "");
+/** Coerce any JSON scalar (SMS Magic sends phone numbers + ids as NUMBERS, not
+ *  strings) to a trimmed string. null/undefined -> "". */
+function str(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  return String(v).trim();
+}
+
+function last10(raw: unknown): string {
+  const digits = str(raw).replace(/[^0-9]/g, "");
   return digits.length > 10 ? digits.slice(-10) : digits;
 }
 

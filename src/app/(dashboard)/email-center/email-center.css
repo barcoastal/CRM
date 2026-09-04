@@ -1216,3 +1216,5 @@
 .ec-attach-status { font-size: 12px; opacity: 0.7; }
 .ec-thread-actions { display: flex; gap: 8px; margin-top: 8px; }
 .ec-msg-attachments { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+.ec-msg-iframe { width: 100%; min-height: 320px; max-height: 640px; border: 0; background: #fff; border-radius: 6px; }

@@ -507,7 +507,9 @@ export function InboxClient({
                     </div>
                     <div className="ec-msg-body">
                       {m.bodyHtml ? (
-                        <div dangerouslySetInnerHTML={{ __html: m.bodyHtml }} />
+                        // Sandboxed iframe: renders the email's own HTML/CSS faithfully while
+                        // containing it (no scripts, and its styles can't leak onto the CRM page).
+                        <iframe className="ec-msg-iframe" sandbox="allow-popups" srcDoc={m.bodyHtml} title="Email content" />
                       ) : (
                         <pre>{m.bodyText}</pre>
                       )}

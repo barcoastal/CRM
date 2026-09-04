@@ -24,6 +24,9 @@ function makeDeps(): SyncDeps {
       const created = await prisma.emailMessage.create({ data: data as never, select: { id: true, threadId: true } });
       if (!created.threadId) await prisma.emailMessage.update({ where: { id: created.id }, data: { threadId: created.id } });
     },
+    async updateBodyByGmailId(gmailId, body) {
+      await prisma.emailMessage.updateMany({ where: { gmailMessageId: gmailId }, data: { bodyText: body.bodyText, bodyHtml: body.bodyHtml } });
+    },
     async resolveThread(counterparty, subject, inReplyTo) {
       return resolveThreadId({ inReplyTo, subject, counterpartyEmails: [counterparty] }, prismaThreadFinders());
     },

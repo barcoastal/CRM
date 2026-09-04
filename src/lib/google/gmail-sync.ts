@@ -4,7 +4,7 @@
  * GmailClient and a SyncDeps bag (match/exists/create/thread), so it is fully
  * unit-testable. The cron route wires the real prisma + client.
  */
-import { parseHeaders, detectDirection, pickCounterparty, extractPlainBody } from "./gmail-map";
+import { parseHeaders, detectDirection, pickCounterparty, extractPlainBody, extractHtmlBody } from "./gmail-map";
 import { normalizeSubject, normalizeMessageId } from "@/lib/email/threading";
 import type { GmailClient } from "./gmail-client";
 
@@ -15,6 +15,8 @@ export interface SyncDeps {
   existsByGmailId(gmailId: string): Promise<boolean>;
   existsByMessageIdHeader(header: string): Promise<boolean>;
   createMessage(data: Record<string, unknown>): Promise<void>;
+  /** Refresh the stored body of an already-synced message (used on full backfill). */
+  updateBodyByGmailId(gmailId: string, body: { bodyText: string | null; bodyHtml: string | null }): Promise<void>;
   resolveThread(counterparty: string, subject: string, inReplyTo: string | null): Promise<string | null>;
 }
 
@@ -49,10 +51,21 @@ export async function syncOneMailbox(mb: MailboxRef, client: GmailClient, deps: 
   }
 
   let stored = 0;
+  // Backfill (no history cursor) also refreshes bodies of already-stored rows,
+  // so older messages that were saved before HTML capture get their bodyHtml
+  // backfilled. Incremental runs keep skipping already-synced messages.
+  const isBackfill = !mb.historyId;
   for (const id of messageIds) {
     try {
-      if (await deps.existsByGmailId(id)) continue;
+      const alreadyStored = await deps.existsByGmailId(id);
+      if (alreadyStored && !isBackfill) continue;
       const m = await client.getMessage(id);
+      const bodyText = extractPlainBody(m.payload) || null;
+      const bodyHtml = extractHtmlBody(m.payload) || null;
+      if (alreadyStored) {
+        await deps.updateBodyByGmailId(id, { bodyText, bodyHtml });
+        continue;
+      }
       const h = parseHeaders(m.headers);
       const direction = detectDirection(mb.repEmail, h.from);
       const counterparty = pickCounterparty(direction, h.from, h.to);
@@ -77,7 +90,8 @@ export async function syncOneMailbox(mb: MailboxRef, client: GmailClient, deps: 
         cc: h.cc || null,
         subject,
         subjectNorm: normalizeSubject(subject),
-        bodyText: extractPlainBody(m.payload) || null,
+        bodyText,
+        bodyHtml,
         messageIdHeader: msgHeader,
         inReplyTo: h.inReplyTo ? normalizeMessageId(h.inReplyTo) : null,
         leadId: match?.leadId ?? null,

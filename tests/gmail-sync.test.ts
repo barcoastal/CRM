@@ -33,6 +33,7 @@ function makeDeps(created: Record<string, unknown>[], seenGmailIds = new Set<str
     existsByGmailId: async (id: string) => seenGmailIds.has(id),
     existsByMessageIdHeader: async (h: string) => seenMsgHeaders.has(h),
     createMessage: async (data) => { created.push(data); },
+    updateBodyByGmailId: async () => {},
     resolveThread: async () => null, // new thread -> self-anchor
   };
 }
