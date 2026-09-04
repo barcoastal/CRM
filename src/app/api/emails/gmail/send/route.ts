@@ -59,6 +59,10 @@ export async function POST(req: NextRequest) {
       include: { attachments: true, owner: { select: { email: true } } },
     });
     if (src) {
+      const isAdmin = ["SUPER_ADMIN", "ADMIN", "MANAGER"].includes(r.session.role);
+      if (!isAdmin && src.ownerId !== r.session.userId) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
       record.leadId = src.leadId;
       record.contactId = src.contactId;
       record.accountId = src.accountId;
@@ -66,6 +70,7 @@ export async function POST(req: NextRequest) {
       record.caseId = src.caseId;
       if (d.replyToMessageId) {
         inReplyTo = withBrackets(src.messageIdHeader);
+        // Phase 1: single-hop References (parent Message-ID only). Gmail threads by threadId; full RFC 5322 chain (parent References + parent Message-ID) is Phase 2.
         references = withBrackets(src.messageIdHeader);
         gmailThreadId = src.gmailThreadId;
       }

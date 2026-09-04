@@ -106,24 +106,13 @@ export function InboxClient({
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
-  const [compose, setCompose] = useState({ to: "", subject: "", body: "", templateId: "" });
-  const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
+  const [compose, setCompose] = useState({ to: "", subject: "", body: "" });
   const [error, setError] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [composeCc, setComposeCc] = useState("");
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [forwardId, setForwardId] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/email-templates")
-      .then((r) => r.json())
-      .then((data) => {
-        const items = Array.isArray(data) ? data : (data.items ?? data.templates ?? []);
-        setTemplates(items.map((t: { id: string; name: string }) => ({ id: t.id, name: t.name })));
-      })
-      .catch(() => setTemplates([]));
-  }, []);
 
   const loadThreads = useCallback(async () => {
     setLoading(true);
@@ -136,7 +125,6 @@ export function InboxClient({
   }, [folder, viewUser, isAdmin, me.id]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- loadThreads flips the loading flag before fetching, same pattern the rest of the app uses
     void loadThreads();
   }, [loadThreads]);
 
@@ -167,26 +155,33 @@ export function InboxClient({
   async function onPickFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     setUploading(true);
-    for (const file of Array.from(files)) {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/emails/attachments", { method: "POST", body: fd });
-      if (res.ok) {
-        const uploaded = (await res.json()) as PendingAttachment;
-        setAttachments((prev) => [...prev, uploaded]);
+    try {
+      for (const file of Array.from(files)) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/emails/attachments", { method: "POST", body: fd });
+        if (res.ok) { const att = (await res.json()) as PendingAttachment; setAttachments((prev) => [...prev, att]); }
+        else setError("Upload failed. Please try again.");
       }
+    } catch {
+      setError("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   }
   function removeAttachment(storagePath: string) {
     setAttachments((prev) => prev.filter((a) => a.storagePath !== storagePath));
   }
+  function extractEmail(token: string): string {
+    const m = token.match(/<([^>]+)>/);
+    return (m ? m[1] : token).trim();
+  }
   function splitAddrs(s: string): string[] {
-    return s.split(",").map((x) => x.trim()).filter(Boolean);
+    return s.split(",").map((x) => extractEmail(x)).filter(Boolean);
   }
 
   function openComposer(prefill: { to?: string; cc?: string; subject?: string; replyToId?: string | null; forwardId?: string | null }) {
-    setCompose({ to: prefill.to ?? "", subject: prefill.subject ?? "", body: "", templateId: "" });
+    setCompose({ to: prefill.to ?? "", subject: prefill.subject ?? "", body: "" });
     setComposeCc(prefill.cc ?? "");
     setReplyToId(prefill.replyToId ?? null);
     setForwardId(prefill.forwardId ?? null);
@@ -202,7 +197,7 @@ export function InboxClient({
     setError(null);
     const last = messages[messages.length - 1];
     // Reply to the counterparty: inbound -> its From; outbound -> its To.
-    const replyTo = last && last.direction === "INBOUND" ? [last.fromAddress] : splitAddrs(last?.toAddresses ?? selected.lastFrom);
+    const replyTo = last && last.direction === "INBOUND" ? [extractEmail(last.fromAddress)] : splitAddrs(last?.toAddresses ?? selected.lastFrom);
     const subject = /^re:/i.test(selected.subject) ? selected.subject : `Re: ${selected.subject}`;
     const res = await fetch("/api/emails/gmail/send", {
       method: "POST",
@@ -228,7 +223,7 @@ export function InboxClient({
 
   async function sendNew() {
     const toList = splitAddrs(compose.to);
-    if (toList.length === 0 && !forwardId) return;
+    if (toList.length === 0) { setError("Enter at least one recipient"); return; }
     setSending(true);
     setError(null);
     const res = await fetch("/api/emails/gmail/send", {
@@ -252,7 +247,7 @@ export function InboxClient({
       return;
     }
     setComposeOpen(false);
-    setCompose({ to: "", subject: "", body: "", templateId: "" });
+    setCompose({ to: "", subject: "", body: "" });
     setComposeCc(""); setReplyToId(null); setForwardId(null); setAttachments([]);
     setFolder("sent");
   }
@@ -387,21 +382,6 @@ export function InboxClient({
                 </button>
               </div>
               <div className="ec-compose-body">
-                {templates.length > 0 ? (
-                  <div>
-                    <label className="ec-field-label">Template</label>
-                    <select
-                      className="ec-select"
-                      value={compose.templateId}
-                      onChange={(e) => setCompose((c) => ({ ...c, templateId: e.target.value }))}
-                    >
-                      <option value="">No template (write below)</option>
-                      {templates.map((t) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                ) : null}
                 <div>
                   <label className="ec-field-label">To</label>
                   <input
@@ -452,7 +432,7 @@ export function InboxClient({
                   <button
                     className="ec-btn ec-btn-primary"
                     onClick={() => void sendNew()}
-                    disabled={sending || (splitAddrs(compose.to).length === 0 && !forwardId)}
+                    disabled={sending || splitAddrs(compose.to).length === 0}
                   >
                     {sending ? "Sending..." : "Send"}
                   </button>
@@ -493,9 +473,9 @@ export function InboxClient({
               <div className="ec-thread-actions">
                 <button className="ec-btn" onClick={() => {
                   const last = messages[messages.length - 1];
-                  const to = last && last.direction === "INBOUND" ? last.fromAddress : (last?.toAddresses ?? selected.lastFrom);
+                  const to = last && last.direction === "INBOUND" ? extractEmail(last.fromAddress) : extractEmail(last?.toAddresses ?? selected.lastFrom);
                   const cc = Array.from(new Set([...(splitAddrs(last?.toAddresses ?? ""))]))
-                    .filter((a) => a.toLowerCase() !== (me.mailboxAddress ?? "").toLowerCase())
+                    .filter((a) => extractEmail(a).toLowerCase() !== (me.mailboxAddress ?? "").toLowerCase())
                     .join(", ");
                   openComposer({ to, cc, subject: /^re:/i.test(selected.subject) ? selected.subject : `Re: ${selected.subject}`, replyToId: last?.id });
                 }}>Reply all</button>
@@ -532,6 +512,7 @@ export function InboxClient({
                         <pre>{m.bodyText}</pre>
                       )}
                     </div>
+                    {/* Inbound Gmail attachments are captured in Phase 2; outbound sent files show here now. */}
                     {m.attachments?.length ? (
                       <div className="ec-msg-attachments">
                         {m.attachments.map((a) => (
