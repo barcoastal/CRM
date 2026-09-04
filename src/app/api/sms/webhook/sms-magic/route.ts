@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: Record<string, string | undefined>;
+  let body: Record<string, unknown>;
   try {
     body = await request.json();
   } catch {
@@ -68,12 +68,13 @@ export async function POST(request: NextRequest) {
   }
 
   // -------------------- Inbound SMS --------------------
-  // { id, sent_from, sent_to, msg, timestamp }
+  // { id, sent_from, sent_to, msg, timestamp } - NOTE: SMS Magic sends
+  // sent_from/sent_to/id as JSON NUMBERS, so coerce everything to string.
   if (body.msg !== undefined && body.sent_from) {
-    const from = body.sent_from ?? "";
-    const to = body.sent_to ?? "";
-    const text = body.msg ?? "";
-    const messageId = body.id ?? null;
+    const from = str(body.sent_from);
+    const to = str(body.sent_to);
+    const text = str(body.msg);
+    const messageId = body.id == null ? null : str(body.id);
 
     const key = last10(from);
     const lead = key
@@ -112,8 +113,8 @@ export async function POST(request: NextRequest) {
 
   // -------------------- Delivery report --------------------
   // { id, delivery_status, timestamp, mobile_number, label }
-  const messageId = body.id ?? null;
-  const raw = (body.delivery_status ?? "").toLowerCase();
+  const messageId = body.id == null ? null : str(body.id);
+  const raw = str(body.delivery_status).toLowerCase();
   // status can be "failed : INVALID-MOBILE-NUMBER"; take the leading word
   const statusWord = raw.split(/[:\s]/)[0];
   const newStatus = DELIVERY_MAP[statusWord] ?? null;
