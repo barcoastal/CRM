@@ -257,6 +257,13 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const closerDisplay = closerUser
     ? <Link key="closer" href={`/settings/users/${closerUser.id}`} style={{ color: "#0176d3" }}>{closerName}</Link>
     : closerName;
+  // Opportunity owner (the active/most-recent opp's assignee), shown in Details
+  // across from Account Owner.
+  const oppOwner = account.opportunities[0]?.assignedTo ?? null;
+  const oppOwnerName = oppOwner?.name ?? account.opportunities[0]?.closer ?? null;
+  const oppOwnerDisplay = oppOwner
+    ? <Link key="oppown" href={`/settings/users/${oppOwner.id}`} style={{ color: "#0176d3" }}>{oppOwnerName}</Link>
+    : oppOwnerName;
   const firstDraftDateDisplay = acctSfDate("First_Draft_Date__c");
   const lastContactedDateTimeDisplay = acctSfDateTime("Last_Contacted_DateTime__c");
   const firstPaymentCompletedDateDisplay = acctSfDate("First_Payment_Completed_Date__c") ?? acctSfDate("First_Payment_Date__c");
@@ -329,7 +336,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
               "select",
               { rawValue: account.ownerId ?? null, options: ownerOptions },
             ),
-            ["", null],
+            ["Opportunity Owner", oppOwnerDisplay],
             // Row 3: Parent Account | Processor Status
             ["Parent Account", parentAcctNode],
             ["Processor Status", processorStatusDisplay],
