@@ -3,6 +3,7 @@ import { hash } from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { hasPermission } from "@/lib/permissions";
 import { auditWrite } from "@/lib/audit";
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -51,6 +52,24 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   const d = parsed.data;
   const before = await prisma.user.findUnique({ where: { id } });
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Credential + authority administration is separated from routine User.Edit:
+  // changing a password, role, profile, reporting role or active status requires
+  // Permission.Manage (admins pass via the Modify.AllData wildcard). Routine
+  // name/email/mailbox/five9 edits stay under User.Edit. Compared against the
+  // current record so re-sending an unchanged value never trips the gate.
+  const sensitiveChange =
+    d.password !== undefined ||
+    (d.role !== undefined && d.role !== before.role) ||
+    (d.profileId !== undefined && d.profileId !== before.profileId) ||
+    (d.hierarchyRoleId !== undefined && d.hierarchyRoleId !== before.hierarchyRoleId) ||
+    (d.isActive !== undefined && d.isActive !== before.isActive);
+  if (sensitiveChange && !hasPermission(r.session.permissions, "Permission.Manage")) {
+    return NextResponse.json(
+      { error: "Forbidden", required: "Permission.Manage", reason: "changing password, role, profile or active status requires access administration" },
+      { status: 403 },
+    );
+  }
 
   if (d.email && d.email !== before.email) {
     const dupe = await prisma.user.findUnique({ where: { email: d.email } });

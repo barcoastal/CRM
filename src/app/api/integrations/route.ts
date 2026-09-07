@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { createIntegrationCredentialSchema } from "@/lib/validations/integration-credential";
+import { maskConfig } from "@/lib/integrations/mask-config";
 
 export async function GET(req: NextRequest) {
   const r = await requireAuthOrRespond("Integration.Manage");
@@ -40,17 +41,4 @@ export async function POST(req: NextRequest) {
     },
   });
   return NextResponse.json({ ...cred, config: maskConfig(cred.config) }, { status: 201 });
-}
-
-function maskConfig(cfg: unknown): Record<string, unknown> {
-  if (!cfg || typeof cfg !== "object") return {};
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(cfg as Record<string, unknown>)) {
-    if (typeof v === "string" && /token|secret|key|password/i.test(k)) {
-      out[k] = v.length > 8 ? `${v.slice(0, 4)}…${v.slice(-4)}` : "•••";
-    } else {
-      out[k] = v;
-    }
-  }
-  return out;
 }
