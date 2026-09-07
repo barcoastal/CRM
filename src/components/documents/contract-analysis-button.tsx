@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { AnalysisBody } from "./analysis-body";
 
 /**
  * "Analyze" action per uploaded document: runs the Gemini contract analysis
@@ -30,9 +31,6 @@ interface Analysis {
   redFlags: string[];
   summary: string;
 }
-
-const money = (n: number | null | undefined) =>
-  n == null ? "-" : n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export function ContractAnalysisButton({ documentId, documentName, hasAnalysis }: { documentId: string; documentName: string; hasAnalysis: boolean }) {
   const router = useRouter();
@@ -89,25 +87,6 @@ export function ContractAnalysisButton({ documentId, documentName, hasAnalysis }
     }
   }
 
-  const flag = (on: boolean, label: string) => (
-    <span
-      key={label}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "3px 10px",
-        borderRadius: 12,
-        fontSize: 12,
-        fontWeight: 700,
-        background: on ? "#fdecea" : "#eaf5ec",
-        color: on ? "#c23934" : "#2e844a",
-      }}
-    >
-      {on ? "⚠" : "✓"} {label}
-    </span>
-  );
-
   return (
     <>
       <button onClick={() => void openModal()} style={{ background: "none", border: 0, color: "#0176d3", cursor: "pointer", fontSize: 13, padding: 0 }}>
@@ -130,62 +109,14 @@ export function ContractAnalysisButton({ documentId, documentName, hasAnalysis }
             {error && <div style={{ padding: "10px 12px", background: "#fdecea", border: "1px solid #f5c2c0", borderRadius: 4, fontSize: 13, color: "#c23934", marginBottom: 10 }}>{error}</div>}
 
             {analysis && !busy && (
-              <div style={{ fontSize: 13, color: "#181818" }}>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-                  {flag(analysis.hasConfessionOfJudgment, "Confession of Judgment")}
-                  {flag(analysis.hasPersonalGuarantee, "Personal Guarantee")}
-                  {flag(analysis.hasUccFilingClause, "UCC Filing")}
-                  {flag(analysis.hasTroClause, "TRO / Injunction")}
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 20px", marginBottom: 14 }}>
-                  {([
-                    ["Document type", analysis.docType],
-                    ["Agreement date", analysis.agreementDate ?? "-"],
-                    ["Funder", analysis.funderName ?? "-"],
-                    ["Merchant", analysis.merchantName ?? "-"],
-                    ["Amount funded", money(analysis.fundingAmount)],
-                    ["Total payback", money(analysis.paybackAmount)],
-                    ["Factor rate", analysis.factorRate != null ? analysis.factorRate.toFixed(2) : "-"],
-                    ["Payment", `${money(analysis.paymentAmount)}${analysis.paymentFrequency ? ` ${analysis.paymentFrequency}` : ""}`],
-                    ["Estimated term", analysis.estimatedTermDays != null ? `${analysis.estimatedTermDays} days` : "-"],
-                  ] as Array<[string, string]>).map(([l, v]) => (
-                    <div key={l} style={{ display: "flex", justifyContent: "space-between", gap: 8, borderBottom: "1px solid #f3f3f3", padding: "3px 0" }}>
-                      <span style={{ color: "#444444", fontSize: 12, fontWeight: 600 }}>{l}</span>
-                      <span>{v}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{ background: "#f2f4f9", borderRadius: 6, padding: "10px 14px", marginBottom: 12, lineHeight: 1.55 }}>
-                  {analysis.summary}
-                </div>
-
-                {analysis.redFlags.length > 0 && (
-                  <>
-                    <div style={sectionLbl}>Red flags</div>
-                    <ul style={ul}>{analysis.redFlags.map((f, i) => <li key={i} style={{ color: "#c23934" }}>{f}</li>)}</ul>
-                  </>
-                )}
-                {analysis.fees.length > 0 && (
-                  <>
-                    <div style={sectionLbl}>Fees</div>
-                    <ul style={ul}>{analysis.fees.map((f, i) => <li key={i}>{f}</li>)}</ul>
-                  </>
-                )}
-                {analysis.defaultClauses.length > 0 && (
-                  <>
-                    <div style={sectionLbl}>Default triggers</div>
-                    <ul style={ul}>{analysis.defaultClauses.map((f, i) => <li key={i}>{f}</li>)}</ul>
-                  </>
-                )}
-
+              <>
+                <AnalysisBody analysis={analysis} />
                 <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
                   <button onClick={() => void run()} disabled={busy} style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, padding: "5px 14px", fontSize: 12, fontWeight: 600, color: "#0176d3", cursor: "pointer" }}>
                     Re-analyze
                   </button>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>
@@ -200,7 +131,5 @@ const overlay: React.CSSProperties = {
 };
 const modal: React.CSSProperties = {
   background: "#fff", borderRadius: 8, padding: 20, width: "100%", maxWidth: 640,
-  maxHeight: "88vh", overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+  maxHeight: "88vh", overflowY: "auto", overflowX: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
 };
-const sectionLbl: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: "#444444", margin: "8px 0 2px" };
-const ul: React.CSSProperties = { margin: "0 0 8px", paddingLeft: 18, lineHeight: 1.5 };

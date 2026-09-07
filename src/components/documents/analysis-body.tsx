@@ -51,7 +51,7 @@ export function AnalysisBody({ analysis }: { analysis: ContractAnalysisData }) {
   );
 
   return (
-    <div style={{ fontSize: 13, color: "#181818" }}>
+    <div style={{ fontSize: 13, color: "#181818", overflowWrap: "anywhere", wordBreak: "break-word" }}>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
         {flag(analysis.hasConfessionOfJudgment, "Confession of Judgment")}
         {flag(analysis.hasPersonalGuarantee, "Personal Guarantee")}
@@ -71,14 +71,14 @@ export function AnalysisBody({ analysis }: { analysis: ContractAnalysisData }) {
           ["Payment", `${money(analysis.paymentAmount)}${analysis.paymentFrequency ? ` ${analysis.paymentFrequency}` : ""}`],
           ["Estimated term", analysis.estimatedTermDays != null ? `${analysis.estimatedTermDays} days` : "-"],
         ] as Array<[string, string]>).map(([l, v]) => (
-          <div key={l} style={{ display: "flex", justifyContent: "space-between", gap: 8, borderBottom: "1px solid #f3f3f3", padding: "3px 0" }}>
-            <span style={{ color: "#444444", fontSize: 12, fontWeight: 600 }}>{l}</span>
-            <span>{v}</span>
+          <div key={l} style={{ display: "flex", justifyContent: "space-between", gap: 8, borderBottom: "1px solid #f3f3f3", padding: "3px 0", minWidth: 0 }}>
+            <span style={{ color: "#444444", fontSize: 12, fontWeight: 600, flexShrink: 0 }}>{l}</span>
+            <span style={{ minWidth: 0, textAlign: "right", overflowWrap: "anywhere" }}>{v}</span>
           </div>
         ))}
       </div>
 
-      <div style={{ background: "#f2f4f9", borderRadius: 6, padding: "10px 14px", marginBottom: 12, lineHeight: 1.55 }}>
+      <div style={{ background: "#f2f4f9", borderRadius: 6, padding: "10px 14px", marginBottom: 12, lineHeight: 1.55, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
         {analysis.summary}
       </div>
 
@@ -105,4 +105,4 @@ export function AnalysisBody({ analysis }: { analysis: ContractAnalysisData }) {
 }
 
 const sectionLbl: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: "#444444", margin: "8px 0 2px" };
-const ul: React.CSSProperties = { margin: "0 0 8px", paddingLeft: 18, lineHeight: 1.5 };
+const ul: React.CSSProperties = { margin: "0 0 8px", paddingLeft: 18, lineHeight: 1.5, overflowWrap: "anywhere" };
