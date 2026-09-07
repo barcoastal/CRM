@@ -11,7 +11,7 @@ export const PERMISSION_CATALOG = [
   // Lead
   "Lead.View", "Lead.Create", "Lead.Edit", "Lead.Delete", "Lead.Convert", "Lead.Import", "Lead.MassReassign", "Lead.ViewAll", "Lead.ModifyAll",
   // Opportunity
-  "Opportunity.View", "Opportunity.Create", "Opportunity.Edit", "Opportunity.Delete", "Opportunity.ViewAll", "Opportunity.ModifyAll", "Opportunity.EditLocked",
+  "Opportunity.View", "Opportunity.Create", "Opportunity.Edit", "Opportunity.Delete", "Opportunity.ViewAll", "Opportunity.ModifyAll", "Opportunity.EditLocked", "Opportunity.ViewArchived",
   // Account / Contact
   "Account.View", "Account.Create", "Account.Edit", "Account.Delete", "Account.ViewAll", "Account.ModifyAll",
   "Contact.View", "Contact.Create", "Contact.Edit", "Contact.Delete",

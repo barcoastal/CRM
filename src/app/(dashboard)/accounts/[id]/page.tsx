@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { canViewArchivedOpportunities, ARCHIVED_STAGE } from "@/lib/opportunity-access";
 import { RecordPage, StatusPill } from "@/components/slds/record-page";
 import { PathSidePanelServer } from "@/components/path/path-side-panel-server";
 import { Section, FieldGrid } from "@/components/slds/section";
@@ -76,6 +78,13 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     },
   });
   if (!account) notFound();
+
+  // Closers don't see archived opportunities in the account's opp panels.
+  const acctSession = await auth();
+  const canArchivedOpps = await canViewArchivedOpportunities(acctSession?.user?.id ?? "");
+  const visibleOpps = canArchivedOpps
+    ? account.opportunities
+    : account.opportunities.filter((o) => o.stage !== ARCHIVED_STAGE);
 
   const activity: ActivityItem[] = [
     ...account.tasks.map((t) => ({
@@ -781,7 +790,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       <RelatedList
         entity="Opportunity"
         title="Opportunities"
-        items={account.opportunities}
+        items={visibleOpps}
         renderItem={(o) => (
           <div style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr", gap: 12 }}>
             <Link href={`/opportunities/${o.id}`} style={{ color: "#0176d3" }}>{o.name ?? o.recordType.replace(/_/g, " ")}</Link>
@@ -837,8 +846,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   );
 
   const opportunitiesPanel = (
-    <Section title={`Opportunities (${account.opportunities.length})`}>
-      {account.opportunities.length === 0 ? (
+    <Section title={`Opportunities (${visibleOpps.length})`}>
+      {visibleOpps.length === 0 ? (
         <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>No opportunities yet.</div>
       ) : (
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -851,7 +860,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             </tr>
           </thead>
           <tbody>
-            {account.opportunities.map((o) => (
+            {visibleOpps.map((o) => (
               <tr key={o.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
                 <td style={td}>
                   <Link href={`/opportunities/${o.id}`} style={{ color: "#0176d3" }}>{o.name ?? o.recordType.replace(/_/g, " ")}</Link>
@@ -996,7 +1005,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           <RelatedList
             entity="Opportunity"
             title="Opportunities"
-            items={account.opportunities}
+            items={visibleOpps}
             renderItem={(o) => (
               <div style={{ fontSize: 12, lineHeight: 1.5 }}>
                 <Link href={`/opportunities/${o.id}`} style={{ color: "#0176d3", fontWeight: 600, fontSize: 13 }}>

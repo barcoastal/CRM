@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
+import { canViewArchivedOpportunities } from "@/lib/opportunity-access";
 import Link from "next/link";
 import {
   SfListPage,
@@ -118,6 +119,12 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     where.createdAt = { gte: weekStart };
   } else if (view === "today-activity") {
     where.updatedAt = { gte: todayStart, lt: tomorrow };
+  }
+
+  // Closers don't see archived opportunities (unless granted Opportunity.ViewArchived).
+  if (!(await canViewArchivedOpportunities(myId))) {
+    if (params.stage === "ARCHIVED") where.stage = { in: [] };
+    else if (where.stage == null) where.stage = { not: "ARCHIVED" };
   }
 
   let orderBy: Prisma.OpportunityOrderByWithRelationInput = { updatedAt: "desc" };
