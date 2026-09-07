@@ -25,15 +25,24 @@ const TYPE_LABEL: Record<string, { label: string; bg: string; color: string }> =
 
 const STATUSES = [
   { value: "NEW", label: "New" },
-  { value: "IN_PROGRESS", label: "In progress" },
+  { value: "IN_PROGRESS", label: "Working on it" },
   { value: "DONE", label: "Done" },
   { value: "WONT_FIX", label: "Won't fix" },
 ];
 
+// Three workflow tabs. "Done" also holds Won't-fix so nothing is orphaned.
+const TABS = [
+  { key: "NEW", label: "New", statuses: ["NEW"] },
+  { key: "IN_PROGRESS", label: "Working on it", statuses: ["IN_PROGRESS"] },
+  { key: "DONE", label: "Done", statuses: ["DONE", "WONT_FIX"] },
+] as const;
+
+type TabKey = (typeof TABS)[number]["key"];
+
 export function FeedbackAdminList({ items: initial }: { items: Item[] }) {
   const [items, setItems] = useState(initial);
   const [typeFilter, setTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [activeTab, setActiveTab] = useState<TabKey>("NEW");
   const [zoomed, setZoomed] = useState<string | null>(null);
 
   async function setStatus(id: string, status: string) {
@@ -50,35 +59,46 @@ export function FeedbackAdminList({ items: initial }: { items: Item[] }) {
     }
   }
 
-  const visible = items.filter(
-    (i) => (!typeFilter || i.type === typeFilter) && (!statusFilter || i.status === statusFilter),
-  );
+  const byType = items.filter((i) => !typeFilter || i.type === typeFilter);
+  const tabStatuses = TABS.find((t) => t.key === activeTab)!.statuses as readonly string[];
+  const visible = byType.filter((i) => tabStatuses.includes(i.status));
 
   return (
     <div style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4 }}>
-      <div style={{ display: "flex", gap: 8, padding: "10px 16px", borderBottom: "1px solid #ecebea" }}>
-        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={sel}>
+      <div style={{ display: "flex", alignItems: "flex-end", padding: "0 16px", borderBottom: "1px solid #ecebea" }}>
+        {TABS.map((t) => {
+          const count = byType.filter((i) => (t.statuses as readonly string[]).includes(i.status)).length;
+          const active = activeTab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              style={{
+                background: "none",
+                border: 0,
+                borderBottom: active ? "2px solid #0176d3" : "2px solid transparent",
+                padding: "12px 14px 10px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                color: active ? "#181818" : "#747474",
+              }}
+            >
+              {t.label} <span style={{ fontSize: 11, color: "#747474" }}>({count})</span>
+            </button>
+          );
+        })}
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={{ ...sel, marginLeft: "auto", marginBottom: 8 }}>
           <option value="">All types</option>
           <option value="BUG">Bugs</option>
           <option value="PARITY">SF differences</option>
           <option value="IDEA">Ideas</option>
         </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={sel}>
-          <option value="">All statuses</option>
-          {STATUSES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-        <span style={{ marginLeft: "auto", fontSize: 12, color: "#747474", alignSelf: "center" }}>
-          {visible.length} shown
-        </span>
       </div>
 
       {visible.length === 0 ? (
         <div style={{ padding: 32, textAlign: "center", fontSize: 13, color: "#747474" }}>
-          No feedback yet.
+          Nothing in {TABS.find((t) => t.key === activeTab)!.label}.
         </div>
       ) : (
         visible.map((i) => {
