@@ -16,6 +16,7 @@
 
 import { LEAD_STATUSES, LEAD_SOURCES } from "@/lib/validations/lead";
 import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
+import { BRANDS } from "@/lib/sf-canonical";
 import {
   ACCOUNT_RECORD_TYPES,
   CASE_PRIORITIES,
@@ -49,6 +50,7 @@ export const INLINE_EDITABLE_FIELDS: Record<string, InlineFieldConfig[]> = {
     { field: "email", type: "text" },
     { field: "status", type: "enum", options: LEAD_STATUSES.map((s) => ({ value: s, label: s })) },
     { field: "source", type: "enum", options: LEAD_SOURCES.map((s) => ({ value: s, label: s })) },
+    { field: "brand", type: "enum", options: BRANDS.map((s) => ({ value: s, label: s })) },
     { field: "assignedToId", type: "enum", optionsKind: "users" },
   ],
   opportunity: [
@@ -56,12 +58,14 @@ export const INLINE_EDITABLE_FIELDS: Record<string, InlineFieldConfig[]> = {
     { field: "stage", type: "enum", options: OPPORTUNITY_STAGES.map((s) => ({ value: s, label: s })) },
     { field: "amount", type: "number" },
     { field: "closeDate", type: "date" },
+    { field: "brand", type: "enum", options: BRANDS.map((s) => ({ value: s, label: s })) },
     { field: "assignedToId", type: "enum", optionsKind: "users" },
   ],
   account: [
     { field: "name", type: "text" },
     { field: "clientStatus", type: "enum", options: ["Active", "Inactive", "Hardship", "Cancelled"].map((s) => ({ value: s, label: s })) },
     { field: "recordType", type: "enum", options: ACCOUNT_RECORD_TYPES.map((s) => ({ value: s, label: s })) },
+    { field: "brand", type: "enum", options: BRANDS.map((s) => ({ value: s, label: s })) },
     { field: "ownerId", type: "enum", optionsKind: "users" },
   ],
   contact: [

@@ -451,8 +451,11 @@ export const LEAD_SOURCES = [
   "Bullmarket", "Direct Mail", "IB - Debtco", "IB - Organic M", "List Lead",
   "IB - Social Spanish", "IB - Direct Mail", "IB - Google Spanish",
   "IB - Bing Spanish", "IB - Outbrain", "Vibe CTV", "YouTube", "IB - Reddit",
-  "Reddit", "TikTok",
+  "Reddit", "TikTok", "SMS",
 ] as const;
+
+/** SF Brand__c picklist — shared across Lead, Opportunity, Account */
+export const BRANDS = ["BDI", "Coastal Debt"] as const;
 
 /** SF Lead list views (system + topic-based; skipping personal user-owned views) */
 export const SF_LEAD_LIST_VIEWS: {

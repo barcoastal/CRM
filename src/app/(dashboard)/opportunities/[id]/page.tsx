@@ -25,7 +25,7 @@ import { TotalPaymentsSummary } from "@/components/opportunities/total-payments-
 import { DocusignEnvelopeStatus } from "@/components/opportunities/docusign-envelope-status";
 import { OppReportsCard } from "@/components/opportunities/opp-reports-card";
 import { settlementStatusTone, genericTone } from "@/lib/slds/status-tones";
-import { OPP_STAGES } from "@/lib/sf-canonical";
+import { OPP_STAGES, BRANDS } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { ClientSubmittedInfoCard } from "@/components/shared/client-submitted-info";
 import { RecordNotes } from "@/components/shared/record-notes";
@@ -495,6 +495,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             // Row 4: Version Status | Lead Source Category
             ["Version Status", oppSf("Version_Status__c")],
             E("Lead Source Category", oppSf("Lead_Source_Category__c"), "leadSourceCategory"),
+            E("Brand", opp.brand ?? "", "brand", "select", { rawValue: opp.brand ?? null, options: BRANDS.map((s) => ({ label: s, value: s })) }),
             // Row 5: Last Disposition | Probability (%)
             E("Last Disposition", lastDispositionDisplay, "Last_Disposition__c"),
             E("Probability (%)", probabilityDisplay, "probability", "number", { rawValue: opp.probability ?? null }),

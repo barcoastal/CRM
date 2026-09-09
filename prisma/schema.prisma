@@ -335,6 +335,7 @@ model Account {
   recordType        String    @default("CLIENT") // CLIENT | CREDITOR | VENDOR | BUSINESS_ACCOUNT | PERSON_ACCOUNT | BUYOUT | OTHER
   name              String // org name OR person full name
   type              String    @default("ORG") // ORG | PERSON
+  brand             String? // SF Brand__c picklist: BDI | Coastal Debt
   ein               String?
   ssn               String?
   ssnLast4          String?
@@ -825,6 +826,7 @@ model Lead {
   totalDebtEst    Float?
   numberOfLenders Int? // # of lenders/creditors, verified by the opener on the call
   source          String  @default("OTHER") // WEBSITE, REFERRAL, MAILER, PURCHASED_LIST, COLD_CALL, SOCIAL, OTHER
+  brand           String? // SF Brand__c picklist: BDI | Coastal Debt
   status          String  @default("NEW") // NEW, CONTACTED, QUALIFIED, UNQUALIFIED, CALLBACK, ENROLLED, CONVERTED, LOST, DNC
   score           Int?
   scoreReason     String?
@@ -1181,6 +1183,7 @@ model Opportunity {
   // Source / category
   leadSource                  String? // SF LeadSource (picklist)
   leadSourceCategory          String? // SF Lead_Source_Category__c
+  brand                       String? // SF Brand__c picklist: BDI | Coastal Debt
   // Risk / requirements
   legalPlanRequired           Boolean? // SF Legal_Plan_Required__c
   addendumRequired            Boolean? // SF Addendum_Required__c

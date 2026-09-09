@@ -30,7 +30,7 @@ import { RescheduleCalculator } from "@/components/shared/reschedule-calculator"
 import { EnvelopesRelatedList } from "@/components/envelopes/envelopes-related-list";
 import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
-import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
+import { ACCOUNT_STAGES, BRANDS } from "@/lib/sf-canonical";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { ClientSubmittedInfoCard } from "@/components/shared/client-submitted-info";
 import { RecordNotes } from "@/components/shared/record-notes";
@@ -387,6 +387,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             // Row 14: External SAS Id | Account Record Type
             E("External SAS Id", account.externalSasId ?? acctSf("External_SAS_Id__c"), "externalSasId", "text", { rawValue: account.externalSasId }),
             ["Account Record Type", accountRecordTypeDisplay],
+            E("Brand", account.brand ?? "", "brand", "select", { rawValue: account.brand ?? null, options: BRANDS.map((s) => ({ label: s, value: s })) }),
             // Row 15: External RAM Id | Primary Contact
             E("External RAM Id", acctSf("External_RAM_Id__c") ?? acctSf("RAM_Id__c"), "externalRamId", "text", { rawValue: account.externalRamId }),
             ["Primary Contact", primaryContactNode],

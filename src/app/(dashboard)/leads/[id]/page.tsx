@@ -23,7 +23,7 @@ import { fetchChainNotes } from "@/lib/notes";
 import { CallButton } from "@/components/dialer/call-button";
 import { ComposeEmailButton } from "@/components/emails/compose-email-button";
 import { leadStatusTone } from "@/lib/slds/status-tones";
-import { LEAD_STATUSES, type LeadStatusV2 } from "@/lib/sf-canonical";
+import { LEAD_STATUSES, BRANDS, type LeadStatusV2 } from "@/lib/sf-canonical";
 import Link from "next/link";
 
 const LEAD_PATH = LEAD_STATUSES.map((s) => ({ label: s }));
@@ -507,6 +507,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           // Row 4: Lead Source Category | Lead Source
           E("Lead Source Category", sf("Lead_Source_Category__c"), "Lead_Source_Category__c"),
           E("Lead Source", lead.source ?? sf("LeadSource"), "source", "text", { rawValue: lead.source }),
+          // Brand (SF Brand__c picklist)
+          [
+            "Brand",
+            lead.brand ?? "",
+            { fieldKey: "brand", type: "select", rawValue: lead.brand, options: BRANDS.map((s) => ({ label: s, value: s })) },
+          ],
           // Row 5: Status | Last Disposition
           [
             "Status",

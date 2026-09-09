@@ -36,6 +36,7 @@ export const LEAD_COLUMNS: Record<string, ColumnSpec> = {
   annualRevenue: { kind: "number", mirrorSfKey: "AnnualRevenue" },
   totalDebtEst: { kind: "number" },
   source: { kind: "string" },
+  brand: { kind: "string", mirrorSfKey: "Brand__c" },
   status: { kind: "string" },
   score: { kind: "number" },
   notes: { kind: "string" },
@@ -78,6 +79,7 @@ export const OPPORTUNITY_COLUMNS: Record<string, ColumnSpec> = {
   nextStep: { kind: "string" },
   leadSource: { kind: "string" },
   leadSourceCategory: { kind: "string" },
+  brand: { kind: "string", mirrorSfKey: "Brand__c" },
   subDisposition: { kind: "string" },
   fronter: { kind: "string" },
   closer: { kind: "string" },
@@ -127,6 +129,7 @@ export const ACCOUNT_COLUMNS: Record<string, ColumnSpec> = {
   ownerId: { kind: "string" }, // Account Owner (FK to User; UI passes a valid user id)
   recordType: { kind: "string" },
   type: { kind: "string" },
+  brand: { kind: "string", mirrorSfKey: "Brand__c" },
   ein: { kind: "string" },
   ssnLast4: { kind: "string" },
   phone: { kind: "string", mirrorSfKey: "Phone" },
