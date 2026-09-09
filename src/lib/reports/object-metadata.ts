@@ -174,6 +174,8 @@ const ACCOUNT_FIELDS: ObjectField[] = [
   { key: "createdAt", label: "Created At", type: "date", source: "column" },
   { key: "updatedAt", label: "Updated At", type: "date", source: "column" },
   { key: "sfDataJson.First_Payment_Completed_Date__c", label: "First Payment Completed Date", type: "date", source: "json", jsonColumn: "sfDataJson" },
+  // The firstContractSignedDate column is not synced; the real value lives here.
+  { key: "sfDataJson.First_Contract_Signed_Date__c", label: "First Contract Signed Date", type: "date", source: "json", jsonColumn: "sfDataJson" },
   { key: "sfDataJson.Sub_Disposition__c", label: "Sub Disposition", type: "string", source: "json", jsonColumn: "sfDataJson" },
   { key: "sfDataJson.Closer__c", label: "Closer", type: "string", source: "json", jsonColumn: "sfDataJson" },
   { key: "owner.name", label: "Owner Name", type: "string", source: "relation", relation: "owner" },

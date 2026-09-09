@@ -468,6 +468,26 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
   }
 }
 
+/**
+ * Compare two scalars for range operators. Numeric when both are numbers,
+ * otherwise by date when both parse as dates (JSON fields store dates as ISO
+ * strings, so Number() would give NaN), otherwise lexicographic. Returns null
+ * when incomparable.
+ */
+function compareValues(a: unknown, b: unknown): number | null {
+  const na = Number(a);
+  const nb = Number(b);
+  const aNum = typeof a !== "boolean" && String(a).trim() !== "" && Number.isFinite(na);
+  const bNum = typeof b !== "boolean" && String(b).trim() !== "" && Number.isFinite(nb);
+  if (aNum && bNum) return na - nb;
+  const da = Date.parse(String(a));
+  const db = Date.parse(String(b));
+  if (Number.isFinite(da) && Number.isFinite(db)) return da - db;
+  const sa = String(a ?? "");
+  const sb = String(b ?? "");
+  return sa < sb ? -1 : sa > sb ? 1 : 0;
+}
+
 function matchPostFilter(value: unknown, operator: string, raw: unknown): boolean {
   switch (operator) {
     case "isNull":
@@ -485,13 +505,14 @@ function matchPostFilter(value: unknown, operator: string, raw: unknown): boolea
     case "endsWith":
       return String(value ?? "").toLowerCase().endsWith(String(raw ?? "").toLowerCase());
     case "gt":
-      return Number(value) > Number(raw);
     case "gte":
-      return Number(value) >= Number(raw);
     case "lt":
-      return Number(value) < Number(raw);
-    case "lte":
-      return Number(value) <= Number(raw);
+    case "lte": {
+      if (value === null || value === undefined || value === "") return false;
+      const c = compareValues(value, raw);
+      if (c === null) return false;
+      return operator === "gt" ? c > 0 : operator === "gte" ? c >= 0 : operator === "lt" ? c < 0 : c <= 0;
+    }
     case "in": {
       const arr = Array.isArray(raw) ? raw.map(String) : String(raw ?? "").split(",").map((s) => s.trim());
       return arr.includes(String(value ?? ""));
