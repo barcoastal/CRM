@@ -16,6 +16,7 @@ import { AccountHeaderButtons } from "@/components/accounts/account-header-butto
 import { BankDetailsCard } from "@/components/accounts/bank-details-card";
 import { HealthCheckCard } from "@/components/accounts/health-check-card";
 import { EscrowBalanceCard } from "@/components/accounts/escrow-balance-card";
+import { StickyNoteCard } from "@/components/accounts/sticky-note-card";
 import { SasDetailsPanel } from "@/components/accounts/sas-details-panel";
 import { AccountTeamCard } from "@/components/accounts/account-team-card";
 import { ChecklistCard } from "@/components/accounts/checklist-card";
@@ -308,6 +309,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     opportunityIds: chainOpps.map((o) => o.id),
     accountIds: [account.id],
   });
+  // Latest account-scoped note drives the rail sticky note (click to edit).
+  const latestAccountNote = chainNotes.find((n) => n.source === "Account") ?? null;
+  const stickyNote = latestAccountNote ? { id: latestAccountNote.id, body: latestAccountNote.body } : null;
 
   const infoRequests = await prisma.documentRequest.findMany({
     where: { accountId: account.id, kind: "INFO", status: "COMPLETED" },
@@ -994,6 +998,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             pulledAt={account.escrowPulledAt}
             feePaidInFull={account.feePaidInFull}
           />
+          <StickyNoteCard accountId={account.id} note={stickyNote} />
           <BankDetailsCard
             accountId={account.id}
             initial={{
