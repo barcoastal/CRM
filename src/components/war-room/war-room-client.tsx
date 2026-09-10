@@ -56,7 +56,9 @@ function relTime(iso: string): string {
 }
 
 export function WarRoomClient() {
-  const [convos, setConvos] = useState<Convo[]>([]);
+  const [tab, setTab] = useState<"email" | "sms">("sms");
+  const [emailConvos, setEmailConvos] = useState<Convo[]>([]);
+  const [smsConvos, setSmsConvos] = useState<Convo[]>([]);
   const [loading, setLoading] = useState(true);
   const [sel, setSel] = useState<Convo | null>(null);
   const [emailMsgs, setEmailMsgs] = useState<EmailMsg[]>([]);
@@ -69,9 +71,9 @@ export function WarRoomClient() {
   const loadConvos = useCallback(async () => {
     const [emailRes, smsRes] = await Promise.all([
       fetch("/api/war-room/emails").then((r) => (r.ok ? r.json() : { conversations: [] })).catch(() => ({ conversations: [] })),
-      fetch("/api/sms/conversations").then((r) => (r.ok ? r.json() : { conversations: [] })).catch(() => ({ conversations: [] })),
+      fetch("/api/war-room/sms").then((r) => (r.ok ? r.json() : { conversations: [] })).catch(() => ({ conversations: [] })),
     ]);
-    const emailConvos: Convo[] = (emailRes.conversations ?? []).map((c: {
+    setEmailConvos((emailRes.conversations ?? []).map((c: {
       threadId: string; from: string; name: string | null; subject: string; snippet: string; lastAt: string; unread: number;
     }) => ({
       kind: "email" as const,
@@ -83,8 +85,8 @@ export function WarRoomClient() {
       unread: c.unread,
       emailFrom: c.from,
       emailSubject: c.subject,
-    }));
-    const smsConvos: Convo[] = (smsRes.conversations ?? []).map((c: {
+    })).sort((a: Convo, b: Convo) => b.lastAt.localeCompare(a.lastAt)));
+    setSmsConvos((smsRes.conversations ?? []).map((c: {
       key: string; number: string; name: string | null; lastBody: string; lastAt: string; unread: number;
     }) => ({
       kind: "sms" as const,
@@ -95,9 +97,7 @@ export function WarRoomClient() {
       lastAt: typeof c.lastAt === "string" ? c.lastAt : new Date(c.lastAt).toISOString(),
       unread: c.unread,
       smsNumber: c.number,
-    }));
-    const merged = [...emailConvos, ...smsConvos].sort((a, b) => b.lastAt.localeCompare(a.lastAt));
-    setConvos(merged);
+    })).sort((a: Convo, b: Convo) => b.lastAt.localeCompare(a.lastAt)));
     setLoading(false);
   }, []);
 
@@ -165,23 +165,41 @@ export function WarRoomClient() {
     }
   }
 
-  const totalUnread = convos.reduce((n, c) => n + c.unread, 0);
+  const activeList = tab === "email" ? emailConvos : smsConvos;
+  const emailUnread = emailConvos.reduce((n, c) => n + c.unread, 0);
+  const smsUnread = smsConvos.reduce((n, c) => n + c.unread, 0);
 
   return (
     <div style={{ display: "flex", height: "calc(100vh - 120px)", background: "#fff", border: "1px solid #d8dde6", borderRadius: 6, overflow: "hidden" }}>
       {/* Conversation list */}
       <div style={{ width: 340, borderRight: "1px solid #e5e5e5", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "12px 16px", borderBottom: "1px solid #e5e5e5", fontWeight: 700, fontSize: 14, display: "flex", justifyContent: "space-between" }}>
-          <span>Inbound {totalUnread > 0 ? <span style={{ color: "#c23934" }}>({totalUnread})</span> : null}</span>
-          <button onClick={() => void loadConvos()} style={{ background: "none", border: "none", color: "#0176d3", cursor: "pointer", fontSize: 12 }}>Refresh</button>
+        <div style={{ display: "flex", borderBottom: "1px solid #e5e5e5" }}>
+          {(["sms", "email"] as const).map((tk) => {
+            const active = tab === tk;
+            const unread = tk === "email" ? emailUnread : smsUnread;
+            return (
+              <button
+                key={tk}
+                onClick={() => { setTab(tk); setSel(null); }}
+                style={{
+                  flex: 1, padding: "12px 8px", background: "none", border: "none",
+                  borderBottom: active ? "2px solid #0176d3" : "2px solid transparent",
+                  fontWeight: 700, fontSize: 13, cursor: "pointer", color: active ? "#181818" : "#747474",
+                }}
+              >
+                {tk === "sms" ? "SMS" : "Email"} {unread > 0 ? <span style={{ color: "#c23934" }}>({unread})</span> : null}
+              </button>
+            );
+          })}
+          <button onClick={() => void loadConvos()} title="Refresh" style={{ background: "none", border: "none", color: "#0176d3", cursor: "pointer", fontSize: 12, padding: "0 12px" }}>↻</button>
         </div>
         <div style={{ overflowY: "auto", flex: 1 }}>
           {loading ? (
             <div style={{ padding: 20, color: "#747474", fontSize: 13 }}>Loading...</div>
-          ) : convos.length === 0 ? (
-            <div style={{ padding: 20, color: "#747474", fontSize: 13 }}>No inbound conversations.</div>
+          ) : activeList.length === 0 ? (
+            <div style={{ padding: 20, color: "#747474", fontSize: 13 }}>{tab === "sms" ? "No SMS replies yet." : "No inbound email."}</div>
           ) : (
-            convos.map((c) => (
+            activeList.map((c) => (
               <button
                 key={c.key}
                 onClick={() => void openConvo(c)}
