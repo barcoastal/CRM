@@ -50,6 +50,7 @@ const TABS: TabItem[] = [
   { label: "Floor Manager", href: "/dialer/manager" },
   { label: "Closer Dashboard", href: "/dialer/closer-dashboard" },
   { label: "Closers On Call", href: "/dialer/on-call" },
+  { label: "War Room", href: "/war-room" },
   { label: "Reports", href: "/reports" },
   { label: "Payment Processors", href: "/integrations/processor-log", entity: "Settings" },
   { label: "Application Logs", href: "/settings/app-log", entity: "Settings" },
