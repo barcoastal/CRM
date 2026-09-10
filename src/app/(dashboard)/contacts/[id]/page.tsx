@@ -207,7 +207,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   const phoneVal = contact.phone ?? sfc("Phone");
   const emailVal = contact.email ?? sfc("Email");
   // SF renders SSN masked to the last four digits.
-  const ssnRaw = sfc("SSN__c") ?? sfc("SSN_Encrypted__c") ?? sfc("SSN");
+  const ssnRaw = contact.ssn;
   const ssnDigits = ssnRaw ? ssnRaw.replace(/\D/g, "") : "";
   const ssnMasked = ssnDigits.length >= 4 ? `XXX-XX-${ssnDigits.slice(-4)}` : ssnRaw;
   const nameNode = (
@@ -253,7 +253,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     CE("Department", sfc("Department"), "Department"),
     CE("Fax", sfc("Fax"), "Fax"),
     // Row 6: Birthdate | Email
-    CE("Birthdate", contact.birthdate?.toLocaleDateString() ?? sfcDate("Birthdate"), "birthdate", "date", { rawValue: contact.birthdate ?? null }),
+    CE("Birthdate", contact.birthdate?.toLocaleDateString("en-US", { timeZone: "UTC" }) ?? null, "birthdate", "date", { rawValue: contact.birthdate ?? null }),
     [
       "Email",
       emailVal ? (
@@ -266,7 +266,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     ],
     // Row 7: Reports To | SSN
     ["Reports To", reportsToNode],
-    CE("SSN", ssnMasked, "SSN__c"),
+    CE("SSN", ssnMasked, "ssn", "text", { rawValue: contact.ssn ?? "" }),
     // Row 8: Lead Source | Preferred Method of Contact
     CE("Lead Source", sfc("LeadSource"), "LeadSource"),
     CE("Preferred Method of Contact", sfc("Preferred_Method_of_Contact__c") ?? sfc("Preferred_Method__c"), "Preferred_Method_of_Contact__c"),

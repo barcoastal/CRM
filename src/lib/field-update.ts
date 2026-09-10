@@ -198,6 +198,7 @@ export const CONTACT_COLUMNS: Record<string, ColumnSpec> = {
   mobilePhone: { kind: "string", mirrorSfKey: "MobilePhone" },
   title: { kind: "string", mirrorSfKey: "Title" },
   birthdate: { kind: "date", mirrorSfKey: "Birthdate" },
+  ssn: { kind: "string", mirrorSfKey: "SSN__c" },
 };
 
 export function columnsFor(entity: EntityType): Record<string, ColumnSpec> {

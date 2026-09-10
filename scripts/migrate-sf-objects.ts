@@ -18,9 +18,10 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import { contactIdentity } from "../src/lib/sf-sync/contact-identity";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 20 });
-const prisma = new PrismaClient({ adapter, log: ["warn", "error"] });
+const prisma = new PrismaClient({ adapter, log: process.argv[2] === "contact" ? [] : ["warn", "error"] });
 
 const ENTITIES_ALL = ["contact", "account", "opportunity", "lead", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage", "accounthistory", "paymentsummary", "offer", "settlement"];
 const ENTITY = process.argv[2];
@@ -30,7 +31,7 @@ if (!ENTITY || !ENTITIES_ALL.includes(ENTITY)) {
 }
 
 const SOQL: Record<string, string> = {
-  contact: `SELECT Id, FirstName, LastName, Email, Phone, MobilePhone, Title, Birthdate, AccountId, OwnerId FROM Contact`,
+  contact: `SELECT Id, FirstName, LastName, Email, Phone, MobilePhone, Title, Birthdate, SSN__c, AccountId, OwnerId FROM Contact`,
   // Account: identity fields + the OPERATIONAL fields the record page + contracts
   // read (client status, program dates, processor ids, bank, escrow snapshot,
   // first payment). The full row is also stored as the sfDataJson snapshot so
@@ -188,6 +189,9 @@ async function migrateContacts(headers: string[], records: AsyncIterable<string[
     Title: idx("Title"), Birthdate: idx("Birthdate"),
     AccountId: idx("AccountId"), OwnerId: idx("OwnerId"),
   };
+  for (const field of ["Birthdate", "SSN__c"]) {
+    if (!headers.includes(field)) throw new Error(`Contact export missing required field: ${field}`);
+  }
   const users = await loadUserMap();
   const accounts = await loadAccountMap();
   let batch: Array<Record<string, unknown>> = [];
@@ -196,18 +200,32 @@ async function migrateContacts(headers: string[], records: AsyncIterable<string[
   async function flush() {
     if (batch.length === 0) return;
     const results = await Promise.allSettled(
-      batch.map((c) =>
-        prisma.contact.upsert({
+      batch.map((c) => prisma.$transaction(async (tx) => {
+        const contact = await tx.contact.upsert({
           where: { sfId: c.sfId as string },
           update: c,
           create: c as never,
-        }),
-      ),
+        });
+        // These pages prefer their own identity fields over the linked Contact.
+        // Refresh them too, using only the explicit primary-contact relationship.
+        await tx.opportunity.updateMany({
+          where: { primaryContactId: contact.id },
+          data: { dateOfBirth: contact.birthdate, contactSsn: contact.ssn },
+        });
+        await tx.$executeRaw`
+          UPDATE "Account"
+          SET "dateOfBirth" = ${contact.birthdate},
+              "sfDataJson" = (COALESCE(NULLIF("sfDataJson", '')::jsonb, '{}'::jsonb)
+                || ${JSON.stringify({ SSN__c: contact.ssn, Date_of_Birth__c: contact.birthdate?.toISOString().slice(0, 10) ?? null, DOB__c: contact.birthdate?.toISOString().slice(0, 10) ?? null })}::jsonb)::text,
+              "updatedAt" = NOW()
+          WHERE "primaryContactId" = ${contact.id}
+        `;
+      })),
     );
     const failures = results.filter((r) => r.status === "rejected");
     if (failures.length > 0) {
       console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} contact upserts failed`);
-      console.error((failures[0] as PromiseRejectedResult).reason?.message);
+      throw new Error("Contact sync failed; identity values omitted from logs");
     }
     count += batch.length;
     batch = [];
@@ -228,7 +246,7 @@ async function migrateContacts(headers: string[], records: AsyncIterable<string[
       phone: cells[I.Phone] || null,
       mobilePhone: cells[I.MobilePhone] || null,
       title: cells[I.Title] || null,
-      birthdate: cells[I.Birthdate] ? new Date(cells[I.Birthdate]) : null,
+      ...contactIdentity({ Birthdate: cells[I.Birthdate], SSN__c: cells[idx("SSN__c")] }),
       isActive: true,
       ownerId: users.get(cells[I.OwnerId]) ?? null,
       primaryAccountId: accounts.get(cells[I.AccountId]) ?? null,

@@ -20,6 +20,7 @@ import fs from "node:fs";
 import readline from "node:readline";
 import crypto from "node:crypto";
 import { Client } from "pg";
+import { contactIdentity } from "../src/lib/sf-sync/contact-identity";
 
 function cuid(): string {
   // Compact, sortable, ~25 char id (close to Prisma's default cuid)
@@ -165,7 +166,7 @@ function mapTypedColumns(sf: Record<string, string>): Record<string, unknown> {
       phone: sf.Phone || null,
       mobilePhone: sf.MobilePhone || null,
       title: sf.Title || null,
-      birthdate: date(sf.Birthdate),
+      ...contactIdentity(sf),
       isActive: true,
       ...baseTimestamps,
     };
