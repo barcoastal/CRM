@@ -10,6 +10,10 @@ export const dynamic = "force-dynamic";
  * queue. GET with no params lists conversations (one per thread that has an
  * inbound message); GET ?threadId= returns that thread's messages.
  */
+// The War Room email feed is scoped to this shared intake mailbox only (NOT
+// individual reps' personal mail). Override with WAR_ROOM_MAILBOX if it moves.
+const WAR_ROOM_MAILBOX = (process.env.WAR_ROOM_MAILBOX ?? "consultations@coastaldebt.com").toLowerCase();
+
 export async function GET(req: NextRequest) {
   const r = await requireAuthOrRespond("Email.Send");
   if ("response" in r) return r.response;
@@ -28,9 +32,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ items: items.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() })) });
   }
 
+  // Scope to the intake mailbox: emails owned by that mailbox's user, or
+  // addressed to it (covers both Gmail-synced rows and any inbound-webhook rows).
+  const box = await prisma.user.findUnique({ where: { email: WAR_ROOM_MAILBOX }, select: { id: true } });
+
   // Recent inbound messages -> one conversation per thread (latest wins).
   const inbound = await prisma.emailMessage.findMany({
-    where: { direction: "INBOUND" },
+    where: {
+      direction: "INBOUND",
+      OR: [
+        ...(box ? [{ ownerId: box.id }] : []),
+        { toAddresses: { contains: WAR_ROOM_MAILBOX, mode: "insensitive" } },
+        { cc: { contains: WAR_ROOM_MAILBOX, mode: "insensitive" } },
+      ],
+    },
     orderBy: { createdAt: "desc" },
     take: 400,
     select: {

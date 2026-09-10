@@ -14,7 +14,7 @@ export default async function WarRoomPage() {
   return (
     <div style={{ padding: "16px 20px" }}>
       <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px", color: "#181818" }}>Flow Reply War Room</h1>
-      <p style={{ fontSize: 13, color: "#747474", margin: "0 0 14px" }}>All inbound email and SMS in one place — reply live.</p>
+      <p style={{ fontSize: 13, color: "#747474", margin: "0 0 14px" }}>Inbound email to consultations@coastaldebt.com and all inbound SMS, in one place, reply live.</p>
       <WarRoomClient />
     </div>
   );
