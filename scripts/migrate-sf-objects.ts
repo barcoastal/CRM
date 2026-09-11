@@ -220,11 +220,13 @@ async function migrateContacts(headers: string[], records: AsyncIterable<string[
               "updatedAt" = NOW()
           WHERE "primaryContactId" = ${contact.id}
         `;
-      })),
+      }, { maxWait: 30_000, timeout: 30_000 })),
     );
     const failures = results.filter((r) => r.status === "rejected");
     if (failures.length > 0) {
       console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} contact upserts failed`);
+      const codes = failures.map((r) => r.status === "rejected" && typeof r.reason?.code === "string" ? r.reason.code : "UNKNOWN");
+      console.error(`Contact failure codes: ${[...new Set(codes)].join(", ")}`);
       throw new Error("Contact sync failed; identity values omitted from logs");
     }
     count += batch.length;
@@ -251,7 +253,7 @@ async function migrateContacts(headers: string[], records: AsyncIterable<string[
       ownerId: users.get(cells[I.OwnerId]) ?? null,
       primaryAccountId: accounts.get(cells[I.AccountId]) ?? null,
     });
-    if (batch.length >= 50) await flush();
+    if (batch.length >= 10) await flush();
   }
   await flush();
   console.log(`[${new Date().toISOString()}] DONE Contact: ${count} total`);
