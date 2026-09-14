@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { rollupPayments } from "@/lib/payment-rollup";
@@ -57,5 +58,5 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     },
   });
 
-  return NextResponse.json(rollup);
+  return ssnSafeJson(rollup);
 }

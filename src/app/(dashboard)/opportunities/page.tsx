@@ -1,3 +1,4 @@
+import { redactSsn } from "@/lib/ssn-privacy";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
@@ -334,7 +335,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         { label: "Mass Update" },
       ]}
       columns={COLUMNS}
-      rows={rows}
+      rows={redactSsn(rows)}
       pathname="/opportunities"
       sortKey={sort || undefined}
       sortDir={dir}

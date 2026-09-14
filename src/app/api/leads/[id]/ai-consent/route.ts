@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const auth = await requireAuthOrRespond("Lead.Edit");
   if ("response" in auth) return auth.response;
   const parsed = schema.safeParse(await request.json().catch(() => ({})));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid consent evidence", details: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success) return ssnSafeJson({ error: "Invalid consent evidence", details: parsed.error.flatten() }, { status: 400 });
   const { id } = await params;
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   const lead = await prisma.lead.update({
@@ -41,5 +42,5 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     },
     select: { id: true, aiCallConsent: true, aiCallConsentAt: true, aiCallConsentSource: true },
   });
-  return NextResponse.json({ lead });
+  return ssnSafeJson({ lead });
 }

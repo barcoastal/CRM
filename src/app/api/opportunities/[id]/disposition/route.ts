@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { OPP_STAGES, OPP_STAGE_FINAL_WIN } from "@/lib/sf-canonical";
@@ -25,14 +26,14 @@ export async function POST(
   const { stage, subDisposition, subject, callResult, status, description } = body ?? {};
 
   if (!stage || !(OPP_STAGES as readonly string[]).includes(stage)) {
-    return NextResponse.json({ error: "Invalid stage" }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid stage" }, { status: 400 });
   }
   if (!subDisposition || typeof subDisposition !== "string") {
-    return NextResponse.json({ error: "Sub Disposition is required" }, { status: 400 });
+    return ssnSafeJson({ error: "Sub Disposition is required" }, { status: 400 });
   }
 
   const opp = await prisma.opportunity.findUnique({ where: { id } });
-  if (!opp) return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
+  if (!opp) return ssnSafeJson({ error: "Opportunity not found" }, { status: 404 });
 
   const taskStatus = STATUS_MAP[status] ?? "COMPLETED";
 
@@ -90,5 +91,5 @@ export async function POST(
     }
   }
 
-  return NextResponse.json({ ok: true, taskId: task.id, stage, redirectTo });
+  return ssnSafeJson({ ok: true, taskId: task.id, stage, redirectTo });
 }

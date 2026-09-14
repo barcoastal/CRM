@@ -1,10 +1,11 @@
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
 /**
  * Live SAS detail pull for one account: customer record (status, totals, NSF
  * count, balance) + draft/payment history. Powers the account SAS panel.
  *
  *   GET /api/accounts/[id]/sas
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { getSasAccountDetails } from "@/lib/payment-processors/sas";
@@ -21,9 +22,9 @@ export async function GET(
     where: { id },
     select: { sfId: true, externalSasId: true },
   });
-  if (!account) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!account) return ssnSafeJson({ error: "Not found" }, { status: 404 });
   if (!account.sfId && !account.externalSasId) {
-    return NextResponse.json({ linked: false, customer: null, debits: [] });
+    return ssnSafeJson({ linked: false, customer: null, debits: [] });
   }
 
   try {
@@ -31,9 +32,9 @@ export async function GET(
       sfId: account.sfId,
       externalSasId: account.externalSasId,
     });
-    return NextResponse.json({ linked: !!customer, customer, debits });
+    return ssnSafeJson({ linked: !!customer, customer, debits });
   } catch (e) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: e instanceof Error ? e.message : "SAS pull failed", customer: null, debits: [] },
       { status: 502 },
     );

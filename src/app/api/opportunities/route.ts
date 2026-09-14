@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { createOpportunitySchema } from "@/lib/validations/opportunity";
@@ -7,7 +8,7 @@ import { Prisma } from "@/generated/prisma/client";
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const searchParams = request.nextUrl.searchParams;
@@ -70,20 +71,20 @@ export async function GET(request: NextRequest) {
     updatedAt: opp.updatedAt.toISOString(),
   }));
 
-  return NextResponse.json({ opportunities: serialized, total, page, totalPages });
+  return ssnSafeJson({ opportunities: serialized, total, page, totalPages });
 }
 
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await request.json();
   const parsed = createOpportunitySchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     );
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
   // Check lead exists
   const lead = await prisma.lead.findUnique({ where: { id: data.leadId } });
   if (!lead) {
-    return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Lead not found" }, { status: 404 });
   }
 
   // Check no existing opportunity for this lead
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
     where: { leadId: data.leadId },
   });
   if (existing) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "An opportunity already exists for this lead" },
       { status: 409 }
     );
@@ -140,7 +141,7 @@ export async function POST(request: NextRequest) {
     }),
   ]);
 
-  return NextResponse.json({
+  return ssnSafeJson({
     ...opportunity,
     expectedCloseDate: opportunity.expectedCloseDate?.toISOString() ?? null,
     createdAt: opportunity.createdAt.toISOString(),

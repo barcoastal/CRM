@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { makeCtx, triggerUpdate } from "@/lib/triggers/runner";
@@ -13,7 +14,7 @@ export async function PATCH(
   const { id } = await params;
 
   const acct = await prisma.account.findUnique({ where: { id } });
-  if (!acct) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!acct) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
   const { bankName, bankRoutingNumber, bankAccountNumber, bankAccountType } = body ?? {};
@@ -39,7 +40,7 @@ export async function PATCH(
   }
 
   if (Object.keys(updates).length === 0) {
-    return NextResponse.json({ ok: true, changed: false });
+    return ssnSafeJson({ ok: true, changed: false });
   }
 
   // accountTrigger flips bankAccountSyncStatus + processorStatus to "Sync Pending"
@@ -56,5 +57,5 @@ export async function PATCH(
     )
   );
 
-  return NextResponse.json({ ok: true, changed: true });
+  return ssnSafeJson({ ok: true, changed: true });
 }

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { runReport, type ReportConfig, type ReportFilter, type ReportSummarize } from "@/lib/reports/runner";
@@ -9,7 +10,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
   const { id } = await ctx.params;
 
   const report = await prisma.report.findUnique({ where: { id } });
-  if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!report) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 
   // Body can carry filterOverrides for future use; accept and ignore for now.
   await _req.json().catch(() => ({}));
@@ -31,7 +32,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
   prisma.report.update({ where: { id }, data: { lastRunAt: new Date() } }).catch(() => {});
 
   if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: 400 });
+    return ssnSafeJson({ error: result.error }, { status: 400 });
   }
-  return NextResponse.json(result);
+  return ssnSafeJson(result);
 }

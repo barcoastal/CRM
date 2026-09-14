@@ -1,3 +1,5 @@
+import { redactSsn } from "@/lib/ssn-privacy";
+import { SsnField } from "@/components/shared/ssn-field";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -49,7 +51,7 @@ function accountPathIndex(stage: string): number {
 
 export default async function AccountDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const account = await prisma.account.findUnique({
+  const rawRecord = await prisma.account.findUnique({
     where: { id },
     include: {
       owner: { select: { id: true, name: true, email: true } },
@@ -78,7 +80,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       envelopes: { orderBy: { createdAt: "desc" }, take: 30 },
     },
   });
-  if (!account) notFound();
+  if (!rawRecord) notFound();
+  const account = redactSsn(rawRecord);
 
   // Closers don't see archived opportunities in the account's opp panels.
   const acctSession = await auth();
@@ -374,7 +377,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             E("Annual Revenue", account.annualRevenue ? `$${account.annualRevenue.toLocaleString()}` : acctSfDollar("AnnualRevenue"), "annualRevenue", "number", { rawValue: account.annualRevenue ?? null }),
             ["", null],
             // Row 9: SSN | (Employees removed)
-            E("SSN", acctSf("SSN__c") ?? account.primaryContact?.ssn, "SSN__c"),
+            ["SSN", <SsnField key="ssn" entity="account" id={id} masked={acctSf("SSN__c") ?? account.primaryContact?.ssn ?? null} />],
             ["", null],
             // Row 10: EIN Number / Tax Id | SIC Code
             E("EIN Number / Tax Id", account.ein ?? acctSf("EIN_Number_Tax_Id__c"), "ein", "text", { rawValue: account.ein }),

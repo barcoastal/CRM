@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { createNegotiationSchema } from "@/lib/validations/debt";
@@ -9,7 +10,7 @@ export async function GET(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id, debtId } = await params;
@@ -18,7 +19,7 @@ export async function GET(
     where: { id: debtId, clientId: id },
   });
   if (!debt) {
-    return NextResponse.json({ error: "Debt not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Debt not found" }, { status: 404 });
   }
 
   const negotiations = await prisma.negotiation.findMany({
@@ -31,7 +32,7 @@ export async function GET(
     orderBy: { date: "desc" },
   });
 
-  return NextResponse.json(negotiations);
+  return ssnSafeJson(negotiations);
 }
 
 export async function POST(
@@ -40,7 +41,7 @@ export async function POST(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id, debtId } = await params;
@@ -49,14 +50,14 @@ export async function POST(
     where: { id: debtId, clientId: id },
   });
   if (!debt) {
-    return NextResponse.json({ error: "Debt not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Debt not found" }, { status: 404 });
   }
 
   const body = await request.json();
   const parsed = createNegotiationSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     );
@@ -83,5 +84,5 @@ export async function POST(
     },
   });
 
-  return NextResponse.json(negotiation, { status: 201 });
+  return ssnSafeJson(negotiation, { status: 201 });
 }

@@ -1,3 +1,5 @@
+import { redactSsn } from "@/lib/ssn-privacy";
+import { SsnField } from "@/components/shared/ssn-field";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -123,7 +125,7 @@ const OPP_PATH_OPEN_STAGES = OPP_STAGES.filter((st) => !st.startsWith("Closed"))
 
 export default async function OpportunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const opp = await prisma.opportunity.findUnique({
+  const rawRecord = await prisma.opportunity.findUnique({
     where: { id },
     include: {
       lead: {
@@ -186,7 +188,8 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       envelopes: { orderBy: { createdAt: "desc" }, take: 30 },
     },
   });
-  if (!opp) notFound();
+  if (!rawRecord) notFound();
+  const opp = redactSsn(rawRecord);
 
   // Closers may not open archived opportunities directly (unless granted Opportunity.ViewArchived).
   if (opp.stage === ARCHIVED_STAGE) {
@@ -518,7 +521,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             E("Individual", opp.individualName, "individualName", "text", { rawValue: opp.individualName ?? null }),
             E("Alternative #", opp.alternatePhone, "alternatePhone", "phone", { rawValue: opp.alternatePhone ?? null }),
             E("Date of Birth", (opp.dateOfBirth ?? opp.primaryContact?.birthdate)?.toLocaleDateString() ?? oppSf("Date_of_Birth__c") ?? oppSf("DOB__c"), "dateOfBirth", "date", { rawValue: opp.dateOfBirth ?? opp.primaryContact?.birthdate ?? null }),
-            E("SSN", opp.contactSsn ?? opp.primaryContact?.ssn ?? oppSf("SSN__c"), "contactSsn", "text", { rawValue: opp.contactSsn ?? opp.primaryContact?.ssn ?? null }),
+            ["SSN", <SsnField key="ssn" entity="opportunity" id={id} masked={opp.contactSsn ?? opp.primaryContact?.ssn ?? oppSf("SSN__c")} />],
             E("Mailing Street", opp.mailingStreet ?? oppSf("MailingStreet"), "mailingStreet", "text", { rawValue: opp.mailingStreet ?? null }),
             E("Mailing City", opp.mailingCity ?? oppSf("MailingCity"), "mailingCity", "text", { rawValue: opp.mailingCity ?? null }),
             E("Mailing State", opp.mailingState ?? oppSf("MailingState"), "mailingState", "text", { rawValue: opp.mailingState ?? null }),

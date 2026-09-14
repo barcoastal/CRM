@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { getProvider } from "@/lib/payment-processors";
@@ -23,7 +24,7 @@ export async function POST(
       paymentProcessor: true,
     },
   });
-  if (!acct) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!acct) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 
   const procName = (acct.paymentProcessor ?? (acct.externalSasId ? "SAS" : acct.externalRamId ? "RAM" : null)) as
     | "SAS"
@@ -32,21 +33,21 @@ export async function POST(
     | null;
   const externalId = procName === "SAS" ? acct.externalSasId : acct.externalRamId;
   if (!procName || !externalId) {
-    return NextResponse.json({ error: "Account has no processor / external id set" }, { status: 400 });
+    return ssnSafeJson({ error: "Account has no processor / external id set" }, { status: 400 });
   }
 
   try {
     const balance = await getProvider(procName).getEscrowBalance(externalId);
     if (balance == null) {
-      return NextResponse.json({ ok: false, error: "Processor returned no balance" }, { status: 502 });
+      return ssnSafeJson({ ok: false, error: "Processor returned no balance" }, { status: 502 });
     }
     const now = new Date();
     await prisma.account.update({
       where: { id },
       data: { escrowBalance: balance, escrowPulledAt: now },
     });
-    return NextResponse.json({ ok: true, balance, pulledAt: now.toISOString() });
+    return ssnSafeJson({ ok: true, balance, pulledAt: now.toISOString() });
   } catch (e: unknown) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Refresh failed" }, { status: 500 });
+    return ssnSafeJson({ error: e instanceof Error ? e.message : "Refresh failed" }, { status: 500 });
   }
 }

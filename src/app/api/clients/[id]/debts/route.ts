@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { createDebtSchema } from "@/lib/validations/debt";
@@ -9,14 +10,14 @@ export async function GET(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
   const client = await prisma.client.findUnique({ where: { id } });
   if (!client) {
-    return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Client not found" }, { status: 404 });
   }
 
   const debts = await prisma.debt.findMany({
@@ -34,7 +35,7 @@ export async function GET(
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(debts);
+  return ssnSafeJson(debts);
 }
 
 export async function POST(
@@ -43,21 +44,21 @@ export async function POST(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
   const client = await prisma.client.findUnique({ where: { id } });
   if (!client) {
-    return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Client not found" }, { status: 404 });
   }
 
   const body = await request.json();
   const parsed = createDebtSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     );
@@ -82,5 +83,5 @@ export async function POST(
     },
   });
 
-  return NextResponse.json(debt, { status: 201 });
+  return ssnSafeJson(debt, { status: 201 });
 }

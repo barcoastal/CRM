@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { auditWrite } from "@/lib/audit";
@@ -12,8 +13,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     where: { id },
     include: { createdBy: { select: { id: true, name: true, email: true } } },
   });
-  if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(report);
+  if (!report) return ssnSafeJson({ error: "Not found" }, { status: 404 });
+  return ssnSafeJson(report);
 }
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -22,7 +23,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   const { id } = await ctx.params;
 
   const existing = await prisma.report.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!existing) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const data: Record<string, unknown> = {};
@@ -31,7 +32,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (typeof body.description === "string" || body.description === null) data.description = body.description ?? null;
   if (typeof body.objectType === "string") {
     if (!REPORTABLE_OBJECT_TYPES.includes(body.objectType)) {
-      return NextResponse.json({ error: "Invalid objectType" }, { status: 400 });
+      return ssnSafeJson({ error: "Invalid objectType" }, { status: 400 });
     }
     data.objectType = body.objectType;
   }
@@ -55,7 +56,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     after: updated as unknown as Record<string, unknown>,
   });
 
-  return NextResponse.json(updated);
+  return ssnSafeJson(updated);
 }
 
 export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -64,7 +65,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
   const { id } = await ctx.params;
 
   const existing = await prisma.report.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!existing) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 
   await prisma.report.delete({ where: { id } });
   await auditWrite({
@@ -75,5 +76,5 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     before: { name: existing.name, objectType: existing.objectType },
   });
 
-  return NextResponse.json({ ok: true });
+  return ssnSafeJson({ ok: true });
 }

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { updateClientSchema } from "@/lib/validations/client";
@@ -9,7 +10,7 @@ export async function GET(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
@@ -62,10 +63,10 @@ export async function GET(
   });
 
   if (!client) {
-    return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Client not found" }, { status: 404 });
   }
 
-  return NextResponse.json(client);
+  return ssnSafeJson(client);
 }
 
 export async function PATCH(
@@ -74,21 +75,21 @@ export async function PATCH(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
   const existing = await prisma.client.findUnique({ where: { id } });
   if (!existing) {
-    return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Client not found" }, { status: 404 });
   }
 
   const body = await request.json();
   const parsed = updateClientSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     );
@@ -126,5 +127,5 @@ export async function PATCH(
     },
   });
 
-  return NextResponse.json(client);
+  return ssnSafeJson(client);
 }

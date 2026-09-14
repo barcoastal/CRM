@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { LEAD_STATUSES } from "@/lib/sf-canonical";
@@ -26,14 +27,14 @@ export async function POST(
   const { stage, subDisposition, subject, callResult, status, description } = body ?? {};
 
   if (!stage || typeof stage !== "string" || !(LEAD_STATUSES as readonly string[]).includes(stage)) {
-    return NextResponse.json({ error: "Invalid stage" }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid stage" }, { status: 400 });
   }
   if (!subDisposition || typeof subDisposition !== "string") {
-    return NextResponse.json({ error: "Sub Disposition is required" }, { status: 400 });
+    return ssnSafeJson({ error: "Sub Disposition is required" }, { status: 400 });
   }
 
   const lead = await prisma.lead.findUnique({ where: { id } });
-  if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+  if (!lead) return ssnSafeJson({ error: "Lead not found" }, { status: 404 });
 
   const oldStatus = lead.status;
   const taskStatus = STATUS_MAP[status] ?? "COMPLETED";
@@ -92,7 +93,7 @@ export async function POST(
     } catch (e) {
       // Surface the conversion failure but don't roll back the disposition save
       const msg = e instanceof Error ? e.message : "conversion failed";
-      return NextResponse.json({
+      return ssnSafeJson({
         ok: true,
         taskId: task.id,
         status: stage,
@@ -101,7 +102,7 @@ export async function POST(
     }
   }
 
-  return NextResponse.json({
+  return ssnSafeJson({
     ok: true,
     taskId: task.id,
     status: stage,

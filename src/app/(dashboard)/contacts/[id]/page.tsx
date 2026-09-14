@@ -1,3 +1,5 @@
+import { redactSsn } from "@/lib/ssn-privacy";
+import { SsnField } from "@/components/shared/ssn-field";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -18,7 +20,7 @@ import { LeadHistoryCard, type HistoryRow } from "@/components/leads/lead-histor
 
 export default async function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const contact = await prisma.contact.findUnique({
+  const rawRecord = await prisma.contact.findUnique({
     where: { id },
     include: {
       primaryAccount: {
@@ -47,7 +49,8 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       sms: { orderBy: { createdAt: "desc" }, take: 30 },
     },
   });
-  if (!contact) notFound();
+  if (!rawRecord) notFound();
+  const contact = redactSsn(rawRecord);
 
   // Contact audit history — Contact has no dedicated history table in schema,
   // so we surface the last 100 AuditLog rows for this entity. The audit
@@ -60,8 +63,8 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     include: { user: { select: { name: true } } },
   });
   const contactHistory: HistoryRow[] = auditRows.flatMap((row) => {
-    const before = (row.before ?? {}) as Record<string, unknown>;
-    const after = (row.after ?? {}) as Record<string, unknown>;
+    const before = (redactSsn(row.before) ?? {}) as Record<string, unknown>;
+    const after = (redactSsn(row.after) ?? {}) as Record<string, unknown>;
     const changedFields = Array.from(new Set([...Object.keys(before), ...Object.keys(after)]));
     return changedFields
       .filter((f) => String(before[f] ?? "") !== String(after[f] ?? ""))
@@ -266,7 +269,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     ],
     // Row 7: Reports To | SSN
     ["Reports To", reportsToNode],
-    CE("SSN", ssnMasked, "ssn", "text", { rawValue: contact.ssn ?? "" }),
+    ["SSN", <SsnField key="ssn" entity="contact" id={id} masked={ssnMasked} />],
     // Row 8: Lead Source | Preferred Method of Contact
     CE("Lead Source", sfc("LeadSource"), "LeadSource"),
     CE("Preferred Method of Contact", sfc("Preferred_Method_of_Contact__c") ?? sfc("Preferred_Method__c"), "Preferred_Method_of_Contact__c"),

@@ -7,7 +7,7 @@ import {
   isForecastCategory,
   type ForecastCategory,
 } from "@/lib/forecasting/categories";
-import { currentMonthPeriod, currentQuarterPeriod, parsePeriod } from "@/lib/forecasting/period";
+import { currentMonthPeriod, parsePeriod } from "@/lib/forecasting/period";
 import { buildForecastRollup, summarizeRollup } from "@/lib/forecasting/rollup";
 import { ForecastingClient } from "@/components/forecasting/forecasting-client";
 
@@ -121,6 +121,3 @@ export default async function ForecastingPage({
     />
   );
 }
-
-// Helper exposed for ad-hoc callers that need today's quarter slug.
-export const todayQuarterPeriod = currentQuarterPeriod;

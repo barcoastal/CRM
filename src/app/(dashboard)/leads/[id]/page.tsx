@@ -1,3 +1,5 @@
+import { redactSsn } from "@/lib/ssn-privacy";
+import { SsnField } from "@/components/shared/ssn-field";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { RecordPage, StatusPill } from "@/components/slds/record-page";
@@ -92,7 +94,7 @@ function yesNo(v: string | null): string | null {
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const lead = await prisma.lead.findUnique({
+  const rawRecord = await prisma.lead.findUnique({
     where: { id },
     include: {
       assignedTo: { select: { id: true, name: true, email: true } },
@@ -115,7 +117,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       debts: { orderBy: { createdAt: "asc" } },
     },
   });
-  if (!lead) notFound();
+  if (!rawRecord) notFound();
+  const lead = redactSsn(rawRecord);
 
   const latestCalc = lead.paymentCalculations[0];
 
@@ -261,7 +264,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         fields={[
           // Row 1: Name | SSN
           E("Name", displayContactName, "contactName", "text", { rawValue: lead.contactName }),
-          E("SSN", sf("SSN__c"), "SSN__c"),
+          ["SSN", <SsnField key="ssn" entity="lead" id={id} masked={sf("SSN__c")} />],
           // Row 2: Email | Date Of Birth
           [
             "Email",

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
@@ -7,7 +8,7 @@ import { createLeadSchema } from "@/lib/validations/lead";
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const searchParams = request.nextUrl.searchParams;
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
     prisma.lead.count({ where }),
   ]);
 
-  return NextResponse.json({
+  return ssnSafeJson({
     leads,
     total,
     page,
@@ -65,14 +66,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await request.json();
   const parsed = createLeadSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     );
@@ -111,5 +112,5 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  return NextResponse.json(lead, { status: 201 });
+  return ssnSafeJson(lead, { status: 201 });
 }

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updatePaymentSchema } from "@/lib/validations/payment";
@@ -9,7 +10,7 @@ export async function PATCH(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id, paymentId } = await params;
@@ -22,7 +23,7 @@ export async function PATCH(
     });
 
     if (!client) {
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+      return ssnSafeJson({ error: "Client not found" }, { status: 404 });
     }
 
     // Verify payment exists and belongs to this client
@@ -31,7 +32,7 @@ export async function PATCH(
     });
 
     if (!existingPayment) {
-      return NextResponse.json(
+      return ssnSafeJson(
         { error: "Payment not found" },
         { status: 404 }
       );
@@ -41,7 +42,7 @@ export async function PATCH(
     const parsed = updatePaymentSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
+      return ssnSafeJson(
         { error: "Validation failed", details: parsed.error.flatten() },
         { status: 400 }
       );
@@ -91,10 +92,10 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(updatedPayment);
+    return ssnSafeJson(updatedPayment);
   } catch (error) {
     console.error("Update payment error:", error);
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Failed to update payment" },
       { status: 500 }
     );

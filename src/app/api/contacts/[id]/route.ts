@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { updateContactSchema } from "@/lib/validations/contact";
@@ -18,8 +19,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
       accountRelations: { include: { account: { select: { id: true, name: true, recordType: true } } } },
     },
   });
-  if (!contact) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(contact);
+  if (!contact) return ssnSafeJson({ error: "Not found" }, { status: 404 });
+  return ssnSafeJson(contact);
 }
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -30,11 +31,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   const body = await req.json().catch(() => ({}));
   const parsed = updateContactSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
   const d = parsed.data;
   const before = await prisma.contact.findUnique({ where: { id } });
-  if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!before) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 
   // SF validation rules — reject patches that violate ported Contact rules.
   const vErrors = validateContactPatch(
@@ -57,7 +58,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     },
   );
   if (vErrors.length > 0) {
-    return NextResponse.json({ error: vErrors[0], errors: vErrors }, { status: 400 });
+    return ssnSafeJson({ error: vErrors[0], errors: vErrors }, { status: 400 });
   }
 
   const data: Record<string, unknown> = { ...d };
@@ -77,7 +78,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     before: before as unknown as Record<string, unknown>,
     after: contact as unknown as Record<string, unknown>,
   }).catch(() => null);
-  return NextResponse.json(contact);
+  return ssnSafeJson(contact);
 }
 
 export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -85,7 +86,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
   if ("response" in r) return r.response;
   const { id } = await ctx.params;
   const before = await prisma.contact.findUnique({ where: { id } });
-  if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!before) return ssnSafeJson({ error: "Not found" }, { status: 404 });
   await prisma.contact.update({ where: { id }, data: { isActive: false } });
-  return NextResponse.json({ ok: true });
+  return ssnSafeJson({ ok: true });
 }

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createPaymentSchema } from "@/lib/validations/payment";
@@ -9,7 +10,7 @@ export async function GET(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
@@ -22,7 +23,7 @@ export async function GET(
     });
 
     if (!client) {
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+      return ssnSafeJson({ error: "Client not found" }, { status: 404 });
     }
 
     // Build where clause with optional filters
@@ -51,10 +52,10 @@ export async function GET(
       orderBy: { scheduledDate: "desc" },
     });
 
-    return NextResponse.json(payments);
+    return ssnSafeJson(payments);
   } catch (error) {
     console.error("List payments error:", error);
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Failed to fetch payments" },
       { status: 500 }
     );
@@ -67,7 +68,7 @@ export async function POST(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
@@ -80,14 +81,14 @@ export async function POST(
     });
 
     if (!client) {
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+      return ssnSafeJson({ error: "Client not found" }, { status: 404 });
     }
 
     const body = await request.json();
     const parsed = createPaymentSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
+      return ssnSafeJson(
         { error: "Validation failed", details: parsed.error.flatten() },
         { status: 400 }
       );
@@ -103,7 +104,7 @@ export async function POST(
       });
 
       if (!debt) {
-        return NextResponse.json(
+        return ssnSafeJson(
           { error: "Debt not found for this client" },
           { status: 404 }
         );
@@ -139,10 +140,10 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(payment, { status: 201 });
+    return ssnSafeJson(payment, { status: 201 });
   } catch (error) {
     console.error("Create payment error:", error);
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Failed to create payment" },
       { status: 500 }
     );

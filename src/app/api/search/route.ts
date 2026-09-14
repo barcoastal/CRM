@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const q = (url.searchParams.get("q") ?? "").trim();
-  if (q.length < 2) return NextResponse.json({ results: [] });
+  if (q.length < 2) return ssnSafeJson({ results: [] });
 
   const like = `%${q}%`;
   const limit = 8;
@@ -107,5 +107,5 @@ export async function GET(req: Request) {
   // Mark unused — keep `like` reserved for raw fallback if Prisma like syntax differs
   void like;
 
-  return NextResponse.json({ results });
+  return ssnSafeJson({ results });
 }

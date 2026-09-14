@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 
 const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN", "MANAGER"];
-export const normLenderName = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9 ]/g, "");
+const normLenderName = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9 ]/g, "");
 
 // GET - the full lender directory (used by the Lenders page, intel cards and
 // the creditor typeahead). canEdit tells the UI whether to show edit controls.

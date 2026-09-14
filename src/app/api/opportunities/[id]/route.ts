@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { updateOpportunitySchema } from "@/lib/validations/opportunity";
@@ -10,7 +11,7 @@ export async function GET(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
@@ -46,10 +47,10 @@ export async function GET(
   });
 
   if (!opportunity) {
-    return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Opportunity not found" }, { status: 404 });
   }
 
-  return NextResponse.json({
+  return ssnSafeJson({
     ...opportunity,
     expectedCloseDate: opportunity.expectedCloseDate?.toISOString() ?? null,
     createdAt: opportunity.createdAt.toISOString(),
@@ -66,21 +67,21 @@ export async function PATCH(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
   const existing = await prisma.opportunity.findUnique({ where: { id } });
   if (!existing) {
-    return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Opportunity not found" }, { status: 404 });
   }
 
   const body = await request.json();
   const parsed = updateOpportunitySchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     );
@@ -104,7 +105,7 @@ export async function PATCH(
     },
   );
   if (vErrors.length > 0) {
-    return NextResponse.json({ error: vErrors[0], errors: vErrors }, { status: 400 });
+    return ssnSafeJson({ error: vErrors[0], errors: vErrors }, { status: 400 });
   }
 
   const updateData: Record<string, unknown> = {};
@@ -139,7 +140,7 @@ export async function PATCH(
     },
   });
 
-  return NextResponse.json({
+  return ssnSafeJson({
     ...opportunity,
     expectedCloseDate: opportunity.expectedCloseDate?.toISOString() ?? null,
     createdAt: opportunity.createdAt.toISOString(),
@@ -153,14 +154,14 @@ export async function DELETE(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
   const existing = await prisma.opportunity.findUnique({ where: { id } });
   if (!existing) {
-    return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Opportunity not found" }, { status: 404 });
   }
 
   const opportunity = await prisma.opportunity.update({
@@ -168,7 +169,7 @@ export async function DELETE(
     data: { stage: "CLOSED" },
   });
 
-  return NextResponse.json({
+  return ssnSafeJson({
     ...opportunity,
     expectedCloseDate: opportunity.expectedCloseDate?.toISOString() ?? null,
     createdAt: opportunity.createdAt.toISOString(),

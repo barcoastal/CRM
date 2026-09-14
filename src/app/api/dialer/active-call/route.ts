@@ -1,3 +1,4 @@
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
 /**
  * Current active call for the logged-in agent → drives the dialer screen-pop.
  *
@@ -11,7 +12,6 @@
  *
  * GET /api/dialer/active-call
  */
-import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { supervisorFeed } from "@/lib/five9/supervisor-feed";
@@ -60,7 +60,7 @@ async function matchLead(customer: string | null): Promise<{ id: string; phone: 
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
 
   // 1. Supervisor feed (real-time, all call directions).
   const user = await prisma.user.findUnique({
@@ -75,7 +75,7 @@ export async function GET() {
     const lead = await matchLead(call.customer);
     // For outbound the customer IS the dialed number — pop it even if no lead matched.
     const customerIsPhone = !!call.customer && /^[\d\s+()-]+$/.test(call.customer) && call.customer.replace(/\D/g, "").length >= 7;
-    return NextResponse.json({
+    return ssnSafeJson({
       active: true,
       source: "supervisor",
       customer: call.customer,
@@ -97,7 +97,7 @@ export async function GET() {
     orderBy: { startedAt: "desc" },
     select: { phoneNumber: true, leadId: true },
   });
-  if (row) return NextResponse.json({ active: true, source: "webhook", phone: row.phoneNumber, leadId: row.leadId });
+  if (row) return ssnSafeJson({ active: true, source: "webhook", phone: row.phoneNumber, leadId: row.leadId });
 
-  return NextResponse.json({ active: false });
+  return ssnSafeJson({ active: false });
 }

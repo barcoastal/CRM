@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { sendESignEmail } from "@/lib/esign/send-email";
@@ -14,7 +15,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     include: { createdBy: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
   });
-  return NextResponse.json(items);
+  return ssnSafeJson(items);
 }
 
 // POST - create a request link and email it to the recipient.
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     where: { id },
     select: { id: true, opportunities: { select: { id: true, leadId: true }, orderBy: { createdAt: "desc" }, take: 1 } },
   });
-  if (!account) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+  if (!account) return ssnSafeJson({ error: "Account not found" }, { status: 404 });
   const activeOpp = account.opportunities[0];
 
   const body = (await request.json().catch(() => ({}))) as {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const recipientEmail = (body.recipientEmail ?? "").trim();
   if (!recipientEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail)) {
-    return NextResponse.json({ error: "A valid recipient email is required" }, { status: 400 });
+    return ssnSafeJson({ error: "A valid recipient email is required" }, { status: 400 });
   }
 
   const kind = body.kind === "INFO" ? "INFO" : "DOCUMENTS";
@@ -83,5 +84,5 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     replyTo: session.email,
   });
 
-  return NextResponse.json({ id: req.id, token: req.token, url: link, emailed: sent.ok, emailError: sent.ok ? undefined : sent.error });
+  return ssnSafeJson({ id: req.id, token: req.token, url: link, emailed: sent.ok, emailError: sent.ok ? undefined : sent.error });
 }

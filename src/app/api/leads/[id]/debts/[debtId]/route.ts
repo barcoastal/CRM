@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { recalcLeadWeeklyPayment } from "@/lib/lead-debt-rollup";
@@ -12,7 +13,7 @@ export async function PATCH(
   const { id, debtId } = await params;
 
   const existing = await prisma.leadDebt.findFirst({ where: { id: debtId, leadId: id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!existing) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
   const data: Record<string, unknown> = {};
@@ -28,7 +29,7 @@ export async function PATCH(
 
   const updated = await prisma.leadDebt.update({ where: { id: debtId }, data });
   await recalcLeadWeeklyPayment(id).catch(() => undefined);
-  return NextResponse.json(updated);
+  return ssnSafeJson(updated);
 }
 
 export async function DELETE(
@@ -39,8 +40,8 @@ export async function DELETE(
   if ("response" in r) return r.response;
   const { id, debtId } = await params;
   const existing = await prisma.leadDebt.findFirst({ where: { id: debtId, leadId: id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!existing) return ssnSafeJson({ error: "Not found" }, { status: 404 });
   await prisma.leadDebt.delete({ where: { id: debtId } });
   await recalcLeadWeeklyPayment(id).catch(() => undefined);
-  return NextResponse.json({ ok: true });
+  return ssnSafeJson({ ok: true });
 }

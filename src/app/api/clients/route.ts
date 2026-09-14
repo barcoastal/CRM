@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { createClientSchema } from "@/lib/validations/client";
@@ -6,7 +7,7 @@ import { createClientSchema } from "@/lib/validations/client";
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const searchParams = request.nextUrl.searchParams;
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
     prisma.client.count({ where }),
   ]);
 
-  return NextResponse.json({
+  return ssnSafeJson({
     clients,
     total,
     page,
@@ -72,14 +73,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await request.json();
   const parsed = createClientSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     );
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
     where: { leadId: data.leadId },
   });
   if (existingClient) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Client already exists for this lead" },
       { status: 409 }
     );
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
     where: { id: data.leadId },
   });
   if (!lead) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Lead not found" },
       { status: 404 }
     );
@@ -142,5 +143,5 @@ export async function POST(request: NextRequest) {
     data: { status: "ENROLLED" },
   });
 
-  return NextResponse.json(client, { status: 201 });
+  return ssnSafeJson(client, { status: 201 });
 }

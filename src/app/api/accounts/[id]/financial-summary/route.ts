@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -21,7 +22,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     orderBy: { capturedAt: "desc" },
     take: 50,
   });
-  return NextResponse.json({ items });
+  return ssnSafeJson({ items });
 }
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const body = await req.json().catch(() => ({}));
   const parsed = Body.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
   const d = parsed.data;
   const disposableIncome = d.monthlyIncome - d.monthlyExpenses;
@@ -48,5 +49,5 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       capturedById: r.session.userId,
     },
   });
-  return NextResponse.json(snapshot, { status: 201 });
+  return ssnSafeJson(snapshot, { status: 201 });
 }

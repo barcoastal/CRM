@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 
@@ -11,7 +12,7 @@ export async function POST(
   const { session } = r;
   const { id } = await params;
   const opp = await prisma.opportunity.findUnique({ where: { id } });
-  if (!opp) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!opp) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 
   // version bump: "1.0" → "1.1" → "1.2" etc.
   const parts = (opp.version || "1.0").split(".");
@@ -32,5 +33,5 @@ export async function POST(
     }),
   ]);
 
-  return NextResponse.json({ ok: true, version: next });
+  return ssnSafeJson({ ok: true, version: next });
 }

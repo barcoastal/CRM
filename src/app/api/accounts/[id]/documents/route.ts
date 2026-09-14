@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { prisma } from "@/lib/prisma";
@@ -20,7 +21,7 @@ export async function GET(
     include: { uploadedBy: { select: { id: true, name: true } } },
     orderBy: { createdAt: "desc" },
   });
-  return NextResponse.json(items);
+  return ssnSafeJson(items);
 }
 
 export async function POST(
@@ -33,13 +34,13 @@ export async function POST(
   const { id } = await params;
 
   const acct = await prisma.account.findUnique({ where: { id } });
-  if (!acct) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+  if (!acct) return ssnSafeJson({ error: "Account not found" }, { status: 404 });
 
   const form = await request.formData();
   const file = form.get("file");
   const type = (form.get("type") as string) || "OTHER";
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "No file" }, { status: 400 });
+    return ssnSafeJson({ error: "No file" }, { status: 400 });
   }
 
   const dir = path.join(UPLOAD_ROOT, id);
@@ -62,5 +63,5 @@ export async function POST(
     },
   });
 
-  return NextResponse.json(doc);
+  return ssnSafeJson(doc);
 }

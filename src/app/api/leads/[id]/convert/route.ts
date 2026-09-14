@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { convertLead } from "@/lib/lead-conversion";
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const body = await req.json().catch(() => ({}));
   const parsed = Body.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
 
   try {
@@ -41,9 +42,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       ...parsed.data,
       performedById: r.session.userId,
     });
-    return NextResponse.json(result, { status: result.alreadyConverted ? 200 : 201 });
+    return ssnSafeJson(result, { status: result.alreadyConverted ? 200 : 201 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "conversion failed";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return ssnSafeJson({ error: msg }, { status: 400 });
   }
 }

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { ACCOUNT_STAGES } from "@/lib/sf-canonical";
@@ -25,14 +26,14 @@ export async function POST(
   const { stage, subDisposition, subject, callResult, status, description } = body ?? {};
 
   if (!stage || !(ACCOUNT_STAGES as readonly string[]).includes(stage)) {
-    return NextResponse.json({ error: "Invalid stage" }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid stage" }, { status: 400 });
   }
   if (!subDisposition || typeof subDisposition !== "string") {
-    return NextResponse.json({ error: "Sub Disposition is required" }, { status: 400 });
+    return ssnSafeJson({ error: "Sub Disposition is required" }, { status: 400 });
   }
 
   const acct = await prisma.account.findUnique({ where: { id } });
-  if (!acct) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+  if (!acct) return ssnSafeJson({ error: "Account not found" }, { status: 404 });
 
   const taskStatus = STATUS_MAP[status] ?? "COMPLETED";
 
@@ -56,5 +57,5 @@ export async function POST(
   const ctx = makeCtx(session.userId, [`Account:${id}:task`]);
   await triggerUpdate("account", id, { stage, clientStatus: stage }, ctx);
 
-  return NextResponse.json({ ok: true, taskId: task.id, stage });
+  return ssnSafeJson({ ok: true, taskId: task.id, stage });
 }

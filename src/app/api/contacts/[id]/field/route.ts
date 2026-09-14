@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { isSsnField, maskSsn } from "@/lib/ssn-privacy";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { auditWrite } from "@/lib/audit";
@@ -15,12 +17,12 @@ export async function PATCH(
   const { id } = await params;
 
   const existing = await prisma.contact.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Contact not found" }, { status: 404 });
+  if (!existing) return ssnSafeJson({ error: "Contact not found" }, { status: 404 });
 
   const body = (await request.json()) as Record<string, unknown>;
   const entries = Object.entries(body ?? {});
   if (entries.length !== 1) {
-    return NextResponse.json({ error: "Provide exactly one field to update" }, { status: 400 });
+    return ssnSafeJson({ error: "Provide exactly one field to update" }, { status: 400 });
   }
   const [fieldName, newValue] = entries[0];
 
@@ -54,7 +56,7 @@ export async function PATCH(
         patch as Parameters<typeof validateContactPatch>[1],
       );
       if (vErrors.length > 0) {
-        return NextResponse.json({ error: vErrors[0], errors: vErrors }, { status: 400 });
+        return ssnSafeJson({ error: vErrors[0], errors: vErrors }, { status: 400 });
       }
     }
 
@@ -83,12 +85,12 @@ export async function PATCH(
       after: { [result.historyField]: result.newDisplay },
     }).catch((err) => { console.error("[contacts/field] auditWrite failed:", err); });
 
-    return NextResponse.json({ ok: true, value: result.newDisplay, contact: updated });
+    return ssnSafeJson({ ok: true, value: isSsnField(fieldName) ? maskSsn(result.newDisplay) : result.newDisplay, contact: updated });
   } catch (e) {
     if (e instanceof FieldUpdateError) {
-      return NextResponse.json({ error: e.message }, { status: 400 });
+      return ssnSafeJson({ error: e.message }, { status: 400 });
     }
     const msg = e instanceof Error ? e.message : "Update failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return ssnSafeJson({ error: msg }, { status: 500 });
   }
 }

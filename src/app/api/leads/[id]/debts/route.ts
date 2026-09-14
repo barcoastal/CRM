@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { recalcLeadWeeklyPayment } from "@/lib/lead-debt-rollup";
@@ -18,7 +19,7 @@ export async function GET(
     where: { leadId: id },
     orderBy: { createdAt: "asc" },
   });
-  return NextResponse.json(items);
+  return ssnSafeJson(items);
 }
 
 export async function POST(
@@ -31,17 +32,17 @@ export async function POST(
   const { id } = await params;
 
   const lead = await prisma.lead.findUnique({ where: { id } });
-  if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+  if (!lead) return ssnSafeJson({ error: "Lead not found" }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
   const { type, creditorName, amount, frequency, paymentAmount, status, notes } = body ?? {};
 
-  if (!TYPES.includes(type)) return NextResponse.json({ error: "Invalid type" }, { status: 400 });
-  if (!FREQS.includes(frequency)) return NextResponse.json({ error: "Invalid frequency" }, { status: 400 });
+  if (!TYPES.includes(type)) return ssnSafeJson({ error: "Invalid type" }, { status: 400 });
+  if (!FREQS.includes(frequency)) return ssnSafeJson({ error: "Invalid frequency" }, { status: 400 });
   const finalStatus = STATUSES.includes(status) ? status : "ACTIVE";
   const amt = Number(amount);
   if (!Number.isFinite(amt) || amt < 0) {
-    return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid amount" }, { status: 400 });
   }
 
   const debt = await prisma.leadDebt.create({
@@ -61,5 +62,5 @@ export async function POST(
   // SF parity: keep Lead.currentTotalWeeklyPayment in sync after any creditor edit.
   await recalcLeadWeeklyPayment(id).catch(() => undefined);
 
-  return NextResponse.json(debt);
+  return ssnSafeJson(debt);
 }

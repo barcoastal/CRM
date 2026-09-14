@@ -1,3 +1,4 @@
+import { redactSsn } from "@/lib/ssn-privacy";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
@@ -326,7 +327,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
         { label: "Send List Email" },
       ]}
       columns={COLUMNS}
-      rows={rows}
+      rows={redactSsn(rows)}
       pathname="/leads"
       sortKey={sort || undefined}
       sortDir={dir}

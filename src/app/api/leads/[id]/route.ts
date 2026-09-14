@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { updateLeadSchema } from "@/lib/validations/lead";
@@ -11,7 +12,7 @@ export async function GET(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
@@ -37,10 +38,10 @@ export async function GET(
   });
 
   if (!lead) {
-    return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Lead not found" }, { status: 404 });
   }
 
-  return NextResponse.json(lead);
+  return ssnSafeJson(lead);
 }
 
 export async function PATCH(
@@ -49,14 +50,14 @@ export async function PATCH(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
   const existing = await prisma.lead.findUnique({ where: { id } });
   if (!existing) {
-    return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Lead not found" }, { status: 404 });
   }
 
   const body = await request.json();
@@ -65,7 +66,7 @@ export async function PATCH(
   if (body.status === "ENROLLED" && body.enrollmentData) {
     const enrollParsed = enrollClientSchema.safeParse(body.enrollmentData);
     if (!enrollParsed.success) {
-      return NextResponse.json(
+      return ssnSafeJson(
         { error: "Validation failed", details: enrollParsed.error.flatten() },
         { status: 400 }
       );
@@ -76,7 +77,7 @@ export async function PATCH(
       where: { leadId: id },
     });
     if (existingClient) {
-      return NextResponse.json(
+      return ssnSafeJson(
         { error: "Client already exists for this lead" },
         { status: 409 }
       );
@@ -140,14 +141,14 @@ export async function PATCH(
       await prisma.payment.createMany({ data: payments });
     }
 
-    return NextResponse.json({ ...lead, clientId: client.id });
+    return ssnSafeJson({ ...lead, clientId: client.id });
   }
 
   // Standard lead update
   const parsed = updateLeadSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     );
@@ -177,7 +178,7 @@ export async function PATCH(
     },
   );
   if (vErrors.length > 0) {
-    return NextResponse.json({ error: vErrors[0], errors: vErrors }, { status: 400 });
+    return ssnSafeJson({ error: vErrors[0], errors: vErrors }, { status: 400 });
   }
 
   const updateData: Record<string, unknown> = {};
@@ -225,7 +226,7 @@ export async function PATCH(
     },
   });
 
-  return NextResponse.json(lead);
+  return ssnSafeJson(lead);
 }
 
 export async function DELETE(
@@ -234,14 +235,14 @@ export async function DELETE(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
   const existing = await prisma.lead.findUnique({ where: { id } });
   if (!existing) {
-    return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Lead not found" }, { status: 404 });
   }
 
   const lead = await prisma.lead.update({
@@ -249,5 +250,5 @@ export async function DELETE(
     data: { status: "LOST" },
   });
 
-  return NextResponse.json(lead);
+  return ssnSafeJson(lead);
 }

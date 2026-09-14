@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { createAccountSchema } from "@/lib/validations/account";
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
     prisma.account.count({ where }),
   ]);
 
-  return NextResponse.json({ items, total });
+  return ssnSafeJson({ items, total });
 }
 
 export async function POST(req: NextRequest) {
@@ -49,9 +50,9 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const parsed = createAccountSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
 
   const account = await prisma.account.create({ data: parsed.data });
-  return NextResponse.json(account, { status: 201 });
+  return ssnSafeJson(account, { status: 201 });
 }

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createLeadSchema } from "@/lib/validations/lead";
 
@@ -8,7 +9,7 @@ export async function POST(request: NextRequest) {
   const expectedKey = process.env.LEAD_INGEST_API_KEY;
 
   if (!expectedKey || apiKey !== expectedKey) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Unauthorized: invalid or missing API key" },
       { status: 401 }
     );
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Invalid JSON body" },
       { status: 400 }
     );
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
   const parsed = createLeadSchema.safeParse(payload);
 
   if (!parsed.success) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     );
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  return NextResponse.json(
+  return ssnSafeJson(
     { id: lead.id, businessName: lead.businessName, status: lead.status },
     { status: 201 }
   );

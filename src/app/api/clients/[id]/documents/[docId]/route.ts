@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
@@ -8,7 +9,7 @@ export async function DELETE(
 ) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id, docId } = await params;
@@ -18,10 +19,10 @@ export async function DELETE(
   });
 
   if (!document) {
-    return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    return ssnSafeJson({ error: "Document not found" }, { status: 404 });
   }
 
   await prisma.document.delete({ where: { id: docId } });
 
-  return NextResponse.json({ success: true });
+  return ssnSafeJson({ success: true });
 }

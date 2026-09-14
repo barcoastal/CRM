@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { sendESignEmail } from "@/lib/esign/send-email";
@@ -17,7 +18,7 @@ export async function GET(
     include: { createdBy: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
   });
-  return NextResponse.json(items);
+  return ssnSafeJson(items);
 }
 
 // POST — create a document-request link and email it to the recipient.
@@ -34,7 +35,7 @@ export async function POST(
     where: { id },
     select: { id: true, accountId: true, leadId: true },
   });
-  if (!opp) return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
+  if (!opp) return ssnSafeJson({ error: "Opportunity not found" }, { status: 404 });
 
   const body = (await request.json().catch(() => ({}))) as {
     recipientEmail?: string;
@@ -52,7 +53,7 @@ export async function POST(
 
   const recipientEmail = (body.recipientEmail ?? "").trim();
   if (!recipientEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail)) {
-    return NextResponse.json({ error: "A valid recipient email is required" }, { status: 400 });
+    return ssnSafeJson({ error: "A valid recipient email is required" }, { status: 400 });
   }
 
   const kind = body.kind === "INFO" ? "INFO" : "DOCUMENTS";
@@ -105,7 +106,7 @@ export async function POST(
     replyTo: session.email,
   });
 
-  return NextResponse.json({
+  return ssnSafeJson({
     id: req.id,
     token: req.token,
     url: link,

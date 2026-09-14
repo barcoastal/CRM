@@ -1,3 +1,4 @@
+import { maskSsn } from "@/lib/ssn-privacy";
 import { Section } from "@/components/slds/section";
 
 /**
@@ -60,7 +61,7 @@ export function ClientSubmittedInfoCard({ requests }: { requests: SubmittedInfoR
   if (addr) rows.push(["Address", addr]);
   if (c.phone) rows.push(["Phone", c.phone]);
   if (c.email) rows.push(["Email", c.email]);
-  if (c.ssn) rows.push(["SSN", c.ssn]);
+  if (c.ssn) rows.push(["SSN", maskSsn(c.ssn)]);
   if (c.ein) rows.push(["EIN / TIN", c.ein]);
   if (c.dob) rows.push(["Date of birth", c.dob]);
   if (bank) rows.push(["Bank details", bank]);

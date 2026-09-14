@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { runReport, type ReportConfig, type ReportFilter, type ReportSummarize } from "@/lib/reports/runner";
 
@@ -8,7 +9,7 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   if (typeof body.objectType !== "string") {
-    return NextResponse.json({ error: "objectType required" }, { status: 400 });
+    return ssnSafeJson({ error: "objectType required" }, { status: 400 });
   }
 
   const cfg: ReportConfig = {
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
 
   const result = await runReport(cfg);
   if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: 400 });
+    return ssnSafeJson({ error: result.error }, { status: 400 });
   }
-  return NextResponse.json(result);
+  return ssnSafeJson(result);
 }

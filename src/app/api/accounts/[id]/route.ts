@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { updateAccountSchema } from "@/lib/validations/account";
@@ -21,8 +22,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
       parentAccount: { select: { id: true, name: true } },
     },
   });
-  if (!account) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(account);
+  if (!account) return ssnSafeJson({ error: "Not found" }, { status: 404 });
+  return ssnSafeJson(account);
 }
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -33,11 +34,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   const body = await req.json().catch(() => ({}));
   const parsed = updateAccountSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
 
   const before = await prisma.account.findUnique({ where: { id } });
-  if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!before) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 
   // SF validation rules — reject patches that violate ported Account rules.
   const d = parsed.data as Record<string, unknown>;
@@ -58,7 +59,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     },
   );
   if (vErrors.length > 0) {
-    return NextResponse.json({ error: vErrors[0], errors: vErrors }, { status: 400 });
+    return ssnSafeJson({ error: vErrors[0], errors: vErrors }, { status: 400 });
   }
 
   const account = await prisma.account.update({ where: { id }, data: parsed.data });
@@ -70,7 +71,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     before: before as unknown as Record<string, unknown>,
     after: account as unknown as Record<string, unknown>,
   }).catch(() => null);
-  return NextResponse.json(account);
+  return ssnSafeJson(account);
 }
 
 export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -80,8 +81,8 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
 
   // Soft-delete: flip isActive instead of dropping data.
   const before = await prisma.account.findUnique({ where: { id } });
-  if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (!before.isActive) return NextResponse.json({ ok: true, alreadyInactive: true });
+  if (!before) return ssnSafeJson({ error: "Not found" }, { status: 404 });
+  if (!before.isActive) return ssnSafeJson({ ok: true, alreadyInactive: true });
 
   await prisma.account.update({ where: { id }, data: { isActive: false } });
   await auditWrite({
@@ -92,5 +93,5 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     before: { isActive: true },
     after: { isActive: false },
   }).catch(() => null);
-  return NextResponse.json({ ok: true });
+  return ssnSafeJson({ ok: true });
 }

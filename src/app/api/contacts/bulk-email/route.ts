@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
   const { ids, subject, bodyHtml, bodyText, sendNow } = parsed.data;
 
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (contacts.length === 0) {
-    return NextResponse.json({ ok: false, error: "No selected contacts have an email address" }, { status: 400 });
+    return ssnSafeJson({ ok: false, error: "No selected contacts have an email address" }, { status: 400 });
   }
 
   const defaultFrom = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({
+  return ssnSafeJson({
     ok: true,
     queued: created.length,
     sent,

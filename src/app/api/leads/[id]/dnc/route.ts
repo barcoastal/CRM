@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -9,14 +9,14 @@ import { prisma } from "@/lib/prisma";
  */
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user) return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   const { id } = await ctx.params;
 
   const lead = await prisma.lead.findUnique({
     where: { id },
     select: { id: true, phone: true, sfDataJson: true },
   });
-  if (!lead) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!lead) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 
   // Update DNC__c in sfDataJson + the typed column if present
   const sf = lead.sfDataJson ? JSON.parse(lead.sfDataJson) as Record<string, unknown> : {};
@@ -43,5 +43,5 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     }
   } catch { /* ignore optional table miss */ }
 
-  return NextResponse.json({ ok: true });
+  return ssnSafeJson({ ok: true });
 }

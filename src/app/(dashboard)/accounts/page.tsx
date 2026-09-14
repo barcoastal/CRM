@@ -1,3 +1,4 @@
+import { redactSsn } from "@/lib/ssn-privacy";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
@@ -381,7 +382,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         { label: "Intelligence View" },
       ]}
       columns={COLUMNS}
-      rows={rows}
+      rows={redactSsn(rows)}
       pathname="/accounts"
       sortKey={sort || undefined}
       sortDir={dir}

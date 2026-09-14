@@ -1,9 +1,10 @@
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
 /**
  * "Sync to Payment Processor" - real processor enrollment. Creates the
  * client + bank account + initial debit schedule at SAS or RAM (test-mode
  * gated; see lib/payment-processors/enrollment.ts).
  */
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { enrollClient } from "@/lib/payment-processors/enrollment";
@@ -31,5 +32,5 @@ export async function POST(
       },
     });
   }
-  return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+  return ssnSafeJson(result, { status: result.ok ? 200 : 400 });
 }

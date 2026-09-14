@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { createContactSchema } from "@/lib/validations/contact";
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
       owner: { select: { id: true, name: true } },
     },
   });
-  return NextResponse.json({ items });
+  return ssnSafeJson({ items });
 }
 
 export async function POST(req: NextRequest) {
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const parsed = createContactSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
   const d = parsed.data;
   const fullName = [d.firstName, d.lastName].filter(Boolean).join(" ").trim();
@@ -84,5 +85,5 @@ export async function POST(req: NextRequest) {
 
   void evaluateAndStartFlows("Contact", "INSERT", contact as unknown as Record<string, unknown>).catch(() => undefined);
 
-  return NextResponse.json(contact, { status: 201 });
+  return ssnSafeJson(contact, { status: 201 });
 }

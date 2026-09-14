@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -16,7 +17,7 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
   const { ids, assignedToId, status } = parsed.data;
 
@@ -24,12 +25,12 @@ export async function PATCH(req: NextRequest) {
   if (assignedToId !== undefined) data.assignedToId = assignedToId || null;
   if (status !== undefined) data.status = status;
   if (Object.keys(data).length === 0) {
-    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+    return ssnSafeJson({ error: "Nothing to update" }, { status: 400 });
   }
 
   const result = await prisma.lead.updateMany({
     where: { id: { in: ids } },
     data,
   });
-  return NextResponse.json({ ok: true, updated: result.count });
+  return ssnSafeJson({ ok: true, updated: result.count });
 }

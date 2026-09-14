@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { auditWrite } from "@/lib/audit";
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ items });
+  return ssnSafeJson({ items });
 }
 
 export async function POST(req: NextRequest) {
@@ -32,9 +33,9 @@ export async function POST(req: NextRequest) {
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const objectType = typeof body.objectType === "string" ? body.objectType : "";
 
-  if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  if (!name) return ssnSafeJson({ error: "Name is required" }, { status: 400 });
   if (!REPORTABLE_OBJECT_TYPES.includes(objectType)) {
-    return NextResponse.json({ error: "Invalid objectType" }, { status: 400 });
+    return ssnSafeJson({ error: "Invalid objectType" }, { status: 400 });
   }
 
   const created = await prisma.report.create({
@@ -62,5 +63,5 @@ export async function POST(req: NextRequest) {
     after: { name: created.name, objectType: created.objectType },
   });
 
-  return NextResponse.json(created, { status: 201 });
+  return ssnSafeJson(created, { status: 201 });
 }

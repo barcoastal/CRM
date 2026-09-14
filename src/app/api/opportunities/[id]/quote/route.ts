@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { sendESignEmail } from "@/lib/esign/send-email";
@@ -61,8 +62,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if ("response" in r) return r.response;
   const { id } = await params;
   const q = await loadQuote(id);
-  if ("error" in q) return NextResponse.json({ error: q.error }, { status: q.status });
-  return NextResponse.json(q);
+  if ("error" in q) return ssnSafeJson({ error: q.error }, { status: q.status });
+  return ssnSafeJson(q);
 }
 
 // POST - send the branded quote email to the client.
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
 
   const q = await loadQuote(id);
-  if ("error" in q) return NextResponse.json({ error: q.error }, { status: q.status });
+  if ("error" in q) return ssnSafeJson({ error: q.error }, { status: q.status });
 
   const body = (await request.json().catch(() => ({}))) as {
     recipientEmail?: string;
@@ -82,10 +83,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   };
   const to = (body.recipientEmail ?? q.recipientEmail ?? "").trim();
   if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
-    return NextResponse.json({ error: "A valid recipient email is required." }, { status: 400 });
+    return ssnSafeJson({ error: "A valid recipient email is required." }, { status: 400 });
   }
   if (q.figures.enrolledDebt <= 0) {
-    return NextResponse.json(
+    return ssnSafeJson(
       { error: "This opportunity has no debt on file to quote. Add a debt first." },
       { status: 400 },
     );
@@ -132,8 +133,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .catch(() => undefined);
 
   if (!sent.ok) {
-    return NextResponse.json({ error: `Quote could not be sent (${sent.error ?? "unknown"}).` }, { status: 502 });
+    return ssnSafeJson({ error: `Quote could not be sent (${sent.error ?? "unknown"}).` }, { status: 502 });
   }
 
-  return NextResponse.json({ ok: true, sentTo: to, figures: q.figures, previewBase: appBaseUrl() });
+  return ssnSafeJson({ ok: true, sentTo: to, figures: q.figures, previewBase: appBaseUrl() });
 }

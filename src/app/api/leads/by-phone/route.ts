@@ -1,3 +1,4 @@
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
 /**
  * Lookup a Lead by phone number — used by the dialer to load lead context
  * when a call connects.
@@ -5,7 +6,7 @@
  *   GET /api/leads/by-phone?phone=5551234567
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 
@@ -19,10 +20,10 @@ export async function GET(request: NextRequest) {
   const r = await requireAuthOrRespond("Lead.View");
   if ("response" in r) return r.response;
   const phone = new URL(request.url).searchParams.get("phone");
-  if (!phone) return NextResponse.json({ error: "phone required" }, { status: 400 });
+  if (!phone) return ssnSafeJson({ error: "phone required" }, { status: 400 });
 
   const key = last10(phone);
-  if (!key) return NextResponse.json(null);
+  if (!key) return ssnSafeJson(null);
 
   // Match on DIGITS, not the raw stored string: strip all non-digits from the
   // stored phone and test that it ends with the incoming digits. This handles
@@ -48,9 +49,9 @@ export async function GET(request: NextRequest) {
       })
     : null;
 
-  if (!lead) return NextResponse.json(null);
+  if (!lead) return ssnSafeJson(null);
 
-  return NextResponse.json({
+  return ssnSafeJson({
     id: lead.id,
     contactName: lead.contactName,
     businessName: lead.businessName,

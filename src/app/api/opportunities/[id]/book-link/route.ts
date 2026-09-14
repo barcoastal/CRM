@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
+import { NextRequest } from "next/server";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { sendESignEmail } from "@/lib/esign/send-email";
 import { createBookingLink } from "@/lib/scheduled-calls";
@@ -15,11 +16,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = (await req.json().catch(() => ({}))) as { email?: string };
 
   const res = await createBookingLink(id);
-  if ("error" in res) return NextResponse.json({ error: res.error }, { status: 404 });
+  if ("error" in res) return ssnSafeJson({ error: res.error }, { status: 404 });
 
   const to = (body.email ?? res.call.clientEmail ?? "").trim();
   if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
-    return NextResponse.json({ error: "No valid client email on this opportunity.", url: res.url }, { status: 400 });
+    return ssnSafeJson({ error: "No valid client email on this opportunity.", url: res.url }, { status: 400 });
   }
 
   const name = res.call.clientName ?? "there";
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const from = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
   const sent = await sendESignEmail({ from, to, subject: "Schedule your call with Coastal Debt", html, replyTo: r.session.email });
-  if (!sent.ok) return NextResponse.json({ error: `Could not send (${sent.error ?? "unknown"}).`, url: res.url }, { status: 502 });
+  if (!sent.ok) return ssnSafeJson({ error: `Could not send (${sent.error ?? "unknown"}).`, url: res.url }, { status: 502 });
 
-  return NextResponse.json({ ok: true, sentTo: to, url: res.url });
+  return ssnSafeJson({ ok: true, sentTo: to, url: res.url });
 }
