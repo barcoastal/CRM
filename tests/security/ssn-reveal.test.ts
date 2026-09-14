@@ -36,6 +36,10 @@ describe("admin-only SSN reveal", () => {
     expect(mocks.audit.mock.calls[0][0].data.action).toBe("REVEAL_SSN");
     expect(JSON.stringify(mocks.audit.mock.calls)).not.toContain("000-00-0001");
   });
+  it("accepts same-origin HTTPS requests behind the production HTTP proxy", async () => {
+    const req = new NextRequest("http://localhost:8080/api/ssn/contact/example", { method: "POST", headers: { origin: "https://crm.example", host: "crm.example", "x-forwarded-proto": "https" } });
+    expect((await POST(req, context)).status).toBe(200);
+  });
   it("rejects cross-origin requests", async () => {
     expect((await POST(new NextRequest("https://crm.example/api/ssn/contact/example", { method: "POST", headers: { origin: "https://other.example" } }), context)).status).toBe(403);
     expect(mocks.contact).not.toHaveBeenCalled();

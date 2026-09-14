@@ -21,7 +21,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ entity: st
   const user = await prisma.user.findUnique({ where: { id: r.session.userId }, select: { role: true, isActive: true } });
   if (!user?.isActive || !canRevealSsn(user.role)) return NextResponse.json({ error: "Admin access required" }, { status: 403, headers });
   const origin = req.headers.get("origin");
-  if (origin && origin !== req.nextUrl.origin) return NextResponse.json({ error: "Forbidden" }, { status: 403, headers });
+  // Railway terminates HTTPS before forwarding to the custom HTTP server.
+  const host = req.headers.get("x-forwarded-host")?.split(",")[0].trim() || req.headers.get("host") || req.nextUrl.host;
+  const protocol = req.headers.get("x-forwarded-proto")?.split(",")[0].trim() || req.nextUrl.protocol.slice(0, -1);
+  if (origin && origin !== `${protocol}://${host}`) return NextResponse.json({ error: "Forbidden" }, { status: 403, headers });
   let ssn: string | null = null;
   let found = false;
   if (entity === "contact") {
