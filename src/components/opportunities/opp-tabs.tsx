@@ -10,7 +10,6 @@ export type OppTabKey =
   | "Settlements"
   | "Documents"
   | "Related"
-  | "Marketing"
   | "All SF Fields";
 
 // SF tab bar order — exactly matches Lightning record page. "All SF Fields"
@@ -23,7 +22,6 @@ const TABS: OppTabKey[] = [
   "Settlements",
   "Documents",
   "Related",
-  "Marketing",
 ];
 
 export function OppTabs({ panels }: { panels: Record<OppTabKey, ReactNode> }) {

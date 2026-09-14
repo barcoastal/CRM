@@ -974,21 +974,6 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     <SfDataSection sfDataJson={opp.sfDataJson} sfId={opp.sfId} />
   );
 
-  const marketingPanel = (
-    <Section title="Marketing Attribution">
-      <FieldGrid
-        fields={[
-          ["Lead Source", opp.lead?.source],
-          ["Originating Lead", opp.lead?.id ? (
-            <Link href={`/leads/${opp.lead.id}`} style={{ color: "#0176d3" }}>
-              {opp.lead.contactName}
-            </Link>
-          ) : null],
-        ]}
-      />
-    </Section>
-  );
-
   const sfOppIdDisplay = opp.sfId ?? opp.id.slice(-8).toUpperCase();
 
   return (
@@ -1035,7 +1020,6 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
                 Settlements: settlementsPanel,
                 Documents: documentsPanel,
                 Related: relatedPanel,
-                Marketing: marketingPanel,
                 "All SF Fields": sfFieldsPanel,
               }}
             />
