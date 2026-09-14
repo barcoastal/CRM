@@ -794,12 +794,17 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       : 0) ||
     6;
   const reschedDebt = latestCalc?.totalDebt ?? totalDebtVal;
+  const reschedFirstPaymentDate = latestCalc?.firstPaymentDate
+    ? latestCalc.firstPaymentDate.toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
   // Server-side schedule so the right-rail Total Payments Summary matches the
   // calculator (and SF) to the cent for the deal's real inputs.
   const reschedSchedule = generateRescheduleSchedule({
     totalDebt: reschedDebt,
     termMonths: reschedTermMonths,
     citadelFee: latestCalc?.citadelFee ?? undefined,
+    firstPaymentDate: reschedFirstPaymentDate,
+    weeklyPaymentDay: "Friday",
   });
   const rRows = reschedSchedule.rows;
   const rSum = (fn: (r: (typeof rRows)[number]) => number) =>
@@ -836,9 +841,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           noOfDebts: opp.debts.length,
           currentWeeklyPayment: opp.currentWeeklyPayment || totalWeekly,
           citadelFee: latestCalc?.citadelFee ?? undefined,
-          firstPaymentDate: latestCalc?.firstPaymentDate
-            ? latestCalc.firstPaymentDate.toISOString().slice(0, 10)
-            : new Date().toISOString().slice(0, 10),
+          firstPaymentDate: reschedFirstPaymentDate,
         }}
       />
     </Section>
@@ -1055,10 +1058,9 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
               estimatedYouSave={summaryValues.estimatedYouSave}
               totalWeeklyPayment={summaryValues.totalWeeklyPayment}
               totalWeeklySaving={summaryValues.totalWeeklySaving}
-              // SF's Total Payments Summary is a related list that reads "No
-              // Records Found" until payment records exist. Our equivalent
-              // record is a saved calculator run, so gate on that.
-              empty={!latestCalc || reschedDebt <= 0}
+              // Imported opportunities can have a calculated schedule without
+              // a locally saved calculator run. Show those totals immediately.
+              empty={reschedDebt <= 0}
             />
             <OppReportsCard opportunityId={opp.id} />
             <DocusignEnvelopeStatus
