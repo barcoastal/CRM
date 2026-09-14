@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PAYMENT_STATUSES } from "@/lib/debt-payment-status";
 
 export const DEBT_STATUSES = [
   "ENROLLED",
@@ -28,6 +29,7 @@ export type NegotiationType = (typeof NEGOTIATION_TYPES)[number];
 export type NegotiationResponse = (typeof NEGOTIATION_RESPONSES)[number];
 
 export const createDebtSchema = z.object({
+  paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
   creditorName: z.string().min(1, "Creditor name is required"),
   creditorPhone: z.string().optional().or(z.literal("")),
   creditorEmail: z.string().email("Invalid email").optional().or(z.literal("")),

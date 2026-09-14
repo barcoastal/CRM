@@ -13,6 +13,7 @@ import { RelatedList } from "@/components/slds/related-list";
 import { OppTabs } from "@/components/opportunities/opp-tabs";
 import { OppHeaderButtons } from "@/components/opportunities/opp-header-buttons";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
+import { debtPaymentStatus } from "@/lib/debt-payment-status";
 import { ContactRolesList } from "@/components/accounts/contact-roles-list";
 import { AddContactButton } from "@/components/contacts/add-contact-button";
 import { RescheduleCalculator } from "@/components/shared/reschedule-calculator";
@@ -779,6 +780,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           currentBalance: d.currentBalance,
           enrolledBalance: d.enrolledBalance,
           status: d.status,
+          paymentStatus: debtPaymentStatus(d.sfDataJson),
           analysis: (d.sourceDocument?.analysisJson as import("@/components/documents/analysis-body").ContractAnalysisData | null) ?? null,
           analysisDocName: d.sourceDocument?.name ?? null,
         }))}

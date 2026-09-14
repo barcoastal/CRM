@@ -7,6 +7,7 @@ import { DebtAnalysisDrawer } from "@/components/debts/debt-analysis-drawer";
 import { LenderIntelCard } from "@/components/debts/lender-intel-card";
 import { useLenders, matchLender } from "@/lib/use-lenders";
 import type { ContractAnalysisData } from "@/components/documents/analysis-body";
+import { PAYMENT_STATUSES } from "@/lib/debt-payment-status";
 
 export type OppDebtRow = {
   id: string;
@@ -18,6 +19,7 @@ export type OppDebtRow = {
   currentBalance: number;
   enrolledBalance: number;
   status: string;
+  paymentStatus?: string;
   analysis?: ContractAnalysisData | null;
   analysisDocName?: string | null;
 };
@@ -35,19 +37,10 @@ const TYPE_OPTIONS = [
 const FREQ_OPTIONS = [
   ["DAILY", "Daily"],
   ["WEEKLY", "Weekly"],
-  ["BI_WEEKLY", "Bi-Weekly"],
   ["MONTHLY", "Monthly"],
-  ["LUMP_SUM", "Lump Sum"],
 ];
 
-const STATUS_OPTIONS = [
-  ["ENROLLED", "Enrolled"],
-  ["NEGOTIATING", "Negotiating"],
-  ["SETTLED", "Settled"],
-  ["PAID", "Paid"],
-  ["DISPUTED", "Disputed"],
-  ["WRITTEN_OFF", "Written Off"],
-];
+const STATUS_OPTIONS = PAYMENT_STATUSES.map((status) => [status, status]);
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -107,13 +100,15 @@ export function OppDebtInformation({
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [inlineSaving, setInlineSaving] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     creditorName: "",
     debtType: "MCA",
     paymentFrequency: "DAILY",
     paymentAmount: "",
     debtAmount: "",
-    status: "ENROLLED",
+    status: "",
   });
 
   function resetForm() {
@@ -123,7 +118,7 @@ export function OppDebtInformation({
       paymentFrequency: "DAILY",
       paymentAmount: "",
       debtAmount: "",
-      status: "ENROLLED",
+      status: "",
     });
   }
 
@@ -136,14 +131,15 @@ export function OppDebtInformation({
       paymentFrequency: d.paymentFrequency ?? "DAILY",
       paymentAmount: d.paymentAmount != null ? String(d.paymentAmount) : "",
       debtAmount: String(d.originalBalance),
-      status: d.status,
+      status: d.paymentStatus ?? "",
     });
   }
 
   async function save() {
     const amt = Number(form.debtAmount);
-    if (!form.creditorName || !Number.isFinite(amt) || amt <= 0) return;
+    if (!form.creditorName || !Number.isFinite(amt) || amt <= 0 || !form.status) return;
     setSaving(true);
+    setError(null);
     try {
       const payload = {
         creditorName: form.creditorName,
@@ -153,7 +149,7 @@ export function OppDebtInformation({
         originalBalance: amt,
         currentBalance: amt,
         enrolledBalance: amt,
-        status: form.status,
+        paymentStatus: form.status,
       };
       const url = editing
         ? `/api/debts/${editing}`
@@ -168,9 +164,31 @@ export function OppDebtInformation({
         setEditing(null);
         resetForm();
         router.refresh();
+      } else {
+        setError("Could not save the debt. Please try again.");
       }
+    } catch {
+      setError("Could not save the debt. Please check your connection.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function saveInline(debtId: string, field: "paymentFrequency" | "paymentStatus", value: string) {
+    setInlineSaving(debtId);
+    setError(null);
+    try {
+      const response = await fetch(`/api/debts/${debtId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+      if (!response.ok) throw new Error("Save failed");
+      router.refresh();
+    } catch {
+      setError("Could not save the change. Please try again.");
+    } finally {
+      setInlineSaving(null);
     }
   }
 
@@ -189,6 +207,7 @@ export function OppDebtInformation({
 
   return (
     <div>
+      {error && <div role="alert" style={{ color: "#ba0517", marginBottom: 12 }}>{error}</div>}
       <div style={{ display: "flex", gap: 24, marginBottom: 16, justifyContent: "center" }}>
         <div style={{ background: "#fafaf9", padding: "8px 16px", borderRadius: 4, border: "1px solid #c9c9c9" }}>
           <span style={{ fontSize: 13, color: "#747474", marginRight: 8 }}>Total Debt:</span>
@@ -287,8 +306,18 @@ export function OppDebtInformation({
               <td style={td}>{label(TYPE_OPTIONS, d.debtType)}</td>
               <td style={td}>{fmtMoney(d.originalBalance)}</td>
               <td style={td}>{d.paymentAmount != null ? fmtMoney(d.paymentAmount) : ""}</td>
-              <td style={td}>{label(FREQ_OPTIONS, d.paymentFrequency)}</td>
-              <td style={td}>{label(STATUS_OPTIONS, d.status)}</td>
+              <td style={td}>
+                <select aria-label={`Frequency for ${d.creditorName}`} value={d.paymentFrequency ?? ""} disabled={inlineSaving !== null} onChange={(e) => saveInline(d.id, "paymentFrequency", e.target.value)} style={{ ...inputStyle, minWidth: 110 }}>
+                  {!FREQ_OPTIONS.some(([value]) => value === d.paymentFrequency) && <option value={d.paymentFrequency ?? ""}>{d.paymentFrequency ? label([["BI_WEEKLY", "Bi-Weekly"], ["LUMP_SUM", "Lump Sum"]], d.paymentFrequency) : "Select…"}</option>}
+                  {FREQ_OPTIONS.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+                </select>
+              </td>
+              <td style={td}>
+                <select aria-label={`Debt Status for ${d.creditorName}`} value={d.paymentStatus ?? ""} disabled={inlineSaving !== null} onChange={(e) => saveInline(d.id, "paymentStatus", e.target.value)} style={{ ...inputStyle, minWidth: 110 }}>
+                  {!STATUS_OPTIONS.some(([value]) => value === d.paymentStatus) && <option value={d.paymentStatus ?? ""}>{d.paymentStatus || "Select…"}</option>}
+                  {STATUS_OPTIONS.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+                </select>
+              </td>
               <td style={td}>
                 <button
                   onClick={() => startEdit(d)}
@@ -364,6 +393,8 @@ export function OppDebtInformation({
               </td>
               <td style={td}>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} style={inputStyle}>
+                  <option value="">Select…</option>
+                  {form.status && !STATUS_OPTIONS.some(([value]) => value === form.status) && <option value={form.status}>{form.status}</option>}
                   {STATUS_OPTIONS.map(([k, l]) => (
                     <option key={k} value={k}>{l}</option>
                   ))}
@@ -373,7 +404,7 @@ export function OppDebtInformation({
                 <div style={{ display: "flex", gap: 4 }}>
                   <button
                     onClick={save}
-                    disabled={saving || !form.creditorName || !form.debtAmount}
+                    disabled={saving || !form.creditorName || !form.debtAmount || !form.status}
                     style={{
                       background: "#0176d3",
                       color: "#fff",

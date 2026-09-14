@@ -79,6 +79,7 @@ export async function POST(
       currentBalance: data.currentBalance,
       enrolledBalance: data.enrolledBalance,
       status: data.status || undefined,
+      sfDataJson: data.paymentStatus ? JSON.stringify({ Debt_Status__c: data.paymentStatus }) : undefined,
       notes: data.notes || null,
     },
     include: {

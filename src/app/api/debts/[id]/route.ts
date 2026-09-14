@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { debtSnapshot, PAYMENT_STATUSES } from "@/lib/debt-payment-status";
 
 export async function PATCH(
   request: NextRequest,
@@ -15,6 +16,12 @@ export async function PATCH(
 
   const body = await request.json().catch(() => ({}));
   const data: Record<string, unknown> = {};
+  if (body.paymentStatus !== undefined) {
+    if (!PAYMENT_STATUSES.includes(body.paymentStatus)) {
+      return NextResponse.json({ error: "Invalid debt payment status" }, { status: 400 });
+    }
+    data.sfDataJson = JSON.stringify({ ...debtSnapshot(existing.sfDataJson), Debt_Status__c: body.paymentStatus });
+  }
   if (typeof body.creditorName === "string") data.creditorName = body.creditorName;
   if (typeof body.debtType === "string" || body.debtType === null) data.debtType = body.debtType || null;
   if (typeof body.paymentFrequency === "string" || body.paymentFrequency === null)
