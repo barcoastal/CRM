@@ -88,14 +88,14 @@ export function RescheduleRecalculateModal({
 
   return (
     <div style={overlay} onClick={onClose}>
-      <div style={dialog} onClick={(e) => e.stopPropagation()}>
+      <div style={dialog} role="dialog" aria-modal="true" aria-labelledby="recalculate-title" onClick={(e) => e.stopPropagation()}>
         <header style={dialogHeader}>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Program Recalculate</h2>
+          <h2 id="recalculate-title" style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Program Recalculate</h2>
           <button onClick={onClose} style={xBtn} aria-label="Close">×</button>
         </header>
 
-        <div style={{ padding: 16 }}>
-          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <div style={{ padding: 16, display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16, flexShrink: 0 }}>
             <button style={btnOutline} onClick={() => setShowCompare((s) => !s)}>
               Compare With Other Program
             </button>
@@ -108,7 +108,7 @@ export function RescheduleRecalculateModal({
           </div>
 
           {showCompare && (
-            <div style={{ ...card, marginBottom: 16, padding: 12 }}>
+            <div style={{ ...card, marginBottom: 16, padding: 12, flexShrink: 0 }}>
               <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Add program lengths to compare</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {ALL_TERMS.map((t) => (
@@ -121,7 +121,7 @@ export function RescheduleRecalculateModal({
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 270px), 1fr))", gap: 12, overflowY: "auto", minHeight: 0, padding: "2px 4px 4px 2px" }}>
             {options.map((o) => {
               const isSel = o.term === selected;
               const qualifies = bonusProgramLengths.includes(o.term);
@@ -131,8 +131,7 @@ export function RescheduleRecalculateModal({
                   onClick={() => setSelected(o.term)}
                   style={{
                     ...card,
-                    minWidth: 230,
-                    flexShrink: 0,
+                    minWidth: 0,
                     cursor: "pointer",
                     border: isSel ? "2px solid #1a96ff" : "1px solid #c9c9c9",
                     position: "relative",
@@ -176,20 +175,23 @@ const overlay: React.CSSProperties = {
   inset: 0,
   background: "rgba(0,0,0,0.4)",
   display: "flex",
-  alignItems: "flex-start",
+  alignItems: "center",
   justifyContent: "center",
-  paddingTop: 80,
+  padding: "16px",
   zIndex: 9999,
 };
 const dialog: React.CSSProperties = {
   background: "#fff",
   borderRadius: 6,
-  width: "min(880px, 94vw)",
-  maxHeight: "80vh",
-  overflow: "auto",
+  width: "min(1480px, 100%)",
+  maxHeight: "calc(100dvh - 32px)",
+  display: "flex",
+  flexDirection: "column",
+  overflow: "hidden",
   boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
 };
 const dialogHeader: React.CSSProperties = {
+  flexShrink: 0,
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
@@ -211,12 +213,16 @@ const bonusBadge: React.CSSProperties = {
 };
 const checkMark: React.CSSProperties = {
   position: "absolute",
-  top: 0,
-  right: 0,
-  width: 0,
-  height: 0,
-  borderTop: "28px solid #1a96ff",
-  borderLeft: "28px solid transparent",
+  top: 6,
+  right: 6,
+  width: 18,
+  height: 18,
+  borderRadius: "50%",
+  background: "#0176d3",
+  color: "#fff",
+  fontSize: 12,
+  display: "grid",
+  placeItems: "center",
 };
 const btnBrand: React.CSSProperties = {
   background: "#0176d3",
