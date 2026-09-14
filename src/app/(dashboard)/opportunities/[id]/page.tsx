@@ -10,6 +10,7 @@ import { E } from "@/components/slds/field-helpers";
 import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activity-chatter-rail";
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { RelatedList } from "@/components/slds/related-list";
+import { OppActivities } from "@/components/opportunities/opp-activities";
 import { OppTabs } from "@/components/opportunities/opp-tabs";
 import { OppHeaderButtons } from "@/components/opportunities/opp-header-buttons";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
@@ -137,11 +138,10 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           calls: {
             include: { agent: { select: { id: true, name: true } } },
             orderBy: { createdAt: "desc" },
-            take: 50,
           },
-          emails: { orderBy: { createdAt: "desc" }, take: 50 },
-          sms: { orderBy: { createdAt: "desc" }, take: 50 },
-          tasks: { orderBy: { createdAt: "desc" }, take: 50 },
+          emails: { orderBy: { createdAt: "desc" } },
+          sms: { orderBy: { createdAt: "desc" } },
+          tasks: { orderBy: { createdAt: "desc" } },
         },
       },
       account: {
@@ -174,9 +174,9 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
         orderBy: { startDate: "desc" },
       },
       documents: { include: { uploadedBy: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" } },
-      tasks: { orderBy: { createdAt: "desc" }, take: 50 },
-      events: { orderBy: { startAt: "desc" }, take: 30 },
-      emails: { orderBy: { createdAt: "desc" }, take: 20 },
+      tasks: { orderBy: { createdAt: "desc" } },
+      events: { orderBy: { startAt: "desc" } },
+      emails: { orderBy: { createdAt: "desc" } },
       history: {
         orderBy: { changedAt: "desc" },
         take: 100,
@@ -734,35 +734,13 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
   const activitiesPanel = (
     <Section title={`Activities (${activity.length})`}>
-      <div style={{ fontSize: 12, color: "#747474", marginBottom: 8 }}>
-        Includes calls, emails, SMS and tasks from both the Opportunity and originating Lead.
-      </div>
-      {activity.length === 0 ? (
-        <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>No activity recorded.</div>
-      ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
-              <th style={th}>Date</th>
-              <th style={th}>Type</th>
-              <th style={th}>Subject</th>
-              <th style={th}>Detail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...activity]
-              .sort((a, b) => b.date.getTime() - a.date.getTime())
-              .map((a) => (
-                <tr key={a.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                  <td style={td}>{a.date.toLocaleString()}</td>
-                  <td style={td}>{a.type}</td>
-                  <td style={td}>{a.subject}</td>
-                  <td style={td}>{a.meta ?? "-"}</td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
-      )}
+      <OppActivities items={activity.map((item) => ({
+        id: item.id,
+        type: item.type,
+        subject: item.subject,
+        detail: typeof item.meta === "string" ? item.meta : "",
+        date: item.date.toISOString(),
+      }))} />
     </Section>
   );
 
