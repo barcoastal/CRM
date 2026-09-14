@@ -19,6 +19,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import { contactIdentity } from "../src/lib/sf-sync/contact-identity";
+import { opportunityContactIdentity } from "../src/lib/sf-sync/opportunity-contact";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 20 });
 const prisma = new PrismaClient({ adapter, log: process.argv[2] === "contact" ? [] : ["warn", "error"] });
@@ -41,7 +42,7 @@ const SOQL: Record<string, string> = {
   // oppSf() - the full row is snapshotted into sfDataJson. NOTE: SF "Amount"
   // is NOT the debt; Total_Debt__c is (mapping Amount->totalDebt once showed
   // $290 instead of $408K).
-  opportunity: `SELECT Id, Name, StageName, Amount, CloseDate, AccountId, OwnerId, Description, LeadSource, Probability, ExpectedRevenue, IsPrivate, NextStep, CampaignId, RecordTypeId, Total_Debt__c, Current_Total_Debt__c, Lead_Id__c, Phone_Formula__c, Formatted_Phone__c, Phone__c, Email_Formula__c, Email__c, Last_Disposition__c, Last_Disposition_DateTime__c, Lead_Source_Category__c, Preferred_method_of_Contact__c, Timezone__c, Legal_Plan_Required__c, Secured_Party__c, Current_Weekly_Payment__c, Current_Monthly_Payment__c, Weekly_Payment_To_Debt_Ratio__c, Preferred_Language__c, Dialer_Group__c, First_Draft_Date__c, First_Contract_Signed_Date__c, Version_Status__c, Fronter__c, Closer__c, Sub_Disposition__c, Business_Start_Date__c, HIGH_UCC_RISK__c, Call_ASAP__c, Addendum_Required__c, Welcome_Call_Scheduled__c, Type_of_Business__c, Processor_Info__c, Active_Opportunity__c, Verified_Phone_Number__c, Qualified_Financial_Formula__c, First_Payment_Completed__c, First_Payment_Completed_Date__c, Legal_Network__c, Affiliate__c, Last_Contacted_DateTime__c, DS_Buyout_Total_Program_Cost__c, DS_Buyout_Settlement_to_Creditors__c, DS_Buyout_Fee__c, DS_Buyout_Savings__c, Lead_Vendor_ID_Text__c, Addendum_Required_Reason__c, UTM_Term__c, Commission_Payment_Date__c, Commission_Payment_Date_Override__c, Commission_Payment_Override_Reason__c, Processor_Contract_Formula__c, Processor__c, Hopper_priority_c__c, Outbound_ANI_Date__c, Outbound_ANI_From__c, Outbound_ANI_Identifier__c, Re_shuffle_Opportunity__c, Re_shuffle_count__c, Number_Of_Days_From_First_ContractSigned__c, Opportunity_Amended_DateTime__c, Opportunity_Reinstated_DateTime__c, Opportunity_Reactivated_DateTime__c, Opportunity_Reshuffled_DateTime__c, Reactivate_Reason__c, Opportunity_Assignment_Date__c, Account_Status__c, Ad_Click_Id__c, Eli_Ad_click__c, Has_Closer_Notes__c, Latest_Closer_Notes__c, FronterLookup__c, CloserLookup__c, Call_Transferred_By__c, Call_Received_By__c, Call_Transferred_By_Lookup__c, Call_Received_By_Lookup__c, Call_Tranferred_DateTime__c, Call_Received_Date__c, Call_Transfer_Status__c, Transfer_Qualification__c, Last_Sub_Disposition__c, Last_Call__c, Last_Email__c, Last_SMS__c, Week_Days_Between_Last_Contacted_Date__c, High_Lien_Risk__c, Receivables_Collection_Method__c, What_was_explained_to_client__c, Bank_Change__c, Lender_Agreements_Collected__c, Status_with_Lender_s__c, COJ_or_TRO__c, First_Payment_to_Legal__c, Summons_or_Judgment__c, Add_to_f9list_Id__c, Delete_from_f9list_id__c, Five9_List_Id__c, Lead_Created_Date__c, CreatedById, LastModifiedById, CreatedDate, LastModifiedDate FROM Opportunity`,
+  opportunity: `SELECT Id, ContactId, Name, StageName, Amount, CloseDate, AccountId, OwnerId, Description, LeadSource, Probability, ExpectedRevenue, IsPrivate, NextStep, CampaignId, RecordTypeId, Total_Debt__c, Current_Total_Debt__c, Lead_Id__c, Phone_Formula__c, Formatted_Phone__c, Phone__c, Email_Formula__c, Email__c, Last_Disposition__c, Last_Disposition_DateTime__c, Lead_Source_Category__c, Preferred_method_of_Contact__c, Timezone__c, Legal_Plan_Required__c, Secured_Party__c, Current_Weekly_Payment__c, Current_Monthly_Payment__c, Weekly_Payment_To_Debt_Ratio__c, Preferred_Language__c, Dialer_Group__c, First_Draft_Date__c, First_Contract_Signed_Date__c, Version_Status__c, Fronter__c, Closer__c, Sub_Disposition__c, Business_Start_Date__c, HIGH_UCC_RISK__c, Call_ASAP__c, Addendum_Required__c, Welcome_Call_Scheduled__c, Type_of_Business__c, Processor_Info__c, Active_Opportunity__c, Verified_Phone_Number__c, Qualified_Financial_Formula__c, First_Payment_Completed__c, First_Payment_Completed_Date__c, Legal_Network__c, Affiliate__c, Last_Contacted_DateTime__c, DS_Buyout_Total_Program_Cost__c, DS_Buyout_Settlement_to_Creditors__c, DS_Buyout_Fee__c, DS_Buyout_Savings__c, Lead_Vendor_ID_Text__c, Addendum_Required_Reason__c, UTM_Term__c, Commission_Payment_Date__c, Commission_Payment_Date_Override__c, Commission_Payment_Override_Reason__c, Processor_Contract_Formula__c, Processor__c, Hopper_priority_c__c, Outbound_ANI_Date__c, Outbound_ANI_From__c, Outbound_ANI_Identifier__c, Re_shuffle_Opportunity__c, Re_shuffle_count__c, Number_Of_Days_From_First_ContractSigned__c, Opportunity_Amended_DateTime__c, Opportunity_Reinstated_DateTime__c, Opportunity_Reactivated_DateTime__c, Opportunity_Reshuffled_DateTime__c, Reactivate_Reason__c, Opportunity_Assignment_Date__c, Account_Status__c, Ad_Click_Id__c, Eli_Ad_click__c, Has_Closer_Notes__c, Latest_Closer_Notes__c, FronterLookup__c, CloserLookup__c, Call_Transferred_By__c, Call_Received_By__c, Call_Transferred_By_Lookup__c, Call_Received_By_Lookup__c, Call_Tranferred_DateTime__c, Call_Received_Date__c, Call_Transfer_Status__c, Transfer_Qualification__c, Last_Sub_Disposition__c, Last_Call__c, Last_Email__c, Last_SMS__c, Week_Days_Between_Last_Contacted_Date__c, High_Lien_Risk__c, Receivables_Collection_Method__c, What_was_explained_to_client__c, Bank_Change__c, Lender_Agreements_Collected__c, Status_with_Lender_s__c, COJ_or_TRO__c, First_Payment_to_Legal__c, Summons_or_Judgment__c, Add_to_f9list_Id__c, Delete_from_f9list_id__c, Five9_List_Id__c, Lead_Created_Date__c, CreatedById, LastModifiedById, CreatedDate, LastModifiedDate FROM Opportunity`,
   // Lead: identity + operational fields (dispositions, debt calc, five9, IPQS)
   // verified against the org describe; full row snapshotted into sfDataJson.
   // Related records per account: debts, fees, cases, activities, emails - so
@@ -386,12 +387,17 @@ async function migrateOpportunities(headers: string[], records: AsyncIterable<st
   console.log(`[${new Date().toISOString()}] ${accountMap.size} accounts loaded.`);
 
   // Guard: refuse a stale/partial export (would null-overwrite good data).
-  const requiredOpp = ["Total_Debt__c", "Current_Weekly_Payment__c", "Last_Disposition__c", "Version_Status__c"];
+  const requiredOpp = ["ContactId", "Total_Debt__c", "Current_Weekly_Payment__c", "Last_Disposition__c", "Version_Status__c"];
   const missingOpp = requiredOpp.filter((h) => idx(h) === -1);
   if (missingOpp.length) {
     throw new Error(`Opportunity CSV missing operational columns (${missingOpp.join(", ")}) - refusing to import. Delete the CSV and re-export.`);
   }
   const col = (h: string): number => idx(h);
+  const contactRows = await prisma.contact.findMany({
+    where: { sfId: { not: null } },
+    select: { id: true, sfId: true, birthdate: true, ssn: true },
+  });
+  const contactIdentities = new Map(contactRows.map((c) => [c.sfId!, c]));
   const users = await loadUserMap();
   let batch: Array<Record<string, unknown>> = [];
   let count = 0;
@@ -437,6 +443,7 @@ async function migrateOpportunities(headers: string[], records: AsyncIterable<st
     batch.push({
       sfId,
       accountId,
+      ...opportunityContactIdentity(cells[idx("ContactId")], contactIdentities),
       name: cells[I.Name] || "Unnamed Opp",
       stage: cells[I.StageName] || "Working Opportunity",
       // SF Amount is a separate money field; the DEBT lives in Total_Debt__c.
