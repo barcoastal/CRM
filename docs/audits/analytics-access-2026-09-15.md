@@ -14,7 +14,7 @@ A non-admin could run reports and dashboard aggregates across unrelated teams, r
 - Dashboard/report definition updates and deletes carry the ownership predicate in the write query. Tile mutations constrain both dashboard ID and ownership. Read-only viewers no longer see detail-page Edit controls.
 - The legacy /api/dashboard/stats endpoint is admin-only pending an approved financial/telephony sharing policy. Its DashboardContent component has no page caller in this source tree; the current homepage uses the scoped /api/dashboard/manager endpoint.
 
-No migrations, production user edits, role grants or manager assignments are part of this change.
+No migrations or changes to existing production users, role grants or manager assignments are part of this change. Temporary validation users were created with user authorization and deactivated after testing.
 
 ## Verification
 
@@ -22,11 +22,15 @@ No migrations, production user edits, role grants or manager assignments are par
 - New fixture-based tests cover unrelated teams, descendants, agent/manager/admin behavior, data/chart totals, relation redaction, OR-filter and relation-filter attacks, object permission denial, deactivation, permission refresh, private report IDs, owner versus reader tile mutations, envelope parent requirements and all dashboard registry queries when logged out.
 - Full suite: 311 passed, 1 failed (312 total). The isolated failure is the existing `defaultOpportunityName` hyphen versus em-dash expectation in `tests/lib/lead-conversion.test.ts`; both that file and its implementation are unchanged from the deployed base.
 - TypeScript, targeted ESLint, whitespace checks and production webpack build are checked before handoff. The repo's existing middleware deprecation warning remains.
-- Tests use independent team fixtures and a mock database query evaluator. They are not a production restricted-user penetration test or a real-database integration fixture.
+- Unit tests use independent team fixtures and a mock database query evaluator. An additional production integration run passed all 18 checks using normal credentials login for a temporary agent and manager: scoped reports and aggregates, OR-filter isolation, private definitions, shared-dashboard mutation restrictions, permission revocation and session deactivation. Synthetic tasks, report, dashboard and permission set were removed; both test users were deactivated. See `validation/live-analytics-role-check.cjs`. This is bounded analytics verification, not a full penetration test.
 
 ## Rollout and remaining work
 
-This patch is prepared locally; it does not deploy itself. Base commit 02d65ee was verified in production on September 15, despite the older rollout note saying otherwise.
+Runtime commit `ffde3da` was deployed successfully on September 15, 2026, via Railway CLI upload. Deployment: `fd054934-6d5b-4c04-b2b9-1830852f0bca`. Database schema was already in sync. Anonymous requests to report, dashboard, ad-hoc report and tile APIs returned 401; the existing admin session loaded 37 report definitions and 5 dashboard definitions. Home dashboard performance remains a separate concern; its full data rendering was not verified in this run.
+
+Production permission review found explicit report/dashboard grants for 27 of 131 active sales reps. Review the remaining 104 with the business owner before granting access; existing profiles were not changed.
+
+The deployed runtime fix is preserved on local branch `fix/analytics-record-access-20260915`. The connected GitHub account has READ permission on `barcoastal/CRM`, so the branch has not been pushed or merged. A future deployment from the unchanged main branch could replace this CLI deployment; repository integration remains outstanding.
 
 The production read-only snapshot has 136 active users, 134 without managerId; two of those 134 have admin roles. The separate local team-assignment review lists every missing link. A business owner must distinguish actual missing relationships from intentional root/admin/service accounts. No relationships were guessed.
 
