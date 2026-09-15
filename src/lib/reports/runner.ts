@@ -1,3 +1,4 @@
+import { analyticsAccess, analyticsScope, ANALYTICS_RELATIONS, visibleRelation, redactAnalyticsRelations } from "@/lib/analytics-access";
 // Report runner: takes a ReportConfig (object + columns + filters + grouping +
 // summarize) and returns rows ready for the UI. The runner uses Prisma's
 // findMany with dynamic include + where, then post-processes in JS for JSON
@@ -306,6 +307,7 @@ function computeSummary(
 // ── Main entry ─────────────────────────────────────────────────────────
 
 export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
+  const access = await analyticsAccess("Reports.View");
   try {
     const meta = getObjectMetadata(cfg.objectType);
     if (!meta) return { error: `Unknown objectType: ${cfg.objectType}` };
@@ -391,10 +393,19 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
     if (!delegate?.findMany) {
       return { error: `Prisma model not available: ${meta.prismaModel}` };
     }
-    const args: Record<string, unknown> = { where, take, orderBy };
+    const scopeClauses = [analyticsScope(access, meta.prismaModel), where];
+    // Relation filters, grouping and sorting cannot be used to infer hidden values.
+    const relationKeys = [...filters.map(f => f.field), groupBy, sortBy, ...(cfg.summarize ?? []).map(s => s.field)];
+    for (const relation of new Set(relationKeys.filter((key): key is string => !!key).map(key => key.split(".")[0]))) {
+      if (ANALYTICS_RELATIONS[relation]) scopeClauses.push(visibleRelation(access, relation));
+    }
+    const args: Record<string, unknown> = { where: { AND: scopeClauses }, take, orderBy };
     if (include) args.include = include;
 
-    const dbRows = (await delegate.findMany(args)) as Record<string, unknown>[];
+    const dbRows = await redactAnalyticsRelations(
+      (await delegate.findMany(args)) as Record<string, unknown>[],
+      Object.keys(include ?? {}), access,
+    );
 
     // Project to flat rows
     let flatRows: Record<string, unknown>[] = dbRows.map((r) => {

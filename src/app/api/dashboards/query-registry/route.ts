@@ -1,9 +1,9 @@
+import { analyticsApiAccess } from "@/lib/analytics-access";
 import { NextResponse } from "next/server";
-import { requireAuthOrRespond } from "@/lib/api-auth";
 import { listRegistry } from "@/lib/dashboards/queries";
 
 export async function GET() {
-  const r = await requireAuthOrRespond();
-  if ("response" in r) return r.response;
+  const gate = await analyticsApiAccess("Dashboards.View");
+  if ("response" in gate) return gate.response;
   return NextResponse.json({ items: listRegistry() });
 }

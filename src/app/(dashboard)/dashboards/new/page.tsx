@@ -1,15 +1,12 @@
+import { analyticsPageAccess } from "@/lib/analytics-page-access";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ArrowLeft } from "@/components/icons/lucide";
 
 async function createDashboard(formData: FormData) {
   "use server";
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
+  const access = await analyticsPageAccess("Dashboards.Create");
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   const description = String(formData.get("description") ?? "").trim() || null;
@@ -19,13 +16,14 @@ async function createDashboard(formData: FormData) {
       name,
       description,
       isShared,
-      createdById: session.user.id,
+      createdById: access.userId,
     },
   });
   redirect(`/dashboards/${dash.id}`);
 }
 
 export default async function NewDashboardPage() {
+  await analyticsPageAccess("Dashboards.Create");
   return (
     <div className="space-y-5 max-w-2xl">
       <div>

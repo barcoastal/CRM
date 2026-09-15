@@ -1,5 +1,7 @@
+import { hasPermission } from "@/lib/permissions";
+import { definitionScope } from "@/lib/analytics-access";
+import { analyticsPageAccess } from "@/lib/analytics-page-access";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { OBJECT_METADATA } from "@/lib/reports/object-metadata";
 import { ReportViewer } from "@/components/reports/report-viewer";
@@ -10,11 +12,11 @@ interface PageProps {
 }
 
 export default async function ReportViewPage({ params }: PageProps) {
-  await auth();
+  const access = await analyticsPageAccess("Reports.View");
   const { id } = await params;
 
-  const report = await prisma.report.findUnique({
-    where: { id },
+  const report = await prisma.report.findFirst({
+    where: { id, AND: [definitionScope(access)] },
     include: { createdBy: { select: { id: true, name: true, email: true } } },
   });
   if (!report) redirect("/reports");
@@ -23,6 +25,7 @@ export default async function ReportViewPage({ params }: PageProps) {
 
   return (
     <ReportViewer
+      canEdit={access.isAdmin || (report.createdById === access.userId && hasPermission(access.permissions, "Reports.Edit"))}
       id={report.id}
       name={report.name}
       description={report.description}

@@ -1,3 +1,4 @@
+import { analyticsAccess, analyticsScope } from "@/lib/analytics-access";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -66,7 +67,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     label: "Open Leads",
     run: async (): Promise<ScalarResult> => {
       const value = await prisma.lead.count({
-        where: { status: { notIn: LEAD_TERMINAL } },
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "lead")], status: { notIn: LEAD_TERMINAL } },
       });
       return { value, format: "number" };
     },
@@ -76,7 +77,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     label: "Leads Created Today",
     run: async (): Promise<ScalarResult> => {
       const value = await prisma.lead.count({
-        where: { createdAt: { gte: startOfToday() } },
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "lead")], createdAt: { gte: startOfToday() } },
       });
       return { value, format: "number" };
     },
@@ -86,6 +87,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     label: "Leads by Disposition",
     run: async (): Promise<BarResult> => {
       const rows = await prisma.lead.groupBy({
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "lead")], },
         by: ["lastDisposition"],
         _count: { _all: true },
         orderBy: { _count: { id: "desc" } },
@@ -106,7 +108,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     label: "Pipeline Value",
     run: async (): Promise<ScalarResult> => {
       const agg = await prisma.opportunity.aggregate({
-        where: { stage: { notIn: OPP_CLOSED_STAGES } },
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "opportunity")], stage: { notIn: OPP_CLOSED_STAGES } },
         _sum: { totalDebt: true },
       });
       return { value: agg._sum.totalDebt ?? 0, format: "currency" };
@@ -117,7 +119,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     label: "Closed Won MTD",
     run: async (): Promise<ScalarResult> => {
       const value = await prisma.opportunity.count({
-        where: {
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "opportunity")],
           stage: { in: ["CLOSED_WON_FIRST_PAYMENT", "Closed Won"] },
           updatedAt: { gte: startOfMonth() },
         },
@@ -130,6 +132,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     label: "Opportunities by Stage",
     run: async (): Promise<BarResult> => {
       const rows = await prisma.opportunity.groupBy({
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "opportunity")], },
         by: ["stage"],
         _count: { _all: true },
         orderBy: { _count: { id: "desc" } },
@@ -149,7 +152,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     kind: "scalar",
     label: "Active Accounts",
     run: async (): Promise<ScalarResult> => {
-      const value = await prisma.account.count({ where: { isActive: true } });
+      const value = await prisma.account.count({ where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "account")], isActive: true } });
       return { value, format: "number" };
     },
   },
@@ -158,7 +161,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     label: "Accounts in NSF",
     run: async (): Promise<ScalarResult> => {
       const value = await prisma.account.count({
-        where: { paymentStatus: { contains: "NSF", mode: "insensitive" } },
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "account")], paymentStatus: { contains: "NSF", mode: "insensitive" } },
       });
       return { value, format: "number" };
     },
@@ -170,7 +173,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     label: "Pending Signatures",
     run: async (): Promise<ScalarResult> => {
       const value = await prisma.envelope.count({
-        where: { status: { in: ["SENT", "VIEWED"] } },
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "envelope")], status: { in: ["SENT", "VIEWED"] } },
       });
       return { value, format: "number" };
     },
@@ -180,7 +183,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     label: "Envelopes Completed MTD",
     run: async (): Promise<ScalarResult> => {
       const value = await prisma.envelope.count({
-        where: {
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "envelope")],
           status: "COMPLETED",
           completedAt: { gte: startOfMonth() },
         },
@@ -195,7 +198,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     label: "Overdue Tasks",
     run: async (): Promise<ScalarResult> => {
       const value = await prisma.task.count({
-        where: {
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "task")],
           status: { not: "COMPLETED" },
           dueDate: { lt: new Date() },
         },
@@ -211,7 +214,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
       const start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
       const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
       const value = await prisma.task.count({
-        where: {
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "task")],
           status: { notIn: ["COMPLETED", "DEFERRED"] },
           dueDate: { gte: start, lt: end },
         },
@@ -226,7 +229,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     label: "Events in Next 7 Days",
     run: async (): Promise<ScalarResult> => {
       const value = await prisma.event.count({
-        where: {
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "event")],
           startAt: { gte: new Date(), lt: nextDays(7) },
         },
       });
@@ -240,7 +243,7 @@ export const QUERY_REGISTRY: Record<string, QueryRunner> = {
     label: "Open High Priority Cases",
     run: async (): Promise<ScalarResult> => {
       const value = await prisma.case.count({
-        where: {
+        where: { AND: [analyticsScope(await analyticsAccess("Dashboards.View"), "case")],
           status: { notIn: ["CLOSED", "RESOLVED"] },
           priority: { in: ["HIGH", "URGENT"] },
         },

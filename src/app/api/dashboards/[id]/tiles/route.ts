@@ -1,6 +1,6 @@
+import { analyticsApiAccess, definitionScope } from "@/lib/analytics-access";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuthOrRespond } from "@/lib/api-auth";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -9,10 +9,11 @@ interface RouteCtx {
 const VALID_KINDS = new Set(["kpi", "count", "sum", "bar", "table", "report"]);
 
 export async function POST(req: NextRequest, ctx: RouteCtx) {
-  const r = await requireAuthOrRespond();
-  if ("response" in r) return r.response;
+  const gate = await analyticsApiAccess("Dashboards.Create");
+  if ("response" in gate) return gate.response;
+  const access = gate.access;
   const { id } = await ctx.params;
-  const existing = await prisma.dashboard.findUnique({ where: { id } });
+  const existing = await prisma.dashboard.findFirst({ where: { id, AND: [definitionScope(access, true)] } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const body = await req.json().catch(() => ({}));

@@ -1,5 +1,6 @@
+import { definitionScope } from "@/lib/analytics-access";
+import { analyticsPageAccess } from "@/lib/analytics-page-access";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { OBJECT_METADATA } from "@/lib/reports/object-metadata";
 import { ReportBuilder } from "@/components/reports/report-builder";
@@ -13,13 +14,12 @@ interface PageProps {
 }
 
 export default async function ReportBuilderPage({ searchParams }: PageProps) {
-  await auth();
-
   const { objectType, id } = await searchParams;
+  const access = await analyticsPageAccess(id ? "Reports.Edit" : "Reports.Create");
 
   // If editing a saved report, load it and use its objectType.
   if (id) {
-    const report = await prisma.report.findUnique({ where: { id } });
+    const report = await prisma.report.findFirst({ where: { id, AND: [definitionScope(access, true)] } });
     if (!report) redirect("/reports");
     const meta = OBJECT_METADATA[report.objectType];
     if (!meta) redirect("/reports");

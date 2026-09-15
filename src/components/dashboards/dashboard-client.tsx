@@ -24,7 +24,7 @@ export interface DashboardData {
   tiles: DashboardTileData[];
 }
 
-export function DashboardClient({ initial }: { initial: DashboardData }) {
+export function DashboardClient({ initial, canEdit = false }: { initial: DashboardData; canEdit?: boolean }) {
   const router = useRouter();
   const [data, setData] = useState<DashboardData>(initial);
   const [editing, setEditing] = useState(false);
@@ -112,7 +112,7 @@ export function DashboardClient({ initial }: { initial: DashboardData }) {
           </div>
         </div>
         <div className="flex gap-2">
-          {editing && (
+          {canEdit && editing && (
             <button
               type="button"
               onClick={deleteDashboard}
@@ -123,25 +123,25 @@ export function DashboardClient({ initial }: { initial: DashboardData }) {
               Delete
             </button>
           )}
-          <button
+          {canEdit && <button
             type="button"
             onClick={() => setEditing((e) => !e)}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-[13px] font-semibold border border-[#c9c9c9] bg-white text-[#131b2e]"
           >
             {editing ? <Eye className="size-4" /> : <Pencil className="size-4" />}
             {editing ? "Done" : "Edit"}
-          </button>
+          </button>}
         </div>
       </div>
 
       <DashboardGrid
         tiles={data.tiles}
-        editing={editing}
+        editing={canEdit && editing}
         onUpdate={updateTile}
         onDelete={deleteTile}
       />
 
-      {editing && (
+      {canEdit && editing && (
         <button
           type="button"
           onClick={addTile}

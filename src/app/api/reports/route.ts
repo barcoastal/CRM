@@ -1,17 +1,18 @@
+import { analyticsApiAccess, definitionScope } from "@/lib/analytics-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuthOrRespond } from "@/lib/api-auth";
 import { auditWrite } from "@/lib/audit";
 import { REPORTABLE_OBJECT_TYPES } from "@/lib/reports/object-metadata";
 
 export async function GET(req: NextRequest) {
-  const r = await requireAuthOrRespond();
-  if ("response" in r) return r.response;
+  const gate = await analyticsApiAccess("Reports.View");
+  if ("response" in gate) return gate.response;
+  const access = gate.access;
 
   const url = new URL(req.url);
   const objectType = url.searchParams.get("objectType");
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { AND: [definitionScope(access)] };
   if (objectType) where.objectType = objectType;
 
   const items = await prisma.report.findMany({
@@ -26,8 +27,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const r = await requireAuthOrRespond();
-  if ("response" in r) return r.response;
+  const gate = await analyticsApiAccess("Reports.Create");
+  if ("response" in gate) return gate.response;
+  const access = gate.access;
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const name = typeof body.name === "string" ? body.name.trim() : "";
@@ -51,12 +53,12 @@ export async function POST(req: NextRequest) {
       summarize: (Array.isArray(body.summarize) ? body.summarize : []) as never,
       rowLimit: typeof body.rowLimit === "number" ? body.rowLimit : 2000,
       isShared: body.isShared !== false,
-      createdById: r.session.userId,
+      createdById: access.userId,
     },
   });
 
   await auditWrite({
-    userId: r.session.userId,
+    userId: access.userId,
     entity: "Report",
     entityId: created.id,
     action: "CREATE",

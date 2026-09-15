@@ -2,9 +2,11 @@
 
 User-approved policy (2026-09-14): agents see assigned records, managers see their teams, admins see everything.
 
-Implementation in progress; not deployed and not yet a complete security boundary.
+Base implementation 02d65ee verified deployed on September 15, 2026. It is not yet a complete security boundary.
 
-## Implemented locally
+The report/dashboard extension is documented in [analytics-access-2026-09-15.md](analytics-access-2026-09-15.md) and is pending deployment.
+
+## Deployed base implementation
 
 - Shared scope for Lead/Opportunity assignedToId and Account/Contact ownerId.
 - Active ADMIN/SUPER_ADMIN users have unrestricted record scope.
@@ -19,7 +21,7 @@ Implementation in progress; not deployed and not yet a complete security boundar
 
 - Verify production managerId completeness against intended teams; do not infer teams from names.
 - Filter nested related-record payloads and related lists: scoping a parent alone is insufficient.
-- Cover reports, exports, dashboards, dialer, alternate lookup endpoints and service-driven reads/writes.
+- Deploy and verify the report/dashboard extension; cover future exports, dialer, alternate lookup endpoints and service-driven reads/writes.
 - Define sharing for tasks, cases, documents, clients, financial objects and queues.
 - Verify reassignment rights and race-safe action authorization.
 - Exercise restricted users against live-equivalent fixture data and test all bypass paths.

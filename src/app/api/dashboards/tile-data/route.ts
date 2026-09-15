@@ -1,5 +1,6 @@
+import { hasPermission } from "@/lib/permissions";
+import { analyticsApiAccess, definitionScope } from "@/lib/analytics-access";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuthOrRespond } from "@/lib/api-auth";
 import { getQuery } from "@/lib/dashboards/queries";
 import { prisma } from "@/lib/prisma";
 
@@ -12,8 +13,9 @@ import { prisma } from "@/lib/prisma";
  *                      crashes.
  */
 export async function POST(req: NextRequest) {
-  const r = await requireAuthOrRespond();
-  if ("response" in r) return r.response;
+  const gate = await analyticsApiAccess("Dashboards.View");
+  if ("response" in gate) return gate.response;
+  const access = gate.access;
   const body = await req.json().catch(() => ({}));
   const kind = typeof body.kind === "string" ? body.kind : "";
   const queryKey = typeof body.queryKey === "string" ? body.queryKey : null;
@@ -21,6 +23,9 @@ export async function POST(req: NextRequest) {
 
   try {
     if (kind === "report") {
+      if (!access.isAdmin && !hasPermission(access.permissions, "Reports.View")) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
       if (!reportId) {
         return NextResponse.json({ error: "reportId required" }, { status: 400 });
       }
@@ -31,12 +36,12 @@ export async function POST(req: NextRequest) {
         // The Reports agent may not have finished. Guard with a soft try.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const reportClient = (prisma as any).report;
-        if (!reportClient || typeof reportClient.findUnique !== "function") {
+        if (!reportClient || typeof reportClient.findFirst !== "function") {
           return NextResponse.json({
             error: "report-backed tiles not yet available",
           });
         }
-        const report = await reportClient.findUnique({ where: { id: reportId } });
+        const report = await reportClient.findFirst({ where: { id: reportId, AND: [definitionScope(access)] } });
         if (!report) {
           return NextResponse.json({ error: "Report not found" }, { status: 404 });
         }

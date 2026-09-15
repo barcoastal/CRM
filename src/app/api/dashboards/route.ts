@@ -1,13 +1,14 @@
+import { analyticsApiAccess, definitionScope } from "@/lib/analytics-access";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuthOrRespond } from "@/lib/api-auth";
 
 export async function GET() {
-  const r = await requireAuthOrRespond();
-  if ("response" in r) return r.response;
+  const gate = await analyticsApiAccess("Dashboards.View");
+  if ("response" in gate) return gate.response;
+  const access = gate.access;
   const items = await prisma.dashboard.findMany({
     where: {
-      OR: [{ isShared: true }, { createdById: r.session.userId }],
+      AND: [definitionScope(access)],
     },
     orderBy: { updatedAt: "desc" },
     include: {
@@ -19,8 +20,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const r = await requireAuthOrRespond();
-  if ("response" in r) return r.response;
+  const gate = await analyticsApiAccess("Dashboards.Create");
+  if ("response" in gate) return gate.response;
+  const access = gate.access;
   const body = await req.json().catch(() => ({}));
   const name = typeof body.name === "string" ? body.name.trim() : "";
   if (!name) {
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
       name,
       description,
       isShared,
-      createdById: r.session.userId,
+      createdById: access.userId,
     },
   });
   return NextResponse.json(dash, { status: 201 });

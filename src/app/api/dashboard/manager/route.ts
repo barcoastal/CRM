@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { analyticsApiAccess, analyticsScope, redactAnalyticsRelations } from "@/lib/analytics-access";
 import { prisma } from "@/lib/prisma";
 import { OPP_STAGES } from "@/lib/sf-canonical";
 
@@ -71,10 +71,9 @@ function ymd(d: Date): string {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await analyticsApiAccess("Dashboards.View");
+  if ("response" in gate) return gate.response;
+  const access = gate.access;
 
   const searchParams = request.nextUrl.searchParams;
   const createDate = rangeFromParams(searchParams, "create");
@@ -83,15 +82,15 @@ export async function GET(request: NextRequest) {
 
   // Build where clauses for leads + opps. We combine createdAt + updatedAt
   // ranges with AND so both filters apply at once when set.
-  const leadWhere: Record<string, unknown> = {};
+  const leadWhere: Record<string, unknown> = { AND: [analyticsScope(access, "lead")] };
   if (createDate) leadWhere.createdAt = createDate;
   if (lastModifiedDate) leadWhere.updatedAt = lastModifiedDate;
 
-  const oppWhere: Record<string, unknown> = {};
+  const oppWhere: Record<string, unknown> = { AND: [analyticsScope(access, "opportunity")] };
   if (createDate) oppWhere.createdAt = createDate;
   if (lastModifiedDate) oppWhere.updatedAt = lastModifiedDate;
 
-  const accountWhere: Record<string, unknown> = {};
+  const accountWhere: Record<string, unknown> = { AND: [analyticsScope(access, "account")] };
   if (programStartDate) accountWhere.programStartDate = programStartDate;
 
   const todayStart = startOfDay(new Date());
@@ -161,7 +160,8 @@ export async function GET(request: NextRequest) {
       // Today's Tasks (owner = current user)
       prisma.task.findMany({
         where: {
-          ownerId: session.user.id,
+          ownerId: access.userId,
+          AND: [analyticsScope(access, "task")],
           status: { not: "COMPLETED" },
           dueDate: { gte: todayStart, lt: todayEnd },
         },
@@ -179,7 +179,8 @@ export async function GET(request: NextRequest) {
       // Today's Events
       prisma.event.findMany({
         where: {
-          ownerId: session.user.id,
+          ownerId: access.userId,
+          AND: [analyticsScope(access, "event")],
           startAt: { gte: todayStart, lt: todayEnd },
         },
         orderBy: { startAt: "asc" },
@@ -342,7 +343,7 @@ export async function GET(request: NextRequest) {
       todaysTasks,
       todaysEvents,
       recentRecords,
-      keyDeals,
+      keyDeals: await redactAnalyticsRelations(keyDeals, ["account"], access),
     });
   } catch (error) {
     console.error("Manager dashboard error:", error);
