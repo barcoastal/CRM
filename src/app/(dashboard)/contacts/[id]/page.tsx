@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { SsnField } from "@/components/shared/ssn-field";
 import Link from "next/link";
@@ -21,7 +22,7 @@ import { LeadHistoryCard, type HistoryRow } from "@/components/leads/lead-histor
 export default async function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const rawRecord = await prisma.contact.findUnique({
-    where: { id },
+    where: { id, AND: [await recordScope("contact")] },
     include: {
       primaryAccount: {
         select: {

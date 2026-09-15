@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -12,7 +13,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   const { id } = await ctx.params;
 
   const account = await prisma.account.findUnique({
-    where: { id },
+    where: { id, AND: [await recordScope("account")] },
     include: {
       owner: { select: { id: true, name: true, email: true } },
       contacts: { include: { contact: true } },
@@ -37,7 +38,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     return ssnSafeJson({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const before = await prisma.account.findUnique({ where: { id } });
+  const before = await prisma.account.findUnique({ where: { id, AND: [await recordScope("account")] } });
   if (!before) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 
   // SF validation rules — reject patches that violate ported Account rules.
@@ -62,7 +63,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     return ssnSafeJson({ error: vErrors[0], errors: vErrors }, { status: 400 });
   }
 
-  const account = await prisma.account.update({ where: { id }, data: parsed.data });
+  const account = await prisma.account.update({ where: { id, AND: [await recordScope("account")] }, data: parsed.data });
   await auditWrite({
     userId: r.session.userId,
     entity: "Account",
@@ -80,11 +81,11 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
   const { id } = await ctx.params;
 
   // Soft-delete: flip isActive instead of dropping data.
-  const before = await prisma.account.findUnique({ where: { id } });
+  const before = await prisma.account.findUnique({ where: { id, AND: [await recordScope("account")] } });
   if (!before) return ssnSafeJson({ error: "Not found" }, { status: 404 });
   if (!before.isActive) return ssnSafeJson({ ok: true, alreadyInactive: true });
 
-  await prisma.account.update({ where: { id }, data: { isActive: false } });
+  await prisma.account.update({ where: { id, AND: [await recordScope("account")] }, data: { isActive: false } });
   await auditWrite({
     userId: r.session.userId,
     entity: "Account",

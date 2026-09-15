@@ -1,7 +1,9 @@
+import { recordScope, type OwnedEntity } from "@/lib/record-access";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { hasPermission } from "@/lib/permissions";
 import { auditWrite } from "@/lib/audit";
 import {
   ALLOWED_BULK_FIELDS,
@@ -40,10 +42,8 @@ export async function POST(
   }
   const e = entity as BulkEntity;
 
-  // Require Edit permission for the entity (matches existing per-entity
-  // bulk-update endpoints).
-  const permName = `${ENTITY_LABEL[e]}.Edit`;
-  const r = await requireAuthOrRespond(permName);
+  // Authenticate before parsing, then authorize the actual requested action.
+  const r = await requireAuthOrRespond();
   if ("response" in r) return r.response;
   const { session } = r;
 
@@ -61,7 +61,20 @@ export async function POST(
     return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
   const { ids, patch, delete: doDelete } = parsed.data;
+  const required = `${ENTITY_LABEL[e]}.${doDelete ? "Delete" : "Edit"}`;
+  if (!hasPermission(session.permissions, required)) {
+    return NextResponse.json({ error: "Forbidden", required }, { status: 403 });
+  }
 
+
+  const scope = ["lead", "opportunity", "account", "contact"].includes(e)
+    ? await recordScope(e as OwnedEntity)
+    : null;
+  // Other objects need an explicit sharing policy before non-admin bulk access.
+  if (!scope && !["ADMIN", "SUPER_ADMIN"].includes(session.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const scopedWhere = { id: { in: ids }, AND: [scope ?? {}] };
   const modelKey = PRISMA_MODEL_FOR[e];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const model = (prisma as any)[modelKey];
@@ -73,7 +86,7 @@ export async function POST(
     // No soft-delete columns in the current schema -> hard delete.
     let deletedCount = 0;
     try {
-      const result = await model.deleteMany({ where: { id: { in: ids } } });
+      const result = await model.deleteMany({ where: scopedWhere });
       deletedCount = result.count;
     } catch (err) {
       // Most likely a FK violation. Surface a clear error.
@@ -85,7 +98,7 @@ export async function POST(
       entity: ENTITY_LABEL[e],
       entityId: ids[0],
       action: "DELETE",
-      after: { bulkDelete: true, count: deletedCount, ids: ids.slice(0, 50) },
+      after: { bulkDelete: true, count: deletedCount, ids },
       diffOnly: false,
     });
     return NextResponse.json({ ok: true, deleted: deletedCount });
@@ -109,7 +122,7 @@ export async function POST(
   let updatedCount = 0;
   try {
     const result = await model.updateMany({
-      where: { id: { in: ids } },
+      where: scopedWhere,
       data,
     });
     updatedCount = result.count;
@@ -123,7 +136,7 @@ export async function POST(
     entity: ENTITY_LABEL[e],
     entityId: ids[0],
     action: "UPDATE",
-    after: { bulkUpdate: true, count: updatedCount, fields: Object.keys(data), ids: ids.slice(0, 50) },
+    after: { bulkUpdate: true, count: updatedCount, fields: Object.keys(data), ids },
     diffOnly: false,
   });
 

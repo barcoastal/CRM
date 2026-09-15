@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { z } from "zod";
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const parsed = schema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) return ssnSafeJson({ error: "Invalid consent evidence", details: parsed.error.flatten() }, { status: 400 });
   const { id } = await params;
+  if (!await canAccessRecord("lead", id)) return Response.json({ error: "Not found" }, { status: 404 });
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   const lead = await prisma.lead.update({
     where: { id },

@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -18,7 +19,7 @@ export async function GET(
   const { id } = await params;
 
   const lead = await prisma.lead.findUnique({
-    where: { id },
+    where: { id, AND: [await recordScope("lead")] },
     include: {
       assignedTo: {
         select: { id: true, name: true, email: true },
@@ -55,7 +56,7 @@ export async function PATCH(
 
   const { id } = await params;
 
-  const existing = await prisma.lead.findUnique({ where: { id } });
+  const existing = await prisma.lead.findUnique({ where: { id, AND: [await recordScope("lead")] } });
   if (!existing) {
     return ssnSafeJson({ error: "Lead not found" }, { status: 404 });
   }
@@ -91,7 +92,7 @@ export async function PATCH(
     // Update lead status and create client in a transaction
     const updatePromises: Promise<unknown>[] = [
       prisma.lead.update({
-        where: { id },
+        where: { id, AND: [await recordScope("lead")] },
         data: { status: "ENROLLED" },
         include: {
           assignedTo: { select: { id: true, name: true, email: true } },
@@ -217,7 +218,7 @@ export async function PATCH(
   if (data.fbclid !== undefined) updateData.fbclid = data.fbclid || null;
 
   const lead = await prisma.lead.update({
-    where: { id },
+    where: { id, AND: [await recordScope("lead")] },
     data: updateData,
     include: {
       assignedTo: {
@@ -240,13 +241,13 @@ export async function DELETE(
 
   const { id } = await params;
 
-  const existing = await prisma.lead.findUnique({ where: { id } });
+  const existing = await prisma.lead.findUnique({ where: { id, AND: [await recordScope("lead")] } });
   if (!existing) {
     return ssnSafeJson({ error: "Lead not found" }, { status: 404 });
   }
 
   const lead = await prisma.lead.update({
-    where: { id },
+    where: { id, AND: [await recordScope("lead")] },
     data: { status: "LOST" },
   });
 

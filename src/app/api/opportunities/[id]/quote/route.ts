@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -61,6 +62,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const r = await requireAuthOrRespond("Opportunity.View");
   if ("response" in r) return r.response;
   const { id } = await params;
+  if (!await canAccessRecord("opportunity", id)) return Response.json({ error: "Not found" }, { status: 404 });
   const q = await loadQuote(id);
   if ("error" in q) return ssnSafeJson({ error: q.error }, { status: q.status });
   return ssnSafeJson(q);
@@ -72,6 +74,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if ("response" in r) return r.response;
   const { session } = r;
   const { id } = await params;
+  if (!await canAccessRecord("opportunity", id)) return Response.json({ error: "Not found" }, { status: 404 });
 
   const q = await loadQuote(id);
   if ("error" in q) return ssnSafeJson({ error: q.error }, { status: q.status });

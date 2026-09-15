@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { SsnField } from "@/components/shared/ssn-field";
 import { notFound } from "next/navigation";
@@ -95,7 +96,7 @@ function yesNo(v: string | null): string | null {
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const rawRecord = await prisma.lead.findUnique({
-    where: { id },
+    where: { id, AND: [await recordScope("lead")] },
     include: {
       assignedTo: { select: { id: true, name: true, email: true } },
       calls: { include: { agent: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" }, take: 20 },

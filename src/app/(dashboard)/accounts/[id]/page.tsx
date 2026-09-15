@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { SsnField } from "@/components/shared/ssn-field";
 import Link from "next/link";
@@ -52,7 +53,7 @@ function accountPathIndex(stage: string): number {
 export default async function AccountDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const rawRecord = await prisma.account.findUnique({
-    where: { id },
+    where: { id, AND: [await recordScope("account")] },
     include: {
       owner: { select: { id: true, name: true, email: true } },
       primaryContact: { select: { id: true, fullName: true, email: true, phone: true, title: true, birthdate: true, ssn: true } },

@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -14,6 +15,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   const r = await requireAuthOrRespond("Account.View");
   if ("response" in r) return r.response;
   const { id } = await ctx.params;
+  if (!await canAccessRecord("account", id)) return Response.json({ error: "Not found" }, { status: 404 });
 
   const plans = await prisma.programPlan.findMany({
     where: { accountId: id },

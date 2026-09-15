@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +12,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
   const session = await auth();
   if (!session?.user) return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
   const { id } = await ctx.params;
+  if (!await canAccessRecord("lead", id)) return Response.json({ error: "Not found" }, { status: 404 });
 
   const lead = await prisma.lead.findUnique({
     where: { id },

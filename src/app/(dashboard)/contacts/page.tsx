@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
@@ -63,7 +64,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
   const session = await auth();
   const myId = session?.user?.id ?? "";
 
-  const where: Prisma.ContactWhereInput = { isActive: true };
+  const where: Prisma.ContactWhereInput = { isActive: true, AND: [await recordScope("contact")], };
   if (params.accountId) where.primaryAccountId = params.accountId;
   if (search) {
     where.OR = [

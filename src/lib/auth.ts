@@ -49,13 +49,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: { signIn: "/login" },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id as string;
-        token.role = (user as { role: string }).role;
-        token.profileName = (user as { profileName: string | null }).profileName ?? null;
-        token.permissions = (user as { permissions: string[] }).permissions ?? [];
-        token.mustResetPassword = (user as { mustResetPassword?: boolean }).mustResetPassword ?? false;
-      }
+      const userId = user?.id ?? token.id;
+      if (!userId) return null;
+      // Refresh on every session read so deactivation and permission changes
+      // take effect for existing sessions, not just the next login.
+      const current = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true, role: true, isActive: true, mustResetPassword: true,
+          profile: { select: { name: true } },
+        },
+      });
+      if (!current?.isActive) return null;
+      token.id = current.id;
+      token.role = current.role;
+      token.profileName = current.profile?.name ?? null;
+      token.permissions = Array.from(await loadEffectivePermissions(current.id));
+      token.mustResetPassword = current.mustResetPassword;
       return token;
     },
     async session({ session, token }) {

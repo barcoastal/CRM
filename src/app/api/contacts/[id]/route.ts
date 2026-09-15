@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -12,7 +13,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   const { id } = await ctx.params;
 
   const contact = await prisma.contact.findUnique({
-    where: { id },
+    where: { id, AND: [await recordScope("contact")] },
     include: {
       primaryAccount: true,
       owner: { select: { id: true, name: true } },
@@ -34,7 +35,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     return ssnSafeJson({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
   const d = parsed.data;
-  const before = await prisma.contact.findUnique({ where: { id } });
+  const before = await prisma.contact.findUnique({ where: { id, AND: [await recordScope("contact")] } });
   if (!before) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 
   // SF validation rules — reject patches that violate ported Contact rules.
@@ -69,7 +70,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   }
   if (d.birthdate) data.birthdate = new Date(d.birthdate);
 
-  const contact = await prisma.contact.update({ where: { id }, data });
+  const contact = await prisma.contact.update({ where: { id, AND: [await recordScope("contact")] }, data });
   await auditWrite({
     userId: r.session.userId,
     entity: "Contact",
@@ -85,8 +86,8 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
   const r = await requireAuthOrRespond("Contact.Delete");
   if ("response" in r) return r.response;
   const { id } = await ctx.params;
-  const before = await prisma.contact.findUnique({ where: { id } });
+  const before = await prisma.contact.findUnique({ where: { id, AND: [await recordScope("contact")] } });
   if (!before) return ssnSafeJson({ error: "Not found" }, { status: 404 });
-  await prisma.contact.update({ where: { id }, data: { isActive: false } });
+  await prisma.contact.update({ where: { id, AND: [await recordScope("contact")] }, data: { isActive: false } });
   return ssnSafeJson({ ok: true });
 }

@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
@@ -93,7 +94,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const session = await auth();
   const myId = session?.user?.id ?? "";
 
-  const where: Prisma.LeadWhereInput = {};
+  const where: Prisma.LeadWhereInput = { AND: [await recordScope("lead")], };
   if (search) {
     where.OR = [
       { businessName: { contains: search } },

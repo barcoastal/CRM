@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -23,6 +24,7 @@ export async function POST(
   const { session } = r;
 
   const { id } = await params;
+  if (!await canAccessRecord("lead", id)) return Response.json({ error: "Not found" }, { status: 404 });
   const body = await request.json().catch(() => ({}));
   const { stage, subDisposition, subject, callResult, status, description } = body ?? {};
 

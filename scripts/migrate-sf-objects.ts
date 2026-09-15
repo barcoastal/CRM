@@ -291,7 +291,9 @@ async function migrateAccounts(headers: string[], records: AsyncIterable<string[
       ),
     );
     const aFail = aResults.filter((r) => r.status === "rejected");
-    if (aFail.length > 0) console.error(`[${new Date().toISOString()}] ${aFail.length} account fails:`, (aFail[0] as PromiseRejectedResult).reason?.message);
+    if (aFail.length > 0) {
+      throw new Error(`Account sync failed: ${aFail.length}/${batch.length} upserts rejected; record values omitted`);
+    }
     count += batch.length;
     batch = [];
     if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] Account: ${count} imported`);
@@ -418,7 +420,7 @@ async function migrateOpportunities(headers: string[], records: AsyncIterable<st
     );
     const failures = results.filter((r) => r.status === "rejected");
     if (failures.length > 0) {
-      console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} opp upserts failed:`, (failures[0] as PromiseRejectedResult).reason?.message);
+      throw new Error(`Sync batch failed: ${failures.length}/${batch.length} upserts rejected; record values omitted`);
     }
     count += batch.length;
     batch = [];
@@ -502,7 +504,7 @@ async function migrateLeads(headers: string[], records: AsyncIterable<string[]>)
     );
     const failures = results.filter((r) => r.status === "rejected");
     if (failures.length > 0) {
-      console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} lead upserts failed:`, (failures[0] as PromiseRejectedResult).reason?.message);
+      throw new Error(`Sync batch failed: ${failures.length}/${batch.length} upserts rejected; record values omitted`);
     }
     count += batch.length;
     batch = [];
@@ -585,7 +587,7 @@ async function migrateProgramPlans(headers: string[], records: AsyncIterable<str
     );
     const failures = results.filter((r) => r.status === "rejected");
     if (failures.length > 0) {
-      console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} plan upserts failed:`, (failures[0] as PromiseRejectedResult).reason?.message);
+      throw new Error(`Sync batch failed: ${failures.length}/${batch.length} upserts rejected; record values omitted`);
     }
     count += batch.length;
     batch = [];
@@ -661,7 +663,7 @@ async function migrateDrafts(headers: string[], records: AsyncIterable<string[]>
     );
     const failures = results.filter((r) => r.status === "rejected");
     if (failures.length > 0) {
-      console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} draft upserts failed:`, (failures[0] as PromiseRejectedResult).reason?.message);
+      throw new Error(`Sync batch failed: ${failures.length}/${batch.length} upserts rejected; record values omitted`);
     }
     count += batch.length;
     batch = [];
@@ -722,7 +724,7 @@ function makeFlusher(
         const results = await Promise.allSettled(batch.map(upsert));
         const failures = results.filter((r) => r.status === "rejected");
         if (failures.length > 0) {
-          console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} ${label} upserts failed:`, (failures[0] as PromiseRejectedResult).reason?.message);
+          throw new Error(`Sync batch failed: ${failures.length}/${batch.length} upserts rejected; record values omitted`);
         }
         count += batch.length;
         batch = [];
@@ -734,7 +736,7 @@ function makeFlusher(
         const results = await Promise.allSettled(batch.map(upsert));
         const failures = results.filter((r) => r.status === "rejected");
         if (failures.length > 0) {
-          console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} ${label} upserts failed:`, (failures[0] as PromiseRejectedResult).reason?.message);
+          throw new Error(`Sync batch failed: ${failures.length}/${batch.length} upserts rejected; record values omitted`);
         }
         count += batch.length;
       }

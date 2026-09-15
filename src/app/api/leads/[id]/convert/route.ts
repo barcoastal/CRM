@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { z } from "zod";
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   if ("response" in r) return r.response;
 
   const { id } = await ctx.params;
+  if (!await canAccessRecord("lead", id)) return Response.json({ error: "Not found" }, { status: 404 });
   const body = await req.json().catch(() => ({}));
   const parsed = Body.safeParse(body);
   if (!parsed.success) {

@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
@@ -111,7 +112,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     select: { name: true, developerName: true, filters: true },
   });
 
-  const where: Prisma.AccountWhereInput = { isActive: true };
+  const where: Prisma.AccountWhereInput = { isActive: true, AND: [await recordScope("account")], };
   if (params.recordType) where.recordType = params.recordType;
   if (search) {
     where.OR = [
@@ -131,7 +132,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   if (view.startsWith("view:")) {
     // Stored list view — apply its saved filter criteria.
     const lv = listViews.find((v) => v.developerName === view.slice("view:".length));
-    if (lv) Object.assign(where, buildWhere((lv.filters as unknown as ListFilter[]) ?? []));
+    if (lv) where.AND = [await recordScope("account"), buildWhere((lv.filters as unknown as ListFilter[]) ?? [])];
   } else if (view === "business") {
     where.recordType = "BUSINESS_ACCOUNT";
   } else if (view === "client") {

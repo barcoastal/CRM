@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 /**
  * "Sync to Payment Processor" - real processor enrollment. Creates the
@@ -17,6 +18,7 @@ export async function POST(
   if ("response" in r) return r.response;
   const { session } = r;
   const { id } = await params;
+  if (!await canAccessRecord("account", id)) return Response.json({ error: "Not found" }, { status: 404 });
 
   const body = (await request.json().catch(() => ({}))) as { processor?: "SAS" | "RAM" };
   const result = await enrollClient(id, body.processor);

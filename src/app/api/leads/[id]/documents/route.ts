@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { promises as fs } from "node:fs";
@@ -16,6 +17,7 @@ export async function GET(
   const r = await requireAuthOrRespond("Lead.View");
   if ("response" in r) return r.response;
   const { id } = await params;
+  if (!await canAccessRecord("lead", id)) return Response.json({ error: "Not found" }, { status: 404 });
   const items = await prisma.document.findMany({
     where: { leadId: id },
     include: { uploadedBy: { select: { name: true } } },
@@ -32,6 +34,7 @@ export async function POST(
   if ("response" in r) return r.response;
   const { session } = r;
   const { id } = await params;
+  if (!await canAccessRecord("lead", id)) return Response.json({ error: "Not found" }, { status: 404 });
 
   const lead = await prisma.lead.findUnique({ where: { id } });
   if (!lead) return ssnSafeJson({ error: "Lead not found" }, { status: 404 });

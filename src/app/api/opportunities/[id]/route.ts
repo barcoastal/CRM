@@ -1,7 +1,8 @@
+import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requireAuthOrRespond } from "@/lib/api-auth";
 import { updateOpportunitySchema } from "@/lib/validations/opportunity";
 import { validateOppPatch } from "@/lib/validation/opp-validation";
 
@@ -9,15 +10,13 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session) {
-    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireAuthOrRespond("Opportunity.View");
+  if ("response" in access) return access.response;
 
   const { id } = await params;
 
   const opportunity = await prisma.opportunity.findUnique({
-    where: { id },
+    where: { id, AND: [await recordScope("opportunity")] },
     include: {
       lead: {
         select: {
@@ -65,14 +64,12 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session) {
-    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireAuthOrRespond("Opportunity.Edit");
+  if ("response" in access) return access.response;
 
   const { id } = await params;
 
-  const existing = await prisma.opportunity.findUnique({ where: { id } });
+  const existing = await prisma.opportunity.findUnique({ where: { id, AND: [await recordScope("opportunity")] } });
   if (!existing) {
     return ssnSafeJson({ error: "Opportunity not found" }, { status: 404 });
   }
@@ -121,7 +118,7 @@ export async function PATCH(
   if (data.notes !== undefined) updateData.notes = data.notes || null;
 
   const opportunity = await prisma.opportunity.update({
-    where: { id },
+    where: { id, AND: [await recordScope("opportunity")] },
     data: updateData,
     include: {
       lead: {
@@ -152,20 +149,18 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session) {
-    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireAuthOrRespond("Opportunity.Delete");
+  if ("response" in access) return access.response;
 
   const { id } = await params;
 
-  const existing = await prisma.opportunity.findUnique({ where: { id } });
+  const existing = await prisma.opportunity.findUnique({ where: { id, AND: [await recordScope("opportunity")] } });
   if (!existing) {
     return ssnSafeJson({ error: "Opportunity not found" }, { status: 404 });
   }
 
   const opportunity = await prisma.opportunity.update({
-    where: { id },
+    where: { id, AND: [await recordScope("opportunity")] },
     data: { stage: "CLOSED" },
   });
 

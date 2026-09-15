@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
   const stage = searchParams.get("stage") || "";
   const assignedToId = searchParams.get("assignedToId") || "";
 
-  const where: Prisma.OpportunityWhereInput = {};
+  const where: Prisma.OpportunityWhereInput = { AND: [await recordScope("opportunity")], };
 
   if (search) {
     where.lead = {

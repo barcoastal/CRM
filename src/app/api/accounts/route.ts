@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   const q = url.searchParams.get("q");
   const take = Math.min(Number(url.searchParams.get("limit") ?? "50"), 200);
 
-  const where: Record<string, unknown> = { isActive: true };
+  const where: Record<string, unknown> = { isActive: true, AND: [await recordScope("account")], };
   if (recordType && (ACCOUNT_RECORD_TYPES as readonly string[]).includes(recordType)) {
     where.recordType = recordType;
   }

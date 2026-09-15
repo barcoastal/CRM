@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
@@ -93,7 +94,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   const session = await auth();
   const myId = session?.user?.id ?? "";
 
-  const where: Prisma.OpportunityWhereInput = {};
+  const where: Prisma.OpportunityWhereInput = { AND: [await recordScope("opportunity")], };
   if (params.recordType) where.recordType = params.recordType;
   if (params.stage) where.stage = params.stage;
   if (search) {

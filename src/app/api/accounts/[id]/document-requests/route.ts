@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -10,6 +11,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const r = await requireAuthOrRespond("Account.View");
   if ("response" in r) return r.response;
   const { id } = await params;
+  if (!await canAccessRecord("account", id)) return Response.json({ error: "Not found" }, { status: 404 });
   const items = await prisma.documentRequest.findMany({
     where: { accountId: id },
     include: { createdBy: { select: { name: true } } },
@@ -24,6 +26,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if ("response" in r) return r.response;
   const { session } = r;
   const { id } = await params;
+  if (!await canAccessRecord("account", id)) return Response.json({ error: "Not found" }, { status: 404 });
 
   const account = await prisma.account.findUnique({
     where: { id },

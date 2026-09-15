@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { isSsnField, maskSsn } from "@/lib/ssn-privacy";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
@@ -15,6 +16,7 @@ export async function PATCH(
   if ("response" in r) return r.response;
   const { session } = r;
   const { id } = await params;
+  if (!await canAccessRecord("opportunity", id)) return Response.json({ error: "Not found" }, { status: 404 });
 
   const existing = await prisma.opportunity.findUnique({ where: { id } });
   if (!existing) return ssnSafeJson({ error: "Opportunity not found" }, { status: 404 });

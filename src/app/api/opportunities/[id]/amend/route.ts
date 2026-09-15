@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +12,7 @@ export async function POST(
   if ("response" in r) return r.response;
   const { session } = r;
   const { id } = await params;
+  if (!await canAccessRecord("opportunity", id)) return Response.json({ error: "Not found" }, { status: 404 });
   const opp = await prisma.opportunity.findUnique({ where: { id } });
   if (!opp) return ssnSafeJson({ error: "Not found" }, { status: 404 });
 

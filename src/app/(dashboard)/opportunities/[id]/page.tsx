@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { SsnField } from "@/components/shared/ssn-field";
 import Link from "next/link";
@@ -126,7 +127,7 @@ const OPP_PATH_OPEN_STAGES = OPP_STAGES.filter((st) => !st.startsWith("Closed"))
 export default async function OpportunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const rawRecord = await prisma.opportunity.findUnique({
-    where: { id },
+    where: { id, AND: [await recordScope("opportunity")] },
     include: {
       lead: {
         select: {

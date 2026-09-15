@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -25,6 +26,7 @@ export async function GET(req: Request) {
   const [leads, contacts, accounts, opps] = await Promise.all([
     prisma.lead.findMany({
       where: {
+        AND: [await recordScope("lead")],
         OR: [
           { contactName: { contains: q, mode: "insensitive" } },
           { businessName: { contains: q, mode: "insensitive" } },
@@ -38,6 +40,7 @@ export async function GET(req: Request) {
     }),
     prisma.contact.findMany({
       where: {
+        AND: [await recordScope("contact")],
         OR: [
           // fullName covers first/last; separate clauses would need two more
           // trigram indexes for no extra recall.
@@ -52,6 +55,7 @@ export async function GET(req: Request) {
     }),
     prisma.account.findMany({
       where: {
+        AND: [await recordScope("account")],
         OR: [
           { name: { contains: q, mode: "insensitive" } },
           { email: { contains: q, mode: "insensitive" } },
@@ -65,6 +69,7 @@ export async function GET(req: Request) {
     }),
     prisma.opportunity.findMany({
       where: {
+        AND: [await recordScope("opportunity")],
         OR: [
           { name: { contains: q, mode: "insensitive" } },
           { oppEmail: { contains: q, mode: "insensitive" } },

@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 /**
  * Live SAS detail pull for one account: customer record (status, totals, NSF
@@ -17,6 +18,7 @@ export async function GET(
   const r = await requireAuthOrRespond("Account.View");
   if ("response" in r) return r.response;
   const { id } = await params;
+  if (!await canAccessRecord("account", id)) return Response.json({ error: "Not found" }, { status: 404 });
 
   const account = await prisma.account.findUnique({
     where: { id },

@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -13,6 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const r = await requireAuthOrRespond("Opportunity.View");
   if ("response" in r) return r.response;
   const { id } = await params;
+  if (!await canAccessRecord("opportunity", id)) return Response.json({ error: "Not found" }, { status: 404 });
   const body = (await req.json().catch(() => ({}))) as { email?: string };
 
   const res = await createBookingLink(id);
