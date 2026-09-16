@@ -12,6 +12,7 @@ import type { ReportResult, ReportFilter, ReportSummarize } from "@/lib/reports/
  * Rows, Subtotals, Grand Total).
  */
 interface Props {
+  canEdit?: boolean;
   id: string;
   name: string;
   description: string | null;
@@ -31,7 +32,7 @@ const usd = (v: unknown): string => {
   return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 };
 
-export function ReportViewer({ id, name, objectLabel, summarize, groupBy, groupByLabel, filterCount }: Props) {
+export function ReportViewer({ id, name, objectLabel, summarize, groupBy, groupByLabel, filterCount, canEdit = false }: Props) {
   const [running, setRunning] = useState(true);
   const [result, setResult] = useState<ReportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +116,7 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, groupB
           ▼ {filterCount}
         </button>
         <button className="slds-button slds-button_neutral" onClick={() => void run()} style={{ cursor: "pointer" }}>↻</button>
-        <Link href={`/reports/builder?id=${id}`} className="slds-button slds-button_brand">Edit</Link>
+        {canEdit && <Link href={`/reports/builder?id=${id}`} className="slds-button slds-button_brand">Edit</Link>}
       </div>
 
       {/* Metrics strip */}

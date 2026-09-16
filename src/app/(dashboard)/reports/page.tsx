@@ -1,4 +1,5 @@
-import { auth } from "@/lib/auth";
+import { definitionScope } from "@/lib/analytics-access";
+import { analyticsPageAccess } from "@/lib/analytics-page-access";
 import { prisma } from "@/lib/prisma";
 import { ReportsHome } from "@/components/reports/reports-home";
 
@@ -8,11 +9,12 @@ import { ReportsHome } from "@/components/reports/reports-home";
  * Name | Description | Folder | Created By | Created On table.
  */
 export default async function ReportsPage() {
-  const session = await auth();
-  const myId = session?.user?.id ?? null;
+  const access = await analyticsPageAccess("Reports.View");
+  const myId = access.userId;
 
   const [reports, folders] = await Promise.all([
     prisma.report.findMany({
+      where: definitionScope(access),
       orderBy: { updatedAt: "desc" },
       include: { createdBy: { select: { id: true, name: true } } },
     }),

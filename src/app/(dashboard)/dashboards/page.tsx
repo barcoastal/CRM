@@ -1,5 +1,6 @@
+import { definitionScope } from "@/lib/analytics-access";
+import { analyticsPageAccess } from "@/lib/analytics-page-access";
 import Link from "next/link";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { LayoutDashboard, Plus, BarChart3 } from "@/components/icons/lucide";
 
@@ -16,13 +17,10 @@ function formatRelative(dt: Date | string): string {
 }
 
 export default async function DashboardsIndexPage() {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const access = await analyticsPageAccess("Dashboards.View");
 
   const dashboards = await prisma.dashboard.findMany({
-    where: userId
-      ? { OR: [{ isShared: true }, { createdById: userId }] }
-      : { isShared: true },
+    where: definitionScope(access),
     orderBy: { updatedAt: "desc" },
     include: {
       createdBy: { select: { id: true, name: true } },

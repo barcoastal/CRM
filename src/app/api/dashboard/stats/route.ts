@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { analyticsApiAccess } from "@/lib/analytics-access";
 import { prisma } from "@/lib/prisma";
 
 function getMonday(d: Date): Date {
@@ -11,18 +11,13 @@ function getMonday(d: Date): Date {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const userRole = (session.user as { role?: string }).role;
-  const userId = session.user.id;
-  const isManagerOrAdmin = userRole === "MANAGER" || userRole === "ADMIN";
-
-  const agentFilter = isManagerOrAdmin ? {} : { agentId: userId };
-  const leadFilter = isManagerOrAdmin ? {} : { assignedToId: userId };
+  const gate = await analyticsApiAccess("Dashboards.View");
+  if ("response" in gate) return gate.response;
+  // Legacy financial/telephony aggregates have no approved record-sharing policy.
+  // The current home dashboard uses /api/dashboard/manager with team scopes.
+  if (!gate.access.isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const agentFilter = {};
+  const leadFilter = {};
 
   // Parse date range for filtered section
   const searchParams = request.nextUrl.searchParams;

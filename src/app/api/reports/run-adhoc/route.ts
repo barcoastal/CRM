@@ -1,11 +1,11 @@
+import { analyticsApiAccess } from "@/lib/analytics-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
-import { requireAuthOrRespond } from "@/lib/api-auth";
 import { runReport, type ReportConfig, type ReportFilter, type ReportSummarize } from "@/lib/reports/runner";
 
 export async function POST(req: NextRequest) {
-  const r = await requireAuthOrRespond();
-  if ("response" in r) return r.response;
+  const gate = await analyticsApiAccess("Reports.View");
+  if ("response" in gate) return gate.response;
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   if (typeof body.objectType !== "string") {

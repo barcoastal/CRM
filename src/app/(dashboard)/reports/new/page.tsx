@@ -1,5 +1,5 @@
+import { analyticsPageAccess } from "@/lib/analytics-page-access";
 import Link from "next/link";
-import { auth } from "@/lib/auth";
 import { OBJECT_METADATA } from "@/lib/reports/object-metadata";
 import {
   Users,
@@ -23,7 +23,7 @@ const ICONS: Record<string, { Icon: typeof Users; gradient: string }> = {
 };
 
 export default async function NewReportPickerPage() {
-  await auth();
+  await analyticsPageAccess("Reports.Create");
 
   const entries = Object.entries(OBJECT_METADATA);
 
