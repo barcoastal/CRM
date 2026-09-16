@@ -1,3 +1,5 @@
+import "./negotiations.css";
+import { ObjectHeader } from "@/components/slds/object-header";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { recordScope } from "@/lib/record-access";
@@ -30,11 +32,10 @@ export default async function NegotiationsPage({ searchParams }: { searchParams:
   });
   function href(page: number) { return `/negotiations?${new URLSearchParams({ q, page: String(page) })}`; }
   return (
-    <div className="space-y-4 p-4">
-      <header className="rounded border bg-white p-5">
-        <h1 className="text-2xl font-semibold">Negotiations</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Open an opportunity to work through each creditor’s debt negotiation stages.</p>
-        <form className="mt-4 flex flex-wrap items-end gap-3" action="/negotiations">
+    <div className="ng-page ng-list-page">
+      <ObjectHeader entity="Opportunity" entityLabel="Negotiations" recordTitle="Opportunity negotiations" recordSubtitle="Manage creditor conversations and settlement progress." />
+      <header className="ng-list-tools">
+        <form className="ng-list-search" action="/negotiations">
           <label className="flex min-w-64 flex-1 flex-col gap-1 text-sm">Search opportunities
             <input name="q" defaultValue={q} placeholder="Opportunity, account, or creditor" className="rounded border p-2" />
           </label>
@@ -42,7 +43,7 @@ export default async function NegotiationsPage({ searchParams }: { searchParams:
           <Link href="/negotiations" className="px-2 py-2 text-sm text-[#0176d3]">Clear</Link>
         </form>
       </header>
-      <div className="overflow-x-auto rounded border bg-white">
+      <div className="ng-list-table">
         <p className="border-b p-3 text-sm">{total.toLocaleString()} opportunities · Page {page} of {pageCount}</p>
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50"><tr>{["Opportunity", "Account", "Owner", "Opportunity stage", "Debts", "Balance", ""].map((label) => <th key={label} className="px-4 py-3 font-medium">{label}</th>)}</tr></thead>

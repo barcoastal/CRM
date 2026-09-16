@@ -1,3 +1,5 @@
+import "../negotiations.css";
+import { ObjectHeader } from "@/components/slds/object-header";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
@@ -25,18 +27,18 @@ export default async function NegotiationOpportunityPage({ params }: { params: P
     where: { opportunityId: id, ownerId: session!.user.id }, orderBy: { createdAt: "desc" }, take: 50,
     select: { id: true, subject: true, fromAddress: true, toAddresses: true, direction: true, status: true, createdAt: true },
   }) : [];
-  return <div className="space-y-4 p-4">
-    <Link href="/negotiations" className="text-sm text-[#0176d3]">← All negotiations</Link>
-    <header className="rounded border bg-white p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold">{opp.name || "Opportunity negotiations"}</h1><Link href={`/opportunities/${opp.id}`} className="text-sm text-[#0176d3]">View opportunity record</Link></div>
-      <p className="mt-2 text-sm text-muted-foreground">{opp.account?.name ?? "No account"} · Owner: {opp.assignedTo?.name ?? "Unassigned"} · {opp.debts.length} debts</p>
-    </header>
-    <section className="rounded border bg-white p-4">
+  return <div className="ng-page">
+    <Link href="/negotiations" className="ng-back">‹ Negotiations</Link>
+    <ObjectHeader entity="Opportunity" entityLabel="Negotiations" recordTitle={opp.name || "Opportunity negotiations"} highlights={[
+      { label: "Account", value: opp.account?.name ?? "—" },
+      { label: "Opportunity Owner", value: opp.assignedTo?.name ?? "Unassigned" },
+      { label: "Debts", value: String(opp.debts.length) },
+      { label: "Total Balance", value: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(opp.debts.reduce((sum, debt) => sum + debt.currentBalance, 0)) },
+    ]} actions={<Link href={`/opportunities/${opp.id}`} className="ng-button">View opportunity</Link>} />
       <OpportunityNegotiations canEmail={canEmail} senderEmail={session?.user?.email ?? ""} emails={emails.map((email) => ({ ...email, createdAt: email.createdAt.toISOString() }))} opportunityName={opp.name ?? "Opportunity"} opportunityId={opp.id} debts={opp.debts.map((debt) => ({
         creditorEmail: debt.creditorEmail || debt.creditor?.collectionsEmail || null, id: debt.id, creditorName: debt.creditorName, accountNumber: debt.accountNumber,
         currentBalance: debt.currentBalance, status: debt.status, negotiationStatus: debt.negotiationStatus,
         negotiations: debt.negotiations.map((neg) => ({ ...neg, date: neg.date.toISOString(), createdAt: neg.createdAt.toISOString() })),
       }))} />
-    </section>
   </div>;
 }
