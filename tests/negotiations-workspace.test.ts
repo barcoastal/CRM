@@ -1,8 +1,8 @@
 import { beforeEach, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), mail: vi.fn(), scope: vi.fn(), count: vi.fn(), list: vi.fn(), find: vi.fn() }));
+const mocks = vi.hoisted(() => ({ access: vi.fn(), documents: vi.fn(), auth: vi.fn(), mail: vi.fn(), scope: vi.fn(), count: vi.fn(), list: vi.fn(), find: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: mocks.auth }));
-vi.mock("@/lib/record-access", () => ({ recordScope: mocks.scope }));
-vi.mock("@/lib/prisma", () => ({ prisma: { emailMessage: { findMany: mocks.mail }, opportunity: { count: mocks.count, findMany: mocks.list, findFirst: mocks.find } } }));
+vi.mock("@/lib/record-access", () => ({ recordScope: mocks.scope, canAccessRecord: mocks.access }));
+vi.mock("@/lib/prisma", () => ({ prisma: { document: { findMany: mocks.documents }, emailMessage: { findMany: mocks.mail }, opportunity: { count: mocks.count, findMany: mocks.list, findFirst: mocks.find } } }));
 vi.mock("@/components/opportunities/opportunity-negotiations", () => ({ OpportunityNegotiations: () => null }));
 vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("NOT_FOUND"); } }));
 import Page from "@/app/(dashboard)/negotiations/page";
@@ -34,4 +34,18 @@ it("only pulls the current user's emails linked to this opportunity", async () =
   mocks.mail.mockResolvedValue([]);
   await Detail({ params: Promise.resolve({ id: "opp" }) });
   expect(mocks.mail).toHaveBeenCalledWith(expect.objectContaining({ where: { opportunityId: "opp", ownerId: "me" }, take: 50 }));
+});
+
+it("includes own linked thread replies without pulling another opportunity's messages", async () => {
+  mocks.find.mockResolvedValue({ id: "opp", name: "Opportunity", debts: [] });
+  mocks.mail.mockResolvedValueOnce([{ id: "email", threadId: "thread", createdAt: new Date() }]).mockResolvedValueOnce([]);
+  await Detail({ params: Promise.resolve({ id: "opp" }) });
+  expect(mocks.mail).toHaveBeenNthCalledWith(2, expect.objectContaining({ where: { ownerId: "me", threadId: { in: ["thread"] }, OR: [{ opportunityId: "opp" }, { opportunityId: null }] } }));
+});
+it("only includes related account documents when access is allowed", async () => {
+  mocks.find.mockResolvedValue({ id: "opp", name: "Opportunity", debts: [], accountId: "account", leadId: "lead" });
+  mocks.mail.mockResolvedValue([]); mocks.documents.mockResolvedValue([]);
+  mocks.access.mockImplementation(async (type: string) => type === "account");
+  await Detail({ params: Promise.resolve({ id: "opp" }) });
+  expect(mocks.documents).toHaveBeenCalledWith(expect.objectContaining({ where: { OR: [{ accountId: "account" }] } }));
 });

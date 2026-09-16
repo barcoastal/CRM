@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
       where: { id: sourceId },
       include: { attachments: true, owner: { select: { email: true } } },
     });
+    if (!src) return NextResponse.json({ error: "Original email not found" }, { status: 404 });
     if (src) {
       const isAdmin = ["SUPER_ADMIN", "ADMIN", "MANAGER"].includes(r.session.role);
       if (!isAdmin && src.ownerId !== r.session.userId) {
@@ -104,7 +105,8 @@ export async function POST(req: NextRequest) {
   const uploaded: SendAttachment[] = [];
   for (const a of d.attachments) {
     const content = await readAttachment(a.storagePath).catch(() => null);
-    if (content) uploaded.push({ filename: a.filename, contentType: a.contentType, content, storagePath: a.storagePath });
+    if (!content) return NextResponse.json({ error: `Attachment unavailable: ${a.filename}. Remove it and attach it again before sending.` }, { status: 400 });
+    uploaded.push({ filename: a.filename, contentType: a.contentType, content, storagePath: a.storagePath });
   }
 
   const client = makeGmailWriteClient(repEmail);
