@@ -7,7 +7,6 @@ export type OppTabKey =
   | "Activities"
   | "Debt Information"
   | "Payment Calculator"
-  | "Negotiations"
   | "Settlements"
   | "Documents"
   | "Related"
@@ -20,7 +19,6 @@ const TABS: OppTabKey[] = [
   "Activities",
   "Debt Information",
   "Payment Calculator",
-  "Negotiations",
   "Settlements",
   "Documents",
   "Related",
