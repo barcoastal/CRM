@@ -1,13 +1,15 @@
 import { beforeEach, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ scope: vi.fn(), count: vi.fn(), list: vi.fn(), find: vi.fn() }));
+const mocks = vi.hoisted(() => ({ auth: vi.fn(), mail: vi.fn(), scope: vi.fn(), count: vi.fn(), list: vi.fn(), find: vi.fn() }));
+vi.mock("@/lib/auth", () => ({ auth: mocks.auth }));
 vi.mock("@/lib/record-access", () => ({ recordScope: mocks.scope }));
-vi.mock("@/lib/prisma", () => ({ prisma: { opportunity: { count: mocks.count, findMany: mocks.list, findFirst: mocks.find } } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { emailMessage: { findMany: mocks.mail }, opportunity: { count: mocks.count, findMany: mocks.list, findFirst: mocks.find } } }));
 vi.mock("@/components/opportunities/opportunity-negotiations", () => ({ OpportunityNegotiations: () => null }));
 vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("NOT_FOUND"); } }));
 import Page from "@/app/(dashboard)/negotiations/page";
 import Detail from "@/app/(dashboard)/negotiations/[id]/page";
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.auth.mockResolvedValue({ user: { id: "me", email: "rep@example.com", permissions: ["Email.Send"] } });
   mocks.scope.mockResolvedValue({ assignedToId: { in: ["me"] } });
   mocks.count.mockResolvedValue(0); mocks.list.mockResolvedValue([]); mocks.find.mockResolvedValue(null);
 });
@@ -25,4 +27,11 @@ it("searches while preserving access scope and clamps pagination", async () => {
 it("rejects inaccessible opportunity workspaces", async () => {
   await expect(Detail({ params: Promise.resolve({ id: "other" }) })).rejects.toThrow("NOT_FOUND");
   expect(mocks.find).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "other", AND: [{ assignedToId: { in: ["me"] } }] } }));
+});
+
+it("only pulls the current user's emails linked to this opportunity", async () => {
+  mocks.find.mockResolvedValue({ id: "opp", name: "Opportunity", debts: [] });
+  mocks.mail.mockResolvedValue([]);
+  await Detail({ params: Promise.resolve({ id: "opp" }) });
+  expect(mocks.mail).toHaveBeenCalledWith(expect.objectContaining({ where: { opportunityId: "opp", ownerId: "me" }, take: 50 }));
 });

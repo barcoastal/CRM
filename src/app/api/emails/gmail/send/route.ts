@@ -1,6 +1,7 @@
 // src/app/api/emails/gmail/send/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { canAccessRecord } from "@/lib/record-access";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { gmailConfigured, makeGmailWriteClient } from "@/lib/google/gmail-client";
@@ -19,6 +20,7 @@ const attachmentSchema = z.object({
 });
 
 const bodySchema = z.object({
+  opportunityId: z.string().optional(),
   to: z.array(z.string().email()).min(1),
   cc: z.array(z.string().email()).optional(),
   bcc: z.array(z.string().email()).optional(),
@@ -90,6 +92,12 @@ export async function POST(req: NextRequest) {
         }
       }
     }
+  }
+
+  if (d.opportunityId) {
+    if (!await canAccessRecord("opportunity", d.opportunityId)) return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
+    if (record.opportunityId && record.opportunityId !== d.opportunityId) return NextResponse.json({ error: "Email belongs to another opportunity" }, { status: 400 });
+    record.opportunityId = d.opportunityId;
   }
 
   // Load uploaded files from disk into buffers for the MIME builder.
