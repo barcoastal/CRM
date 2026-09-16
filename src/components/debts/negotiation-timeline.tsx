@@ -224,13 +224,13 @@ export function NegotiationTimeline({
                 <div className="flex-1 pb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{neg.type}</span>
-                      <Badge
+                      <span className="text-sm font-medium">{neg.type === "STAGE_CHANGE" ? "Stage change" : neg.type}</span>
+                      {neg.type !== "STAGE_CHANGE" && <Badge
                         variant="secondary"
                         className={`text-xs ${RESPONSE_COLORS[neg.response] || ""}`}
                       >
                         {neg.response}
-                      </Badge>
+                      </Badge>}
                     </div>
                     <span className="text-xs text-muted-foreground">
                       {formatDate(neg.date)}
