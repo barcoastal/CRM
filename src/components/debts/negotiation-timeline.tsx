@@ -32,6 +32,7 @@ interface NegotiationData {
 interface NegotiationTimelineProps {
   negotiations: NegotiationData[];
   clientId?: string;
+  opportunityId?: string;
   debtId: string;
   onRefresh: () => void;
 }
@@ -71,14 +72,18 @@ function formatDate(dateStr: string): string {
 export function NegotiationTimeline({
   negotiations,
   clientId,
+  opportunityId,
   debtId,
   onRefresh,
 }: NegotiationTimelineProps) {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (submitting) return;
+    setError(null);
     setSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
@@ -94,17 +99,25 @@ export function NegotiationTimeline({
 
     try {
       const res = await fetch(
-        `/api/clients/${clientId}/debts/${debtId}/negotiations`,
+        opportunityId
+          ? `/api/opportunities/${opportunityId}/debts/${debtId}/negotiations`
+          : `/api/clients/${clientId}/debts/${debtId}/negotiations`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         }
       );
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || "Unable to save negotiation. Please try again.");
+      }
       if (res.ok) {
         setShowForm(false);
         onRefresh();
       }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to save negotiation. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -119,7 +132,8 @@ export function NegotiationTimeline({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setShowForm(!showForm)}
+          disabled={submitting || (!clientId && !opportunityId)}
+          onClick={() => { setError(null); setShowForm(!showForm); }}
         >
           <Plus className="size-3.5" />
           Add Negotiation
@@ -131,7 +145,8 @@ export function NegotiationTimeline({
           onSubmit={handleSubmit}
           className="rounded-md border p-4 space-y-3 bg-muted/30"
         >
-          <div className="grid grid-cols-2 gap-3">
+          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label htmlFor="neg-type" className="text-xs">Type</Label>
               <Select name="type" defaultValue="CALL">
@@ -180,7 +195,7 @@ export function NegotiationTimeline({
             <Textarea id="neg-notes" name="notes" rows={2} />
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>
+            <Button type="button" variant="ghost" size="sm" disabled={submitting} onClick={() => setShowForm(false)}>
               Cancel
             </Button>
             <Button type="submit" size="sm" disabled={submitting}>

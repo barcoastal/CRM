@@ -33,6 +33,7 @@ import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
 import { EnrollmentDialog } from "@/components/clients/enrollment-dialog";
 import { PaymentCalculator } from "@/components/calculator/payment-calculator";
 import { ContactActivityLog } from "@/components/shared/contact-activity-log";
+import { NegotiationTimeline } from "@/components/debts/negotiation-timeline";
 import { DebtTable } from "@/components/debts/debt-table";
 import { DocumentList } from "@/components/documents/document-list";
 import { cn } from "@/lib/utils";
@@ -360,6 +361,8 @@ export function OpportunityDetailTabs({ opportunity }: OpportunityDetailTabsProp
   const [updating, setUpdating] = useState(false);
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [negotiationDebtId, setNegotiationDebtId] = useState("");
+  const negotiationDebt = opportunity.debts.find((debt) => debt.id === negotiationDebtId) ?? opportunity.debts[0];
 
   const handleStageChange = async (newStage: string) => {
     setUpdating(true);
@@ -836,6 +839,46 @@ export function OpportunityDetailTabs({ opportunity }: OpportunityDetailTabsProp
             <StatCard label="Total Savings" value={formatCurrency(totalSavings)} />
           </div>
 
+          {negotiationDebt ? (
+            <Panel title="Manage Negotiations">
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label htmlFor="negotiation-creditor" className="text-sm font-medium">Creditor</label>
+                  <select
+                    id="negotiation-creditor"
+                    value={negotiationDebt.id}
+                    onChange={(event) => setNegotiationDebtId(event.target.value)}
+                    className="w-full rounded-md border bg-background p-2 text-sm"
+                  >
+                    {opportunity.debts.map((debt) => (
+                      <option key={debt.id} value={debt.id}>
+                        {debt.creditorName}{debt.accountNumber ? ` • Ending ${debt.accountNumber.slice(-4)}` : ""} • {formatCurrency(debt.currentBalance)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <span>Balance: {formatCurrency(negotiationDebt.currentBalance)}</span>
+                  <span>Status: {negotiationDebt.status.replace(/_/g, " ")}</span>
+                  {negotiationDebt.creditorPhone && <span>Phone: {negotiationDebt.creditorPhone}</span>}
+                  {negotiationDebt.creditorEmail && <span>Email: {negotiationDebt.creditorEmail}</span>}
+                </div>
+                <NegotiationTimeline
+                  key={negotiationDebt.id}
+                  negotiations={negotiationDebt.negotiations}
+                  opportunityId={opportunity.id}
+                  debtId={negotiationDebt.id}
+                  onRefresh={handleRefresh}
+                />
+              </div>
+            </Panel>
+          ) : (
+            <Panel title="Start Negotiating">
+              <p className="mb-3 text-sm text-muted-foreground">Add a debt to record creditor conversations, offers, and counteroffers.</p>
+              <Button variant="outline" onClick={() => setActiveTab("debts")}>Add a debt</Button>
+            </Panel>
+          )}
+
           {settledDebts.length > 0 && (
             <Panel title="Settlement Details">
               <div className="space-y-2">
@@ -926,20 +969,7 @@ export function OpportunityDetailTabs({ opportunity }: OpportunityDetailTabsProp
             </Panel>
           )}
 
-          {!settledDebts.length && !opportunity.debts.some((d) => d.negotiations.length > 0) && (
-            <div
-              className="rounded-xl p-12 text-center"
-              style={{ background: "#ffffff", boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
-            >
-              <DollarSign className="size-8 mx-auto mb-3" style={{ color: "#c4c5d9" }} />
-              <p className="text-[13px]" style={{ color: "#444656" }}>
-                No negotiations recorded yet.
-              </p>
-              <p className="text-[12px] mt-1" style={{ color: "#c4c5d9" }}>
-                Add debts in the Debts tab to start tracking negotiations.
-              </p>
-            </div>
-          )}
+
         </div>
       )}
 

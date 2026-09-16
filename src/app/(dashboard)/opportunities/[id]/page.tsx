@@ -14,6 +14,7 @@ import { ActivityChatterRail, type ChatterPost } from "@/components/slds/activit
 import type { ActivityItem } from "@/components/slds/activity-rail";
 import { RelatedList } from "@/components/slds/related-list";
 import { OppActivities } from "@/components/opportunities/opp-activities";
+import { OpportunityNegotiations } from "@/components/opportunities/opportunity-negotiations";
 import { OppTabs } from "@/components/opportunities/opp-tabs";
 import { OppHeaderButtons } from "@/components/opportunities/opp-header-buttons";
 import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
@@ -999,6 +1000,14 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
                 Activities: activitiesPanel,
                 "Debt Information": debtPanel,
                 "Payment Calculator": calcPanel,
+                Negotiations: <OpportunityNegotiations opportunityId={opp.id} debts={opp.debts.map((debt) => ({
+                  id: debt.id,
+                  creditorName: debt.creditorName,
+                  accountNumber: debt.accountNumber,
+                  currentBalance: debt.currentBalance,
+                  status: debt.status,
+                  negotiations: debt.negotiations.map((neg) => ({ ...neg, date: neg.date.toISOString(), createdAt: neg.createdAt.toISOString() })),
+                }))} />,
                 Settlements: settlementsPanel,
                 Documents: documentsPanel,
                 Related: relatedPanel,
