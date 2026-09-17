@@ -5,6 +5,6 @@ export function LeadHealthCheckCard(props: LeadHealthCheckInput) {
   const results = leadHealthResults(props);
   return <HealthCheckCard
     results={results}
-    emptyMessage={`No checks apply to ${props.status} leads. Salesforce runs these checks for New and Working Lead.`}
+    emptyMessage={`No checks apply to ${props.status} leads. Checks run for New and Working Lead statuses.`}
   />;
 }
