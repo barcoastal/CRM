@@ -1,4 +1,4 @@
-import { canAccessRecord } from "@/lib/record-access";
+import { canAccessRecord, recordScope } from "@/lib/record-access";
 import { isSsnField, maskSsn } from "@/lib/ssn-privacy";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
@@ -27,6 +27,7 @@ export async function PATCH(
     return ssnSafeJson({ error: "Provide exactly one field to update" }, { status: 400 });
   }
   const [fieldName, newValue] = entries[0];
+  if (fieldName === "ownerId" && !await prisma.account.findFirst({ where: { id, AND: [await recordScope("account", false)] }, select: { id: true } })) return Response.json({ error: "Owner reassignment is not permitted." }, { status: 403 });
 
   try {
     const result = applyFieldUpdate({
@@ -63,7 +64,7 @@ export async function PATCH(
     if (result.typedColumn) updateData[result.typedColumn.name] = result.typedColumn.value;
     if (result.sfDataPatch) updateData.sfDataJson = mergeSfData(existing.sfDataJson, result.sfDataPatch);
 
-    const updated = await prisma.account.update({ where: { id }, data: updateData });
+    const updated = await prisma.account.update({ where: { id, AND: [await recordScope("account", fieldName !== "ownerId")] }, data: updateData });
 
     await prisma.accountHistory.create({
       data: {

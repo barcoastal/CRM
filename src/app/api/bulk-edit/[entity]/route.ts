@@ -68,7 +68,7 @@ export async function POST(
 
 
   const scope = ["lead", "opportunity", "account", "contact"].includes(e)
-    ? await recordScope(e as OwnedEntity)
+    ? await recordScope(e as OwnedEntity, !(e === "account" && patch && Object.hasOwn(patch, "ownerId")))
     : null;
   // Other objects need an explicit sharing policy before non-admin bulk access.
   if (!scope && !["ADMIN", "SUPER_ADMIN"].includes(session.role)) {

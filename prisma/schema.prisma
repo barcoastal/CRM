@@ -52,6 +52,7 @@ model User {
   createdDocumentRequests   DocumentRequest[]               @relation("DocRequestCreatedBy")
   opportunities             Opportunity[]                   @relation("OpportunityAssignee")
   ownedAccounts             Account[]                       @relation("AccountOwner")
+  negotiationAccounts       Account[]                       @relation("AccountNegotiator")
   ownedContacts             Contact[]                       @relation("ContactOwner")
   programPlansAssigned      ProgramPlan[]                   @relation("ProgramPlanAssignedTo")
   feesCharged               Fee[]                           @relation("FeeChargedBy")
@@ -358,6 +359,8 @@ model Account {
   // ownership / hierarchy
   ownerId           String?
   owner             User?     @relation("AccountOwner", fields: [ownerId], references: [id])
+  assignedNegotiatorId String?
+  assignedNegotiator User? @relation("AccountNegotiator", fields: [assignedNegotiatorId], references: [id], onDelete: SetNull)
   parentAccountId   String?
   parentAccount     Account?  @relation("AccountHierarchy", fields: [parentAccountId], references: [id])
   childAccounts     Account[] @relation("AccountHierarchy")
@@ -464,6 +467,7 @@ model Account {
 
   @@index([recordType])
   @@index([stage])
+  @@index([assignedNegotiatorId])
   @@index([parentAccountId])
   @@index([primaryContactId])
   // trigram index: global search does ILIKE %q% on this column

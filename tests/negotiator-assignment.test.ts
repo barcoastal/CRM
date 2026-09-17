@@ -1,0 +1,27 @@
+import { beforeEach, expect, it, vi } from 'vitest';
+import { NextRequest } from 'next/server';
+const m = vi.hoisted(() => ({ auth:vi.fn(),scope:vi.fn(),account:vi.fn(),target:vi.fn(),permissions:vi.fn(),update:vi.fn(),history:vi.fn(),audit:vi.fn(),transaction:vi.fn() }));
+vi.mock('@/lib/api-auth',()=>({requireAuthOrRespond:m.auth}));
+vi.mock('@/lib/record-access',()=>({recordScope:m.scope}));
+vi.mock('@/lib/permissions',async original=>({...await original<typeof import('@/lib/permissions')>(),loadEffectivePermissions:m.permissions}));
+vi.mock('@/lib/prisma',()=>({prisma:{account:{findFirst:m.account},user:{findFirst:m.target},$transaction:m.transaction}}));
+import { PATCH } from '@/app/api/accounts/[id]/negotiator/route';
+import { ownedRecordScope } from '@/lib/owned-record-scope';
+import { applyFieldUpdate } from '@/lib/field-update';
+const call=(body:unknown={userId:'negotiator',previousUserId:null})=>PATCH(new NextRequest('http://localhost/api/accounts/account/negotiator',{method:'PATCH',body:JSON.stringify(body)}),{params:Promise.resolve({id:'account'})});
+beforeEach(()=>{
+ vi.resetAllMocks();m.auth.mockResolvedValue({session:{userId:'owner'}});m.scope.mockResolvedValue({ownerId:{in:['owner']}});m.account.mockResolvedValue({assignedNegotiatorId:null,assignedNegotiator:null});m.target.mockResolvedValue({id:'negotiator',name:'Assigned Rep'});m.permissions.mockResolvedValue(new Set(['Account.View','Opportunity.View']));m.update.mockResolvedValue({count:1});m.transaction.mockImplementation(fn=>fn({account:{updateMany:m.update},accountHistory:{create:m.history},auditLog:{create:m.audit}}));
+});
+it('requires object edit permission',async()=>{m.auth.mockResolvedValue({response:Response.json({error:'Forbidden'},{status:403})});expect((await call()).status).toBe(403);expect(m.auth).toHaveBeenCalledWith('Account.Edit');expect(m.account).not.toHaveBeenCalled();});
+it('does not let an assigned negotiator reassign an account they do not own',async()=>{m.account.mockResolvedValue(null);expect((await call()).status).toBe(404);expect(m.scope).toHaveBeenCalledWith('account',false);expect(m.update).not.toHaveBeenCalled();});
+it('rejects inactive or missing target users',async()=>{m.target.mockResolvedValue(null);expect((await call()).status).toBe(400);expect(m.update).not.toHaveBeenCalled();});
+it('requires the target to have account and opportunity viewing permission',async()=>{m.permissions.mockResolvedValue(new Set(['Account.View']));expect((await call()).status).toBe(400);expect(m.update).not.toHaveBeenCalled();});
+it('saves assignment with history and audit in the same transaction',async()=>{expect((await call()).status).toBe(200);expect(m.update).toHaveBeenCalledWith({where:{id:'account',assignedNegotiatorId:null,AND:[{ownerId:{in:['owner']}}]},data:{assignedNegotiatorId:'negotiator'}});expect(m.history).toHaveBeenCalledWith({data:{accountId:'account',field:'Debt Negotiator',oldValue:null,newValue:'Assigned Rep',changedById:'owner'}});expect(m.audit).toHaveBeenCalledTimes(1);});
+it('removes assignment and records the previous assignee',async()=>{m.account.mockResolvedValue({assignedNegotiatorId:'old',assignedNegotiator:{name:'Previous Rep'}});expect((await call({userId:null,previousUserId:'old'})).status).toBe(200);expect(m.target).not.toHaveBeenCalled();expect(m.history.mock.calls[0][0].data.oldValue).toBe('Previous Rep');expect(m.update.mock.calls[0][0].data.assignedNegotiatorId).toBeNull();});
+it('rejects stale requests before writing',async()=>{m.account.mockResolvedValue({assignedNegotiatorId:'other'});expect((await call()).status).toBe(409);expect(m.update).not.toHaveBeenCalled();});
+it('rejects concurrent assignment changes without a misleading audit',async()=>{m.update.mockResolvedValue({count:0});expect((await call()).status).toBe(409);expect(m.audit).not.toHaveBeenCalled();expect(m.history).not.toHaveBeenCalled();});
+it('does not suppress audit failures inside the transaction',async()=>{m.audit.mockRejectedValue(new Error('audit unavailable'));await expect(call()).rejects.toThrow('audit unavailable');});
+it.each([{}, {userId:'rep'}, {userId:42,previousUserId:null}, {userId:'rep',previousUserId:null,ownerId:'rep'}])('rejects malformed assignment requests %j',async body=>{expect((await call(body)).status).toBe(400);expect(m.update).not.toHaveBeenCalled();});
+it('makes account sharing explicit while preserving owner-only assignment rights',()=>{expect(ownedRecordScope('account',['rep'])).toEqual({OR:[{ownerId:{in:['rep']}},{assignedNegotiatorId:{in:['rep']}}]});expect(ownedRecordScope('account',['rep'],false)).toEqual({ownerId:{in:['rep']}});});
+it('includes opportunities through their assigned account but never grants contact sharing',()=>{expect(ownedRecordScope('opportunity',['rep'])).toEqual({OR:[{assignedToId:{in:['rep']}},{account:{is:{assignedNegotiatorId:{in:['rep']}}}}]});expect(ownedRecordScope('contact',['rep'])).toEqual({ownerId:{in:['rep']}});});
+it.each(['assignedNegotiatorId','Debt_Negotiator__c'])('blocks generic field-edit assignment bypass: %s',fieldName=>{expect(()=>applyFieldUpdate({entity:'account',fieldName,newValue:'rep',existingRecord:{},existingSfDataJson:null})).toThrow('assignment control');});

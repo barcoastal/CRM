@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { z } from "zod";
@@ -35,7 +36,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const result = await prisma.account.updateMany({
-    where: { id: { in: ids } },
+    where: { id: { in: ids }, AND: [await recordScope("account", ownerId === undefined)] },
     data,
   });
   return ssnSafeJson({ ok: true, updated: result.count });

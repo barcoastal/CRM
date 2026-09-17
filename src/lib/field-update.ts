@@ -248,6 +248,7 @@ export function applyFieldUpdate(args: {
   existingRecord: Record<string, unknown>;
 }): ApplyResult {
   const { entity, fieldName, newValue, existingSfDataJson, existingRecord } = args;
+  if (entity === "account" && ["assignedNegotiatorId", "Debt_Negotiator__c"].includes(fieldName)) throw new FieldUpdateError("Use the Debt Negotiator assignment control.");
   const cols = columnsFor(entity);
 
   let sfData: Record<string, unknown> = {};

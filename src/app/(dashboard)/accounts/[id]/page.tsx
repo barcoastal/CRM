@@ -1,3 +1,5 @@
+import { NegotiatorAssignment } from "@/components/accounts/negotiator-assignment";
+import { hasPermission } from "@/lib/permissions";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { SsnField } from "@/components/shared/ssn-field";
@@ -55,6 +57,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const rawRecord = await prisma.account.findUnique({
     where: { id, AND: [await recordScope("account")] },
     include: {
+      assignedNegotiator: { select: { id: true, name: true, email: true } },
       owner: { select: { id: true, name: true, email: true } },
       primaryContact: { select: { id: true, fullName: true, email: true, phone: true, title: true, birthdate: true, ssn: true } },
       contacts: { include: { contact: true }, orderBy: { createdAt: "asc" } },
@@ -235,6 +238,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       orderBy: { name: "asc" },
     })
   ).map((u) => ({ label: u.name, value: u.id }));
+  const canAssignNegotiator = hasPermission(acctSession?.user?.permissions ?? [], "Account.Edit") && !!await prisma.account.findFirst({ where: { id: account.id, AND: [await recordScope("account", false)] }, select: { id: true } });
   const parentAcctNode = account.parentAccount?.name
     ? <Link href={`/accounts/${account.parentAccount.id}`} style={{ color: "#0176d3" }}>{account.parentAccount.name}</Link>
     : acctSf("Parent_Account_Name__c") ?? acctSf("ParentName") ?? acctSf("Parent_Account__c");
@@ -433,7 +437,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             E("Creditor Lien Risk", acctSf("Creditor_Lien_Risk__c"), "Creditor_Lien_Risk__c"),
             E("Collection Agency", collectionAgencyDisplay, "collectionAgency", "text", { rawValue: account.collectionAgency }),
             // Row 26: Debt Negotiator | Program Completion Stage
-            E("Debt Negotiator", acctSf("Debt_Negotiator__c"), "Debt_Negotiator__c"),
+            ["Debt Negotiator", <NegotiatorAssignment key={`${account.id}:${account.assignedNegotiatorId ?? ""}`} accountId={account.id} currentId={account.assignedNegotiatorId} currentName={account.assignedNegotiator?.name ?? null} importedName={acctSf("Debt_Negotiator__c")} options={canAssignNegotiator ? ownerOptions : []} canAssign={canAssignNegotiator} />],
             ["Program Completion Stage", programCompletionStageDisplay],
             // Row 27: Cancellation Reason | Legal Network
             E("Cancellation Reason", account.cancellationReason ?? acctSf("Cancellation_Reason__c"), "cancellationReason", "text", { rawValue: account.cancellationReason }),
@@ -752,6 +756,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const teamMembers = (() => {
     const seen = new Set<string>();
     const members: { role: string; name: string | null; email?: string | null }[] = [];
+    if (account.assignedNegotiator) members.push({ role: "Debt Negotiator", name: account.assignedNegotiator.name, email: account.assignedNegotiator.email });
     for (const opp of account.opportunities) {
       if (opp.assignedTo?.name && !seen.has(`a:${opp.assignedTo.id}`)) {
         seen.add(`a:${opp.assignedTo.id}`);

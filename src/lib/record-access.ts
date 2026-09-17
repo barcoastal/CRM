@@ -1,4 +1,6 @@
 import { auth } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
+import { ownedRecordScope } from "@/lib/owned-record-scope";
 import { prisma } from "@/lib/prisma";
 
 export type OwnedEntity = "lead" | "opportunity" | "account" | "contact";
@@ -16,7 +18,7 @@ export function teamOwnerIds(userId: string, users: { id: string; managerId: str
   return [...result];
 }
 
-export async function recordScope(entity: OwnedEntity): Promise<Record<string, unknown>> {
+export async function recordScope(entity: OwnedEntity, includeNegotiator = true): Promise<Record<string, unknown>> {
   const session = await auth();
   if (!session?.user?.id) return { id: { in: [] } };
   // Use current database state, including when called outside the normal layout.
@@ -28,7 +30,7 @@ export async function recordScope(entity: OwnedEntity): Promise<Record<string, u
   const users = await prisma.user.findMany({ select: { id: true, managerId: true } });
   // Having actual reports, rather than a loosely named profile, defines a manager.
   // Include indirect reports; cycles terminate through the visited set.
-  return { [OWNER_FIELD[entity]]: { in: teamOwnerIds(current.id, users) } };
+  return ownedRecordScope(entity, teamOwnerIds(current.id, users), includeNegotiator && hasPermission(session.user.permissions ?? [], entity === "account" ? "Account.View" : "Opportunity.View"));
 }
 
 /** Guard parent-record subroutes before reading documents or running actions. */

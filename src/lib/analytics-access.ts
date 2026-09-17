@@ -1,3 +1,4 @@
+import { ownedRecordScope } from "@/lib/owned-record-scope";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasPermission } from "@/lib/permissions";
@@ -58,7 +59,7 @@ export function analyticsScope(access: AnalyticsAccess, model: string): Record<s
   if (access.isAdmin) return {};
   const rule = OWNED[model];
   if (rule) return hasPermission(access.permissions, rule.permission)
-    ? { [rule.field]: { in: access.ownerIds } } : { id: { in: [] } };
+    ? ownedRecordScope(model, access.ownerIds) : { id: { in: [] } };
   if (model === "envelope") {
     const parents = ["lead", "opportunity", "account"];
     // A signature envelope must have a visible parent, and no hidden linked parent.

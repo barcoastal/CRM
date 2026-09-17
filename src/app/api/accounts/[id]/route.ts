@@ -43,6 +43,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
   // SF validation rules — reject patches that violate ported Account rules.
   const d = parsed.data as Record<string, unknown>;
+  if (Object.hasOwn(d, "ownerId") && !await prisma.account.findFirst({ where: { id, AND: [await recordScope("account", false)] }, select: { id: true } })) return Response.json({ error: "Owner reassignment is not permitted." }, { status: 403 });
   const vErrors = validateAccountPatch(
     {
       id: before.id,
@@ -63,7 +64,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     return ssnSafeJson({ error: vErrors[0], errors: vErrors }, { status: 400 });
   }
 
-  const account = await prisma.account.update({ where: { id, AND: [await recordScope("account")] }, data: parsed.data });
+  const account = await prisma.account.update({ where: { id, AND: [await recordScope("account", !Object.hasOwn(d, "ownerId"))] }, data: parsed.data });
   await auditWrite({
     userId: r.session.userId,
     entity: "Account",

@@ -142,7 +142,7 @@ describe("analytics authorization and isolation", () => {
   });
   it("does not let stale Modify.AllData expand a non-admin's record scope", async () => {
     login("junior", "SALES_REP", ["Modify.AllData"]);
-    expect(analyticsScope(await analyticsAccess("Reports.View"), "opportunity")).toEqual({ assignedToId: { in: ["junior"] } });
+    expect(analyticsScope(await analyticsAccess("Reports.View"), "opportunity")).toEqual({ OR: [{ assignedToId: { in: ["junior"] } }, { account: { is: { assignedNegotiatorId: { in: ["junior"] } } } }] });
   });
   it("blocks a private report by guessed ID before executing it", async () => {
     db.report.findFirst.mockImplementation(async ({ where }) => matches({ id: "private", createdById: "outsider", isShared: false }, where) ? { id: "private", ...config } : null);
@@ -176,4 +176,17 @@ describe("analytics authorization and isolation", () => {
     db.auth.mockResolvedValue(null);
     for (const { key } of listRegistry()) await expect(getQuery(key)!.run()).rejects.toMatchObject({ status: 401 });
   });
+});
+
+it("adds and revokes negotiator report visibility with the account assignment", async () => {
+ login("agent", "SALES_REP", ["Reports.View", "Account.View", "Opportunity.View"]);
+ const access = await analyticsAccess("Reports.View");
+ const account: Record<string, unknown> = { ownerId: "outsider", assignedNegotiatorId: "agent" };
+ const opportunity = { assignedToId: "outsider", account };
+ expect(matches(account, analyticsScope(access, "account"))).toBe(true);
+ expect(matches(opportunity, analyticsScope(access, "opportunity"))).toBe(true);
+ account.assignedNegotiatorId = "other";
+ expect(matches(account, analyticsScope(access, "account"))).toBe(false);
+ expect(matches(opportunity, analyticsScope(access, "opportunity"))).toBe(false);
+ expect(matches({ ownerId: "outsider" }, analyticsScope(access, "contact"))).toBe(false);
 });

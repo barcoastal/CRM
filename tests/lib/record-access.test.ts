@@ -15,3 +15,13 @@ describe("assigned records and manager teams", () => {
   it("denies unauthenticated requests", async () => { mocks.auth.mockResolvedValue(null); expect(await recordScope("lead")).toEqual({ id: { in: [] } }); });
   it("does not let stale global permissions override assignment scope", async () => { mocks.auth.mockResolvedValue({ user: { id: "agent", permissions: ["Modify.AllData"] } }); expect(await recordScope("lead")).toEqual({ assignedToId: { in: ["agent"] } }); });
 });
+
+it("grants a permitted negotiator account and opportunity sharing without assignment management", async () => {
+ mocks.auth.mockResolvedValue({ user: { id: "agent", permissions: ["Account.View", "Opportunity.View"] } });
+ mocks.user.mockResolvedValue({ id: "agent", role: "SALES_REP", isActive: true }); mocks.users.mockResolvedValue([]);
+ expect(await recordScope("account")).toEqual({ OR: [{ ownerId: { in: ["agent"] } }, { assignedNegotiatorId: { in: ["agent"] } }] });
+ expect(await recordScope("opportunity")).toEqual({ OR: [{ assignedToId: { in: ["agent"] } }, { account: { is: { assignedNegotiatorId: { in: ["agent"] } } } }] });
+ expect(await recordScope("account", false)).toEqual({ ownerId: { in: ["agent"] } });
+ mocks.auth.mockResolvedValue({ user: { id: "agent", permissions: [] } });
+ expect(await recordScope("account")).toEqual({ ownerId: { in: ["agent"] } });
+});

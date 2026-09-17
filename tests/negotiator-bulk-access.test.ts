@@ -1,0 +1,13 @@
+import { beforeEach, expect, it, vi } from 'vitest';
+import { NextRequest } from 'next/server';
+const m=vi.hoisted(()=>({scope:vi.fn(),update:vi.fn(),audit:vi.fn()}));
+vi.mock('@/lib/record-access',()=>({recordScope:m.scope}));
+vi.mock('@/lib/api-auth',()=>({requireAuthOrRespond:vi.fn().mockResolvedValue({session:{userId:'rep',role:'SALES_REP',permissions:['Account.Edit']}})}));
+vi.mock('@/lib/prisma',()=>({prisma:{account:{updateMany:m.update}}}));
+vi.mock('@/lib/audit',()=>({auditWrite:m.audit}));
+import { PATCH } from '@/app/api/accounts/bulk-update/route';
+import { POST } from '@/app/api/bulk-edit/[entity]/route';
+beforeEach(()=>{vi.clearAllMocks();m.scope.mockResolvedValue({ownerId:{in:['rep']}});m.update.mockResolvedValue({count:0});});
+it('keeps the older account bulk owner endpoint within owner/manager scope',async()=>{const res=await PATCH(new NextRequest('http://localhost/api/accounts/bulk-update',{method:'PATCH',body:JSON.stringify({ids:['shared-account'],ownerId:'rep'})}));expect(res.status).toBe(200);expect(m.scope).toHaveBeenCalledWith('account',false);expect(m.update.mock.calls[0][0].where.AND).toEqual([{ownerId:{in:['rep']}}]);});
+it('keeps generic bulk owner edits within owner/manager scope',async()=>{await POST(new NextRequest('http://localhost/api/bulk-edit/account',{method:'POST',body:JSON.stringify({ids:['shared-account'],patch:{ownerId:'rep'}})}),{params:Promise.resolve({entity:'account'})});expect(m.scope).toHaveBeenCalledWith('account',false);});
+it('does not expose direct negotiator assignment through generic bulk updates',async()=>{const res=await POST(new NextRequest('http://localhost/api/bulk-edit/account',{method:'POST',body:JSON.stringify({ids:['account'],patch:{assignedNegotiatorId:'rep'}})}),{params:Promise.resolve({entity:'account'})});expect(res.status).toBe(400);expect(m.update).not.toHaveBeenCalled();});
