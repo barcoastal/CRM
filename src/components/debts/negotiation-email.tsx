@@ -81,7 +81,7 @@ export function NegotiationEmail({ opportunityId, opportunityName, debtId, credi
     if (/{{[^}]+}}/.test(draft.subject + draft.body)) { setNotice({ debtId, text: "Replace the template placeholders before sending.", error: true }); return; }
     setSending(true); setNotice(null);
     try {
-      const response = await fetch("/api/emails/gmail/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: [draft.to.trim()], subject: draft.subject, bodyText: draft.body, attachments: draft.attachments ?? [], replyToMessageId: draft.replyToMessageId, opportunityId }) });
+      const response = await fetch("/api/emails/gmail/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: [draft.to.trim()], subject: draft.subject, bodyText: draft.body, attachments: draft.attachments ?? [], replyToMessageId: draft.replyToMessageId, opportunityId, negotiation: true }) });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok) throw new Error(data?.error || "Email could not be sent. Your draft has been kept.");
       setDrafts((prev) => ({ ...prev, [debtId]: { ...draft, body: "", attachments: [], replyToMessageId: undefined } }));

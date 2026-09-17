@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
-const mocks = vi.hoisted(() => ({ access: vi.fn(), auth: vi.fn(), find: vi.fn(), create: vi.fn() }));
+const mocks = vi.hoisted(() => ({ eligible: vi.fn(), access: vi.fn(), auth: vi.fn(), find: vi.fn(), create: vi.fn() }));
+vi.mock("@/lib/negotiation-access", () => ({ isNegotiationEligible: mocks.eligible }));
 vi.mock("@/lib/record-access", () => ({ canAccessRecord: mocks.access }));
 vi.mock("@/lib/api-auth", () => ({ requireAuthOrRespond: mocks.auth }));
 vi.mock("@/lib/prisma", () => ({ prisma: { debt: { findFirst: mocks.find }, negotiation: { create: mocks.create } } }));
@@ -10,7 +11,7 @@ function save(body: unknown) {
   return POST(new NextRequest("http://localhost/api/negotiations", { method: "POST", body: JSON.stringify(body) }), { params: Promise.resolve({ id: "opp-1", debtId: "debt-1" }) });
 }
 beforeEach(() => {
-  vi.resetAllMocks();
+  vi.resetAllMocks(); mocks.eligible.mockResolvedValue(true);
   mocks.access.mockResolvedValue(true);
   mocks.auth.mockResolvedValue({ session: { userId: "user-1" } });
   mocks.find.mockResolvedValue({ id: "debt-1" });
@@ -44,3 +45,4 @@ describe("opportunity negotiation recording", () => {
     expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ debtId: "debt-1", negotiatorId: "user-1", offerAmount: 1000, counterAmount: 1200, date: new Date("2026-09-16") }) }));
   });
 });
+it('blocks negotiation activity for an ineligible lifecycle',async()=>{mocks.eligible.mockResolvedValue(false);expect((await save(valid)).status).toBe(403);expect(mocks.create).not.toHaveBeenCalled();});

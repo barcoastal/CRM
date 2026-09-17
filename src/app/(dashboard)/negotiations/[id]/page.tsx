@@ -1,3 +1,4 @@
+import { negotiationEligibilityWhere } from "@/lib/negotiation-eligibility";
 import "../negotiations.css";
 import { ObjectHeader } from "@/components/slds/object-header";
 import { debtPaymentStatus } from "@/lib/debt-payment-status";
@@ -14,7 +15,7 @@ export default async function NegotiationOpportunityPage({ params }: { params: P
   const { id } = await params;
   const scope = await recordScope("opportunity");
   const opp = await prisma.opportunity.findFirst({
-    where: { id, AND: [scope] },
+    where: { id, AND: [scope, negotiationEligibilityWhere()] },
     include: { account: { select: { name: true } }, documents: { orderBy: { createdAt: "desc" }, select: { id: true, name: true, type: true, fileSize: true, createdAt: true } }, assignedTo: { select: { name: true } },
       debts: { orderBy: { creditorName: "asc" }, include: {
         creditor: { select: { collectionsEmail: true, collectionsPhone: true, account: { select: { name: true } } } },

@@ -1,3 +1,4 @@
+import { isNegotiationEligible } from "@/lib/negotiation-access";
 import { NextRequest, NextResponse } from "next/server";
 import { calculateOffer } from "@/lib/negotiation-offer";
 import { z } from "zod";
@@ -10,6 +11,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if ("response" in auth) return auth.response;
   const { id, debtId } = await params;
   if (!await canAccessRecord("opportunity", id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!await isNegotiationEligible(id)) return NextResponse.json({ error: "Negotiations require a Closed Won opportunity and an Active account." }, { status: 403 });
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Enter a valid offer and payment schedule." }, { status: 400 });
   const debt = await prisma.debt.findFirst({ where: { id: debtId, opportunityId: id } });

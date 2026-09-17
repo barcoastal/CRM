@@ -1,3 +1,4 @@
+import { negotiationEligibilityWhere } from "@/lib/negotiation-eligibility";
 import { beforeEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ access: vi.fn(), documents: vi.fn(), auth: vi.fn(), mail: vi.fn(), scope: vi.fn(), count: vi.fn(), list: vi.fn(), find: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: mocks.auth }));
@@ -15,18 +16,18 @@ beforeEach(() => {
 });
 it("scopes opportunities to the user's records and requires debts", async () => {
   await Page({ searchParams: Promise.resolve({}) });
-  const where = { AND: [{ assignedToId: { in: ["me"] } }], debts: { some: {} } };
+  const where = { AND: [{ assignedToId: { in: ["me"] } }, negotiationEligibilityWhere()], debts: { some: {} } };
   expect(mocks.count).toHaveBeenCalledWith({ where });
   expect(mocks.list).toHaveBeenCalledWith(expect.objectContaining({ where }));
 });
 it("searches while preserving access scope and clamps pagination", async () => {
   mocks.count.mockResolvedValue(31);
   await Page({ searchParams: Promise.resolve({ q: "Acme", page: "999" }) });
-  expect(mocks.list).toHaveBeenCalledWith(expect.objectContaining({ skip: 30, take: 30, where: expect.objectContaining({ AND: [{ assignedToId: { in: ["me"] } }], OR: expect.any(Array) }) }));
+  expect(mocks.list).toHaveBeenCalledWith(expect.objectContaining({ skip: 30, take: 30, where: expect.objectContaining({ AND: [{ assignedToId: { in: ["me"] } }, negotiationEligibilityWhere()], OR: expect.any(Array) }) }));
 });
 it("rejects inaccessible opportunity workspaces", async () => {
   await expect(Detail({ params: Promise.resolve({ id: "other" }) })).rejects.toThrow("NOT_FOUND");
-  expect(mocks.find).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "other", AND: [{ assignedToId: { in: ["me"] } }] } }));
+  expect(mocks.find).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "other", AND: [{ assignedToId: { in: ["me"] } }, negotiationEligibilityWhere()] } }));
 });
 
 it("only pulls the current user's emails linked to this opportunity", async () => {

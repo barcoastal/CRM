@@ -1,8 +1,9 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 import { calculateOffer } from "@/lib/negotiation-offer";
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), access: vi.fn(), debt: vi.fn(), offer: vi.fn(), negotiation: vi.fn(), doc: vi.fn(), opp: vi.fn(), serve: vi.fn() }));
+const mocks = vi.hoisted(() => ({ eligible: vi.fn(), auth: vi.fn(), access: vi.fn(), debt: vi.fn(), offer: vi.fn(), negotiation: vi.fn(), doc: vi.fn(), opp: vi.fn(), serve: vi.fn() }));
 vi.mock("@/lib/api-auth", () => ({ requireAuthOrRespond: mocks.auth }));
+vi.mock("@/lib/negotiation-access", () => ({ isNegotiationEligible: mocks.eligible }));
 vi.mock("@/lib/record-access", () => ({ canAccessRecord: mocks.access }));
 vi.mock("@/lib/document-serve", () => ({ serveDocument: mocks.serve }));
 vi.mock("@/lib/prisma", () => ({ prisma: { debt: { findFirst: mocks.debt }, document: { findFirst: mocks.doc }, opportunity: { findUnique: mocks.opp }, $transaction: (fn: (tx: unknown) => unknown) => fn({ offer: { create: mocks.offer }, negotiation: { create: mocks.negotiation } }) } }));
@@ -10,7 +11,7 @@ import { POST } from "@/app/api/opportunities/[id]/debts/[debtId]/offers/route";
 import { GET } from "@/app/api/opportunities/[id]/negotiation-documents/[docId]/route";
 const save = (body: unknown = { amount: 500, payments: 3, frequency: "Monthly" }) => POST(new NextRequest("http://localhost/api/offer", { method: "POST", body: JSON.stringify(body) }), { params: Promise.resolve({ id: "opp", debtId: "debt" }) });
 const read = () => GET(new NextRequest("http://localhost/api/doc?view=1"), { params: Promise.resolve({ id: "opp", docId: "doc" }) });
-beforeEach(() => { vi.resetAllMocks(); mocks.auth.mockResolvedValue({ session: { userId: "rep" } }); mocks.access.mockResolvedValue(true); mocks.debt.mockResolvedValue({ currentBalance: 1000 }); mocks.offer.mockResolvedValue({ id: "offer", termsNotes: "3 payments" }); mocks.opp.mockResolvedValue({ accountId: "account", leadId: "lead" }); mocks.doc.mockResolvedValue({ id: "doc" }); mocks.serve.mockResolvedValue(new NextResponse("file")); });
+beforeEach(() => { vi.resetAllMocks(); mocks.eligible.mockResolvedValue(true); mocks.auth.mockResolvedValue({ session: { userId: "rep" } }); mocks.access.mockResolvedValue(true); mocks.debt.mockResolvedValue({ currentBalance: 1000 }); mocks.offer.mockResolvedValue({ id: "offer", termsNotes: "3 payments" }); mocks.opp.mockResolvedValue({ accountId: "account", leadId: "lead" }); mocks.doc.mockResolvedValue({ id: "doc" }); mocks.serve.mockResolvedValue(new NextResponse("file")); });
 it("allocates cents so installments add up exactly", () => { const calc = calculateOffer(1000, 500, 3)!; expect(calc.payment).toBe(166.66); expect(calc.finalPayment).toBe(166.68); expect(calc.savings).toBe(500); expect(calc.percent).toBe(50); });
 it.each([[0, 10, 1], [100, 101, 1], [100, 0, 1], [100, 20, 0], [100, 20, 1.5], [100, .01, 3], [100, NaN, 1]])("rejects invalid calculations %j", (balance, amount, payments) => expect(calculateOffer(balance, amount, payments)).toBeNull());
 it("requires offer permission", async () => { mocks.auth.mockResolvedValue({ response: NextResponse.json({}, { status: 403 }) }); expect((await save()).status).toBe(403); expect(mocks.auth).toHaveBeenCalledWith("Offer.Create"); expect(mocks.offer).not.toHaveBeenCalled(); });
@@ -21,3 +22,5 @@ it("saves the ratio, authenticated author, terms and audit together", async () =
 it("denies documents when the opportunity is inaccessible", async () => { mocks.access.mockResolvedValue(false); expect((await read()).status).toBe(404); expect(mocks.doc).not.toHaveBeenCalled(); });
 it("restricts document access to sources and accessible related records", async () => { mocks.access.mockImplementation(async (type: string) => type !== "account"); expect((await read()).status).toBe(200); expect(mocks.doc).toHaveBeenCalledWith({ where: { id: "doc", OR: [{ leadId: "lead" }, { opportunityId: "opp" }, { debtsFromThis: { some: { opportunityId: "opp" } } }] } }); expect(mocks.serve).toHaveBeenCalledWith({ id: "doc" }, true); });
 it("does not serve an unrelated document", async () => { mocks.doc.mockResolvedValue(null); expect((await read()).status).toBe(404); expect(mocks.serve).not.toHaveBeenCalled(); });
+it('blocks offer creation when the account is not active or opportunity is not won',async()=>{mocks.eligible.mockResolvedValue(false);expect((await save()).status).toBe(403);expect(mocks.offer).not.toHaveBeenCalled();});
+it('blocks direct negotiation document access for ineligible opportunities',async()=>{mocks.eligible.mockResolvedValue(false);expect((await read()).status).toBe(403);expect(mocks.serve).not.toHaveBeenCalled();});

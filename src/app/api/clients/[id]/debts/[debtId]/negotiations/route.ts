@@ -1,3 +1,5 @@
+import { isNegotiationEligible } from "@/lib/negotiation-access";
+import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -21,6 +23,7 @@ export async function GET(
   if (!debt) {
     return ssnSafeJson({ error: "Debt not found" }, { status: 404 });
   }
+  if (!debt.opportunityId || !await canAccessRecord("opportunity", debt.opportunityId) || !await isNegotiationEligible(debt.opportunityId)) return ssnSafeJson({ error: "Negotiations require an accessible Closed Won opportunity and an Active account." }, { status: 403 });
 
   const negotiations = await prisma.negotiation.findMany({
     where: { debtId },
@@ -52,6 +55,7 @@ export async function POST(
   if (!debt) {
     return ssnSafeJson({ error: "Debt not found" }, { status: 404 });
   }
+  if (!debt.opportunityId || !await canAccessRecord("opportunity", debt.opportunityId) || !await isNegotiationEligible(debt.opportunityId)) return ssnSafeJson({ error: "Negotiations require an accessible Closed Won opportunity and an Active account." }, { status: 403 });
 
   const body = await request.json();
   const parsed = createNegotiationSchema.safeParse(body);

@@ -1,3 +1,4 @@
+import { isNegotiationEligible } from "@/lib/negotiation-access";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -8,6 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if ("response" in auth) return auth.response;
   const { id, docId } = await params;
   if (!await canAccessRecord("opportunity", id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!await isNegotiationEligible(id)) return NextResponse.json({ error: "Negotiations require a Closed Won opportunity and an Active account." }, { status: 403 });
   const opportunity = await prisma.opportunity.findUnique({ where: { id }, select: { accountId: true, leadId: true } });
   const related: { accountId?: string; leadId?: string }[] = [];
   if (opportunity?.accountId && await canAccessRecord("account", opportunity.accountId)) related.push({ accountId: opportunity.accountId });

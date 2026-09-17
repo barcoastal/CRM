@@ -1,3 +1,4 @@
+import { negotiationEligibilityWhere } from "@/lib/negotiation-eligibility";
 import "./negotiations.css";
 import { ObjectHeader } from "@/components/slds/object-header";
 import Link from "next/link";
@@ -12,7 +13,7 @@ export default async function NegotiationsPage({ searchParams }: { searchParams:
   const q = (params.q ?? "").trim();
   const scope = await recordScope("opportunity");
   const where: Prisma.OpportunityWhereInput = {
-    AND: [scope], debts: { some: {} },
+    AND: [scope, negotiationEligibilityWhere()], debts: { some: {} },
     ...(q ? { OR: [
       { name: { contains: q, mode: "insensitive" } },
       { account: { is: { name: { contains: q, mode: "insensitive" } } } },
@@ -33,7 +34,7 @@ export default async function NegotiationsPage({ searchParams }: { searchParams:
   function href(page: number) { return `/negotiations?${new URLSearchParams({ q, page: String(page) })}`; }
   return (
     <div className="ng-page ng-list-page">
-      <ObjectHeader entity="Opportunity" entityLabel="Negotiations" recordTitle="Opportunity negotiations" recordSubtitle="Manage creditor conversations and settlement progress." />
+      <ObjectHeader entity="Opportunity" entityLabel="Negotiations" recordTitle="Opportunity negotiations" recordSubtitle="Closed Won opportunities with an Active account." />
       <header className="ng-list-tools">
         <form className="ng-list-search" action="/negotiations">
           <label className="flex min-w-64 flex-1 flex-col gap-1 text-sm">Search opportunities
@@ -57,7 +58,7 @@ export default async function NegotiationsPage({ searchParams }: { searchParams:
             <td className="px-4 py-3"><Link className="font-medium text-[#0176d3]" href={`/negotiations/${opp.id}`}>Open negotiations</Link></td>
           </tr>)}</tbody>
         </table>
-        {!opportunities.length && <p className="p-8 text-center text-sm text-muted-foreground">No accessible opportunities with debts match your search.</p>}
+        {!opportunities.length && <p className="p-8 text-center text-sm text-muted-foreground">No eligible Closed Won opportunities with an Active account and debts match your search.</p>}
         <div className="flex justify-between border-t p-3 text-sm">
           {page > 1 ? <Link href={href(page - 1)}>Previous</Link> : <span />}
           {page < pageCount && <Link href={href(page + 1)}>Next</Link>}

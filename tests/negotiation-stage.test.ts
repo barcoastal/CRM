@@ -1,14 +1,15 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 import { negotiationStage } from "@/lib/negotiation-workflow";
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), access: vi.fn(), find: vi.fn(), update: vi.fn(), create: vi.fn(), transaction: vi.fn() }));
+const mocks = vi.hoisted(() => ({ eligible: vi.fn(), auth: vi.fn(), access: vi.fn(), find: vi.fn(), update: vi.fn(), create: vi.fn(), transaction: vi.fn() }));
 vi.mock("@/lib/api-auth", () => ({ requireAuthOrRespond: mocks.auth }));
+vi.mock("@/lib/negotiation-access", () => ({ isNegotiationEligible: mocks.eligible }));
 vi.mock("@/lib/record-access", () => ({ canAccessRecord: mocks.access }));
 vi.mock("@/lib/prisma", () => ({ prisma: { debt: { findFirst: mocks.find }, $transaction: mocks.transaction } }));
 import { PATCH } from "@/app/api/opportunities/[id]/debts/[debtId]/negotiation-stage/route";
 const save = (body: unknown) => PATCH(new NextRequest("http://localhost/api/stage", { method: "PATCH", body: JSON.stringify(body) }), { params: Promise.resolve({ id: "opp", debtId: "debt" }) });
 beforeEach(() => {
-  vi.resetAllMocks(); mocks.auth.mockResolvedValue({ session: { userId: "me" } }); mocks.access.mockResolvedValue(true);
+  vi.resetAllMocks(); mocks.eligible.mockResolvedValue(true); mocks.auth.mockResolvedValue({ session: { userId: "me" } }); mocks.access.mockResolvedValue(true);
   mocks.find.mockResolvedValue({ negotiationStatus: null, status: "ENROLLED" }); mocks.update.mockResolvedValue({ count: 1 });
   mocks.transaction.mockImplementation(async (callback) => callback({ debt: { updateMany: mocks.update }, negotiation: { create: mocks.create } }));
 });
@@ -28,3 +29,4 @@ it("records stage and author in one transaction without altering debt balances o
 it("handles concurrent updates without creating an audit entry", async () => { mocks.update.mockResolvedValue({ count: 0 }); expect((await save({ stage: "Negotiating", previousStatus: null })).status).toBe(409); expect(mocks.create).not.toHaveBeenCalled(); });
 it("avoids duplicate stage entries", async () => { expect((await save({ stage: "Not Started", previousStatus: null })).status).toBe(200); expect(mocks.transaction).not.toHaveBeenCalled(); });
 it("maps legacy settlement statuses and preserves unrecognized values", () => { expect(negotiationStage("Settled Payments")).toBe("Settled"); expect(negotiationStage("Counter Signature from Lender")).toBe("Agreement Pending"); expect(negotiationStage(null, "PAID")).toBe("Settled"); expect(negotiationStage("Custom status")).toBeNull(); });
+it('blocks stage changes when the opportunity/account becomes ineligible', async()=>{mocks.eligible.mockResolvedValue(false);expect((await save({stage:'Negotiating',previousStatus:null})).status).toBe(403);expect(mocks.update).not.toHaveBeenCalled();expect(mocks.create).not.toHaveBeenCalled();});

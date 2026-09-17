@@ -1,3 +1,4 @@
+import { isNegotiationEligible } from "@/lib/negotiation-access";
 // src/app/api/emails/gmail/send/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -21,6 +22,7 @@ const attachmentSchema = z.object({
 
 const bodySchema = z.object({
   opportunityId: z.string().optional(),
+  negotiation: z.boolean().optional(),
   to: z.array(z.string().email()).min(1),
   cc: z.array(z.string().email()).optional(),
   bcc: z.array(z.string().email()).optional(),
@@ -47,6 +49,10 @@ export async function POST(req: NextRequest) {
   const parsed = bodySchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   const d = parsed.data;
+  if (d.negotiation) {
+    if (!d.opportunityId || !await canAccessRecord("opportunity", d.opportunityId)) return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
+    if (!await isNegotiationEligible(d.opportunityId)) return NextResponse.json({ error: "Negotiations require a Closed Won opportunity and an Active account." }, { status: 403 });
+  }
 
   // Resolve reply/forward source for threading + record links + forwarded files.
   let inReplyTo: string | null = null;
