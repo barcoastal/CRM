@@ -19,6 +19,7 @@ import { AccountTabs } from "@/components/accounts/account-tabs";
 import { LivePaymentGrid } from "@/components/program-plans/live-payment-grid";
 import { AccountHeaderButtons } from "@/components/accounts/account-header-buttons";
 import { BankDetailsCard } from "@/components/accounts/bank-details-card";
+import { accountHealthResults, welcomeCallHealthWhere } from "@/lib/account-health-check";
 import { HealthCheckCard } from "@/components/accounts/health-check-card";
 import { EscrowBalanceCard } from "@/components/accounts/escrow-balance-card";
 import { StickyNoteCard } from "@/components/accounts/sticky-note-card";
@@ -188,16 +189,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     return String(v);
   };
 
-  // SF HealthCheckerAccount parity: "Welcome Call completed" = a COMPLETED
-  // task on the account whose subject contains "Welcome Call Completed".
-  const welcomeCallTask = await prisma.task.count({
-    where: {
-      accountId: account.id,
-      status: "COMPLETED",
-      subject: { contains: "Welcome Call Completed", mode: "insensitive" },
-    },
-  });
-  const welcomeCallDone = account.welcomeCallCompleted || welcomeCallTask > 0;
+  const welcomeCallTask = await prisma.task.count({ where: welcomeCallHealthWhere(account.id) });
+  const healthResults = accountHealthResults(welcomeCallTask, acctSfData.First_Payment_Completed_Date__c);
 
   // SF Checklist rail card: stage checklist items (Task RT Checklist_Item).
   const checklistTasks = await prisma.task.findMany({
@@ -998,8 +991,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           {/* SF Debt Settlement app rail order (verified live):
               Health Check Results, Escrow Balance, Bank Details. */}
           <HealthCheckCard
-            welcomeCallCompleted={welcomeCallDone}
-            firstPaymentReceived={account.firstPaymentReceived || !!acctSf("First_Payment_Completed_Date__c")}
+            results={healthResults}
           />
           <EscrowBalanceCard
             accountId={account.id}
