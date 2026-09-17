@@ -3,6 +3,8 @@ import { leadHealthResults, type LeadHealthCheckInput } from '@/lib/lead-health-
 
 export function LeadHealthCheckCard(props: LeadHealthCheckInput) {
   const results = leadHealthResults(props);
-  if (!results.length) return null;
-  return <HealthCheckCard results={results} />;
+  return <HealthCheckCard
+    results={results}
+    emptyMessage={`No checks apply to ${props.status} leads. Salesforce runs these checks for New and Working Lead.`}
+  />;
 }
