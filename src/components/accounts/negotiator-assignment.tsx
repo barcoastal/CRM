@@ -23,7 +23,7 @@ export function NegotiatorAssignment({ accountId, currentId, currentName, import
       <select aria-label="Debt negotiator" value={selected} disabled={busy} onChange={e=>setSelected(e.target.value)} style={{border:'1px solid #c9c9c9',borderRadius:4,padding:5,maxWidth:'100%',background:'white'}}><option value="">Unassigned</option>{currentId && !options.some(o=>o.value===currentId) && <option value={currentId}>{currentName} (inactive)</option>}{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select>
       <button type="button" style={button} disabled={busy || selected === (currentId ?? '')} onClick={save}>{busy?'Saving…':'Save'}</button><button type="button" style={button} disabled={busy} onClick={()=>setEditing(false)}>Cancel</button>
     </div>}
-    {importedName && <div style={{color:'#706e6b',fontSize:11,marginTop:4}}>Salesforce assignment: {importedName}</div>}
+    {importedName && <div style={{color:'#706e6b',fontSize:11,marginTop:4}}>Imported assignment: {importedName}</div>}
     {error && <p role="alert" style={{color:'#ba0517',fontSize:12,marginTop:5}}>{error}</p>}
   </div>;
 }

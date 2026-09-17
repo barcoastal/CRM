@@ -34,7 +34,7 @@ const TREE: TreeNode[] = [
     children: [
       { label: "Einstein Activity Capture", href: "/my-settings/einstein-capture" },
       { label: "My Email Settings", href: "/my-settings/email-settings" },
-      { label: "My Send to Salesforce", href: "/my-settings/send-to-salesforce" },
+      { label: "My CRM Submission Settings", href: "/my-settings/send-to-salesforce" },
       { label: "My Unresolved Items", href: "/my-settings/unresolved-items" },
     ],
   },

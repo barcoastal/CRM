@@ -37,7 +37,7 @@ export default async function FeedbackAdminPage() {
           User Feedback ({items.length})
         </h1>
         <p style={{ margin: "4px 0 0", fontSize: 13, color: "#747474" }}>
-          Bug reports, ideas and Salesforce-difference reports from the team. Status changes
+          Bug reports, ideas and workflow reports from the team. Status changes
           notify the person who reported.
         </p>
       </div>

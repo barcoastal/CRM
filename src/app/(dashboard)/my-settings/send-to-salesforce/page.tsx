@@ -3,7 +3,7 @@ import { MsTitleBar } from "../title-bar";
 export default function Page() {
   return (
     <>
-      <MsTitleBar title="My Send to Salesforce" />
+      <MsTitleBar title="My CRM Submission Settings" />
       <div style={{ padding: 24 }}>
         <p style={{ color: "#747474" }}>Coming soon.</p>
       </div>

@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 
 const TYPE_OPTIONS = [
   { value: "BUG", label: "Something is broken" },
-  { value: "PARITY", label: "Looks different from Salesforce" },
+  { value: "PARITY", label: "Layout or workflow issue" },
   { value: "IDEA", label: "Idea / improvement" },
 ] as const;
 
@@ -242,7 +242,7 @@ export function FeedbackButton() {
                   rows={4}
                   placeholder={
                     type === "PARITY"
-                      ? "e.g. In Salesforce this field shows on the left side"
+                      ? "e.g. This field should appear on the left side"
                       : type === "BUG"
                       ? "e.g. Clicking Save on this page shows an error"
                       : "e.g. It would save time if..."

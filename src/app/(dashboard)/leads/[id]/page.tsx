@@ -711,7 +711,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       {additionalInformation}
       {descriptionInformation}
       {lead.notes && (
-        <Section title="Notes (from Salesforce)" defaultOpen={false}>
+        <Section title="Imported Notes" defaultOpen={false}>
           <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>{lead.notes}</div>
         </Section>
       )}
@@ -928,7 +928,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               Related: related,
               Emails: <RecordEmailActivity entity="lead" id={lead.id} />,
               Marketing: marketing,
-              "All SF Fields": sfFields,
+              "All Fields": sfFields,
             }}
           />
         </>

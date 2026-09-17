@@ -10,11 +10,11 @@ export type LeadTabKey =
   | "Related"
   | "Emails"
   | "Marketing"
-  | "All SF Fields";
+  | "All Fields";
 
 // SF Lightning Lead record-page tab order (verified against
 // docs/sf-screenshots/sf-lead-detail.png). Activities live on the rail
-// (Activity/Chatter card), not in the main tab strip. "All SF Fields"
+// (Activity/Chatter card), not in the main tab strip. "All Fields"
 // is reachable via the footer link, same as the Opportunity page.
 const TABS: LeadTabKey[] = [
   "Details",
@@ -76,7 +76,7 @@ export function LeadTabs({ panels }: { panels: Record<LeadTabKey, ReactNode> }) 
           >
             <button
               type="button"
-              onClick={() => setTab("All SF Fields")}
+              onClick={() => setTab("All Fields")}
               style={{
                 background: "transparent",
                 border: 0,
@@ -86,7 +86,7 @@ export function LeadTabs({ panels }: { panels: Record<LeadTabKey, ReactNode> }) 
                 fontSize: 12,
               }}
             >
-              Show all SF fields
+              Show all fields
             </button>
           </div>
         )}

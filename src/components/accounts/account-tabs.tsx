@@ -12,13 +12,13 @@ export type AccountTabKey =
   | "Opportunities"
   | "Team"
   | "Marketing"
-  | "All SF Fields";
+  | "All Fields";
 
 // Account record page tab order: Details | Payment Calculator | Activities |
 // Documents | Related Records | Debt Info | More. Details is the default.
 // "Debt Info" replaced the old "Payment Summaries" tab - it mirrors the
 // Opportunity debt details (enrolled creditors, payment amount + frequency,
-// cumulative weekly obligation). "All SF Fields" is reachable via a footer
+// cumulative weekly obligation). "All Fields" is reachable via a footer
 // link on the Details tab.
 const PRIMARY_TABS: AccountTabKey[] = [
   "Details",
@@ -96,7 +96,7 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
           >
             <button
               type="button"
-              onClick={() => setTab("All SF Fields")}
+              onClick={() => setTab("All Fields")}
               style={{
                 background: "transparent",
                 border: 0,
@@ -106,7 +106,7 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
                 fontSize: 12,
               }}
             >
-              Show all SF fields
+              Show all fields
             </button>
           </div>
         )}

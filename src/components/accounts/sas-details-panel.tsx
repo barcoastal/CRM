@@ -94,7 +94,7 @@ export function SasDetailsPanel({ accountId }: { accountId: string }) {
       {!loading && !error && !c && (
         <div style={{ fontSize: 13, color: "#747474" }}>
           {data?.linked === false
-            ? "This account isn't linked to a SAS customer (no Salesforce/SAS id)."
+            ? "This account isn't linked to a SAS customer."
             : "No matching SAS customer found."}
         </div>
       )}

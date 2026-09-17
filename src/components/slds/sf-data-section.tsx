@@ -27,7 +27,7 @@ function formatValue(v: unknown): string {
   return s;
 }
 
-export function SfDataSection({ sfDataJson, sfId, title = "All Salesforce Fields" }: SfDataSectionProps) {
+export function SfDataSection({ sfDataJson, sfId, title = "All Fields" }: SfDataSectionProps) {
   const [filter, setFilter] = useState("");
 
   const data = useMemo<Record<string, unknown> | null>(() => {
@@ -54,7 +54,7 @@ export function SfDataSection({ sfDataJson, sfId, title = "All Salesforce Fields
     return (
       <Section title={title}>
         <div style={{ fontSize: 13, color: "#747474", padding: 12 }}>
-          {sfId ? `No Salesforce data on file for sfId ${sfId}.` : "Record was not imported from Salesforce."}
+          {sfId ? `No imported data on file for record ${sfId}.` : "No imported fields are available for this record."}
         </div>
       </Section>
     );

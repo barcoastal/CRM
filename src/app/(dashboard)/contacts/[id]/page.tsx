@@ -488,7 +488,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   const allSfFooter = (
     <details style={{ marginTop: 8 }}>
       <summary style={{ cursor: "pointer", color: "#0176d3", fontSize: 12, padding: "4px 0" }}>
-        View all Salesforce fields
+        View all fields
       </summary>
       <div style={{ marginTop: 8 }}>
         <SfDataSection sfDataJson={contact.sfDataJson} sfId={contact.sfId} />

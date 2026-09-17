@@ -48,9 +48,9 @@ export default function UserImportPage() {
 
   return (
     <div style={{ padding: 24, maxWidth: 900 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Import Users from Salesforce</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Import Users</h1>
       <p style={{ color: "#747474", fontSize: 13, marginBottom: 16 }}>
-        Export users from Salesforce (Setup → Users → Export to CSV) and upload here.
+        Upload a CSV file containing the users you want to import.
       </p>
 
       <div style={{ background: "#f3f3f3", border: "1px solid #c9c9c9", borderRadius: 4, padding: 12, marginBottom: 16, fontSize: 12 }}>

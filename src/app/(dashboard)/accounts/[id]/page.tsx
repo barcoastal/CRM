@@ -454,7 +454,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         attach={{ accountId: account.id }}
       />
 
-      <Section title="Program & Financial (from SF)" defaultOpen={false}>
+      <Section title="Program & Financial" defaultOpen={false}>
         <FieldGrid
           fields={[
             ["Total Debt", acctSfDollar("Total_Debt__c")],
@@ -486,7 +486,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         />
       </Section>
 
-      <Section title="Bank Information (from SF)" defaultOpen={false}>
+      <Section title="Bank Information" defaultOpen={false}>
         <FieldGrid
           fields={[
             ["Bank Name", acctSf("Bank_Name__c")],
@@ -981,7 +981,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             Opportunities: opportunitiesPanel,
             Team: teamPanel,
             Marketing: marketingPanel,
-            "All SF Fields": sfFieldsPanel,
+            "All Fields": sfFieldsPanel,
           }}
         />
         </>

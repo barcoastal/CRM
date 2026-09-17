@@ -10,9 +10,9 @@ export type OppTabKey =
   | "Settlements"
   | "Documents"
   | "Related"
-  | "All SF Fields";
+  | "All Fields";
 
-// SF tab bar order — exactly matches Lightning record page. "All SF Fields"
+// SF tab bar order — exactly matches Lightning record page. "All Fields"
 // is intentionally NOT in the tab strip; it's reachable via a footer link.
 const TABS: OppTabKey[] = [
   "Details",
@@ -74,7 +74,7 @@ export function OppTabs({ panels }: { panels: Record<OppTabKey, ReactNode> }) {
           >
             <button
               type="button"
-              onClick={() => setTab("All SF Fields")}
+              onClick={() => setTab("All Fields")}
               style={{
                 background: "transparent",
                 border: 0,
@@ -84,7 +84,7 @@ export function OppTabs({ panels }: { panels: Record<OppTabKey, ReactNode> }) {
                 fontSize: 12,
               }}
             >
-              Show all SF fields
+              Show all fields
             </button>
           </div>
         )}

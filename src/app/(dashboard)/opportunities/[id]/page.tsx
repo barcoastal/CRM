@@ -1002,7 +1002,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
                 Settlements: settlementsPanel,
                 Documents: documentsPanel,
                 Related: relatedPanel,
-                "All SF Fields": sfFieldsPanel,
+                "All Fields": sfFieldsPanel,
               }}
             />
           </>

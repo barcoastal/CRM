@@ -80,9 +80,8 @@ export default async function PersonalInformationPage() {
     <>
       <MsTitleBar title="Personal Information" />
       <div className="ms-banner">
-        Salesforce now sends emails only from verified domains. To avoid delivery failures,
-        verify your email domain or enable your subdomain email sending domain.{" "}
-        <Link href="https://help.salesforce.com" target="_blank" rel="noreferrer">
+        Manage your email sending domain and verification status in email settings.{" "}
+        <Link href="/email-center/domain-health">
           Learn More
         </Link>
       </div>
