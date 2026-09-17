@@ -1,5 +1,7 @@
 import "../negotiations.css";
 import { ObjectHeader } from "@/components/slds/object-header";
+import { debtPaymentStatus } from "@/lib/debt-payment-status";
+import type { ContractAnalysisData } from "@/components/documents/analysis-body";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
@@ -15,8 +17,8 @@ export default async function NegotiationOpportunityPage({ params }: { params: P
     where: { id, AND: [scope] },
     include: { account: { select: { name: true } }, documents: { orderBy: { createdAt: "desc" }, select: { id: true, name: true, type: true, fileSize: true, createdAt: true } }, assignedTo: { select: { name: true } },
       debts: { orderBy: { creditorName: "asc" }, include: {
-        creditor: { select: { collectionsEmail: true, collectionsPhone: true } },
-        sourceDocument: { select: { id: true, name: true, type: true, fileSize: true, createdAt: true } },
+        creditor: { select: { collectionsEmail: true, collectionsPhone: true, account: { select: { name: true } } } },
+        sourceDocument: { select: { analysisJson: true, id: true, name: true, type: true, fileSize: true, createdAt: true } },
         offers: { orderBy: { createdAt: "desc" }, take: 30 },
         negotiations: { include: { negotiator: { select: { id: true, name: true } } }, orderBy: [{ date: "desc" }, { createdAt: "desc" }] },
       } },
@@ -50,10 +52,10 @@ export default async function NegotiationOpportunityPage({ params }: { params: P
       { label: "Total Balance", value: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(opp.debts.reduce((sum, debt) => sum + debt.currentBalance, 0)) },
     ]} actions={<Link href={`/opportunities/${opp.id}`} className="ng-button">View opportunity</Link>} />
       <OpportunityNegotiations canCreateOffer={hasPermission(session?.user?.permissions ?? [], "Offer.Create")} documents={documents.map((doc) => ({ ...doc, createdAt: doc.createdAt.toISOString() }))} canEmail={canEmail} senderEmail={session?.user?.email ?? ""} emails={emails.map((email) => ({ ...email, createdAt: email.createdAt.toISOString() }))} opportunityName={opp.name ?? "Opportunity"} opportunityId={opp.id} debts={opp.debts.map((debt) => ({
-        creditorEmail: debt.creditorEmail || debt.creditor?.collectionsEmail || null, id: debt.id, creditorName: debt.creditorName, accountNumber: debt.accountNumber,
+        creditorEmail: debt.creditorEmail || debt.creditor?.collectionsEmail || null, id: debt.id, creditorName: debt.creditor?.account?.name ?? debt.creditorName, paymentStatus: debtPaymentStatus(debt.sfDataJson), analysis: (debt.sourceDocument?.analysisJson as ContractAnalysisData | null) ?? null, analysisDocName: debt.sourceDocument?.name ?? null, accountNumber: debt.accountNumber,
         originalBalance: debt.originalBalance, enrolledBalance: debt.enrolledBalance, creditorPhone: debt.creditorPhone || debt.creditor?.collectionsPhone,
         debtType: debt.debtType, paymentAmount: debt.paymentAmount, paymentFrequency: debt.paymentFrequency, legalStatus: debt.legalStatus, lienPosition: debt.lienPosition, isDelinquent: debt.isDelinquent, notes: debt.notes, settledAmount: debt.settledAmount,
-        sourceDocument: debt.sourceDocument ? { ...debt.sourceDocument, createdAt: debt.sourceDocument.createdAt.toISOString() } : null,
+        sourceDocument: debt.sourceDocument ? { id: debt.sourceDocument.id, name: debt.sourceDocument.name, type: debt.sourceDocument.type, fileSize: debt.sourceDocument.fileSize, createdAt: debt.sourceDocument.createdAt.toISOString() } : null,
         offers: debt.offers.map((offer) => ({ id: offer.id, amountOffered: offer.amountOffered, percentOffered: offer.percentOffered, status: offer.status, termsNotes: offer.termsNotes, createdAt: offer.createdAt.toISOString(), counterAmount: offer.counterAmount })),
         currentBalance: debt.currentBalance, status: debt.status, negotiationStatus: debt.negotiationStatus,
         negotiations: debt.negotiations.map((neg) => ({ ...neg, date: neg.date.toISOString(), createdAt: neg.createdAt.toISOString() })),

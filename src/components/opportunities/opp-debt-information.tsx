@@ -20,6 +20,7 @@ export type OppDebtRow = {
   enrolledBalance: number;
   status: string;
   paymentStatus?: string;
+  negotiationStage?: string;
   analysis?: ContractAnalysisData | null;
   analysisDocName?: string | null;
 };
@@ -90,13 +91,19 @@ function label(opts: string[][], v: string | null) {
 export function OppDebtInformation({
   opportunityId,
   items,
+  readOnly = false,
+  selectedDebtId,
+  onSelectDebt,
 }: {
   opportunityId: string;
   items: OppDebtRow[];
+  readOnly?: boolean;
+  selectedDebtId?: string;
+  onSelectDebt?: (id: string) => void;
 }) {
   const router = useRouter();
   const [drawerDebt, setDrawerDebt] = useState<OppDebtRow | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(selectedDebtId ?? null);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -208,7 +215,7 @@ export function OppDebtInformation({
   return (
     <div>
       {error && <div role="alert" style={{ color: "#ba0517", marginBottom: 12 }}>{error}</div>}
-      <div style={{ display: "flex", gap: 24, marginBottom: 16, justifyContent: "center" }}>
+      <div className="opp-debt-totals" style={{ display: "flex", gap: 24, marginBottom: 16, justifyContent: "center" }}>
         <div style={{ background: "#fafaf9", padding: "8px 16px", borderRadius: 4, border: "1px solid #c9c9c9" }}>
           <span style={{ fontSize: 13, color: "#747474", marginRight: 8 }}>Total Debt:</span>
           <span style={{ fontSize: 13, fontWeight: 700 }}>{fmtMoney(totalDebt)}</span>
@@ -219,7 +226,7 @@ export function OppDebtInformation({
         </div>
       </div>
 
-      <div style={{ marginBottom: 12, display: "flex", justifyContent: "flex-end" }}>
+      {!readOnly && <div style={{ marginBottom: 12, display: "flex", justifyContent: "flex-end" }}>
         <button
           onClick={() => {
             setAdding(true);
@@ -239,7 +246,7 @@ export function OppDebtInformation({
         >
           + Add Debt
         </button>
-      </div>
+      </div>}
 
       <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #c9c9c9" }}>
         <thead>
@@ -250,7 +257,7 @@ export function OppDebtInformation({
             <th style={th}>Payment</th>
             <th style={th}>Frequency</th>
             <th style={th}>Debt Status</th>
-            <th style={{ ...th, width: 80 }} />
+            <th style={{ ...th, width: 100 }}>{readOnly ? "Negotiation" : ""}</th>
           </tr>
         </thead>
         <tbody>
@@ -263,10 +270,10 @@ export function OppDebtInformation({
           )}
           {items.map((d, i) => (
             <Fragment key={d.id}>
-            <tr style={{ borderBottom: expandedId === d.id ? "none" : "1px solid #f3f3f3" }}>
+            <tr style={{ background: readOnly && selectedDebtId === d.id ? "#edf5fc" : undefined, borderBottom: expandedId === d.id ? "none" : "1px solid #f3f3f3" }}>
               <td style={td}>
                 <button
-                  onClick={() => setExpandedId((v) => (v === d.id ? null : d.id))}
+                  onClick={() => { setExpandedId((v) => (v === d.id ? null : d.id)); onSelectDebt?.(d.id); }}
                   aria-label={expandedId === d.id ? "Collapse lender info" : "Show lender info"}
                   style={{
                     background: "transparent",
@@ -281,7 +288,7 @@ export function OppDebtInformation({
                   {expandedId === d.id ? "▾" : "▸"}
                 </button>
                 <span style={{ color: "#747474", marginRight: 8 }}>{i + 1}</span>
-                {d.creditorName}
+                {onSelectDebt ? <button type="button" onClick={() => { onSelectDebt(d.id); setExpandedId(d.id); }} style={{ background: "none", border: 0, padding: 0, color: "#0176d3", cursor: "pointer", fontWeight: 600 }}>{d.creditorName}</button> : d.creditorName}
                 <RowIntel name={d.creditorName} />
                 {d.analysis && (
                   <button
@@ -307,18 +314,19 @@ export function OppDebtInformation({
               <td style={td}>{fmtMoney(d.originalBalance)}</td>
               <td style={td}>{d.paymentAmount != null ? fmtMoney(d.paymentAmount) : ""}</td>
               <td style={td}>
-                <select aria-label={`Frequency for ${d.creditorName}`} value={d.paymentFrequency ?? ""} disabled={inlineSaving !== null} onChange={(e) => saveInline(d.id, "paymentFrequency", e.target.value)} style={{ ...inputStyle, minWidth: 110 }}>
+                {readOnly ? (label([...FREQ_OPTIONS, ["BI_WEEKLY", "Bi-Weekly"], ["LUMP_SUM", "Lump Sum"]], d.paymentFrequency) || "—") : <select aria-label={`Frequency for ${d.creditorName}`} value={d.paymentFrequency ?? ""} disabled={inlineSaving !== null} onChange={(e) => saveInline(d.id, "paymentFrequency", e.target.value)} style={{ ...inputStyle, minWidth: 110 }}>
                   {!FREQ_OPTIONS.some(([value]) => value === d.paymentFrequency) && <option value={d.paymentFrequency ?? ""}>{d.paymentFrequency ? label([["BI_WEEKLY", "Bi-Weekly"], ["LUMP_SUM", "Lump Sum"]], d.paymentFrequency) : "Select…"}</option>}
                   {FREQ_OPTIONS.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-                </select>
+                </select>}
               </td>
               <td style={td}>
-                <select aria-label={`Debt Status for ${d.creditorName}`} value={d.paymentStatus ?? ""} disabled={inlineSaving !== null} onChange={(e) => saveInline(d.id, "paymentStatus", e.target.value)} style={{ ...inputStyle, minWidth: 110 }}>
+                {readOnly ? (d.paymentStatus || "Not recorded") : <select aria-label={`Debt Status for ${d.creditorName}`} value={d.paymentStatus ?? ""} disabled={inlineSaving !== null} onChange={(e) => saveInline(d.id, "paymentStatus", e.target.value)} style={{ ...inputStyle, minWidth: 110 }}>
                   {!STATUS_OPTIONS.some(([value]) => value === d.paymentStatus) && <option value={d.paymentStatus ?? ""}>{d.paymentStatus || "Select…"}</option>}
                   {STATUS_OPTIONS.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-                </select>
+                </select>}
               </td>
               <td style={td}>
+                {readOnly ? <><div style={{ fontSize: 11, color: "#52647a", marginBottom: 5 }}>{d.negotiationStage}</div><button type="button" onClick={() => { onSelectDebt?.(d.id); setExpandedId(d.id); }} aria-pressed={selectedDebtId === d.id} style={{ color: "#0176d3", background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, padding: "5px 10px", cursor: "pointer", fontSize: 12 }}>{selectedDebtId === d.id ? "Selected" : "Open"}</button></> : <>
                 <button
                   onClick={() => startEdit(d)}
                   title="Edit"
@@ -333,6 +341,7 @@ export function OppDebtInformation({
                 >
                   ✕
                 </button>
+                </>}
               </td>
             </tr>
             {expandedId === d.id && (

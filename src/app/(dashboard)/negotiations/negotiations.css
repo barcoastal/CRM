@@ -33,3 +33,38 @@
 @media(max-width:800px){.ng-context-stack{grid-template-columns:1fr}.ng-calc-fields{grid-template-columns:1fr 1fr}.ng-mail-workspace{grid-template-columns:1fr}.ng-mail-workspace .ng-email-list{max-height:230px;border-right:0;border-bottom:1px solid #d8dde6}.ng-mail-toolbar{flex-wrap:wrap}.ng-card{padding:14px}.ng-overview{padding:12px!important}}
 .ng-compose-files{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:8px 24px;border-bottom:1px solid #edf0f4}.ng-compose-files>label{position:relative;overflow:hidden;cursor:pointer}.ng-compose-files input[type=file]{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}.ng-compose-files select{max-width:280px;font-size:12px;border:1px solid #d8dde6;border-radius:4px;padding:5px;background:#fff}.ng-compose-files>span{font-size:11px;background:#edf5fc;color:#16325c;border-radius:4px;padding:4px 7px}.ng-compose-files>span button{margin-left:8px;font-size:15px}
 .ng-document-filters{display:flex;gap:12px;align-items:center;margin:16px 0}.ng-document-filters input,.ng-document-filters select{border:1px solid #c9d1dc!important;border-radius:4px!important;padding:9px 12px!important;font-size:12px!important;background:#fff!important;min-width:0}.ng-document-filters input{flex:1}.ng-document-filters span{color:#64748b;font-size:12px;white-space:nowrap}@media(max-width:800px){.ng-document-filters{flex-wrap:wrap}.ng-document-filters input{flex-basis:100%}}
+.ng-opportunity-debts{background:#fff;border:1px solid #d8dde6;border-radius:5px;padding:18px;margin-top:12px;box-shadow:0 1px 2px #0000000d}.ng-opportunity-debts .ng-panel-heading{margin-bottom:16px}.ng-opportunity-debts table{min-width:850px}.ng-workspace.ng-workspace-with-table{grid-template-columns:minmax(0,1fr)}
+
+/* Preserve the Salesforce record header and visible related debt table. */
+.ng-workbench{--ng-ink:#181818;--ng-muted:#706e6b;--ng-line:#dddbda;--ng-accent:#0176d3;margin-top:12px}
+.ng-workbench .ng-opportunity-debts{border-color:#c9c9c9;border-radius:4px;padding:16px;margin-top:0}
+.ng-workbench .ng-opportunity-debts .ng-panel-heading{background:#f3f3f3;margin:-16px -16px 12px;padding:12px 16px;border-bottom:1px solid #dddbda}
+.ng-workbench .ng-creditor-header{background:#f3f3f3;padding:14px 20px 12px}
+.ng-workbench .ng-creditor-title h2{font-size:18px;margin:2px 0 0;letter-spacing:normal}
+.ng-workbench .ng-creditor-icon{width:32px;height:32px;border-radius:4px;background:#0176d3;color:white}
+.ng-workbench .ng-highlights{background:#f3f3f3;padding:0 20px 16px;gap:20px}
+.ng-workbench .ng-highlights>div:first-child dd{font-size:14px;font-weight:600}
+.ng-workbench .ng-tabs{overflow:auto}.ng-workbench .ng-tabs button{white-space:nowrap}
+.ng-workbench .ng-overview-grid{grid-template-columns:minmax(0,1fr) minmax(340px,1fr);gap:18px}
+.ng-workbench .ng-context-stack{grid-template-columns:1fr;gap:18px}
+.ng-workbench .ng-calc-fields{grid-template-columns:1fr 1fr}
+.ng-workbench .ng-card{border-radius:4px}.ng-workbench .ng-calc-presets{flex-wrap:wrap}
+.ng-workbench .ng-detail-grid dd{overflow-wrap:anywhere}
+.ng-workbench button:focus-visible,.ng-workbench a:focus-visible,.ng-workbench select:focus-visible{outline:2px solid #0176d3;outline-offset:3px}
+.ng-workbench .ng-tab-content>div>div:first-child{padding-bottom:0;border-bottom:0}
+@media(max-width:1050px){.ng-workbench .ng-overview-grid{grid-template-columns:1fr}.ng-workbench .ng-context-stack{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.ng-workbench .ng-context-stack{grid-template-columns:1fr}.ng-workbench .ng-creditor-header{flex-wrap:wrap}.ng-workbench .ng-highlights{grid-template-columns:1fr 1fr}.ng-workbench .ng-calc-actions{flex-wrap:wrap}}
+
+/* Compact debt information within the negotiation record. */
+.ng-workbench .ng-opportunity-debts{padding:10px 12px}
+.ng-workbench .ng-opportunity-debts .ng-panel-heading{margin:-10px -12px 8px;padding:8px 12px}
+.ng-workbench .ng-opportunity-debts .ng-section-title{font-size:13px}
+.ng-workbench .ng-opportunity-debts .ng-panel-heading p{font-size:11px;margin-top:2px}
+.ng-workbench .ng-opportunity-debts .opp-debt-totals{justify-content:flex-start!important;gap:12px!important;margin-bottom:8px!important}
+.ng-workbench .ng-opportunity-debts .opp-debt-totals>div{padding:4px 8px!important}
+.ng-workbench .ng-opportunity-debts .opp-debt-totals span{font-size:11px!important}
+.ng-workbench .ng-opportunity-debts table th{font-size:11px!important;padding:5px 8px!important;line-height:1.3}
+.ng-workbench .ng-opportunity-debts table td{font-size:12px!important;padding:5px 8px!important;line-height:1.35}
+.ng-workbench .ng-opportunity-debts table td[colspan]{padding:4px 8px 6px 28px!important}
+.ng-workbench .ng-opportunity-debts table td:last-child>div{display:inline;margin:0 8px 0 0!important;font-size:10px!important}
+.ng-workbench .ng-opportunity-debts button[aria-pressed]{font-size:11px!important;padding:3px 8px!important}

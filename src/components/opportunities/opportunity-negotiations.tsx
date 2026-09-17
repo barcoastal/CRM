@@ -2,6 +2,8 @@
 
 import { useState, type ComponentProps } from "react";
 import { useRouter } from "next/navigation";
+import { OppDebtInformation } from "@/components/opportunities/opp-debt-information";
+import type { ContractAnalysisData } from "@/components/documents/analysis-body";
 import { NegotiationOfferCalculator } from "@/components/debts/negotiation-offer-calculator";
 import { NegotiationEmail, type NegotiationEmailMessage } from "@/components/debts/negotiation-email";
 import { NegotiationStageControl } from "@/components/debts/negotiation-stage";
@@ -10,6 +12,7 @@ import { NegotiationTimeline } from "@/components/debts/negotiation-timeline";
 
 type Document = { origin?: string; id: string; name: string; type: string; fileSize: number | null; createdAt: string };
 type Debt = {
+  paymentStatus?: string; analysis?: ContractAnalysisData | null; analysisDocName?: string | null;
   originalBalance?: number; enrolledBalance?: number; creditorPhone?: string | null; debtType?: string | null; paymentAmount?: number | null; paymentFrequency?: string | null; legalStatus?: string | null; lienPosition?: string | null; isDelinquent?: boolean; notes?: string | null; settledAmount?: number | null; sourceDocument?: Document | null;
   offers?: { id: string; amountOffered: number; percentOffered: number; status: string; termsNotes: string | null; createdAt: string; counterAmount: number | null }[];
   id: string; creditorName: string; creditorEmail?: string | null; accountNumber: string | null;
@@ -31,19 +34,8 @@ export function OpportunityNegotiations({ opportunityId, debts, opportunityName 
   const relatedDocs = [...(debt.sourceDocument ? [debt.sourceDocument] : []), ...documents.filter(doc => doc.id !== debt.sourceDocument?.id)];
   const filteredDocuments = relatedDocs.filter(doc => `${doc.name} ${doc.type.replace(/_/g, " ")}`.toLowerCase().includes(documentSearch.toLowerCase()) && (documentSource === "all" || (documentSource === "contract" ? doc.id === debt.sourceDocument?.id : (doc.origin || "Opportunity") === documentSource)));
   const stage = negotiationStage(debt.negotiationStatus, debt.status);
-  return <div className="ng-workspace">
-    <aside className="ng-debts" aria-label="Opportunity debts">
-      <div className="ng-debts-heading"><h2>Debts</h2><span>{debts.length}</span></div>
-      <p className="ng-debts-total">{money(debts.reduce((sum, item) => sum + item.currentBalance, 0))} total balance</p>
-      <div className="ng-debt-list">{debts.map((item, index) => {
-        const itemStage = negotiationStage(item.negotiationStatus, item.status);
-        return <button key={item.id} type="button" aria-pressed={item.id === debt.id} onClick={() => setSelectedId(item.id)} className={`ng-debt ${item.id === debt.id ? "is-active" : ""}`}>
-          <span className="ng-debt-title">{item.creditorName}<span className="ng-debt-chevron">›</span></span>
-          <span className="ng-debt-meta">{item.accountNumber ? `Account •••• ${item.accountNumber.slice(-4)}` : `Debt ${index + 1}`}<strong>{money(item.currentBalance)}</strong></span>
-          <span className={`ng-status ${itemStage === "Settled" ? "is-settled" : ""}`}>{itemStage ?? item.negotiationStatus}</span>
-        </button>;
-      })}</div>
-    </aside>
+  return <div className="ng-workbench">
+    <section className="ng-opportunity-debts"><div className="ng-panel-heading"><div><h2 className="ng-section-title">Debt Information ({debts.length})</h2><p>Select a debt to work on its negotiation. Expand the lender for details.</p></div></div><div className="ng-table-scroll"><OppDebtInformation opportunityId={opportunityId} readOnly selectedDebtId={debt.id} onSelectDebt={setSelectedId} items={debts.map(item => ({ id: item.id, creditorName: item.creditorName, debtType: item.debtType ?? null, paymentFrequency: item.paymentFrequency ?? null, paymentAmount: item.paymentAmount ?? null, originalBalance: item.originalBalance ?? item.currentBalance, currentBalance: item.currentBalance, enrolledBalance: item.enrolledBalance ?? item.currentBalance, status: item.status, paymentStatus: item.paymentStatus, negotiationStage: negotiationStage(item.negotiationStatus, item.status) ?? item.negotiationStatus ?? "Not Started", analysis: item.analysis, analysisDocName: item.analysisDocName }))} /></div></section><div className="ng-workspace ng-workspace-with-table">
     <div className="ng-main">
       <header className="ng-creditor-header">
         <div className="ng-creditor-title"><span className="ng-creditor-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M3 10h18L12 4 3 10Zm2 10h14M7 10v8m5-8v8m5-8v8" /></svg></span><div><span className="ng-eyebrow">Debt negotiation</span><h2>{debt.creditorName}</h2></div></div>
@@ -66,5 +58,5 @@ export function OpportunityNegotiations({ opportunityId, debts, opportunityName 
       {canEmail && <div className="ng-tab-content" id="ng-panel-Emails" role="tabpanel" aria-labelledby="ng-tab-Emails" hidden={tab !== "Emails"}><NegotiationEmail documents={relatedDocs} offerDraft={offerDraft?.debtId === debt.id ? offerDraft : null} composeOpen={emailOpen} onComposeChange={setEmailOpen} opportunityId={opportunityId} opportunityName={opportunityName} debtId={debt.id} creditorName={debt.creditorName} creditorEmail={debt.creditorEmail ?? null} senderEmail={senderEmail} messages={emails} /></div>}
       <div className="ng-tab-content" id="ng-panel-Debt-details" role="tabpanel" aria-labelledby="ng-tab-Debt-details" hidden={tab !== "Debt details"}><h3 className="ng-section-title">Debt information</h3><dl className="ng-detail-grid"><div><dt>Creditor</dt><dd>{debt.creditorName}</dd></div><div><dt>Debt status</dt><dd>{debt.status.replace(/_/g, " ")}</dd></div><div><dt>Current balance</dt><dd>{money(debt.currentBalance)}</dd></div><div><dt>Recorded negotiation status</dt><dd>{debt.negotiationStatus || "Not started"}</dd></div></dl></div>
     </div>
-  </div>;
+  </div></div>;
 }
