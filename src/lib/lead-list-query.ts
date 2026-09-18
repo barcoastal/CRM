@@ -6,6 +6,7 @@ import type { LeadListDefinition } from './lead-list-catalog';
 const WEB_SOURCES = ["web", "phone inquiry", "partner referral", "other", "social", "google", "webform", "affiliate", "organic", "calendly", "bing", "reddit", "inbound call", "tb", "lawsuit", "google ads", "youtube", "organic m", "bullmarket", "ib - social", "ib-social", "ib - social spanish", "ib - google spanish", "ib - bing spanish", "ib - direct mail", "ib - youtube", "ib - bing", "ib-bing", "ib - google", "ib-google", "ib - debtco", "ib - organic m", "ib - outbrain", "ib - reddit", "website", "vibe ctv", "ib - <>", "tiktok"];
 const json = (key: string) => Prisma.sql`(NULLIF(l."sfDataJson", '')::jsonb ->> ${key})`;
 const nested = (key: string, field: string) => Prisma.sql`(NULLIF(l."sfDataJson", '')::jsonb -> ${key} ->> ${field})`;
+const ownerName = Prisma.sql`COALESCE(u.name, ${json('Owner_Full_Name__c')}, ${nested('Owner', 'Name')})`;
 const fields: Record<string, Prisma.Sql> = {
   'Lead Status': Prisma.sql`l.status`, 'Lead Source': Prisma.sql`l.source`,
   'Name': Prisma.sql`l."contactName"`, 'Created Date': Prisma.sql`l."createdAt"`,
@@ -23,8 +24,8 @@ const fields: Record<string, Prisma.Sql> = {
     WHEN '0058Y00000DE2LS' THEN 'bbizc' WHEN '0058Y00000DE2L8' THEN 'wlead'
     WHEN '005VO0000008yv3' THEN 'treye' WHEN '0058Y00000CELzc' THEN 'AMupp' END)`,
   'Owner Username': Prisma.sql`COALESCE(u.email, ${nested('Owner', 'Username')})`,
-  'Owner First Name': Prisma.sql`COALESCE(split_part(u.name, ' ', 1), ${nested('Owner', 'FirstName')})`,
-  'Owner Last Name': Prisma.sql`COALESCE(regexp_replace(u.name, '^.* ', ''), ${nested('Owner', 'LastName')})`,
+  'Owner First Name': Prisma.sql`COALESCE(split_part(${ownerName}, ' ', 1), ${nested('Owner', 'FirstName')})`,
+  'Owner Last Name': Prisma.sql`COALESCE(regexp_replace(${ownerName}, '^.* ', ''), ${nested('Owner', 'LastName')})`,
   'Closer': json('Closer__c'),
   'Lead Record Type': Prisma.sql`COALESCE(${nested('RecordType', 'Name')}, CASE ${json('RecordTypeId')}
     WHEN '0128Y000001Z0JTQA0' THEN 'Business'
