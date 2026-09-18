@@ -39,6 +39,7 @@ model User {
   auditEntries    AuditLog[]
   appLogs         ApplicationLog[]
 
+  leadViews                 LeadViewHistory[]
   leads                     Lead[]
   calls                     Call[]
   campaigns                 CampaignAgent[]
@@ -886,6 +887,7 @@ model Lead {
   convertedOpportunityId String?
   convertedAt            DateTime?
 
+  viewHistory         LeadViewHistory[]
   calls               Call[]
   handoffs            CloserHandoff[]
   campaignContacts    CampaignContact[]
@@ -906,6 +908,7 @@ model Lead {
   leadLists           LeadListMember[]         @relation("LeadListsForLead")
   aiCalls             AiCall[]
 
+  @@index([contactName, id], map: "Lead_name_list_sort_idx")
   @@index([recordType])
   @@index([convertedAccountId])
   @@index([convertedContactId])
@@ -3292,4 +3295,16 @@ model EmailAttachment {
   createdAt    DateTime     @default(now())
 
   @@index([messageId])
+}
+
+// Actual per-user viewing history, independent from record edits.
+model LeadViewHistory {
+  userId   String
+  leadId   String
+  viewedAt DateTime @default(now())
+  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lead     Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@id([userId, leadId])
+  @@index([userId, viewedAt])
 }

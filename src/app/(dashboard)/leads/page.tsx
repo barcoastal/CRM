@@ -1,3 +1,7 @@
+import Link from "next/link";
+import { LeadListPicker } from "@/components/leads/lead-list-picker";
+import { LEAD_LIST_VIEWS } from "@/lib/lead-list-catalog";
+import { leadListIdsQuery } from "@/lib/lead-list-query";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { prisma } from "@/lib/prisma";
@@ -50,21 +54,31 @@ const COLUMNS: SfColumn[] = [
   { key: "createdDate", label: "Created Date", width: 120, sortable: false },
 ];
 
+const RECENT_COLUMNS: SfColumn[] = [
+  {key:"name",label:"Name",width:180,sortable:true},
+  {key:"leadId",label:"Lead Id",width:180,sortable:true},
+  {key:"company",label:"Company",width:180,sortable:true},
+  {key:"phone",label:"Phone",width:150,sortable:true},
+  {key:"status",label:"Lead Status",width:140,sortable:true},
+  {key:"source",label:"Lead Source",width:140,sortable:true},
+  {key:"totalDebt",label:"Total Debt Amount",width:150},
+  {key:"ownerAlias",label:"Owner Alias",width:120},
+  {key:"subDisposition",label:"Sub Disposition",width:180},
+  {key:"createdDate",label:"Created Date",width:130,sortable:true},
+];
+
 const SORT_MAP: Record<string, Prisma.LeadOrderByWithRelationInput> = {
   name: { contactName: "asc" },
+  company: { businessName: "asc" },
+  leadId: { sfId: "asc" },
+  createdDate: { createdAt: "asc" },
   phone: { phone: "asc" },
   status: { status: "asc" },
   source: { source: "asc" },
   ownerFullName: { assignedTo: { name: "asc" } },
 };
 
-const VIEWS = [
-  { value: "recent", label: "Recently Viewed" },
-  { value: "all", label: "All Leads" },
-  { value: "my-open", label: "My Open Leads" },
-  { value: "this-week", label: "This Week's Leads" },
-  { value: "today-activity", label: "Today's Activity" },
-];
+const VIEWS = LEAD_LIST_VIEWS;
 
 // Duplicated from accounts/page.tsx (not exported there). Keep in sync.
 function fmtDateShort(input: unknown): string {
@@ -88,54 +102,24 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const search = params.search?.trim() ?? "";
   const sort = params.sort ?? "";
   const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
-  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const view = params.view ?? "recent";
+  const page = Math.min(40, Math.max(1, parseInt(params.page ?? "1", 10) || 1));
+  const view = params.view === "my-open" ? "my-leads" : params.view ?? "recent";
+  const definition = VIEWS.find(v => v.value === view) ?? VIEWS.find(v => v.value === "recent")!;
 
   const session = await auth();
   const myId = session?.user?.id ?? "";
 
-  const where: Prisma.LeadWhereInput = { AND: [await recordScope("lead")], };
-  if (search) {
-    where.OR = [
-      { businessName: { contains: search } },
-      { contactName: { contains: search } },
-      { phone: { contains: search } },
-      { email: { contains: search } },
-    ];
-  }
-  if (params.status) where.status = params.status;
-  if (params.source) where.source = params.source;
-  if (params.recordType) where.recordType = params.recordType;
-  if (params.assignedToId) where.assignedToId = params.assignedToId;
-
-  // Apply view-based filters
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const weekStart = new Date(todayStart);
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Sunday
-  const tomorrow = new Date(todayStart);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  if (view?.startsWith("owner:")) {
-    // Per-rep view: everything a specific user owns (SF per-person lists).
-    where.assignedToId = view.slice("owner:".length);
-  } else if (view === "my-open" && myId) {
-    where.assignedToId = myId;
-    where.status = { notIn: ["ENROLLED", "LOST", "DNC"] };
-  } else if (view === "this-week") {
-    where.createdAt = { gte: weekStart };
-  } else if (view === "today-activity") {
-    where.OR = [
-      ...(where.OR ?? []),
-      { lastContactedAt: { gte: todayStart, lt: tomorrow } },
-      { updatedAt: { gte: todayStart, lt: tomorrow } },
-    ];
-  }
-  // "all" → no extra filter. "recent" → default order = most recently updated/created.
-
+  const scope = await recordScope("lead");
+  const where: Prisma.LeadWhereInput = { AND: [scope] };
+  const recent = await prisma.leadViewHistory.findMany({where:{userId:myId},orderBy:{viewedAt:"desc"},take:100,select:{leadId:true}});
+  const recentIds = recent.map(r=>r.leadId);
+  const viewIds = await prisma.$queryRaw<Array<{id:string}>>(leadListIdsQuery({
+    ...params, search, definition, scope, userId:myId, recentIds,
+  }));
+  where.id = {in:viewIds.map(r=>r.id)};
   // Build prisma orderBy from sort key
   let orderBy: Prisma.LeadOrderByWithRelationInput =
-    view === "recent" ? { updatedAt: "desc" } : { createdAt: "desc" };
+    definition.label === "Web Leads" ? { createdAt: "desc" } : { contactName: "asc" };
   if (sort && SORT_MAP[sort]) {
     if (sort === "ownerFullName") {
       orderBy = { assignedTo: { name: dir } };
@@ -160,7 +144,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       statusGroups.map(async (g) => {
         const cards = await prisma.lead.findMany({
           where: { ...where, status: g.status },
-          orderBy: { updatedAt: "desc" },
+          orderBy,
           take: 12,
           select: { id: true, contactName: true, businessName: true, totalDebtEst: true },
         });
@@ -182,18 +166,20 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       <SfListPage
         entity="lead"
         title="Leads"
-        subtitle={VIEWS.find((v) => v.value === view)?.label ?? "Recently Viewed"}
-        count={columns.reduce((s2, c) => s2 + c.count, 0)}
+        subtitle={definition.label}
+        count={Math.min(2000, viewIds.length)}
+        countCapped={viewIds.length > 2000}
         iconColor="#f88962"
         iconSlug="lead"
         actions={[{ label: "New", href: "/leads/new" }]}
-        columns={COLUMNS}
+        columns={definition.value === "recent" ? RECENT_COLUMNS : COLUMNS}
         rows={[]}
         pathname="/leads"
         searchQuery={search}
         preservedParams={{ ...(params.view ? { view: params.view } : {}) }}
         views={VIEWS}
-        currentView={view}
+        currentView={definition.value}
+        viewPicker={<LeadListPicker current={definition.value} userId={myId} /> }
         displayMode="kanban"
         bodyOverride={<KanbanBoard columns={columns} entity="leads" fieldKey="status" />}
         massConfig={{
@@ -206,34 +192,21 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     );
   }
 
-  // Per-rep owner views (SF per-person lists) - searchable in the picker.
-  const ownerUsers = await prisma.user.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
-  });
-  const ownerViews = ownerUsers.map((u) => ({ value: `owner:${u.id}`, label: u.name }));
-  const allViews = [...VIEWS, ...ownerViews];
+  const allViews = VIEWS;
 
   // SF caps list-view counts at 2,000 ("2,000+ items"). An exact COUNT(*)
   // over the 7M-row Lead table takes seconds, so probe up to the cap instead.
   const COUNT_CAP = 2000;
-  const [leads, countProbe] = await Promise.all([
-    prisma.lead.findMany({
-      where,
-      include: {
-        assignedTo: { select: { id: true, name: true, email: true } },
-      },
-      orderBy,
-      skip: (page - 1) * LIMIT,
-      take: LIMIT,
-    }),
-    // orderBy forces the indexed scan path; without it the planner may walk
-    // the 7M-row heap sequentially hunting for matches (20s on this-week).
-    prisma.lead.findMany({ where, orderBy, select: { id: true }, take: COUNT_CAP + 1 }),
-  ]);
-  const countCapped = countProbe.length > COUNT_CAP;
-  const total = countCapped ? COUNT_CAP : countProbe.length;
+  const orderedIds = definition.scope === "recent" && !sort
+    ? recentIds.filter(id=>viewIds.some(row=>row.id===id)) : viewIds.map(row=>row.id);
+  const pageIds = orderedIds.slice((page-1)*LIMIT,page*LIMIT);
+  const leads = await prisma.lead.findMany({
+    where: { AND: [scope], id: { in: pageIds } },
+    include: { assignedTo: { select: { id:true,name:true,email:true } } },
+  });
+  leads.sort((a,b)=>pageIds.indexOf(a.id)-pageIds.indexOf(b.id));
+  const countCapped = viewIds.length > COUNT_CAP;
+  const total = Math.min(COUNT_CAP,viewIds.length);
 
   const rows: SfRow[] = leads.map((lead) => {
     let sfData: Record<string, unknown> = {};
@@ -274,7 +247,18 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     return {
       id: lead.id,
       href: `/leads/${lead.id}`,
-      cells: [
+      cells: definition.value === "recent" ? [
+        nameDisplay,
+        String(sfData.Lead_Id__c || lead.sfId || lead.id),
+        lead.businessName || "—",
+        lead.phone || "—",
+        lead.status,
+        lead.source,
+        fmtMoney(sfData.Total_Debt_Amount__c ?? lead.totalDebtEst) || "—",
+        String((sfData.Owner as {Alias?:string}|undefined)?.Alias || sfData.Owner_Alias__c || "—"),
+        subDisposition || "—",
+        fmtDateShort(lead.createdAt) || "—",
+      ] : [
         nameCfg ? (
           <InlineEditCell key="name" entity="lead" recordId={lead.id} config={nameCfg} value={lead.contactName} display={nameDisplay} />
         ) : (nameDisplay || "—"),
@@ -308,7 +292,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   if (params.assignedToId) preservedParams.assignedToId = params.assignedToId;
   if (params.view) preservedParams.view = params.view;
 
-  const subtitle = VIEWS.find((v) => v.value === view)?.label ?? "Recently Viewed";
+  const subtitle = definition.label;
 
   return (
     <SfListPage
@@ -327,15 +311,17 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
         { label: "Change Status" },
         { label: "Send List Email" },
       ]}
-      columns={COLUMNS}
+      columns={definition.value === "recent" ? RECENT_COLUMNS : COLUMNS}
       rows={redactSsn(rows)}
+      bodyOverride={definition.scope === "recent" && !rows.length && !search ? <div className="border border-[#c9c9c9] bg-white px-6 py-12 text-center"><p className="font-semibold">No recently viewed leads yet</p><p className="mt-2 text-sm text-[#747474]">Open a lead from All Leads to add it to your viewing history.</p><Link href="/leads?view=all" className="mt-4 inline-block text-sm text-[#0176d3]">View All Leads</Link></div> : undefined}
       pathname="/leads"
       sortKey={sort || undefined}
       sortDir={dir}
       searchQuery={search}
       preservedParams={preservedParams}
       views={allViews}
-      currentView={view}
+      currentView={definition.value}
+        viewPicker={<LeadListPicker current={definition.value} userId={myId} /> }
       page={page}
       pageSize={LIMIT}
       massConfig={{

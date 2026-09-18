@@ -62,6 +62,7 @@ export interface SfListPageProps {
   displayMode?: "table" | "kanban";
   /** replaces the table body (kanban board) */
   bodyOverride?: React.ReactNode;
+  viewPicker?: React.ReactNode;
   /** background hex for the icon tile (e.g. "#f88962" for Lead orange) */
   iconColor?: string;
   /** SLDS standard icon slug, e.g. "lead", "opportunity" */
@@ -102,6 +103,7 @@ export function SfListPage(props: SfListPageProps) {
     countCapped,
     displayMode,
     bodyOverride,
+    viewPicker,
     iconColor,
     iconSlug,
     actions,
@@ -152,6 +154,7 @@ export function SfListPage(props: SfListPageProps) {
           searchQuery={searchQuery ?? ""}
           pathname={pathname}
           preservedParams={preservedParams ?? {}}
+          viewPicker={viewPicker}
           views={views}
           currentView={currentView}
         />
@@ -483,6 +486,7 @@ function Header({
   preservedParams,
   views,
   currentView,
+  viewPicker,
 }: {
   iconSlug: string;
   iconColor?: string;
@@ -494,6 +498,7 @@ function Header({
   searchQuery: string;
   pathname: string;
   preservedParams: Record<string, string>;
+  viewPicker?: React.ReactNode;
   views?: SfViewOption[];
   currentView?: string;
 }) {
@@ -540,7 +545,7 @@ function Header({
             <div style={{ fontSize: 12, color: "#444444", lineHeight: 1.2 }}>
               {title}
             </div>
-            {views && views.length > 0 ? (
+            {viewPicker ?? (views && views.length > 0 ? (
               <SfViewPicker views={views} current={currentView ?? "recent"} />
             ) : (
               <div
@@ -559,7 +564,7 @@ function Header({
                   <path d="M2 4l4 4 4-4z" />
                 </svg>
               </div>
-            )}
+            ))}
             <div style={{ marginTop: 2, fontSize: 12, color: "#444444" }}>
               {countLabel ?? String(count)} item{count === 1 ? "" : "s"}
               <span style={{ color: "#747474" }}> · Updated a few seconds ago</span>

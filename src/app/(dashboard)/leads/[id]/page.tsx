@@ -1,3 +1,4 @@
+import { LeadViewTracker } from "@/components/leads/lead-view-tracker";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { SsnField } from "@/components/shared/ssn-field";
@@ -891,6 +892,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   );
 
   return (
+    <>
+    <LeadViewTracker id={lead.id} />
     <RecordPage
       entity="Lead"
       entityLabel="Lead"
@@ -981,6 +984,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         </>
       }
     />
+    </>
   );
 }
 

@@ -720,10 +720,6 @@ export function SfViewPicker({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [open]);
 
-  useEffect(() => {
-    if (!open) setQ("");
-  }, [open]);
-
   const currentLabel = views.find((v) => v.value === current)?.label ?? views[0]?.label ?? "Recently Viewed";
   const filtered = q.trim() ? views.filter((v) => v.label.toLowerCase().includes(q.trim().toLowerCase())) : views;
 
@@ -734,6 +730,7 @@ export function SfViewPicker({
     sp.delete("search");
     sp.delete("sort");
     sp.delete("dir");
+    for (const key of ["page", "status", "source", "recordType", "assignedToId", "listView"]) sp.delete(key);
     if (value && value !== "recent") sp.set("view", value);
     else sp.delete("view");
     const qs = sp.toString();
@@ -745,7 +742,10 @@ export function SfViewPicker({
     <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        aria-label={`Select a List View: ${currentLabel}`}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={() => { setQ(""); setOpen((v) => !v); }}
         style={{
           background: "transparent",
           border: "none",
@@ -789,6 +789,7 @@ export function SfViewPicker({
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search lists..."
+                aria-label="Search lists"
                 style={{
                   width: "100%",
                   padding: "6px 10px",
@@ -810,14 +811,16 @@ export function SfViewPicker({
               letterSpacing: 0.4,
             }}
           >
-            LIST VIEWS
+            ALL LISTS
           </div>
-          <div style={{ maxHeight: 360, overflowY: "auto" }}>
+          <div role="listbox" aria-label="List views" style={{ maxHeight: 360, overflowY: "auto" }}>
             {filtered.map((v) => {
               const active = v.value === current;
               return (
                 <button
                   key={v.value}
+                  role="option"
+                  aria-selected={active}
                   onClick={() => selectView(v.value)}
                   style={{
                     display: "block",
