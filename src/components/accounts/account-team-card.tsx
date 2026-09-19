@@ -1,9 +1,4 @@
-/**
- * Lightweight Account Team card. SF uses an AccountTeamMember object with
- * roles like Owner, Closer, Customer Service Rep. Our Prisma schema does not
- * yet model AccountTeamMember, so this card surfaces the owner + closer/
- * fronter pulled from opportunities so closers see the full team at a glance.
- */
+/** Account owner and explicit team memberships, plus linked opportunity roles. */
 import Link from "next/link";
 
 type Member = {

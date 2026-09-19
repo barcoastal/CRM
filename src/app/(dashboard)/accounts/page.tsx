@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { prisma } from "@/lib/prisma";
@@ -71,6 +72,8 @@ const TYPE_LABEL: Record<string, string> = {
 // COMPUTED_VIEWS are the few genuinely-dynamic views that can't be expressed as
 // stored filters (they depend on the current user / current date).
 const COMPUTED_VIEWS = [
+  {value:"recent",label:"Recently Viewed"},
+  {value:"my-account-teams",label:"My Account Teams"},
   { value: "business", label: "Business Accounts" },
   { value: "my-open", label: "My Accounts" },
   { value: "this-week", label: "This Week's New" },
@@ -97,21 +100,26 @@ function fmtMoney(input: unknown): string {
 export default async function AccountsPage({ searchParams }: AccountsPageProps) {
   const params = await searchParams;
   const search = params.search?.trim() ?? "";
-  const sort = params.sort ?? "";
-  const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
+  let sort = params.sort ?? "";
+  let dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const view = params.view ?? "business";
+  let view = params.view ?? "business";
+  const requestedView=view;
 
   const session = await auth();
   const myId = session?.user?.id ?? "";
 
   // Stored list views (system + the faithful SF recreations, incl. per-rep lists)
   const listViews = await prisma.listView.findMany({
-    where: { entity: "Account" },
+    where: { entity: "Account", OR:[{isSystem:true},{isShared:true},{ownerId:myId}] },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    select: { name: true, developerName: true, filters: true },
+
   });
 
+  const selectedView=listViews.find(v=>`custom:${v.id}`===view);
+  if(view.startsWith('custom:')&&!selectedView)notFound();
+  if(selectedView){view=selectedView.baseView||'all';if(!sort&&selectedView.sortField){sort=selectedView.sortField;dir=selectedView.sortDir==='desc'?'desc':'asc';}}
+  const selectedColumns=Array.isArray(selectedView?.columns)?selectedView.columns.filter((v):v is string=>typeof v==='string'):undefined;
   const where: Prisma.AccountWhereInput = { isActive: true, AND: [await recordScope("account")], };
   if (params.recordType) where.recordType = params.recordType;
   if (search) {
@@ -122,6 +130,9 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     ];
   }
 
+  const recentRows=view==='recent'?await prisma.recordViewHistory.findMany({where:{userId:myId,entity:'account'},orderBy:{viewedAt:'desc'},take:100,select:{recordId:true}}):[];
+  const recentIds=recentRows.map(r=>r.recordId);
+  if(view==='recent')where.id={in:recentIds};
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const weekStart = new Date(todayStart);
@@ -141,7 +152,9 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     where.recordType = "CREDITOR";
   } else if (view === "vendor") {
     where.recordType = "VENDOR";
-  } else if ((view === "my-open" || view === "my-account-teams") && myId) {
+  } else if (view === "my-account-teams" && myId) {
+    where.teamMembers={some:{userId:myId}};
+  } else if (view === "my-open" && myId) {
     where.ownerId = myId;
   } else if (view === "this-week") {
     where.createdAt = { gte: weekStart };
@@ -151,6 +164,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     where.ownerId = view.slice("owner:".length);
   }
 
+  if(selectedView)where.AND=[...(Array.isArray(where.AND)?where.AND:[where.AND??{}]),buildWhere((selectedView.filters??[]) as unknown as ListFilter[])];
   let orderBy: Prisma.AccountOrderByWithRelationInput = { updatedAt: "desc" };
   if (sort && SORT_MAP[sort]) {
     const key = Object.keys(SORT_MAP[sort])[0] as keyof Prisma.AccountOrderByWithRelationInput;
@@ -219,6 +233,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
     );
     return (
       <SfListPage
+      preferenceUserId={myId}
         entity="account"
         title="Accounts"
         subtitle="Recently Viewed"
@@ -227,12 +242,13 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         iconSlug="account"
         actions={[{ label: "New", href: "/accounts/new" }]}
         columns={COLUMNS}
-        rows={[]}
+        selectedColumns={selectedColumns}
+      rows={[]}
         pathname="/accounts"
         searchQuery={search}
         preservedParams={{ ...(params.view ? { view: params.view } : {}), ktab }}
         views={COMPUTED_VIEWS}
-        currentView={view}
+        currentView={requestedView}
         displayMode="kanban"
         bodyOverride={<KanbanBoard columns={columns} entity="accounts" fieldKey="ownerId" groupTabs={groupTabs} />}
         massConfig={{
@@ -267,8 +283,8 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         convertedFromLead: { select: { sfId: true } },
       },
       orderBy,
-      skip: (page - 1) * LIMIT,
-      take: LIMIT,
+      skip: view==='recent'&&!sort?0:(page - 1) * LIMIT,
+      take: view==='recent'&&!sort?100:LIMIT,
     }),
     prisma.account.count({ where }),
     // One entry per account owner → per-rep "owner" views (mirrors the SF
@@ -279,6 +295,8 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
       distinct: ["ownerId"],
     }),
   ]);
+  if(view==='recent'&&!sort){items.sort((a,b)=>recentIds.indexOf(a.id)-recentIds.indexOf(b.id));items.splice(page*LIMIT);items.splice(0,(page-1)*LIMIT);}
+
 
   const ownerViews = ownerRows
     .filter((r) => r.ownerId)
@@ -289,7 +307,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   const dbViews = listViews
     .filter((v) => v.developerName)
     .map((v) => ({ value: `view:${v.developerName}`, label: v.name }));
-  const allViews = [...dbViews, ...COMPUTED_VIEWS, ...ownerViews];
+  const allViews = [...dbViews, ...COMPUTED_VIEWS, ...ownerViews,...listViews.filter(v=>!v.isSystem).map(v=>({value:`custom:${v.id}`,label:v.name}))];
 
   const rows: SfRow[] = items.map((a) => {
     let sfData: Record<string, unknown> = {};
@@ -365,10 +383,11 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   if (params.recordType) preservedParams.recordType = params.recordType;
   if (params.view) preservedParams.view = params.view;
 
-  const subtitle = allViews.find((v) => v.value === view)?.label ?? "Business Accounts";
+  const subtitle = allViews.find((v) => v.value === requestedView)?.label ?? "Business Accounts";
 
   return (
     <SfListPage
+      preferenceUserId={myId}
       entity="account"
       title="Accounts"
       subtitle={subtitle}
@@ -383,6 +402,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         { label: "Intelligence View" },
       ]}
       columns={COLUMNS}
+      selectedColumns={selectedColumns}
       rows={redactSsn(rows)}
       pathname="/accounts"
       sortKey={sort || undefined}
@@ -390,7 +410,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
       searchQuery={search}
       preservedParams={preservedParams}
       views={allViews}
-      currentView={view}
+      currentView={requestedView}
       page={page}
       pageSize={LIMIT}
       massConfig={{

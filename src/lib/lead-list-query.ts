@@ -1,4 +1,5 @@
 import { Prisma } from '@/generated/prisma/client';
+import type { ListFilter } from './list-views';
 import type { LeadListDefinition } from './lead-list-catalog';
 
 // The imported Lead_Source_Category__c formula. Derive it from current source so
@@ -88,8 +89,28 @@ export function leadFilterSql(definition: string): Prisma.Sql {
   return op === 'not equal to' ? Prisma.sql`NOT (${predicate})` : predicate;
 }
 
+/** User filters only reference allowlisted scalar fields; unknown fields fail closed. */
+export function savedLeadFilterSql(filter: ListFilter): Prisma.Sql {
+  const columns: Record<string, Prisma.Sql> = {status:Prisma.sql`l.status`,source:Prisma.sql`l.source`,recordType:Prisma.sql`l."recordType"`,assignedToId:Prisma.sql`l."assignedToId"`,contactName:Prisma.sql`l."contactName"`,businessName:Prisma.sql`l."businessName"`,state:Prisma.sql`l.state`,email:Prisma.sql`l.email`,phone:Prisma.sql`l.phone`};
+  const field=columns[filter.field];
+  if(!field) throw new Error('Unsupported saved lead filter field');
+  const value=String(filter.value??'');
+  switch(filter.op){
+    case 'EQ':return Prisma.sql`${field} = ${value}`;
+    case 'NEQ':return Prisma.sql`${field} IS DISTINCT FROM ${value}`;
+    case 'CONTAINS':return Prisma.sql`strpos(lower(COALESCE(${field},'')),lower(${value})) > 0`;
+    case 'NOT_CONTAINS':return Prisma.sql`strpos(lower(COALESCE(${field},'')),lower(${value})) = 0`;
+    case 'STARTS_WITH':return Prisma.sql`left(lower(COALESCE(${field},'')),length(${value})) = lower(${value})`;
+    case 'IN': case 'NOT_IN': { const values=Array.isArray(filter.value)?filter.value.map(String):[value];const predicate=inValues(field,values);return filter.op==='IN'?predicate:Prisma.sql`NOT (${predicate})`; }
+    case 'IS_NULL':return Prisma.sql`${field} IS NULL`;
+    case 'IS_NOT_NULL':return Prisma.sql`${field} IS NOT NULL`;
+    default:throw new Error('Unsupported saved lead filter operation');
+  }
+}
+
 export interface LeadListQueryInput {
   definition: LeadListDefinition;
+  savedFilters?: ListFilter[];
   scope: Record<string, unknown>;
   userId: string;
   recentIds: string[];
@@ -103,7 +124,7 @@ export interface LeadListQueryInput {
 }
 export function leadListIdsQuery(input: LeadListQueryInput): Prisma.Sql {
   const {definition, userId, recentIds} = input;
-  const conditions = [leadScopeSql(input.scope), ...definition.filters.map(leadFilterSql)];
+  const conditions = [leadScopeSql(input.scope), ...definition.filters.map(leadFilterSql), ...(input.savedFilters??[]).map(savedLeadFilterSql)];
   // Converted records remain reachable through history, not ordinary lead lists.
   if (definition.scope !== 'recent') conditions.push(Prisma.sql`(l."convertedAt" IS NULL AND l."convertedAccountId" IS NULL AND lower(l.status) NOT IN ('converted', 'enrolled'))`);
   if (definition.scope === 'my') conditions.push(Prisma.sql`l."assignedToId" = ${userId}`);

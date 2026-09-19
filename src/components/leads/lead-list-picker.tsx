@@ -2,22 +2,22 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Pin, ChevronDown, Check } from 'lucide-react';
-import { LEAD_LIST_VIEWS } from '@/lib/lead-list-catalog';
+import { LEAD_LIST_VIEWS, type LeadListDefinition } from '@/lib/lead-list-catalog';
 
 const empty = () => '';
 const subscribe = (notify:()=>void) => {
   window.addEventListener('storage',notify); window.addEventListener('lead-list-preference',notify);
   return ()=>{window.removeEventListener('storage',notify);window.removeEventListener('lead-list-preference',notify);};
 };
-export function LeadListPicker({current,userId}:{current:string;userId:string}) {
+export function LeadListPicker({current,userId,views=LEAD_LIST_VIEWS}:{current:string;userId:string;views?:LeadListDefinition[]}) {
   const router=useRouter();const searchParams=useSearchParams();const ref=useRef<HTMLDivElement>(null);
   const [open,setOpen]=useState(false);const [search,setSearch]=useState('');
   const key=`crm:lead-lists:${userId}`;
   const raw=useSyncExternalStore(subscribe,()=>{try{return localStorage.getItem(key)??'';}catch{return '';}},empty);
   let pinned='recent';let recent:string[]=[];
-  try{const data=JSON.parse(raw);if(LEAD_LIST_VIEWS.some(v=>v.value===data.pinned))pinned=data.pinned;if(Array.isArray(data.recent))recent=data.recent.filter((v:unknown)=>typeof v==='string').slice(0,5);}catch{}
+  try{const data=JSON.parse(raw);if(views.some(v=>v.value===data.pinned))pinned=data.pinned;if(Array.isArray(data.recent))recent=data.recent.filter((v:unknown)=>typeof v==='string').slice(0,5);}catch{}
   function save(next:{pinned:string;recent:string[]}){try{localStorage.setItem(key,JSON.stringify(next));window.dispatchEvent(new Event('lead-list-preference'));}catch{}}
-  const label=LEAD_LIST_VIEWS.find(v=>v.value===current)?.label??'Recently Viewed';
+  const label=views.find(v=>v.value===current)?.label??'Recently Viewed';
   useEffect(()=>{
     if(!searchParams.has('view')&&pinned!=='recent'){
       const sp=new URLSearchParams(searchParams.toString());sp.set('view',pinned);sp.delete('page');router.replace(`/leads?${sp}`);
@@ -33,8 +33,8 @@ export function LeadListPicker({current,userId}:{current:string;userId:string}) 
     const sp=new URLSearchParams();sp.set('view',value);if(searchParams.get('display')==='kanban')sp.set('display','kanban');
     router.push(`/leads?${sp}`);setOpen(false);setSearch('');
   }
-  const matches=LEAD_LIST_VIEWS.filter(v=>v.label.toLowerCase().includes(search.trim().toLowerCase()));
-  const recentViews=recent.map(id=>LEAD_LIST_VIEWS.find(v=>v.value===id)).filter(v=>!!v);
+  const matches=views.filter(v=>v.label.toLowerCase().includes(search.trim().toLowerCase()));
+  const recentViews=recent.map(id=>views.find(v=>v.value===id)).filter(v=>!!v);
   function option(v:typeof LEAD_LIST_VIEWS[number]){return <button key={v.value} type="button" role="option" aria-selected={current===v.value} onClick={()=>select(v.value)} className="flex w-full items-center gap-2 px-4 py-2 text-left text-[13px] hover:bg-[#f3f2f2] focus:bg-[#eef4ff]" style={{background:current===v.value?'#eef4ff':undefined}}><Check size={14} style={{visibility:current===v.value?'visible':'hidden'}}/><span className="flex-1">{v.label}</span>{pinned===v.value&&<Pin size={13} aria-label="Pinned list"/>}</button>;}
   return <div ref={ref} className="relative inline-flex items-center gap-3" onKeyDown={e=>{if(e.key==='Escape')setOpen(false);}}>
     <button type="button" aria-label="Select a List View: Leads" aria-haspopup="listbox" aria-expanded={open} onClick={()=>{setOpen(!open);setSearch('');}} className="inline-flex items-center gap-2 text-[18px] font-bold text-[#181818]">{label}<ChevronDown size={14}/></button>

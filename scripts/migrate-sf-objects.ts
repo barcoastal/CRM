@@ -1,3 +1,5 @@
+import { LEAD_PARITY_FIELDS, expandRelationshipFields } from "../src/lib/sf-sync/lead-fields";
+import { syncAccountCloser } from "../src/lib/account-team";
 /**
  * Streaming Salesforce → CRM migration.
  *
@@ -72,7 +74,11 @@ const SOQL: Record<string, string> = {
  * runs with SF_SINCE unset and pulls everything.
  */
 function effectiveSoql(entity: string): string {
-  const base = SOQL[entity];
+  let base = SOQL[entity];
+  if(entity==='lead'){
+    const match=base.match(/^SELECT (.*?) FROM Lead/i);
+    if(match){const fields=[...new Map([...match[1].split(',').map(s=>s.trim()),...LEAD_PARITY_FIELDS].map(field=>[field.toLowerCase(),field])).values()];base=base.replace(/^SELECT .*? FROM Lead/i,`SELECT ${fields.join(', ')} FROM Lead`);}
+  }
   const since = process.env.SF_SINCE?.trim();
   if (!base || !since) return base;
   const pred = `LastModifiedDate >= ${since}`;
@@ -282,13 +288,11 @@ async function migrateAccounts(headers: string[], records: AsyncIterable<string[
   async function flush() {
     if (batch.length === 0) return;
     const aResults = await Promise.allSettled(
-      batch.map((a) =>
-        prisma.account.upsert({
-          where: { sfId: a.sfId as string },
-          update: a,
-          create: a as never,
-        }),
-      ),
+      batch.map((a) => prisma.$transaction(async tx=>{
+        const account=await tx.account.upsert({where:{sfId:a.sfId as string},update:a,create:a as never});
+        await syncAccountCloser(tx,account);
+        return account;
+      })),
     );
     const aFail = aResults.filter((r) => r.status === "rejected");
     if (aFail.length > 0) {
@@ -480,7 +484,7 @@ async function migrateLeads(headers: string[], records: AsyncIterable<string[]>)
     ConvertedDate: idx("ConvertedDate"), OwnerId: idx("OwnerId"),
   };
   // Guard: refuse a stale/partial export (would null-overwrite good data).
-  const requiredLead = ["Last_Disposition__c", "Estimated_Total_Debt__c", "five9_Disposition__c"];
+  const requiredLead = ["Last_Disposition__c", "Estimated_Total_Debt__c", "five9_Disposition__c", "Creditor_1_Payment__c", "CreatedDate"];
   const missingLead = requiredLead.filter((h) => idx(h) === -1);
   if (missingLead.length) {
     throw new Error(`Lead CSV missing operational columns (${missingLead.join(", ")}) - refusing to import.`);
@@ -528,7 +532,10 @@ async function migrateLeads(headers: string[], records: AsyncIterable<string[]>)
       industry: cells[I.Industry] || null,
       annualRevenue: cells[I.AnnualRevenue] ? Number(cells[I.AnnualRevenue]) : null,
       assignedToId: users.get(cells[I.OwnerId]) ?? null,
-      sfDataJson: JSON.stringify(Object.fromEntries(headers.map((h, i) => [h, cells[i]]).filter(([, v]) => v !== undefined && v !== ""))),
+      createdAt: cells[idx('CreatedDate')] ? new Date(cells[idx('CreatedDate')]) : undefined,
+      updatedAt: cells[idx('LastModifiedDate')] ? new Date(cells[idx('LastModifiedDate')]) : undefined,
+      convertedAt: cells[I.IsConverted]?.toLowerCase()==='true' && cells[I.ConvertedDate] ? new Date(cells[I.ConvertedDate]) : null,
+      sfDataJson: JSON.stringify(expandRelationshipFields(Object.fromEntries(headers.map((h, i) => [h, cells[i]??null])))),
     });
     if (batch.length >= 50) await flush();
   }

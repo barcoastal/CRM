@@ -31,3 +31,16 @@ describe('Salesforce lead health checks', () => {
     expect(results.slice(3).every(x => x.ok)).toBe(true);
   });
 });
+
+import { leadPaymentPopulated } from '../src/lib/lead-payment-health';
+describe('source creditor payment health rule',()=>{
+ it('preserves null semantics instead of turning missing payments into zero',()=>{
+  expect(leadPaymentPopulated({Creditor_1_Total_Debt__c:30000,Creditor_1_Payment__c:null})).toBe(true);
+  expect(leadPaymentPopulated({Creditor_1_Total_Debt__c:'30000',Creditor_1_Payment__c:''})).toBe(true);
+ });
+ it('rejects zero or negative payment for any non-null debt, including zero debt',()=>{
+  expect(leadPaymentPopulated({Creditor_1_Total_Debt__c:0,Creditor_1_Payment__c:0})).toBe(false);
+  expect(leadPaymentPopulated({Creditor_10_Total_Debt__c:30000,Creditor_10_Payment__c:-1})).toBe(false);
+  expect(leadPaymentPopulated({Creditor_1_Total_Debt__c:null,Creditor_1_Payment__c:0})).toBe(true);
+ });
+});

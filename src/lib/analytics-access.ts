@@ -58,6 +58,7 @@ const OWNED: Record<string, { field: string; permission: string }> = {
 export function analyticsScope(access: AnalyticsAccess, model: string): Record<string, unknown> {
   if (access.isAdmin) return {};
   const rule = OWNED[model];
+  if(model==='account'&&hasPermission(access.permissions,'Account.View'))return {OR:[ownedRecordScope(model,access.ownerIds),{teamMembers:{some:{userId:access.userId}}}]};
   if (rule) return hasPermission(access.permissions, rule.permission)
     ? ownedRecordScope(model, access.ownerIds) : { id: { in: [] } };
   if (model === "envelope") {

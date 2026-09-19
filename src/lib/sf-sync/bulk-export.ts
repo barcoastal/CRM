@@ -95,3 +95,14 @@ export async function bulkQueryToCsv(soql: string, outPath: string): Promise<voi
     locator = next;
   }
 }
+
+/** Bounded read-only query for record reconciliation. Query is built by server callers. */
+export async function querySourceRecords(soql:string):Promise<Record<string,unknown>[]> {
+ const raw=process.env.SF_AUTH_URL;if(!raw)throw new Error('Source connection is not configured');
+ const {token,instanceUrl}=await getAccessToken(parseAuthUrl(raw));
+ const response=await fetch(`${instanceUrl}/services/data/${API_VERSION}/query?q=${encodeURIComponent(soql)}`,{headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(30000)});
+ if(!response.ok)throw new Error(`Source query failed (${response.status})`);
+ const data=await response.json() as {records:Record<string,unknown>[];done:boolean};
+ if(!data.done)throw new Error('Source result exceeded the record limit');
+ return data.records;
+}

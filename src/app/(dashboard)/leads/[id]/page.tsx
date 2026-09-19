@@ -1,3 +1,4 @@
+import { leadPaymentPopulated } from "@/lib/lead-payment-health";
 import { LeadViewTracker } from "@/components/leads/lead-view-tracker";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
@@ -953,10 +954,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             industry={lead.industry}
             totalDebt={lead.sfId ? sfNum("Current_Total_Debt_Amount__c") : lead.totalDebtEst}
             leadSource={lead.sfId ? sf("LeadSource") : lead.source}
-            isPaymentAmountPopulated={
-              sf("Is_Payment_Amount_Populated__c") === "true" ||
-              sfData["Is_Payment_Amount_Populated__c"] === true
-            }
+            isPaymentAmountPopulated={leadPaymentPopulated(sfData)}
             firstCreditorDebt={sfNum("Creditor_1_Total_Debt__c")}
             callDispositionPopulated={
               !!sf("CloserLookup__c") &&

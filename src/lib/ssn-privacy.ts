@@ -1,3 +1,4 @@
+import { isValidElement, cloneElement } from "react";
 /** Presentation boundary only: never use redacted records for database writes. */
 export function isSsnField(key: string): boolean {
   const field = key.split(".").at(-1)!.replace(/[^a-z0-9]/gi, "").toLowerCase();
@@ -16,6 +17,7 @@ export function canRevealSsn(role: string | null | undefined): boolean {
 
 /** Covers typed fields, Salesforce JSON snapshots, nested records and field history. */
 export function redactSsn<T>(input: T): T {
+  if (isValidElement<Record<string, unknown>>(input)) return cloneElement(input, redactSsn(input.props)) as T;
   if (Array.isArray(input)) return input.map(redactSsn) as T;
   if (!input || typeof input !== "object") return input;
   // Preserve Date/Decimal and other non-record values for normal serialization.

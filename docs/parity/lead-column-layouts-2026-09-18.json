@@ -1,0 +1,3162 @@
+[
+  {
+    "name": "Kevin Price Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Craig Cohen Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Craig Caliph Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Lavell Reed Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Juan Limongi Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Christopher Ayala Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Evgeny Nozdrin Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Total Debt Amount",
+        "field": "Total_Debt_Amount__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Closer",
+        "field": "Closer__c"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Joe Mcdonald Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Total Debt Amount",
+        "field": "Total_Debt_Amount__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Closer",
+        "field": "Closer__c"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Jovana Pavlovic Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Total Debt Amount",
+        "field": "Total_Debt_Amount__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Closer",
+        "field": "Closer__c"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Christopher Boulahanis Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Todays Web Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "five9 Disposition",
+        "field": "five9_Disposition__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Has Calendly Event",
+        "field": "Has_Calendly_Event__c"
+      },
+      {
+        "label": "five9 Last Disposition",
+        "field": "five9_Last_Disposition__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "Converted",
+        "field": "IsConverted"
+      }
+    ]
+  },
+  {
+    "name": "Un-Assigned Web Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Ad Click Id",
+        "field": "Ad_Click_Id__c"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Created By Alias",
+        "field": "CreatedBy.Alias"
+      },
+      {
+        "label": "Has Calendly Event",
+        "field": "Has_Calendly_Event__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "My Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Timezone",
+        "field": "Timezone__c"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "First Email Date",
+        "field": "ActivityMetric.FirstEmailDateTime"
+      }
+    ]
+  },
+  {
+    "name": "Recently Viewed Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Company",
+        "field": "Company"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Email",
+        "field": "Email"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Alias",
+        "field": "Owner.NameOrAlias"
+      },
+      {
+        "label": "Unread By Owner",
+        "field": "IsUnreadByOwner"
+      }
+    ]
+  },
+  {
+    "name": "My Unread Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Total Debt Amount",
+        "field": "Total_Debt_Amount__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Closer",
+        "field": "Closer__c"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      }
+    ]
+  },
+  {
+    "name": "My Team Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Copy of Web Leads - Archived",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Lead Source Category",
+        "field": "Lead_Source_Category__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Leads for Survey",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Zachary Michaels Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "David Medina Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Jose Ledesma Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Tatiana Web leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Source Category",
+        "field": "Lead_Source_Category__c"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Calendly Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Debt Details",
+        "field": "Debt_Details__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "Created By Alias",
+        "field": "CreatedBy.Alias"
+      }
+    ]
+  },
+  {
+    "name": "Lawsuit Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "Closer",
+        "field": "Closer__c"
+      }
+    ]
+  },
+  {
+    "name": "Closer Pool",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Company",
+        "field": "Company"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "Email",
+        "field": "Email"
+      },
+      {
+        "label": "Dialer Group",
+        "field": "Dialer_Group__c"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Alias",
+        "field": "Owner.NameOrAlias"
+      },
+      {
+        "label": "Unread By Owner",
+        "field": "IsUnreadByOwner"
+      }
+    ]
+  },
+  {
+    "name": "UTM Search",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Timezone",
+        "field": "Timezone__c"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "UTM Term",
+        "field": "UTM_Term__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      }
+    ]
+  },
+  {
+    "name": "Leo Gianfortune Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Eli Khouri Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Alvaro Rosenthal Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Yudirsa Correia Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Pmax Lead Source",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Created By Alias",
+        "field": "CreatedBy.Alias"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Yesterday's Web Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "five9 Disposition",
+        "field": "five9_Disposition__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Has Calendly Event",
+        "field": "Has_Calendly_Event__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "Preferred Language",
+        "field": "Preferred_Language__c"
+      }
+    ]
+  },
+  {
+    "name": "Moshe Elkayam Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Christian Garcia Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Arthur Graziano Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Shared Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Email",
+        "field": "Email"
+      },
+      {
+        "label": "Company",
+        "field": "Company"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Last Disposition",
+        "field": "Last_Disposition__c"
+      },
+      {
+        "label": "five9 Disposition",
+        "field": "five9_Disposition__c"
+      },
+      {
+        "label": "MCA Lender External Id",
+        "field": "MCA_Lender_External_Id__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Lead Source Category",
+        "field": "Lead_Source_Category__c"
+      },
+      {
+        "label": "Owner Username",
+        "field": "Owner_Username__c"
+      },
+      {
+        "label": "Last Modified By Alias",
+        "field": "LastModifiedBy.Alias"
+      }
+    ]
+  },
+  {
+    "name": "All Transferred Web Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Email",
+        "field": "Email"
+      },
+      {
+        "label": "Company",
+        "field": "Company"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Unread By Owner",
+        "field": "IsUnreadByOwner"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Alias",
+        "field": "Owner.NameOrAlias"
+      }
+    ]
+  },
+  {
+    "name": "Direct Mail Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Has Calendly Event",
+        "field": "Has_Calendly_Event__c"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "five9 Disposition",
+        "field": "five9_Disposition__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "Ad Click Id",
+        "field": "Ad_Click_Id__c"
+      },
+      {
+        "label": "Add to Five9 List",
+        "field": "Add_to_f9list_Id__c"
+      }
+    ]
+  },
+  {
+    "name": "Web Leads Archive",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Ad Click Id",
+        "field": "Ad_Click_Id__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "five9 Disposition",
+        "field": "five9_Disposition__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "Add to Five9 List",
+        "field": "Add_to_f9list_Id__c"
+      }
+    ]
+  },
+  {
+    "name": "Web Leads Not Dialed",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "Formated Phone",
+        "field": "Formated_Phone__c"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "five9 Disposition",
+        "field": "five9_Disposition__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "Add to Five9 List",
+        "field": "Add_to_f9list_Id__c"
+      }
+    ]
+  },
+  {
+    "name": "Web Leads IB",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Has Calendly Event",
+        "field": "Has_Calendly_Event__c"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "five9 Disposition",
+        "field": "five9_Disposition__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "Ad Click Id",
+        "field": "Ad_Click_Id__c"
+      }
+    ]
+  },
+  {
+    "name": "Web Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Has Calendly Event",
+        "field": "Has_Calendly_Event__c"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "five9 Disposition",
+        "field": "five9_Disposition__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Ad Click Id",
+        "field": "Ad_Click_Id__c"
+      },
+      {
+        "label": "Trackit Click ID",
+        "field": "Eli_Ad_click__c"
+      }
+    ]
+  },
+  {
+    "name": "NO Ad Click Ids",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Has Calendly Event",
+        "field": "Has_Calendly_Event__c"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "five9 Disposition",
+        "field": "five9_Disposition__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Ad Click Id",
+        "field": "Ad_Click_Id__c"
+      },
+      {
+        "label": "Last Sub Disposition",
+        "field": "Last_Sub_Disposition__c"
+      }
+    ]
+  },
+  {
+    "name": "Website Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "Lead Vendor Id Text",
+        "field": "Lead_Vendor_Id_Text__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Has Calendly Event",
+        "field": "Has_Calendly_Event__c"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "five9 Disposition",
+        "field": "five9_Disposition__c"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Ad Click Id",
+        "field": "Ad_Click_Id__c"
+      },
+      {
+        "label": "Last Sub Disposition",
+        "field": "Last_Sub_Disposition__c"
+      }
+    ]
+  },
+  {
+    "name": "David Aflalo Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Elcain Chase Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Albert Beutel Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Chris David Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Nathan Toney Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Isaac Levin Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Michael Rabin Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Ori Keren Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Tahja Palmer Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Zachary Redick Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "Zane Kerns Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Estimated Total Debt",
+        "field": "Estimated_Total_Debt__c"
+      },
+      {
+        "label": "Last Modified Date",
+        "field": "LastModifiedDate"
+      },
+      {
+        "label": "Last Contacted DateTime",
+        "field": "Last_Contacted_DateTime__c"
+      },
+      {
+        "label": "Phone",
+        "field": "Phone"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Sub Disposition",
+        "field": "Sub_Disposition__c"
+      },
+      {
+        "label": "Lead Vendor ID",
+        "field": "Lead_Vendor_ID__r.Name"
+      },
+      {
+        "label": "Lead Source",
+        "field": "LeadSource"
+      },
+      {
+        "label": "Fronter",
+        "field": "Fronter__c"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Full Name",
+        "field": "Owner_Full_Name__c"
+      }
+    ]
+  },
+  {
+    "name": "All Leads",
+    "columns": [
+      {
+        "label": "Name",
+        "field": "Name"
+      },
+      {
+        "label": "Email",
+        "field": "Email"
+      },
+      {
+        "label": "Company",
+        "field": "Company"
+      },
+      {
+        "label": "State/Province",
+        "field": "StateCode"
+      },
+      {
+        "label": "Lead Status",
+        "field": "Status"
+      },
+      {
+        "label": "Unread By Owner",
+        "field": "IsUnreadByOwner"
+      },
+      {
+        "label": "Created Date",
+        "field": "CreatedDate"
+      },
+      {
+        "label": "Owner Alias",
+        "field": "Owner.NameOrAlias"
+      }
+    ]
+  }
+]

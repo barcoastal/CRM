@@ -9,3 +9,5 @@ For Salesforce records, names/company/source and the debt formula come from thei
 Opportunity scope: the export has HealthCheckerOpportunityI but no implementing checker. The live Pending Client Approval opportunity inspected had no Health Check panel. No speculative opportunity rules or panel were added. This evidence does not guarantee every Salesforce record type uses the same layout.
 
 Validation: 22 lead/account rule tests, TypeScript, lint, production build, and browser checks.
+
+September 18 verification: the integration profile does not expose the payment checkbox through the Lead REST describe/query API. The live `LeadTriggerHandler.validateCreditorPayments` source was inspected instead. The CRM now derives this check with exactly that rule: a non-null debt with a non-null payment <= 0 fails; null payments pass in the source. This replaces the old false result caused by a missing imported checkbox, and corrects the old trigger helper’s different zero-debt/null-payment handling. All ten creditor debt/payment pairs are included in new imports. No source permissions were changed.

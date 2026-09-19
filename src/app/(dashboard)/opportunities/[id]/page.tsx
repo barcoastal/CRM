@@ -1,3 +1,4 @@
+import { RecordViewTracker } from "@/components/lists/record-view-tracker";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { SsnField } from "@/components/shared/ssn-field";
@@ -960,6 +961,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
   return (
     <div className="sf-record-page">
+      <RecordViewTracker entity="opportunity" id={opp.id}/>
       <RecordPage
         entity="Opportunity"
         entityLabel="Opportunity"

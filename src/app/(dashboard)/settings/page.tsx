@@ -80,6 +80,7 @@ export default async function SettingsPage() {
     {
       section: "Audit & Logs",
       items: [
+        { href: "/settings/data-check", title: "Imported Data Check", description: "Compare imported leads and repair missing source fields" },
         { href: "/settings/audit-log", title: "Audit Log", description: "Every write captured (entity, before, after, user)" },
         { href: "/settings/app-log", title: "Application Log", description: "Structured app/error log" },
         { href: "/settings/async-ops", title: "Async Operations", description: "Long-running job tracking" },

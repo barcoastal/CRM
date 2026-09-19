@@ -1,3 +1,4 @@
+import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { z } from "zod";
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
   const { ids, subject, bodyHtml, bodyText, sendNow } = parsed.data;
 
   const opps = await prisma.opportunity.findMany({
-    where: { id: { in: ids } },
+    where: { id: { in: ids }, AND:[await recordScope("opportunity")] },
     select: {
       id: true,
       accountId: true,

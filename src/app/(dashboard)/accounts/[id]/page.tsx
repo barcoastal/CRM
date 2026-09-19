@@ -1,3 +1,5 @@
+import { RecordViewTracker } from "@/components/lists/record-view-tracker";
+import { AccountTeamManager } from "@/components/accounts/account-team-manager";
 import { NegotiatorAssignment } from "@/components/accounts/negotiator-assignment";
 import { hasPermission } from "@/lib/permissions";
 import { recordScope } from "@/lib/record-access";
@@ -58,6 +60,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const rawRecord = await prisma.account.findUnique({
     where: { id, AND: [await recordScope("account")] },
     include: {
+      teamMembers: {include:{user:{select:{id:true,name:true,email:true}}}},
       assignedNegotiator: { select: { id: true, name: true, email: true } },
       owner: { select: { id: true, name: true, email: true } },
       primaryContact: { select: { id: true, fullName: true, email: true, phone: true, title: true, birthdate: true, ssn: true } },
@@ -748,7 +751,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
 
   const teamMembers = (() => {
     const seen = new Set<string>();
-    const members: { role: string; name: string | null; email?: string | null }[] = [];
+    const members: { role: string; name: string | null; email?: string | null }[] = account.teamMembers.map(m=>({role:m.role,name:m.user.name,email:m.user.email}));
+    for(const m of account.teamMembers)if(m.role==='Closer')seen.add(`c:${m.user.name}`);
     if (account.assignedNegotiator) members.push({ role: "Debt Negotiator", name: account.assignedNegotiator.name, email: account.assignedNegotiator.email });
     for (const opp of account.opportunities) {
       if (opp.assignedTo?.name && !seen.has(`a:${opp.assignedTo.id}`)) {
@@ -906,6 +910,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
 
   const teamPanel = (
     <Section title="Account Team">
+      <AccountTeamManager accountId={account.id}/>
       <FieldGrid
         fields={[
           ["Owner", account.owner?.name],
@@ -921,6 +926,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   );
 
   return (
+    <>
+    <RecordViewTracker entity="account" id={account.id}/>
     <RecordPage
       entity="Account"
       entityLabel="Account"
@@ -1032,6 +1039,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
             )}
             emptyHint="No opportunities."
           />
+          <AccountTeamManager accountId={account.id}/>
           <AccountTeamCard
             ownerName={account.owner?.name ?? null}
             ownerEmail={account.owner?.email ?? null}
@@ -1065,6 +1073,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         </>
       }
     />
+    </>
   );
 }
 

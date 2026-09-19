@@ -30,7 +30,9 @@ export async function recordScope(entity: OwnedEntity, includeNegotiator = true)
   const users = await prisma.user.findMany({ select: { id: true, managerId: true } });
   // Having actual reports, rather than a loosely named profile, defines a manager.
   // Include indirect reports; cycles terminate through the visited set.
-  return ownedRecordScope(entity, teamOwnerIds(current.id, users), includeNegotiator && hasPermission(session.user.permissions ?? [], entity === "account" ? "Account.View" : "Opportunity.View"));
+  const scope=ownedRecordScope(entity, teamOwnerIds(current.id, users), includeNegotiator && hasPermission(session.user.permissions ?? [], entity === "account" ? "Account.View" : "Opportunity.View"));
+  if(entity==='account'&&includeNegotiator&&hasPermission(session.user.permissions??[], 'Account.View'))return {OR:[scope,{teamMembers:{some:{userId:current.id}}}]};
+  return scope;
 }
 
 /** Guard parent-record subroutes before reading documents or running actions. */

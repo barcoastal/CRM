@@ -32,3 +32,12 @@ describe("SSN privacy boundaries", () => {
     expect(redactSsn({ birthdate: date, ein: "12-3456789", sfDataJson: "broken" })).toEqual({ birthdate: date, ein: "12-3456789", sfDataJson: null });
   });
 });
+
+it('preserves valid React elements while masking their sensitive props',async()=>{
+ const {createElement,isValidElement}=await import('react');
+ const element=createElement('div',{'data-testid':'safe',ssn:'123456789'} as Record<string,unknown>);
+ const redacted=redactSsn(element);
+ expect(isValidElement(redacted)).toBe(true);
+ expect((redacted.props as Record<string,unknown>).ssn).toBe('XXX-XX-6789');
+ expect(redacted.type).toBe('div');
+});

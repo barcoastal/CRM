@@ -19,7 +19,7 @@ describe("assigned records and manager teams", () => {
 it("grants a permitted negotiator account and opportunity sharing without assignment management", async () => {
  mocks.auth.mockResolvedValue({ user: { id: "agent", permissions: ["Account.View", "Opportunity.View"] } });
  mocks.user.mockResolvedValue({ id: "agent", role: "SALES_REP", isActive: true }); mocks.users.mockResolvedValue([]);
- expect(await recordScope("account")).toEqual({ OR: [{ ownerId: { in: ["agent"] } }, { assignedNegotiatorId: { in: ["agent"] } }] });
+ expect(await recordScope("account")).toEqual({ OR: [{OR:[{ ownerId: { in: ["agent"] } }, { assignedNegotiatorId: { in: ["agent"] } }]},{teamMembers:{some:{userId:"agent"}}}] });
  expect(await recordScope("opportunity")).toEqual({ OR: [{ assignedToId: { in: ["agent"] } }, { account: { is: { assignedNegotiatorId: { in: ["agent"] } } } }] });
  expect(await recordScope("account", false)).toEqual({ ownerId: { in: ["agent"] } });
  mocks.auth.mockResolvedValue({ user: { id: "agent", permissions: [] } });

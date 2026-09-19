@@ -1,3 +1,4 @@
+import { syncAccountCloser } from "@/lib/account-team";
 /**
  * Port of SF accountTrigger / AccountHandler / AccountAfterTriggerHelper.
  * Source: docs/sf-export/sfdx-raw/classes/AccountHandler.cls,
@@ -32,17 +33,13 @@
  *    - Qualified + High UCC risk flipped on → log AccountHistory "UCC Risk Flag" entry
  *      (replaces oppSendEmailToAdminGroup + updateOppRecordTypeToBuyout — we don't auto-flip
  *      opp record type because that lives in opportunity-trigger's scope)
- *    - Closer change → log AccountHistory "Closer" entry
- *      (replaces AccountAfterTriggerHelper.createAccountTeamMembersForClosers; we don't have
- *      an AccountTeamMember model yet — see TODO below)
+ *    - Closer changes synchronize explicit account-team memberships by stable user ID.
  *
  * Skipped:
  *  - Picklist transition validation (SF-specific; not enforced here, validateClientStatus)
  *  - SAS/RAM sync calls (Phase C — payment processor)
  *  - Citadel API callout
  *  - Email notifications to admin group
- *  - AccountTeamMember insert/delete (model not in current Prisma schema — TODO leave as
- *    AccountHistory entry until prisma/schema.prisma adds AccountTeamMember)
  */
 
 import type { Account } from "@/generated/prisma/client";
@@ -111,7 +108,9 @@ export const accountTrigger: Trigger<Account, AccountWrite> = {
     }
   },
 
+  async afterInsert({row,ctx}) { await syncAccountCloser(ctx.prisma,row); },
   async afterUpdate({ row, prev, ctx }) {
+    if(row.sfDataJson!==prev.sfDataJson)await syncAccountCloser(ctx.prisma,row);
     // Stage change → AccountHistory entry + lifecycle email
     if (row.stage !== prev.stage) {
       await ctx.prisma.accountHistory.create({

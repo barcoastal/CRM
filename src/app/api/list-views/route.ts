@@ -1,3 +1,5 @@
+import { listViewFilterError } from "@/lib/list-view-access";
+import { hasSameOrigin } from "@/lib/request-origin";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -29,15 +31,19 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const r = await requireAuthOrRespond();
   if ("response" in r) return r.response;
+  if(!hasSameOrigin(req))return NextResponse.json({error:"Invalid origin"},{status:403});
   const body = await req.json().catch(() => ({}));
   const parsed = createListViewSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
   const d = parsed.data;
+  const filterError=listViewFilterError(d.entity,d.filters??[]);
+  if(filterError)return NextResponse.json({error:filterError},{status:400});
   const view = await prisma.listView.create({
     data: {
       entity: d.entity,
+      baseView: d.baseView,
       name: d.name,
       developerName: d.developerName ?? null,
       filters: d.filters as object,

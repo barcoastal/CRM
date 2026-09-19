@@ -1,3 +1,7 @@
+import type { ReactNode } from "react";
+import { LEAD_COLUMNS, leadColumnsForView } from "@/lib/lead-list-columns";
+import { notFound } from "next/navigation";
+import type { ListFilter } from "@/lib/list-views";
 import Link from "next/link";
 import { LeadListPicker } from "@/components/leads/lead-list-picker";
 import { LEAD_LIST_VIEWS } from "@/lib/lead-list-catalog";
@@ -9,10 +13,9 @@ import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import {
   SfListPage,
-  type SfColumn,
   type SfRow,
 } from "@/components/slds/sf-list-page";
-import { LEAD_STATUSES } from "@/lib/validations/lead";
+import { LEAD_STATUSES } from "@/lib/sf-canonical";
 import { InlineEditCell } from "@/components/lists/inline-edit-cell";
 import { KanbanBoard } from "@/components/lists/kanban-board";
 import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
@@ -33,39 +36,6 @@ interface LeadsPageProps {
 }
 
 const LIMIT = 50;
-
-// SF "My Leads" list view describe (2026-06-10). Match the columns + order
-// verbatim. Pull from typed Lead columns where they exist; fall back to
-// sfDataJson for SF-custom fields (Sub_Disposition__c, Lead_Vendor_*, etc.).
-const COLUMNS: SfColumn[] = [
-  { key: "name", label: "Name", width: 180, sortable: true },
-  { key: "estimatedTotalDebt", label: "Estimated Total Debt", width: 150, sortable: false },
-  { key: "lastModified", label: "Last Modified Date", width: 130, sortable: false },
-  { key: "lastContacted", label: "Last Contacted DateTime", width: 150, sortable: false },
-  { key: "phone", label: "Phone", width: 150, sortable: true },
-  { key: "state", label: "State/Province", width: 110, sortable: false },
-  { key: "timezone", label: "Timezone", width: 110, sortable: false },
-  { key: "status", label: "Lead Status", width: 140, sortable: true },
-  { key: "subDisposition", label: "Sub Disposition", width: 180, sortable: false },
-  { key: "leadVendor", label: "Lead Vendor", width: 140, sortable: false },
-  { key: "source", label: "Lead Source", width: 140, sortable: true },
-  { key: "fronter", label: "Fronter", width: 140, sortable: false },
-  { key: "ownerFullName", label: "Owner Full Name", width: 150, sortable: true },
-  { key: "createdDate", label: "Created Date", width: 120, sortable: false },
-];
-
-const RECENT_COLUMNS: SfColumn[] = [
-  {key:"name",label:"Name",width:180,sortable:true},
-  {key:"leadId",label:"Lead Id",width:180,sortable:true},
-  {key:"company",label:"Company",width:180,sortable:true},
-  {key:"phone",label:"Phone",width:150,sortable:true},
-  {key:"status",label:"Lead Status",width:140,sortable:true},
-  {key:"source",label:"Lead Source",width:140,sortable:true},
-  {key:"totalDebt",label:"Total Debt Amount",width:150},
-  {key:"ownerAlias",label:"Owner Alias",width:120},
-  {key:"subDisposition",label:"Sub Disposition",width:180},
-  {key:"createdDate",label:"Created Date",width:130,sortable:true},
-];
 
 const SORT_MAP: Record<string, Prisma.LeadOrderByWithRelationInput> = {
   name: { contactName: "asc" },
@@ -100,21 +70,29 @@ function fmtMoney(input: unknown): string {
 export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const params = await searchParams;
   const search = params.search?.trim() ?? "";
-  const sort = params.sort ?? "";
-  const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
+  let sort = params.sort ?? "";
+  let dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
   const page = Math.min(40, Math.max(1, parseInt(params.page ?? "1", 10) || 1));
   const view = params.view === "my-open" ? "my-leads" : params.view ?? "recent";
-  const definition = VIEWS.find(v => v.value === view) ?? VIEWS.find(v => v.value === "recent")!;
+
 
   const session = await auth();
   const myId = session?.user?.id ?? "";
 
+  const savedViews = await prisma.listView.findMany({where:{entity:'Lead',isSystem:false,OR:[{isShared:true},{ownerId:myId}]},orderBy:{name:'asc'}});
+  const selectedView = savedViews.find(v=>`custom:${v.id}`===view);
+  if(view.startsWith('custom:')&&!selectedView)notFound();
+  const base = VIEWS.find(v=>v.value===(selectedView?.baseView||view)) ?? VIEWS.find(v=>v.value==='all')!;
+  const definition = selectedView ? {...base,value:view,label:selectedView.name} : base;
+  const allViews = [...VIEWS,...savedViews.map(v=>({...base,value:`custom:${v.id}`,label:v.name}))];
+  if(!sort&&selectedView?.sortField){sort=selectedView.sortField;dir=selectedView.sortDir==='desc'?'desc':'asc';}
+  const selectedColumns=Array.isArray(selectedView?.columns)?selectedView.columns.filter((v):v is string=>typeof v==='string'):undefined;
   const scope = await recordScope("lead");
   const where: Prisma.LeadWhereInput = { AND: [scope] };
   const recent = await prisma.leadViewHistory.findMany({where:{userId:myId},orderBy:{viewedAt:"desc"},take:100,select:{leadId:true}});
   const recentIds = recent.map(r=>r.leadId);
   const viewIds = await prisma.$queryRaw<Array<{id:string}>>(leadListIdsQuery({
-    ...params, search, definition, scope, userId:myId, recentIds,
+    ...params, search, sort, dir, definition:base, scope, userId:myId, recentIds, savedFilters:(selectedView?.filters??[]) as unknown as ListFilter[],
   }));
   where.id = {in:viewIds.map(r=>r.id)};
   // Build prisma orderBy from sort key
@@ -164,6 +142,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     );
     return (
       <SfListPage
+      preferenceUserId={myId}
         entity="lead"
         title="Leads"
         subtitle={definition.label}
@@ -172,27 +151,27 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
         iconColor="#f88962"
         iconSlug="lead"
         actions={[{ label: "New", href: "/leads/new" }]}
-        columns={definition.value === "recent" ? RECENT_COLUMNS : COLUMNS}
+        columns={LEAD_COLUMNS}
+        selectedColumns={selectedColumns ?? leadColumnsForView(base.label)}
         rows={[]}
         pathname="/leads"
         searchQuery={search}
         preservedParams={{ ...(params.view ? { view: params.view } : {}) }}
-        views={VIEWS}
+        views={allViews}
         currentView={definition.value}
-        viewPicker={<LeadListPicker current={definition.value} userId={myId} /> }
+        viewPicker={<LeadListPicker current={definition.value} userId={myId} views={allViews} /> }
         displayMode="kanban"
         bodyOverride={<KanbanBoard columns={columns} entity="leads" fieldKey="status" />}
         massConfig={{
           entity: "lead",
           statusField: "status",
           statusLabel: "Status",
-          statusOptions: LEAD_STATUSES.map((s2) => ({ value: s2, label: s2 })),
+          statusOptions: LEAD_STATUSES.filter(s=>s!=="Converted").map((s2) => ({ value: s2, label: s2 })),
         }}
       />
     );
   }
 
-  const allViews = VIEWS;
 
   // SF caps list-view counts at 2,000 ("2,000+ items"). An exact COUNT(*)
   // over the 7M-row Lead table takes seconds, so probe up to the cap instead.
@@ -226,6 +205,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     const leadVendorRel = sfData.Lead_Vendor_ID__r as { Name?: string } | undefined;
     const leadVendor =
       leadVendorRel?.Name ||
+      (typeof sfData.Lead_Vendor_Id_Text__c === "string" ? sfData.Lead_Vendor_Id_Text__c : "") ||
       (typeof sfData.Lead_Vendor_ID_Text__c === "string" ? sfData.Lead_Vendor_ID_Text__c : "") ||
       "";
     const fronter =
@@ -244,45 +224,39 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     const statusCfg = getInlineConfig("lead", "status");
     const sourceCfg = getInlineConfig("lead", "source");
     const phoneCfg = getInlineConfig("lead", "phone");
-    return {
-      id: lead.id,
-      href: `/leads/${lead.id}`,
-      cells: definition.value === "recent" ? [
-        nameDisplay,
-        String(sfData.Lead_Id__c || lead.sfId || lead.id),
-        lead.businessName || "—",
-        lead.phone || "—",
-        lead.status,
-        lead.source,
-        fmtMoney(sfData.Total_Debt_Amount__c ?? lead.totalDebtEst) || "—",
-        String((sfData.Owner as {Alias?:string}|undefined)?.Alias || sfData.Owner_Alias__c || "—"),
-        subDisposition || "—",
-        fmtDateShort(lead.createdAt) || "—",
-      ] : [
-        nameCfg ? (
-          <InlineEditCell key="name" entity="lead" recordId={lead.id} config={nameCfg} value={lead.contactName} display={nameDisplay} />
-        ) : (nameDisplay || "—"),
-        estimatedDebt || "—",
-        fmtDateShort(lead.updatedAt) || "—",
-        lastContacted || "—",
-        phoneCfg ? (
-          <InlineEditCell key="phone" entity="lead" recordId={lead.id} config={phoneCfg} value={lead.phone} />
-        ) : (lead.phone || "—"),
-        stateVal || "—",
-        timezone || "—",
-        statusCfg ? (
-          <InlineEditCell key="status" entity="lead" recordId={lead.id} config={statusCfg} value={lead.status} />
-        ) : (lead.status || "—"),
-        subDisposition || "—",
-        leadVendor || "—",
-        sourceCfg ? (
-          <InlineEditCell key="source" entity="lead" recordId={lead.id} config={sourceCfg} value={lead.source} />
-        ) : (lead.source || "—"),
-        fronter || "—",
-        ownerFullName || "—",
-        fmtDateShort(lead.createdAt) || "—",
-      ],
+    const value = (key: string): string => {
+      const v = sfData[key];
+      return v === null || v === undefined || v === "" ? "—" : typeof v === "boolean" ? (v ? "True" : "False") : String(v);
     };
+    const cells: Record<string, ReactNode> = {
+      debtDetails: value('Debt_Details__c'), createdByAlias: String((sfData.CreatedBy as {Alias?:string}|undefined)?.Alias || "—"),
+      name: nameCfg ? <InlineEditCell entity="lead" recordId={lead.id} config={nameCfg} value={lead.contactName} display={nameDisplay} /> : nameDisplay,
+      estimatedTotalDebt: estimatedDebt || "—",
+      lastModified: fmtDateShort(lead.updatedAt) || "—",
+      lastContacted: lastContacted || "—",
+      phone: phoneCfg ? <InlineEditCell entity="lead" recordId={lead.id} config={phoneCfg} value={lead.phone} /> : lead.phone || "—",
+      state: stateVal || "—", timezone: timezone || "—",
+      status: statusCfg ? <InlineEditCell entity="lead" recordId={lead.id} config={statusCfg} value={lead.status} /> : lead.status,
+      subDisposition: subDisposition || "—", leadVendor: leadVendor || "—",
+      leadVendorText: String(sfData.Lead_Vendor_Id_Text__c ?? sfData.Lead_Vendor_ID_Text__c ?? lead.leadVendorId ?? "—"),
+      source: sourceCfg ? <InlineEditCell entity="lead" recordId={lead.id} config={sourceCfg} value={lead.source} /> : lead.source,
+      fronter: fronter || "—", ownerFullName: ownerFullName || "—",
+      createdDate: fmtDateShort(lead.createdAt) || "—", firstEmail: fmtDateShort((sfData.ActivityMetric as {FirstEmailDateTime?:string}|undefined)?.FirstEmailDateTime ?? sfData.FirstEmailDateTime) || "—",
+      leadId: String(sfData.Lead_Id__c || lead.sfId || lead.id), company: lead.businessName || "—",
+      totalDebt: fmtMoney(sfData.Total_Debt_Amount__c ?? lead.totalDebtEst) || "—",
+      ownerAlias: String((sfData.Owner as {NameOrAlias?:string}|undefined)?.NameOrAlias || (sfData.Owner as {Alias?:string}|undefined)?.Alias || sfData.Owner_Alias__c || "—"),
+      email: lead.email || "—", unread: value('IsUnreadByOwner'), calendly: value('Has_Calendly_Event__c'),
+      five9Disposition: value('five9_Disposition__c'), adClickId: lead.adClickId || value('Ad_Click_Id__c'),
+      trackitClickId: value('Eli_Ad_click__c'), lastDisposition: value('Last_Disposition__c'),
+      lenderExternalId: value('MCA_Lender_External_Id__c'), sourceCategory: value('Lead_Source_Category__c'),
+      ownerUsername: String(sfData.Owner_Username__c || (sfData.Owner as {Username?:string}|undefined)?.Username || lead.assignedTo?.email || "—"),
+      modifiedByAlias: String((sfData.LastModifiedBy as {Alias?:string}|undefined)?.Alias || "—"),
+      addToFive9: value('Add_to_f9list_Id__c'), closer: value('Closer__c'),
+      lastSubDisposition: value('Last_Sub_Disposition__c'), five9LastDisposition: value('five9_Last_Disposition__c'),
+      converted: value('IsConverted'), language: value('Preferred_Language__c'),
+      formattedPhone: value('Formated_Phone__c'), utmTerm: lead.utmTerm || value('UTM_Term__c'), dialerGroup: value('Dialer_Group__c'),
+    };
+    return { id: lead.id, href: `/leads/${lead.id}`, cells: LEAD_COLUMNS.map(column => cells[column.key] ?? "—") };
   });
 
   const preservedParams: Record<string, string> = {};
@@ -296,6 +270,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
 
   return (
     <SfListPage
+      preferenceUserId={myId}
       entity="lead"
       title="Leads"
       subtitle={subtitle}
@@ -306,12 +281,14 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       iconSlug="lead"
       actions={[
         { label: "New", href: "/leads/new" },
-        { label: "Import" },
+        { label: "Import", href: "/leads/import" },
+        { label: "Add to Campaign" },
         { label: "Change Owner" },
         { label: "Change Status" },
         { label: "Send List Email" },
       ]}
-      columns={definition.value === "recent" ? RECENT_COLUMNS : COLUMNS}
+      columns={LEAD_COLUMNS}
+      selectedColumns={selectedColumns ?? leadColumnsForView(base.label)}
       rows={redactSsn(rows)}
       bodyOverride={definition.scope === "recent" && !rows.length && !search ? <div className="border border-[#c9c9c9] bg-white px-6 py-12 text-center"><p className="font-semibold">No recently viewed leads yet</p><p className="mt-2 text-sm text-[#747474]">Open a lead from All Leads to add it to your viewing history.</p><Link href="/leads?view=all" className="mt-4 inline-block text-sm text-[#0176d3]">View All Leads</Link></div> : undefined}
       pathname="/leads"
@@ -321,14 +298,14 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       preservedParams={preservedParams}
       views={allViews}
       currentView={definition.value}
-        viewPicker={<LeadListPicker current={definition.value} userId={myId} /> }
+        viewPicker={<LeadListPicker current={definition.value} userId={myId} views={allViews} /> }
       page={page}
       pageSize={LIMIT}
       massConfig={{
         entity: "lead",
         statusField: "status",
         statusLabel: "Status",
-        statusOptions: LEAD_STATUSES.map((s) => ({ value: s, label: s })),
+        statusOptions: LEAD_STATUSES.filter(s=>s!=="Converted").map((s) => ({ value: s, label: s })),
       }}
     />
   );

@@ -1,0 +1,70 @@
+import type { SfColumn } from '@/components/slds/sf-list-page';
+
+// Column order read from the live list and Select Fields dialogs, 2026-09-18.
+const definitions: Array<[string,string]> = [
+ ['debtDetails','Debt Details'],['createdByAlias','Created By Alias'],['name','Name'],['estimatedTotalDebt','Estimated Total Debt'],['lastModified','Last Modified Date'],['lastContacted','Last Contacted DateTime'],['phone','Phone'],['state','State/Province'],['timezone','Timezone'],['status','Lead Status'],['subDisposition','Sub Disposition'],['leadVendor','Lead Vendor ID'],['leadVendorText','Lead Vendor Id Text'],['source','Lead Source'],['fronter','Fronter'],['ownerFullName','Owner Full Name'],['createdDate','Created Date'],['firstEmail','First Email Date'],['leadId','Lead Id'],['company','Company'],['totalDebt','Total Debt Amount'],['ownerAlias','Owner Alias'],['email','Email'],['unread','Unread By Owner'],['calendly','Has Calendly Event'],['five9Disposition','five9 Disposition'],['adClickId','Ad Click Id'],['trackitClickId','Trackit Click ID'],['lastDisposition','Last Disposition'],['lenderExternalId','MCA Lender External Id'],['sourceCategory','Lead Source Category'],['ownerUsername','Owner Username'],['modifiedByAlias','Last Modified By Alias'],['addToFive9','Add to Five9 List'],['closer','Closer'],['lastSubDisposition','Last Sub Disposition'],['five9LastDisposition','five9 Last Disposition'],['converted','Converted'],['language','Preferred Language'],['formattedPhone','Formated Phone'],['utmTerm','UTM Term'],['dialerGroup','Dialer Group'],
+];
+const sortable = new Set(['name','phone','status','source','ownerFullName','createdDate','company','leadId']);
+export const LEAD_COLUMNS: SfColumn[] = definitions.map(([key,label])=>({key,label,width:key==='name'||key==='company'?180:150,sortable:sortable.has(key)}));
+export const LEAD_COLUMN_LAYOUTS: Record<string,string> = {
+  "Albert Beutel Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "All Leads": "name email company state status unread createdDate ownerAlias",
+  "All Transferred Web Leads": "name email company state status unread createdDate ownerAlias",
+  "Alvaro Rosenthal Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Arthur Graziano Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Calendly Leads": "name debtDetails lastModified lastContacted phone state status subDisposition createdDate source ownerFullName createdByAlias",
+  "Chris David Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Christian Garcia Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Christopher Ayala Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Christopher Boulahanis Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source createdDate fronter ownerFullName",
+  "Closer Pool": "name company state phone email dialerGroup status createdDate ownerAlias unread",
+  "Copy of Web Leads - Archived": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition createdDate sourceCategory ownerFullName",
+  "Craig Caliph Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Craig Cohen Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "David Aflalo Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "David Medina Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Direct Mail Leads": "name estimatedTotalDebt lastModified lastContacted phone status leadVendorText source createdDate calendly subDisposition five9Disposition ownerFullName adClickId addToFive9",
+  "Elcain Chase Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Eli Khouri Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Evgeny Nozdrin Leads": "name totalDebt lastModified phone state status subDisposition leadVendor source closer fronter ownerFullName",
+  "Isaac Levin Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Joe Mcdonald Leads": "name totalDebt lastModified phone state status subDisposition leadVendor source closer fronter ownerFullName",
+  "Jose Ledesma Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Jovana Pavlovic Leads": "name totalDebt lastModified phone state status subDisposition leadVendor source closer fronter ownerFullName",
+  "Juan Limongi Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Kevin Price Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Lavell Reed Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Lawsuit Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendorText source fronter createdDate ownerFullName closer",
+  "Leads for Survey": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendorText source fronter createdDate ownerFullName",
+  "Leo Gianfortune Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Michael Rabin Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Moshe Elkayam Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "My Leads": "name estimatedTotalDebt lastModified lastContacted phone state timezone status subDisposition leadVendor source fronter ownerFullName createdDate firstEmail",
+  "My Team Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendorText source fronter createdDate ownerFullName",
+  "My Unread Leads": "name totalDebt lastModified phone state status subDisposition leadVendor source closer fronter",
+  "NO Ad Click Ids": "name estimatedTotalDebt phone leadVendorText lastModified lastContacted createdDate calendly status subDisposition five9Disposition ownerFullName source adClickId lastSubDisposition",
+  "Nathan Toney Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Ori Keren Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Pmax Lead Source": "name estimatedTotalDebt lastModified phone state status subDisposition leadVendorText source createdByAlias createdDate ownerFullName",
+  "Recently Viewed": "name leadId company phone status source totalDebt ownerAlias subDisposition createdDate",
+  "Recently Viewed Leads": "name company state email status createdDate ownerAlias unread",
+  "Shared Leads": "name email company state status lastDisposition five9Disposition lenderExternalId createdDate lastModified sourceCategory ownerUsername modifiedByAlias",
+  "Tahja Palmer Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Tatiana Web leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition sourceCategory fronter createdDate ownerFullName",
+  "Todays Web Leads": "name estimatedTotalDebt lastModified lastContacted phone status subDisposition createdDate leadVendorText five9Disposition source calendly five9LastDisposition ownerFullName converted",
+  "UTM Search": "name estimatedTotalDebt lastModified lastContacted phone state timezone status subDisposition source fronter ownerFullName utmTerm createdDate",
+  "Un-Assigned Web Leads": "name estimatedTotalDebt lastModified phone state status subDisposition adClickId leadVendorText source createdByAlias calendly createdDate ownerFullName",
+  "Web Leads": "name estimatedTotalDebt phone leadVendorText lastModified lastContacted createdDate calendly status subDisposition five9Disposition ownerFullName source adClickId trackitClickId",
+  "Web Leads Archive": "name estimatedTotalDebt lastModified lastContacted phone status leadVendorText source adClickId createdDate subDisposition five9Disposition ownerFullName addToFive9",
+  "Web Leads IB": "name estimatedTotalDebt phone status leadVendorText source lastModified lastContacted createdDate calendly subDisposition five9Disposition ownerFullName adClickId",
+  "Web Leads Not Dialed": "name phone formattedPhone estimatedTotalDebt lastModified lastContacted status leadVendorText source createdDate subDisposition five9Disposition ownerFullName addToFive9",
+  "Website Leads": "name estimatedTotalDebt phone leadVendorText lastModified lastContacted createdDate calendly status subDisposition five9Disposition ownerFullName source adClickId lastSubDisposition",
+  "Yesterday's Web Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendorText five9Disposition source createdDate calendly ownerFullName language",
+  "Yudirsa Correia Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Zachary Michaels Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source createdDate fronter ownerFullName",
+  "Zachary Redick Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
+  "Zane Kerns Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName"
+};
+export function leadColumnsForView(label:string):string[]{
+ return (LEAD_COLUMN_LAYOUTS[label] ?? LEAD_COLUMN_LAYOUTS["All Leads"]).split(" ");
+}

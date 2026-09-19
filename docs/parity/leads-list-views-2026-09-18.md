@@ -35,6 +35,6 @@ Ordinary lead lists exclude converted records; viewing history can still surface
 
 Recently Viewed now uses per-user persistent viewing history, written only after opening a record in the browser, not on Next.js prefetch. Existing Salesforce browsing history is not imported. New history starts empty with a link to All Leads. Pinning and recent list choices are stored per user in this browser.
 
-Recently Viewed has the reference's ten columns: Name, Lead Id, Company, Phone, Lead Status, Lead Source, Total Debt Amount, Owner Alias, Sub Disposition, Created Date. Missing imported aliases display a dash. Other saved lists retain the existing CRM columns; this change does not claim full parity for every Salesforce toolbar action or custom column layout.
+Recently Viewed has the reference's ten columns: Name, Lead Id, Company, Phone, Lead Status, Lead Source, Total Debt Amount, Owner Alias, Sub Disposition, Created Date. Missing imported aliases display a dash. All 56 saved-list column layouts now come from the live REST list-view descriptions, plus the special Recently Viewed layout verified in the browser (57 total). The sanitized field-only audit is in `lead-column-layouts-2026-09-18.json`. Each saved view can customize its columns. Filters and record access remain independent of the column layout.
 
 Schema additions are additive: viewing history and list sort indexes. The existing deployment startup applies the schema with Prisma. PostgreSQL tests use temporary fixture tables in an isolated local database, never production records.

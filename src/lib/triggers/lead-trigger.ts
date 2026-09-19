@@ -1,3 +1,4 @@
+import { leadPaymentPopulated } from "../lead-payment-health";
 /**
  * Port of SF LeadTrigger / LeadTriggerHandler / LeadAfterTriggerHelper.
  * Source: docs/sf-export/sfdx-raw/classes/LeadTriggerHandler.cls
@@ -78,23 +79,6 @@ function stringifySfData(obj: Record<string, unknown>): string {
 }
 
 /**
- * SF parity: validateCreditorPayments() — returns false if any creditor has a
- * Total_Debt populated but Payment <= 0. We stamp this back into sfDataJson so
- * downstream reports + the "Is Payment Amount Populated" formula field still
- * resolve.
- */
-function validateCreditorPayments(sf: Record<string, unknown>): boolean {
-  for (let i = 1; i <= 10; i++) {
-    const totalDebt = Number(sf[`Creditor_${i}_Total_Debt__c`]);
-    const payment = Number(sf[`Creditor_${i}_Payment__c`]);
-    if (Number.isFinite(totalDebt) && totalDebt > 0 && Number.isFinite(payment) && payment <= 0) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/**
  * SF parity: calculateCurrentTotalWeeklyPayment() — sum each creditor's
  * payment normalized to a weekly amount. Daily *5, Monthly /4, Weekly as-is.
  */
@@ -124,7 +108,7 @@ export const leadTrigger: Trigger<Lead, LeadWrite> = {
     // Carry over any sf snapshot the caller passed; we may write into it.
     const sf = parseSfData((next.sfDataJson as string | null | undefined) ?? null);
 
-    sf.Is_Payment_Amount_Populated__c = validateCreditorPayments(sf);
+    sf.Is_Payment_Amount_Populated__c = leadPaymentPopulated(sf);
 
     // Initial creditor totals -> currentTotalWeeklyPayment + sfDataJson mirror
     const weekly = recalcCreditorWeeklyTotal(sf);
@@ -211,7 +195,7 @@ export const leadTrigger: Trigger<Lead, LeadWrite> = {
     }
 
     // Recompute Is_Payment_Amount_Populated__c + currentTotalWeeklyPayment
-    sf.Is_Payment_Amount_Populated__c = validateCreditorPayments(sf);
+    sf.Is_Payment_Amount_Populated__c = leadPaymentPopulated(sf);
     const weekly = recalcCreditorWeeklyTotal(sf);
     if (weekly > 0) {
       next.currentTotalWeeklyPayment = weekly;

@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { buildWhere, type ListFilter } from "@/lib/list-views";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { prisma } from "@/lib/prisma";
@@ -10,7 +12,7 @@ import {
   type SfColumn,
   type SfRow,
 } from "@/components/slds/sf-list-page";
-import { OPPORTUNITY_STAGES } from "@/lib/validations/opportunity";
+import { OPP_STAGES as OPPORTUNITY_STAGES } from "@/lib/sf-canonical";
 import { InlineEditCell } from "@/components/lists/inline-edit-cell";
 import { KanbanBoard } from "@/components/lists/kanban-board";
 import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
@@ -86,14 +88,20 @@ function fmtDateShort(input: unknown): string {
 export default async function OpportunitiesPage({ searchParams }: OpportunitiesPageProps) {
   const params = await searchParams;
   const search = params.search?.trim() ?? "";
-  const sort = params.sort ?? "";
-  const dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
+  let sort = params.sort ?? "";
+  let dir: "asc" | "desc" = params.dir === "desc" ? "desc" : "asc";
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const view = params.view ?? "recent";
+  let view = params.view ?? "recent";
+  const requestedView=view;
 
   const session = await auth();
   const myId = session?.user?.id ?? "";
 
+  const listViews=await prisma.listView.findMany({where:{entity:'Opportunity',isSystem:false,OR:[{isShared:true},{ownerId:myId}]},orderBy:{name:'asc'}});
+  const selectedView=listViews.find(v=>`custom:${v.id}`===view);
+  if(view.startsWith('custom:')&&!selectedView)notFound();
+  if(selectedView){view=selectedView.baseView||'all';if(!sort&&selectedView.sortField){sort=selectedView.sortField;dir=selectedView.sortDir==='desc'?'desc':'asc';}}
+  const selectedColumns=Array.isArray(selectedView?.columns)?selectedView.columns.filter((v):v is string=>typeof v==='string'):undefined;
   const where: Prisma.OpportunityWhereInput = { AND: [await recordScope("opportunity")], };
   if (params.recordType) where.recordType = params.recordType;
   if (params.stage) where.stage = params.stage;
@@ -104,6 +112,9 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     ];
   }
 
+  const recentRows=view==='recent'?await prisma.recordViewHistory.findMany({where:{userId:myId,entity:'opportunity'},orderBy:{viewedAt:'desc'},take:100,select:{recordId:true}}):[];
+  const recentIds=recentRows.map(r=>r.recordId);
+  if(view==='recent')where.id={in:recentIds};
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const weekStart = new Date(todayStart);
@@ -113,7 +124,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
 
   if (view === "my-open" && myId) {
     where.assignedToId = myId;
-    where.stage = { notIn: ["CLOSED", "CLOSED_WON_FIRST_PAYMENT", "ARCHIVED"] };
+    where.stage = { notIn: ["Closed", "Closed Won", "CLOSED", "CLOSED_WON_FIRST_PAYMENT", "ARCHIVED", "Closed Won First Payment Pending", "Closed Won - First Payment Completed", "Closed Lost", "Archive Disposition", "Archived"] };
   } else if (view?.startsWith("owner:")) {
     // Admin drill-down: everything a specific user owns.
     where.assignedToId = view.slice("owner:".length);
@@ -129,6 +140,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     else if (where.stage == null) where.stage = { not: "ARCHIVED" };
   }
 
+  if(selectedView)where.AND=[...(Array.isArray(where.AND)?where.AND:[where.AND??{}]),buildWhere((selectedView.filters??[]) as unknown as ListFilter[])];
   let orderBy: Prisma.OpportunityOrderByWithRelationInput = { updatedAt: "desc" };
   if (sort && SORT_MAP[sort]) {
     if (sort === "accountName") {
@@ -173,6 +185,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     );
     return (
       <SfListPage
+      preferenceUserId={myId}
         entity="opportunity"
         title="Opportunities"
         subtitle={VIEWS.find((v) => v.value === view)?.label ?? "Recently Viewed"}
@@ -181,12 +194,13 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         iconSlug="opportunity"
         actions={[{ label: "New" }]}
         columns={COLUMNS}
-        rows={[]}
+        selectedColumns={selectedColumns}
+      rows={[]}
         pathname="/opportunities"
         searchQuery={search}
         preservedParams={{ ...(params.view ? { view: params.view } : {}) }}
         views={VIEWS}
-        currentView={view}
+        currentView={requestedView}
         displayMode="kanban"
         bodyOverride={<KanbanBoard columns={columns} entity="opportunities" fieldKey="stage" />}
         massConfig={{
@@ -209,7 +223,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     select: { id: true, name: true },
   });
   const ownerViews = ownerUsers.map((u) => ({ value: `owner:${u.id}`, label: u.name }));
-  const allViews = [...VIEWS, ...ownerViews];
+  const allViews = [...VIEWS, ...ownerViews,...listViews.map(v=>({value:`custom:${v.id}`,label:v.name}))];
 
   const [items, total] = await Promise.all([
     prisma.opportunity.findMany({
@@ -227,11 +241,13 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         assignedTo: { select: { id: true, name: true, email: true } },
       },
       orderBy,
-      skip: (page - 1) * LIMIT,
-      take: LIMIT,
+      skip: view==='recent'&&!sort?0:(page - 1) * LIMIT,
+      take: view==='recent'&&!sort?100:LIMIT,
     }),
     prisma.opportunity.count({ where }),
   ]);
+  if(view==='recent'&&!sort){items.sort((a,b)=>recentIds.indexOf(a.id)-recentIds.indexOf(b.id));items.splice(page*LIMIT);items.splice(0,(page-1)*LIMIT);}
+
 
   const rows: SfRow[] = items.map((o) => {
     let sfData: Record<string, unknown> = {};
@@ -316,12 +332,13 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   if (params.stage) preservedParams.stage = params.stage;
   if (params.view) preservedParams.view = params.view;
 
-  const subtitle = params.stage
+  const subtitle = selectedView?.name ?? (params.stage
     ? params.stage
-    : VIEWS.find((v) => v.value === view)?.label ?? "Recently Viewed";
+    : VIEWS.find((v) => v.value === view)?.label ?? "Recently Viewed");
 
   return (
     <SfListPage
+      preferenceUserId={myId}
       entity="opportunity"
       title="Opportunities"
       subtitle={subtitle}
@@ -336,6 +353,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         { label: "Mass Update" },
       ]}
       columns={COLUMNS}
+      selectedColumns={selectedColumns}
       rows={redactSsn(rows)}
       pathname="/opportunities"
       sortKey={sort || undefined}
@@ -343,7 +361,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
       searchQuery={search}
       preservedParams={preservedParams}
       views={allViews}
-      currentView={view}
+      currentView={requestedView}
       page={page}
       pageSize={LIMIT}
       massConfig={{

@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   }
 
   const searchParams = request.nextUrl.searchParams;
+  if(searchParams.get('picker')==='1')return NextResponse.json({campaigns:await prisma.campaign.findMany({select:{id:true,name:true},orderBy:{name:'asc'},take:1000})});
   const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20")));
   const skip = (page - 1) * limit;

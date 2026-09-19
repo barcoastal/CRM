@@ -1,3 +1,7 @@
+"use client";
+import { useState, useSyncExternalStore } from "react";
+import { ListControls } from "./list-controls";
+import { SfHeaderAction } from "./sf-list-client";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import {
@@ -63,6 +67,8 @@ export interface SfListPageProps {
   /** replaces the table body (kanban board) */
   bodyOverride?: React.ReactNode;
   viewPicker?: React.ReactNode;
+  selectedColumns?: string[];
+  preferenceUserId?: string;
   /** background hex for the icon tile (e.g. "#f88962" for Lead orange) */
   iconColor?: string;
   /** SLDS standard icon slug, e.g. "lead", "opportunity" */
@@ -107,8 +113,8 @@ export function SfListPage(props: SfListPageProps) {
     iconColor,
     iconSlug,
     actions,
-    columns,
-    rows,
+    columns: allColumns,
+    rows: allRows,
     pathname,
     sortKey,
     sortDir,
@@ -121,6 +127,15 @@ export function SfListPage(props: SfListPageProps) {
     pageSize,
   } = props;
 
+  const [columnPreference,setColumnPreference] = useState<{view:string|undefined;keys:string[]} | null>(null);
+  const preferenceKey = props.preferenceUserId ? `crm:list-columns:${props.preferenceUserId}:${pathname}:${currentView}` : '';
+  const stored = useSyncExternalStore(subscribeColumns,()=>{try{return preferenceKey?localStorage.getItem(preferenceKey)??'':'';}catch{return '';}},()=> '');
+  let storedColumns:string[]|undefined;try{const v=JSON.parse(stored);if(Array.isArray(v)&&v.every(k=>typeof k==='string'))storedColumns=v;}catch{}
+  const preference = columnPreference && columnPreference.view === currentView ? columnPreference.keys : storedColumns ?? props.selectedColumns;
+  const chosen = preference?.filter(k=>allColumns.some(c=>c.key===k));
+  const columns = chosen?.length ? chosen.map(k=>allColumns.find(c=>c.key===k)!) : allColumns;
+  const rows = allRows.map(row=>({...row,cells:columns.map(c=>row.cells[allColumns.findIndex(a=>a.key===c.key)])}));
+  const controls = <ListControls pathname={pathname} subtitle={subtitle} columns={allColumns} selectedColumns={columns.map(c=>c.key)} defaultColumns={props.selectedColumns} onColumns={keys=>{setColumnPreference({view:currentView,keys});try{if(preferenceKey){localStorage.setItem(preferenceKey,JSON.stringify(keys));window.dispatchEvent(new Event("crm-columns"));}}catch{}}} config={massConfig} currentView={currentView} allowKanban={!!displayMode} />;
   const ids = rows.map((r) => r.id);
   const countLabel = count.toLocaleString("en-US") + (countCapped ? "+" : "");
 
@@ -144,6 +159,7 @@ export function SfListPage(props: SfListPageProps) {
       <div style={{ padding: 0 }}>
         <SfMassActionsToolbar config={massConfig} />
         <Header
+          controls={controls}
           iconSlug={iconSlug}
           iconColor={iconColor}
           title={title}
@@ -474,6 +490,7 @@ export function SfListPage(props: SfListPageProps) {
 /* ------------------------------------------------------------------ */
 
 function Header({
+  controls,
   iconSlug,
   iconColor,
   title,
@@ -488,6 +505,7 @@ function Header({
   currentView,
   viewPicker,
 }: {
+  controls: ReactNode;
   iconSlug: string;
   iconColor?: string;
   title: string;
@@ -610,9 +628,7 @@ function Header({
               );
             }
             return (
-              <span key={a.label} style={{ textDecoration: "none" }}>
-                {inner}
-              </span>
+              <SfHeaderAction key={a.label} label={a.label}>{inner}</SfHeaderAction>
             );
           })}
         </div>
@@ -633,70 +649,9 @@ function Header({
           preservedParams={preservedParams}
           initialValue={searchQuery}
         />
-        <IconBtn ariaLabel="List controls">
-          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2l-.3-2.4h-4l-.3 2.4a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2l.3 2.4h4l.3-2.4a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5A7 7 0 0 0 19 12z" />
-          </svg>
-        </IconBtn>
-        <IconBtn ariaLabel="Choose view">
-          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
-            <rect x="3" y="4" width="18" height="3" />
-            <rect x="3" y="10" width="18" height="3" />
-            <rect x="3" y="16" width="18" height="3" />
-          </svg>
-        </IconBtn>
-        <IconBtn ariaLabel="Refresh">
-          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
-            <path d="M17.65 6.35A8 8 0 0 0 4 12h2a6 6 0 0 1 10.24-4.24L13 11h7V4l-2.35 2.35z" />
-          </svg>
-        </IconBtn>
-        <IconBtn ariaLabel="Sort">
-          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
-            <path d="M7 4l-4 5h3v11h2V9h3L7 4zm10 16l4-5h-3V4h-2v11h-3l4 5z" />
-          </svg>
-        </IconBtn>
-        <IconBtn ariaLabel="Edit list">
-          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
-            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-          </svg>
-        </IconBtn>
-        <IconBtn ariaLabel="Filters">
-          <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#747474" }}>
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46" />
-          </svg>
-        </IconBtn>
+        {controls}
       </div>
     </div>
-  );
-}
-
-function IconBtn({
-  ariaLabel,
-  children,
-}: {
-  ariaLabel: string;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={ariaLabel}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 28,
-        height: 28,
-        border: "1px solid #c9c9c9",
-        background: "#fff",
-        borderRadius: 4,
-        cursor: "pointer",
-        padding: 0,
-      }}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -794,3 +749,5 @@ export function ownerAlias(
   }
   return "";
 }
+
+function subscribeColumns(notify:()=>void){window.addEventListener('storage',notify);window.addEventListener('crm-columns',notify);return()=>{window.removeEventListener('storage',notify);window.removeEventListener('crm-columns',notify);};}

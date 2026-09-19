@@ -302,8 +302,10 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
   const router = useRouter();
   const count = selected.size;
   const [modal, setModal] = useState<
-    "owner" | "status" | "email" | "delete" | null
+    "owner" | "status" | "email" | "delete" | "campaign" | null
   >(null);
+  const [campaigns,setCampaigns]=useState<{id:string;name:string}[]>([]);
+  const [campaignId,setCampaignId]=useState("");
   const [users, setUsers] = useState<UserOption[]>([]);
   const [ownerId, setOwnerId] = useState("");
   const [statusValue, setStatusValue] = useState("");
@@ -311,6 +313,13 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
   const [bodyText, setBodyText] = useState("");
   const [busy, setBusy] = useState(false);
 
+  async function openCampaign(){
+    setBusy(true);try{const response=await fetch('/api/campaigns?picker=1');if(!response.ok)throw Error('Could not load campaigns');const data=await response.json();setCampaigns(data.campaigns??[]);setCampaignId('');setModal('campaign');}catch(e){toast.error(e instanceof Error?e.message:'Could not load campaigns');}finally{setBusy(false);}
+  }
+  useEffect(()=>{if(modal!=='campaign')return;let active=true;void fetch('/api/campaigns?picker=1').then(async response=>{if(!response.ok)throw Error('Could not load campaigns');return response.json();}).then(data=>{if(active)setCampaigns(data.campaigns??[]);}).catch(()=>{if(active)toast.error('Could not load campaigns');});return()=>{active=false;};},[modal]);
+  async function addCampaign(){
+    setBusy(true);try{const response=await fetch(`/api/campaigns/${campaignId}/contacts`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({leadIds:Array.from(selected)})});const data=await response.json();if(!response.ok)throw Error(data.error||'Could not add leads');toast.success(`${data.added} added · ${data.skipped} already in campaign`);setModal(null);clear();router.refresh();}catch(e){toast.error(e instanceof Error?e.message:'Could not add leads');}finally{setBusy(false);}
+  }
   // load users when an owner modal opens
   useEffect(() => {
     if (modal !== "owner" || users.length > 0) return;
@@ -322,6 +331,8 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
       }
     })();
   }, [modal, users.length]);
+
+  useEffect(()=>{const handler=(event:Event)=>{const action=(event as CustomEvent).detail;if(['owner','status','email','campaign'].includes(action))setModal(action);};window.addEventListener('crm-list-action',handler);return()=>window.removeEventListener('crm-list-action',handler);},[]);
 
   const selectedIds = useMemo(() => Array.from(selected), [selected]);
 
@@ -441,6 +452,7 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
 
   return (
     <>
+      {modal==='campaign'&&<Modal open title="Add to Campaign" onClose={()=>setModal(null)} footer={<><ModalButton onClick={()=>setModal(null)}>Cancel</ModalButton><ModalButton variant="brand" disabled={busy||!campaignId} onClick={addCampaign}>Add Selected Leads</ModalButton></>}><label>Campaign<select className="mt-2 w-full rounded border p-2" value={campaignId} onChange={e=>setCampaignId(e.target.value)}><option value="">Select a campaign</option>{campaigns.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>{!campaigns.length&&<p>No campaigns yet. Create one from the Campaigns page.</p>}<p className="mt-3 text-sm">Adds {count} selected leads. Existing members are skipped.</p></Modal>}
       <div
         style={{
           position: "sticky",
@@ -472,7 +484,7 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
           </ToolbarBtn>
         )}
         <ToolbarBtn onClick={() => setModal("email")}>Send Email</ToolbarBtn>
-        <ToolbarBtn onClick={() => toast("Add to Campaign coming soon")}>Add to Campaign</ToolbarBtn>
+        {config.entity === "lead" && <ToolbarBtn onClick={openCampaign}>Add to Campaign</ToolbarBtn>}
         <ToolbarBtn onClick={() => setModal("delete")} danger>Delete</ToolbarBtn>
         <button
           onClick={clear}
@@ -853,4 +865,14 @@ export function SfViewPicker({
       )}
     </div>
   );
+}
+
+export function SfHeaderAction({label,children}:{label:string;children:ReactNode}) {
+  const {selected}=useSelection();
+  return <button type="button" style={{border:0,padding:0,background:'transparent'}} onClick={()=>{
+    const action=label==='Add to Campaign'?'campaign':label==='Change Owner'?'owner':label.includes('Status')||label.includes('Stage')?'status':label.includes('Email')?'email':null;
+    if(!action){toast.error('This action is unavailable on this list');return;}
+    if(!selected.size){toast.info('Select one or more records first');return;}
+    window.dispatchEvent(new CustomEvent('crm-list-action',{detail:action}));
+  }}>{children}</button>;
 }

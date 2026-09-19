@@ -8,6 +8,7 @@ const filter = z.object({
 
 export const createListViewSchema = z.object({
   entity: z.string().min(1),
+  baseView: z.string().max(255).optional().nullable(),
   name: z.string().min(1).max(255),
   developerName: z.string().optional().nullable(),
   filters: z.array(filter).default([]),

@@ -10,6 +10,8 @@ datasource db {
 // ============ AUTH ============
 
 model User {
+  recordViews RecordViewHistory[]
+  accountTeamMemberships AccountTeamMember[]
   id                String    @id @default(cuid())
   sfId              String?   @unique // Salesforce 18-char User ID, populated by backfill-user-sfid.ts
   name              String
@@ -331,6 +333,7 @@ model AsyncOperation {
 // ============ ACCOUNTS / CONTACTS / CREDITORS (SF parity) ============
 
 model Account {
+  teamMembers AccountTeamMember[]
   id                String    @id @default(cuid())
   sfId              String?   @unique // Salesforce 18-char ID, populated on migration
   sfDataJson        String? // Lossless SF row snapshot
@@ -2467,6 +2470,7 @@ model LeadHistory {
 // ============ LIST VIEWS (SF List View parity) ============
 
 model ListView {
+  baseView      String?
   id            String   @id @default(cuid())
   entity        String // "Lead" | "Account" | "Contact" | "Opportunity" | "Case" | ...
   name          String // "Web Leads"
@@ -3307,4 +3311,29 @@ model LeadViewHistory {
 
   @@id([userId, leadId])
   @@index([userId, viewedAt])
+}
+
+// Explicit account sharing. Automatically maintained closer entries are separate
+// from manually added roles so changing a closer preserves the rest of the team.
+model AccountTeamMember {
+  id String @id @default(cuid())
+  accountId String
+  account Account @relation(fields:[accountId], references:[id], onDelete:Cascade)
+  userId String
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  role String @default("Team Member")
+  source String @default("MANUAL")
+  createdAt DateTime @default(now())
+  @@unique([accountId,userId,role])
+  @@index([userId,accountId])
+}
+
+model RecordViewHistory {
+ userId String
+ user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+ entity String
+ recordId String
+ viewedAt DateTime @default(now())
+ @@id([userId,entity,recordId])
+ @@index([userId,entity,viewedAt])
 }

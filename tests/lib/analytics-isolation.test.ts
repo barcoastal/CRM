@@ -27,6 +27,7 @@ function matches(row: Record<string, any>, where: Record<string, any> = {}): boo
     if (key === "OR") return value.some((v: any) => matches(row, v));
     if (value === null || typeof value !== "object") return row[key] === value;
     return Object.entries(value).every(([op, val]: [string, any]) => {
+      if (op === "some") return (row[key]??[]).some((item:any)=>matches(item,val));
       if (op === "equals") return row[key] === val;
       if (op === "in") return val.includes(row[key]);
       if (op === "notIn") return !val.includes(row[key]);
@@ -189,4 +190,13 @@ it("adds and revokes negotiator report visibility with the account assignment", 
  expect(matches(account, analyticsScope(access, "account"))).toBe(false);
  expect(matches(opportunity, analyticsScope(access, "opportunity"))).toBe(false);
  expect(matches({ ownerId: "outsider" }, analyticsScope(access, "contact"))).toBe(false);
+});
+
+it("account-team access requires membership and object permission and revokes immediately",()=>{
+ const access={userId:'member',isAdmin:false,ownerIds:['member'],permissions:['Account.View']};
+ const account={id:'shared',ownerId:'someone-else',assignedNegotiatorId:null,teamMembers:[{userId:'member'}]};
+ expect(matches(account,analyticsScope(access,'account'))).toBe(true);
+ expect(matches({...account,teamMembers:[]},analyticsScope(access,'account'))).toBe(false);
+ expect(matches(account,analyticsScope({...access,permissions:[]},'account'))).toBe(false);
+ expect(matches({...account,teamMembers:[{userId:'peer'}]},analyticsScope(access,'account'))).toBe(false);
 });
