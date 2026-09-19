@@ -3,7 +3,7 @@ import {parseLeadCsv} from '../../src/lib/lead-csv';
 import {importedCloserId,syncAccountCloser} from '../../src/lib/account-team';
 import {savedLeadFilterSql,leadListIdsQuery} from '../../src/lib/lead-list-query';
 import {LEAD_LIST_VIEWS} from '../../src/lib/lead-list-catalog';
-import {expandRelationshipFields,missingSourceFields,LEAD_PARITY_FIELDS} from '../../src/lib/sf-sync/lead-fields';
+import {expandRelationshipFields,missingSourceFields,LEAD_PARITY_FIELDS,sourceValueMatches} from '../../src/lib/sf-sync/lead-fields';
 import type {TriggerCtx} from '../../src/lib/triggers/types';
 describe('CSV import preview',()=>{
  it('handles commas, escaped quotes, CRLF and multiline quoted values',()=>{const rows=parseLeadCsv('Name,Company,Phone\r\n"Sam ""S"" Smith","ACME, Inc\nEast",5551234567');expect(rows).toEqual([{contactName:'Sam "S" Smith',businessName:'ACME, Inc\nEast',phone:'5551234567'}]);});
@@ -19,6 +19,7 @@ describe('account closer membership',()=>{
  it('revokes automatic access when closer is cleared or unmapped',async()=>{const db={user:{findFirst:vi.fn()},accountTeamMember:{deleteMany:vi.fn(),upsert:vi.fn()}};await syncAccountCloser(db as unknown as TriggerCtx['prisma'],{id:'acct',sfDataJson:null});expect(db.accountTeamMember.deleteMany).toHaveBeenCalledWith({where:{accountId:'acct',source:'CLOSER_SYNC'}});expect(db.accountTeamMember.upsert).not.toHaveBeenCalled();});
 });
 describe('import completeness',()=>{
+ it('ignores CSV transport differences but preserves real conflicts',()=>{expect(sourceValueMatches('false',false)).toBe(true);expect(sourceValueMatches('1.0',1)).toBe(true);expect(sourceValueMatches({Name:'Sam'},{Name:'Sam',attributes:{url:'source'}})).toBe(true);expect(sourceValueMatches('true',false)).toBe(false);expect(sourceValueMatches(null,0)).toBe(false);});
  it('retains owner relation fields read by lists',()=>{expect(expandRelationshipFields({'Owner.Alias':'sam','Owner.Name':'Sam'}).Owner).toEqual({Alias:'sam',Name:'Sam'});});
  it('repairs absent keys without overwriting false or null values',()=>{expect(missingSourceFields({a:false,b:null},{a:true,b:'value',c:false,attributes:{}})).toEqual(['c']);});
  it('exports readable health inputs and owner fields',()=>{expect(LEAD_PARITY_FIELDS).not.toContain('Is_Payment_Amount_Populated__c');expect(LEAD_PARITY_FIELDS).toContain('Creditor_10_Payment__c');expect(LEAD_PARITY_FIELDS).toContain('Current_Total_Debt_Amount__c');expect(LEAD_PARITY_FIELDS).toContain('Owner.Alias');});

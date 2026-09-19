@@ -22,3 +22,15 @@ export function expandRelationshipFields(flat:Record<string,unknown>):Record<str
 export function missingSourceFields(current:Record<string,unknown>,source:Record<string,unknown>):string[]{
  return Object.keys(source).filter(key=>key!=='attributes'&&!(key in current));
 }
+
+/** CSV snapshots store scalar values as strings; compare meaning, not transport format. */
+export function sourceValueMatches(current:unknown,source:unknown):boolean {
+ if(source===null)return current===null||current==='';
+ if(typeof source==='boolean')return current===source||typeof current==='string'&&current.toLowerCase()===String(source);
+ if(typeof source==='number')return current!==null&&current!==''&&current!==undefined&&Number(current)===source;
+ if(source&&typeof source==='object'&&!Array.isArray(source)){
+  if(!current||typeof current!=='object'||Array.isArray(current))return false;
+  return Object.entries(source).every(([key,value])=>key==='attributes'||sourceValueMatches((current as Record<string,unknown>)[key],value));
+ }
+ return current===source;
+}

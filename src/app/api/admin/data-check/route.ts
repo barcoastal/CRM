@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { requireAuthOrRespond } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 import { querySourceRecords } from '@/lib/sf-sync/bulk-export';
-import { LEAD_PARITY_FIELDS,missingSourceFields } from '@/lib/sf-sync/lead-fields';
+import { LEAD_PARITY_FIELDS,missingSourceFields,sourceValueMatches } from '@/lib/sf-sync/lead-fields';
 import { hasSameOrigin } from '@/lib/request-origin';
 const schema=z.object({ids:z.array(z.string().regex(/^[a-zA-Z0-9]{15,18}$/)).min(1).max(20),apply:z.boolean().default(false)});
 export async function POST(req:NextRequest){
@@ -21,7 +21,7 @@ export async function POST(req:NextRequest){
    if(!lead){results.push({id:record.Id,status:'Not imported',missing:[],differences:[]});continue;}
    let current:Record<string,unknown>={};try{current=JSON.parse(lead.sfDataJson||'{}');}catch{}
    const missing=missingSourceFields(current,record);
-   const differences=Object.keys(record).filter(k=>k!=='attributes'&&k in current&&JSON.stringify(current[k])!==JSON.stringify(record[k]));
+   const differences=Object.keys(record).filter(k=>k!=='attributes'&&k in current&&!sourceValueMatches(current[k],record[k]));
    if(lead.status!==record.Status)differences.push('Lead status');if(lead.source!==record.LeadSource)differences.push('Lead source');if(lead.assignedTo?.sfId!==record.OwnerId)differences.push('Owner mapping');
    let applied=false;
    if(parsed.data.apply&&missing.length){
