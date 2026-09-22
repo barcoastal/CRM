@@ -42,6 +42,8 @@ interface OpportunitiesPageProps {
     view?: string;
     page?: string;
     display?: string;
+    label?: string;
+    inspection?: string;
   }>;
 }
 
@@ -59,6 +61,7 @@ const COLUMNS: SfColumn[] = [
   { key: "probability", label: "Probability (%)", width: 110, sortable: false, align: "right" },
   { key: "uccRisk", label: "HIGH UCC RISK", width: 130, sortable: false },
   { key: "ownerFullName", label: "Owner Full Name", width: 150, sortable: true },
+  { key: "labels", label: "Labels", width: 180 },
 ];
 
 const SORT_MAP: Record<string, Prisma.OpportunityOrderByWithRelationInput> = {
@@ -115,6 +118,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   if(selectedView){view=selectedView.baseView||'all';if(!sort&&selectedView.sortField){sort=selectedView.sortField;dir=selectedView.sortDir==='desc'?'desc':'asc';}}
   const selectedColumns=Array.isArray(selectedView?.columns)?selectedView.columns.filter((v):v is string=>typeof v==='string'):undefined;
   const where: Prisma.OpportunityWhereInput = { AND: [await recordScope("opportunity")], };
+  if (params.label?.trim()) where.labels = { has: params.label.trim() };
   if (params.recordType) where.recordType = params.recordType;
   if (params.stage) where.stage = params.stage;
   if (search) {
@@ -179,10 +183,9 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     where.updatedAt = { gte: todayStart, lt: tomorrow };
   }
 
-  // Closers don't see archived opportunities (unless granted Opportunity.ViewArchived).
+  // Intersect the visibility restriction with every selected view/filter.
   if (!(await canViewArchivedOpportunities(myId))) {
-    if (params.stage === "ARCHIVED") where.stage = { in: [] };
-    else if (where.stage == null) where.stage = { not: "ARCHIVED" };
+    (where.AND as Prisma.OpportunityWhereInput[]).push({ stage: { notIn: ["ARCHIVED", "Archived", "Archive Disposition"] } });
   }
 
   if(selectedView)where.AND=[...(Array.isArray(where.AND)?where.AND:[where.AND??{}]),buildWhere((selectedView.filters??[]) as unknown as ListFilter[])];
@@ -237,14 +240,14 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         count={columns.reduce((s2, c) => s2 + c.count, 0)}
         iconColor="#fcb95b"
         iconSlug="opportunity"
-        actions={[{ label: "New" }]}
+        actions={[{ label: "New", href: "/opportunities/new" }]}
         columns={COLUMNS}
         selectedColumns={selectedColumns}
       rows={[]}
         pathname="/opportunities"
         searchQuery={search}
-        preservedParams={{ ...(params.view ? { view: params.view } : {}) }}
-        views={VIEWS}
+        preservedParams={{ ...(params.view ? { view: params.view } : {}), ...(params.label ? {label:params.label} : {}), ...(params.stage ? {stage:params.stage} : {}), ...(params.recordType ? {recordType:params.recordType} : {}) }}
+        views={[...VIEWS, ...listViews.map(v => ({value:`custom:${v.id}`,label:v.name}))]}
         currentView={requestedView}
         displayMode="kanban"
         bodyOverride={<KanbanBoard columns={columns} entity="opportunities" fieldKey="stage" />}
@@ -280,6 +283,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         leadSource: true,
         probability: true,
         highUccRisk: true,
+        labels: true,
         sfDataJson: true,
         updatedAt: true,
         account: { select: { id: true, name: true, highUccRisk: true } },
@@ -368,6 +372,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         probability || "—",
         uccCell,
         ownerFullName || "—",
+        o.labels.join(", ") || "—",
       ],
     };
   });
@@ -376,6 +381,34 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   if (params.recordType) preservedParams.recordType = params.recordType;
   if (params.stage) preservedParams.stage = params.stage;
   if (params.view) preservedParams.view = params.view;
+  if (params.label) preservedParams.label = params.label;
+  if (params.inspection) preservedParams.inspection = params.inspection;
+
+  const stageTotals = params.inspection ? await prisma.opportunity.groupBy({
+    by: ["stage"], where, _count: { id: true }, _sum: { amount: true, currentTotalDebt: true },
+    orderBy: { stage: "asc" },
+  }) : [];
+  const stalledBefore = new Date(now.getTime() - 14 * 86400000);
+  const attention = params.inspection ? await Promise.all([
+    prisma.opportunity.count({ where: { AND: [where, { closeDate: { lt: todayStart } }, { probability: { lt: 100 } }] } }),
+    prisma.opportunity.count({ where: { AND: [where, { updatedAt: { lt: stalledBefore } }] } }),
+  ]) : [0, 0];
+  const money = (value: number | null) => (value ?? 0).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+  const inspectionSummary = <section className="border border-slate-300 bg-white p-4">
+    <form action="/opportunities" className="flex gap-2 items-end mb-3">
+      {Object.entries(preservedParams).filter(([key]) => key !== "label").map(([key,value]) => <input key={key} type="hidden" name={key} value={value} />)}
+      {search && <input type="hidden" name="search" value={search} />}
+      <label className="text-sm">Filter by label<input name="label" defaultValue={params.label ?? ""} maxLength={60} className="block border rounded p-2" /></label>
+      <button className="border rounded px-3 py-2 text-blue-700" type="submit">Apply</button>
+    </form>
+    {params.inspection && <>
+      <h2 className="font-semibold">Pipeline Inspection · {total.toLocaleString()} opportunities</h2>
+      <p className="text-sm text-slate-600 my-2">{attention[0]} past close date with probability below 100% · {attention[1]} unchanged for 14+ days. Totals cover this filtered list.</p>
+      <div className="overflow-auto"><table className="w-full text-sm"><thead><tr><th className="text-left p-2">Stage</th><th>Records</th><th>Amount</th><th>Current Debt</th></tr></thead><tbody>
+        {stageTotals.map(group => <tr key={group.stage} className="border-t"><td className="p-2"><Link className="text-blue-700" href={`/opportunities?${new URLSearchParams({...preservedParams, ...(search ? {search} : {}), stage:group.stage})}`}>{formatStage(group.stage)}</Link></td><td className="text-center">{group._count.id}</td><td className="text-center">{money(group._sum.amount)}</td><td className="text-center">{money(group._sum.currentTotalDebt)}</td></tr>)}
+      </tbody></table></div>
+    </>}
+  </section>;
 
   const subtitle = selectedView?.name ?? (params.stage
     ? params.stage
@@ -392,11 +425,12 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
       iconColor="#fcb95b"
       iconSlug="opportunity"
       actions={[
-        { label: "New" },
-        { label: "Pipeline Inspection" },
+        { label: "New", href: "/opportunities/new" },
+        { label: params.inspection ? "Close Inspection" : "Pipeline Inspection", href: `/opportunities?${new URLSearchParams({ ...preservedParams, ...(search ? {search} : {}), inspection: params.inspection ? "" : "1" })}` },
         { label: "Assign Label" },
         { label: "Mass Update" },
       ]}
+      summary={inspectionSummary}
       columns={COLUMNS}
       selectedColumns={selectedColumns}
       rows={redactSsn(rows)}

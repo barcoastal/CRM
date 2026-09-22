@@ -1133,6 +1133,7 @@ model CallFeedback {
 // ============ CLIENTS (Post-Enrollment) ============
 
 model Opportunity {
+  labels String[] @default([])
   id                          String                          @id @default(cuid())
   sfId                        String?                         @unique // Salesforce 18-char ID
   // Lossless JSON snapshot of the SF row — every SF field captured here even if

@@ -66,6 +66,7 @@ export interface SfListPageProps {
   displayMode?: "table" | "kanban";
   /** replaces the table body (kanban board) */
   bodyOverride?: React.ReactNode;
+  summary?: React.ReactNode;
   viewPicker?: React.ReactNode;
   selectedColumns?: string[];
   preferenceUserId?: string;
@@ -174,6 +175,8 @@ export function SfListPage(props: SfListPageProps) {
           views={views}
           currentView={currentView}
         />
+
+        {props.summary}
 
         {displayMode && (
           <div

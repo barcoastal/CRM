@@ -26,6 +26,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { Modal, ModalButton } from "./modal";
+import { CompanyFinder } from "@/components/accounts/company-finder";
 
 /* ====================================================================
  * Selection context
@@ -302,10 +303,27 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
   const router = useRouter();
   const count = selected.size;
   const [modal, setModal] = useState<
-    "owner" | "status" | "email" | "delete" | "campaign" | "mass" | null
+    "owner" | "status" | "email" | "delete" | "campaign" | "mass" | "labels" | null
   >(null);
   const [campaigns,setCampaigns]=useState<{id:string;name:string}[]>([]);
   const [campaignId,setCampaignId]=useState("");
+  const [labelText, setLabelText] = useState("");
+  const [labelOperation, setLabelOperation] = useState<"add" | "remove">("add");
+  async function saveLabels() {
+    if (!labelText.trim()) { toast.error("Enter a label"); return; }
+    setBusy(true);
+    try {
+      const response = await fetch("/api/opportunities/labels", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: Array.from(selected), label: labelText.trim(), operation: labelOperation }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not update labels");
+      toast.success(`Updated labels on ${data.updated} records`);
+      setModal(null); setLabelText(""); clear(); router.refresh();
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Could not update labels"); }
+    finally { setBusy(false); }
+  }
   const [users, setUsers] = useState<UserOption[]>([]);
   const [ownerId, setOwnerId] = useState("");
   const [statusValue, setStatusValue] = useState("");
@@ -332,7 +350,7 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
     })();
   }, [modal, users.length]);
 
-  useEffect(()=>{const handler=(event:Event)=>{const action=(event as CustomEvent).detail;if(['owner','status','email','campaign','mass'].includes(action))setModal(action);};window.addEventListener('crm-list-action',handler);return()=>window.removeEventListener('crm-list-action',handler);},[]);
+  useEffect(()=>{const handler=(event:Event)=>{const action=(event as CustomEvent).detail;if(['owner','status','email','campaign','mass','labels'].includes(action))setModal(action);};window.addEventListener('crm-list-action',handler);return()=>window.removeEventListener('crm-list-action',handler);},[]);
 
   const selectedIds = useMemo(() => Array.from(selected), [selected]);
 
@@ -522,6 +540,13 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
             </ModalButton>
           ) : null}
         </div>
+      </Modal>
+
+      <Modal open={modal === "labels"} onClose={() => { if (!busy) setModal(null); }} title="Assign Label" size="small"
+        footer={<><ModalButton disabled={busy} onClick={() => setModal(null)}>Cancel</ModalButton><ModalButton variant="brand" disabled={busy || !labelText.trim()} onClick={saveLabels}>{busy ? "Saving…" : "Save"}</ModalButton></>}>
+        <p className="mb-4 text-sm">Update labels on {count} selected opportunities. Existing labels are preserved.</p>
+        <label className="block mb-4">Action<select className="block w-full border rounded p-2" value={labelOperation} onChange={e => setLabelOperation(e.target.value as "add" | "remove")}><option value="add">Add label</option><option value="remove">Remove label</option></select></label>
+        <label className="block">Label<input maxLength={60} className="block w-full border rounded p-2" value={labelText} onChange={e => setLabelText(e.target.value)} /></label>
       </Modal>
 
       {/* Change Owner modal */}
@@ -890,8 +915,9 @@ export function SfViewPicker({
 
 export function SfHeaderAction({label,children}:{label:string;children:ReactNode}) {
   const {selected}=useSelection();
+  if (label === "Discover Companies") return <CompanyFinder>{children}</CompanyFinder>;
   return <button type="button" style={{border:0,padding:0,background:'transparent'}} onClick={()=>{
-    const action=label==='Mass Update'?'mass':label==='Add to Campaign'?'campaign':label==='Change Owner'?'owner':label.includes('Status')||label.includes('Stage')?'status':label.includes('Email')?'email':null;
+    const action=label==='Assign Label'?'labels':label==='Mass Update'?'mass':label==='Add to Campaign'?'campaign':label==='Change Owner'?'owner':label.includes('Status')||label.includes('Stage')?'status':label.includes('Email')?'email':null;
     if(!action){toast.error('This action is unavailable on this list');return;}
     if(!selected.size){toast.info('Select one or more records first');return;}
     window.dispatchEvent(new CustomEvent('crm-list-action',{detail:action}));

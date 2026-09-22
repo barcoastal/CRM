@@ -1,3 +1,4 @@
+import { requireAuthOrRespond } from "@/lib/api-auth";
 import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
@@ -76,12 +77,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session) {
-    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authorization = await requireAuthOrRespond("Opportunity.Create");
+  if ("response" in authorization) return authorization.response;
 
-  const body = await request.json();
+  const body = await request.json().catch(() => ({}));
   const parsed = createOpportunitySchema.safeParse(body);
 
   if (!parsed.success) {
@@ -94,7 +93,7 @@ export async function POST(request: NextRequest) {
   const data = parsed.data;
 
   // Check lead exists
-  const lead = await prisma.lead.findUnique({ where: { id: data.leadId } });
+  const lead = await prisma.lead.findFirst({ where: { id: data.leadId, AND: [await recordScope("lead")] } });
   if (!lead) {
     return ssnSafeJson({ error: "Lead not found" }, { status: 404 });
   }
@@ -110,14 +109,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Create opportunity and update lead status in parallel
-  const [opportunity] = await Promise.all([
+  // Keep record creation and lead status atomic.
+  const [opportunity] = await prisma.$transaction([
     prisma.opportunity.create({
       data: {
         leadId: data.leadId,
+        name: lead.businessName,
         totalDebt: typeof data.totalDebt === "number" ? data.totalDebt : null,
         expectedCloseDate: data.expectedCloseDate ? new Date(data.expectedCloseDate) : null,
-        assignedToId: data.assignedToId || lead.assignedToId || null,
+        assignedToId: data.assignedToId || lead.assignedToId || authorization.session.userId,
         notes: data.notes || null,
       },
       include: {

@@ -54,6 +54,6 @@ export async function POST(req: NextRequest) {
     return ssnSafeJson({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const account = await prisma.account.create({ data: parsed.data });
+  const account = await prisma.account.create({ data: { ...parsed.data, ownerId: parsed.data.ownerId || r.session.userId } });
   return ssnSafeJson(account, { status: 201 });
 }

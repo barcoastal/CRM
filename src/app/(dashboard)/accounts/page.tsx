@@ -26,6 +26,7 @@ interface AccountsPageProps {
     page?: string;
     display?: string;
     ktab?: string;
+    intelligence?: string;
   }>;
 }
 
@@ -136,9 +137,10 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   if (params.recordType) where.recordType = params.recordType;
   if (search) {
     where.OR = [
-      { name: { contains: search } },
+      { name: { contains: search, mode: "insensitive" } },
       { phone: { contains: search } },
-      { email: { contains: search } },
+      { email: { contains: search, mode: "insensitive" } },
+      { ein: { contains: search } },
     ];
   }
 
@@ -400,6 +402,19 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   const preservedParams: Record<string, string> = {};
   if (params.recordType) preservedParams.recordType = params.recordType;
   if (params.view) preservedParams.view = params.view;
+  if (params.intelligence) preservedParams.intelligence = params.intelligence;
+
+  const statusGroups = params.intelligence ? await prisma.account.groupBy({
+    by: ["clientStatus"], where, _count: { id: true },
+    _sum: { currentTotalDebt: true, escrowBalance: true }, orderBy: { clientStatus: "asc" },
+  }) : [];
+  const intelligenceSummary = params.intelligence ? <section className="border bg-white p-4">
+    <h2 className="font-semibold">Account Intelligence · {total.toLocaleString()} accounts</h2>
+    <p className="text-sm text-slate-600 my-2">Client status, current debt and escrow totals for this filtered list.</p>
+    <table className="w-full text-sm"><thead><tr><th className="text-left p-2">Client Status</th><th>Accounts</th><th>Current Debt</th><th>Escrow Balance</th></tr></thead><tbody>
+      {statusGroups.map(group => <tr key={group.clientStatus} className="border-t"><td className="p-2">{group.clientStatus}</td><td className="text-center">{group._count.id}</td><td className="text-center">{fmtMoney(group._sum.currentTotalDebt)}</td><td className="text-center">{fmtMoney(group._sum.escrowBalance)}</td></tr>)}
+    </tbody></table>
+  </section> : undefined;
 
   const subtitle = allViews.find((v) => v.value === requestedView)?.label ?? "Business Accounts";
 
@@ -414,11 +429,12 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
       iconColor="#7f8de1"
       iconSlug="account"
       actions={[
-        { label: "New" },
+        { label: "New", href: "/accounts/new" },
         { label: "Import" },
         { label: "Discover Companies" },
-        { label: "Intelligence View" },
+        { label: params.intelligence ? "Close Intelligence" : "Intelligence View", href: `/accounts?${new URLSearchParams({...preservedParams, ...(search ? {search} : {}), intelligence: params.intelligence ? "" : "1"})}` },
       ]}
+      summary={intelligenceSummary}
       columns={COLUMNS}
       selectedColumns={selectedColumns}
       rows={redactSsn(rows)}

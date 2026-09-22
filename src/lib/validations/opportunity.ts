@@ -16,7 +16,7 @@ export type OpportunityStage = (typeof OPPORTUNITY_STAGES)[number];
 export const createOpportunitySchema = z.object({
   leadId: z.string().min(1, "Lead is required"),
   totalDebt: z.coerce.number().positive("Must be a positive number").optional().or(z.literal("")),
-  expectedCloseDate: z.string().optional().or(z.literal("")),
+  expectedCloseDate: z.string().refine(value => value === "" || (/^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value))), "Use a valid date").optional(),
   assignedToId: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
 });
@@ -24,7 +24,7 @@ export const createOpportunitySchema = z.object({
 export const updateOpportunitySchema = z.object({
   stage: z.enum(OPPORTUNITY_STAGES).optional(),
   totalDebt: z.coerce.number().positive("Must be a positive number").optional().or(z.literal("")),
-  expectedCloseDate: z.string().optional().or(z.literal("")),
+  expectedCloseDate: z.string().refine(value => value === "" || (/^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value))), "Use a valid date").optional(),
   assignedToId: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
 });
