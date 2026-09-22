@@ -1,3 +1,4 @@
+import { normalizeAccountColumns, resolveAccountView } from "@/lib/account-list-layout";
 import { notFound } from "next/navigation";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
@@ -30,9 +31,8 @@ interface AccountsPageProps {
 
 const LIMIT = 50;
 
-// SF Account list columns — pulled verbatim from the SF Angie Kelly list view
-// describe (2026-06-10). DO NOT add or remove columns without checking SF
-// first — these match the SOQL columns SF returns for that view.
+// Available Account columns. The first 13 preserve the existing default layout;
+// saved views can select additional fields from the source export.
 const COLUMNS: SfColumn[] = [
   { key: "ownerFullName", label: "Owner Full Name", width: 140, sortable: true },
   { key: "clientStatus", label: "Client Status", width: 110, sortable: true },
@@ -47,6 +47,15 @@ const COLUMNS: SfColumn[] = [
   { key: "phone", label: "Phone", width: 150, sortable: true },
   { key: "billingState", label: "Billing State/Province", width: 130, sortable: false },
   { key: "leadNumber", label: "Lead Id", width: 100, sortable: false },
+  { key: "industry", label: "Industry", width: 150 },
+  { key: "type", label: "Type", width: 150 },
+  { key: "legalStatus", label: "Legal Status", width: 150 },
+  { key: "processorStatus", label: "Processor Status", width: 150 },
+  { key: "programStartDate", label: "Program Start Date", width: 150 },
+  { key: "programEndDate", label: "Program End Date", width: 150 },
+  { key: "feePaidInFull", label: "Fee Paid In Full", width: 150 },
+  { key: "externalSasId", label: "External SAS Id", width: 150 },
+  { key: "externalRamId", label: "External RAM Id", width: 150 },
 ];
 
 const SORT_MAP: Record<string, Prisma.AccountOrderByWithRelationInput> = {
@@ -54,6 +63,9 @@ const SORT_MAP: Record<string, Prisma.AccountOrderByWithRelationInput> = {
   clientStatus: { clientStatus: "asc" },
   phone: { phone: "asc" },
   paymentStatus: { paymentStatus: "asc" },
+  ownerFullName: { owner: { name: "asc" } },
+  updatedAt: { updatedAt: "asc" },
+  lastModified: { updatedAt: "asc" },
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -116,10 +128,10 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
 
   });
 
-  const selectedView=listViews.find(v=>`custom:${v.id}`===view);
-  if(view.startsWith('custom:')&&!selectedView)notFound();
+  const selectedView=resolveAccountView(listViews, view);
+  if((view.startsWith('custom:')||view.startsWith('view:'))&&!selectedView)notFound();
   if(selectedView){view=selectedView.baseView||'all';if(!sort&&selectedView.sortField){sort=selectedView.sortField;dir=selectedView.sortDir==='desc'?'desc':'asc';}}
-  const selectedColumns=Array.isArray(selectedView?.columns)?selectedView.columns.filter((v):v is string=>typeof v==='string'):undefined;
+  const selectedColumns=normalizeAccountColumns(selectedView?.columns) ?? COLUMNS.slice(0,13).map(c=>c.key);
   const where: Prisma.AccountWhereInput = { isActive: true, AND: [await recordScope("account")], };
   if (params.recordType) where.recordType = params.recordType;
   if (search) {
@@ -168,7 +180,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   let orderBy: Prisma.AccountOrderByWithRelationInput = { updatedAt: "desc" };
   if (sort && SORT_MAP[sort]) {
     const key = Object.keys(SORT_MAP[sort])[0] as keyof Prisma.AccountOrderByWithRelationInput;
-    orderBy = { [key]: dir } as Prisma.AccountOrderByWithRelationInput;
+    orderBy = sort === "ownerFullName" ? { owner: { name: dir } } : { [key]: dir } as Prisma.AccountOrderByWithRelationInput;
   }
 
   if (params.display === "kanban") {
@@ -272,6 +284,9 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         clientStatus: true,
         paymentStatus: true,
         bankAccountStatus: true,
+        industry: true, type: true, legalStatus: true, processorStatus: true,
+        programStartDate: true, programEndDate: true, feePaidInFull: true,
+        externalSasId: true, externalRamId: true,
         currentTotalDebt: true,
         updatedAt: true,
         createdAt: true,
@@ -305,7 +320,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
   // Stored list views (system + SF recreations) drive the picker; their filters
   // are applied above via buildWhere(). COMPUTED_VIEWS + per-owner views follow.
   const dbViews = listViews
-    .filter((v) => v.developerName)
+    .filter((v) => v.developerName && v.isSystem)
     .map((v) => ({ value: `view:${v.developerName}`, label: v.name }));
   const allViews = [...dbViews, ...COMPUTED_VIEWS, ...ownerViews,...listViews.filter(v=>!v.isSystem).map(v=>({value:`custom:${v.id}`,label:v.name}))];
 
@@ -375,6 +390,9 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         ),
         billingStateVal || "—",
         leadIdVal ?? "—",
+        a.industry || "—", a.type || "—", a.legalStatus || "—", a.processorStatus || "—",
+        fmtDateShort(a.programStartDate) || "—", fmtDateShort(a.programEndDate) || "—",
+        a.feePaidInFull ? "Yes" : "No", a.externalSasId || "—", a.externalRamId || "—",
       ],
     };
   });
