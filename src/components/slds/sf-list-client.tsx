@@ -302,7 +302,7 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
   const router = useRouter();
   const count = selected.size;
   const [modal, setModal] = useState<
-    "owner" | "status" | "email" | "delete" | "campaign" | null
+    "owner" | "status" | "email" | "delete" | "campaign" | "mass" | null
   >(null);
   const [campaigns,setCampaigns]=useState<{id:string;name:string}[]>([]);
   const [campaignId,setCampaignId]=useState("");
@@ -332,7 +332,7 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
     })();
   }, [modal, users.length]);
 
-  useEffect(()=>{const handler=(event:Event)=>{const action=(event as CustomEvent).detail;if(['owner','status','email','campaign'].includes(action))setModal(action);};window.addEventListener('crm-list-action',handler);return()=>window.removeEventListener('crm-list-action',handler);},[]);
+  useEffect(()=>{const handler=(event:Event)=>{const action=(event as CustomEvent).detail;if(['owner','status','email','campaign','mass'].includes(action))setModal(action);};window.addEventListener('crm-list-action',handler);return()=>window.removeEventListener('crm-list-action',handler);},[]);
 
   const selectedIds = useMemo(() => Array.from(selected), [selected]);
 
@@ -502,6 +502,27 @@ export function SfMassActionsToolbar({ config }: { config: SfMassToolbarConfig }
           ×
         </button>
       </div>
+
+      <Modal
+        open={modal === "mass"}
+        onClose={() => setModal(null)}
+        title="Mass Update"
+        size="small"
+        footer={<ModalButton onClick={() => setModal(null)}>Cancel</ModalButton>}
+      >
+        <p style={{ marginBottom: 16 }}>
+          Choose a field to update on {count} selected record{count === 1 ? "" : "s"}.
+          You will review the new value before saving.
+        </p>
+        <div style={{ display: "flex", gap: 12 }}>
+          <ModalButton onClick={() => { setOwnerId(""); setModal("owner"); }}>Owner</ModalButton>
+          {config.statusField && config.statusOptions?.length ? (
+            <ModalButton onClick={() => { setStatusValue(""); setModal("status"); }}>
+              {config.statusLabel ?? "Status"}
+            </ModalButton>
+          ) : null}
+        </div>
+      </Modal>
 
       {/* Change Owner modal */}
       <Modal
@@ -870,7 +891,7 @@ export function SfViewPicker({
 export function SfHeaderAction({label,children}:{label:string;children:ReactNode}) {
   const {selected}=useSelection();
   return <button type="button" style={{border:0,padding:0,background:'transparent'}} onClick={()=>{
-    const action=label==='Add to Campaign'?'campaign':label==='Change Owner'?'owner':label.includes('Status')||label.includes('Stage')?'status':label.includes('Email')?'email':null;
+    const action=label==='Mass Update'?'mass':label==='Add to Campaign'?'campaign':label==='Change Owner'?'owner':label.includes('Status')||label.includes('Stage')?'status':label.includes('Email')?'email':null;
     if(!action){toast.error('This action is unavailable on this list');return;}
     if(!selected.size){toast.info('Select one or more records first');return;}
     window.dispatchEvent(new CustomEvent('crm-list-action',{detail:action}));
