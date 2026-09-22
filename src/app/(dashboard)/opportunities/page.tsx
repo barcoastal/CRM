@@ -72,8 +72,20 @@ const VIEWS = [
   { value: "recent", label: "Recently Viewed" },
   { value: "all", label: "All Opportunities" },
   { value: "my-open", label: "My Open Opportunities" },
+  { value: "my-team", label: "My Team Opportunities" },
   { value: "this-week", label: "This Week's New" },
   { value: "today-activity", label: "Today's Activity" },
+  { value: "closing-next-month", label: "Closing Next Month" },
+  { value: "new-last-week", label: "New Last Week" },
+  { value: "closed-won", label: "All Closed Won" },
+  { value: "closed-lost", label: "All Closed Lost" },
+  { value: "archived", label: "All Archive Opportunities" },
+  { value: "contract-sent", label: "Contract Sent" },
+  { value: "buyout", label: "Buy Out Opportunities" },
+  { value: "reshuffle-7", label: "Reshuffle Opportunities · 7 Days" },
+  { value: "reshuffle-15", label: "Reshuffle Opportunities · 15–20 Days" },
+  { value: "reshuffle-30", label: "Reshuffle Opportunities · 30 Days" },
+  { value: "reshuffle-45", label: "Reshuffle Opportunities · 45 Days" },
 ];
 
 function fmtDateShort(input: unknown): string {
@@ -125,6 +137,39 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   if (view === "my-open" && myId) {
     where.assignedToId = myId;
     where.stage = { notIn: ["Closed", "Closed Won", "CLOSED", "CLOSED_WON_FIRST_PAYMENT", "ARCHIVED", "Closed Won First Payment Pending", "Closed Won - First Payment Completed", "Closed Lost", "Archive Disposition", "Archived"] };
+  } else if (view === "my-team" && myId) {
+    // Team membership is represented by the user's reporting chain. Keep the
+    // view useful for individual users even when no manager is configured.
+    const me = await prisma.user.findUnique({ where: { id: myId }, select: { managerId: true } });
+    const teamIds = me?.managerId
+      ? (await prisma.user.findMany({ where: { OR: [{ id: myId }, { managerId: me.managerId }] }, select: { id: true } })).map((u) => u.id)
+      : [myId];
+    where.assignedToId = { in: teamIds };
+  } else if (view === "closing-next-month") {
+    const next = new Date(todayStart.getFullYear(), todayStart.getMonth() + 2, 1);
+    const monthStart = new Date(todayStart.getFullYear(), todayStart.getMonth() + 1, 1);
+    where.closeDate = { gte: monthStart, lt: next };
+  } else if (view === "new-last-week") {
+    const lastWeekStart = new Date(weekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+    where.createdAt = { gte: lastWeekStart, lt: weekStart };
+  } else if (view === "closed-won") {
+    where.stage = { in: ["CLOSED_WON_FIRST_PAYMENT", "Closed Won", "Closed Won First Payment Pending", "Closed Won - First Payment Completed"] };
+  } else if (view === "closed-lost") {
+    where.stage = { in: ["CLOSED_LOST", "Closed Lost"] };
+  } else if (view === "archived") {
+    where.stage = { in: ["ARCHIVED", "Archived", "Archive Disposition"] };
+  } else if (view === "contract-sent") {
+    where.stage = { in: ["CONTRACT_SENT", "Contract Sent"] };
+  } else if (view === "buyout") {
+    where.recordType = "BUYOUT";
+  } else if (view?.startsWith("reshuffle-")) {
+    const days = Number(view.slice("reshuffle-".length));
+    const cutoff = new Date(todayStart);
+    cutoff.setDate(cutoff.getDate() - days);
+    const lower = days === 15 ? new Date(todayStart.getTime()) : new Date(cutoff);
+    if (days === 15) lower.setDate(lower.getDate() - 20);
+    where.updatedAt = { gte: lower, lt: new Date(todayStart) };
   } else if (view?.startsWith("owner:")) {
     // Admin drill-down: everything a specific user owns.
     where.assignedToId = view.slice("owner:".length);
