@@ -26,7 +26,9 @@ type FieldDef =
 
 export const FIELD_MAP: Record<string, FieldDef> = {
   "Owner Full Name": { kind: "owner" },
-  "Client Status": { key: "stage", kind: "string" }, // CRM Account.stage holds the SF Client Status picklist
+  // Salesforce exposes Client Status separately from the Account stage. Keep
+  // this on the typed CRM field so saved views filter the same records as SF.
+  "Client Status": { key: "clientStatus", kind: "string" },
   "Payment Status": { key: "paymentStatus", kind: "string" },
   "Processor Status": { key: "processorStatus", kind: "string" },
   "Legal Status": { key: "legalStatus", kind: "string" },
@@ -54,23 +56,23 @@ export const FIELD_MAP: Record<string, FieldDef> = {
 
 export const COLUMN_MAP: Record<string, string | null> = {
   "Account Name": "name",
-  "Owner Full Name": "owner.name",
-  "Account Owner Alias": "owner.name",
-  "Primary Contact": "primaryContact.name",
-  "Primary Contact Name": "primaryContact.name",
-  "Client Status": "stage",
+  "Owner Full Name": "ownerFullName",
+  "Account Owner Alias": "ownerFullName",
+  "Primary Contact": "primaryContact",
+  "Primary Contact Name": "primaryContact",
+  "Client Status": "clientStatus",
   "Payment Status": "paymentStatus",
   "Processor Status": "processorStatus",
   "Legal Status": "legalStatus",
   "Phone": "phone",
   "Billing State/Province": "billingState",
-  "Total Debt": "currentTotalDebt",
+  "Total Debt": "totalDebt",
   "Industry": "industry",
   "Type": "type",
-  "First Contract Signed Date": "firstContractSignedDate",
+  "First Contract Signed Date": "firstContractSigned",
   "Program Start Date": "programStartDate",
   "Program End Date": "programEndDate",
-  "Last Modified Date": "updatedAt",
+  "Last Modified Date": "lastModified",
   "Fee Paid In Full": "feePaidInFull",
   "External SAS Id": "externalSasId",
   "External RAM Id": "externalRamId",
