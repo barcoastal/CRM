@@ -59,8 +59,9 @@ export function MonthlyScoreboard({ tv = false }: { tv?: boolean }) {
   const rows = data?.rows ?? [];
   const totals = totalScoreboard(rows);
   const pageCount = tv ? Math.max(1, Math.ceil(rows.length / pageSize)) : 1;
+  const rowsPerPage = tv ? Math.ceil(rows.length / pageCount) : rows.length;
   const activePage = page % pageCount;
-  const visibleRows = tv ? rows.slice(activePage * pageSize, (activePage + 1) * pageSize) : rows;
+  const visibleRows = tv ? rows.slice(activePage * rowsPerPage, (activePage + 1) * rowsPerPage) : rows;
   const completeGoals = rows.length > 0 && totals.targetCount === rows.length;
 
   useEffect(() => {
@@ -140,7 +141,7 @@ export function MonthlyScoreboard({ tv = false }: { tv?: boolean }) {
     <div className="sb-table-panel">
       <div className="sb-table-heading"><h2><span /> Monthly closer standings</h2><span>RANKED BY GROSS DEBT <span className="sb-dot">·</span> {rows.length} CLOSERS</span></div>
       <div className="sb-table-scroll" ref={tableArea}><table className="sb-table"><caption className="sr-only">Monthly closer production for {monthLabel(period)}, ranked by gross signed debt</caption><thead><tr><th scope="col">Rank</th><th scope="col">Closer</th><th scope="col">Monthly goal</th><th scope="col">Gross debt</th><th scope="col">Goal hit</th><th scope="col">Transfers</th><th scope="col">Signed</th><th scope="col">Won</th><th scope="col">1st paid</th><th scope="col">Net debt</th></tr></thead>
-        <tbody>{!data ? <tr><td colSpan={10} className="sb-empty">{error ? "Waiting for the scoreboard to reconnect…" : "Getting the field ready…"}</td></tr> : !rows.length ? <tr><td colSpan={10} className="sb-empty">Add your team in <Link href="/floor-manager/closers">Closer Setup</Link> to start the scoreboard.</td></tr> : visibleRows.map((row, i) => <CloserRow key={row.userId} row={row} rank={activePage * pageSize + i + 1} leader={activePage === 0 && i === 0 && row.grossDebt > 0} />)}</tbody>
+        <tbody>{!data ? <tr><td colSpan={10} className="sb-empty">{error ? "Waiting for the scoreboard to reconnect…" : "Getting the field ready…"}</td></tr> : !rows.length ? <tr><td colSpan={10} className="sb-empty">Add your team in <Link href="/floor-manager/closers">Closer Setup</Link> to start the scoreboard.</td></tr> : visibleRows.map((row, i) => <CloserRow key={row.userId} row={row} rank={activePage * rowsPerPage + i + 1} leader={activePage === 0 && i === 0 && row.grossDebt > 0} />)}</tbody>
         {rows.length > 0 && <tfoot><tr><th colSpan={2}>TEAM TOTALS</th><td>{completeGoals ? money(totals.target) : "—"}</td><td>{money(totals.debt)}</td><td>{completeGoals ? `${Math.round(targetPercent(totals.debt, totals.target) ?? 0)}%` : "—"}</td><td>{number(totals.transfers)}</td><td>{number(totals.signed)}</td><td>{number(totals.won)}</td><td>{number(totals.paid)}</td><td>{money(totals.netDebt)}</td></tr></tfoot>}
       </table></div>
     </div>

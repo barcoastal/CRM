@@ -26,3 +26,9 @@ Additive only: `CloserScoreboardTarget` with user/month uniqueness and period in
 - Production webpack build passed with an 8 GB Node heap. A first build hit the default local 4 GB heap during type checking; compilation itself succeeded.
 - Browser tested actual React components against isolated sample responses: 1920×1080 fits all 12 closers and totals with no table scroll; touchdown visual with name/debt/confetti; sound toggle; two polled wins celebrate in order; reload does not replay; changed monthly goal saves and updates progress.
 - No real deal was edited for QA. Preview harness is local and excluded from the release.
+
+## Production verification
+
+Initial release `362019f5` deployed successfully through GitHub main → Railway (`c4d5eda5-6f18-46c8-8bd4-2d992d3b8a70`). The authenticated TV route loads all 12 configured closers and current September production with live refresh and no feed error. The hub exposes Scoreboard & TV, Open TV display, and the admin-only monthly-goal form. All target inputs start blank; the form was closed without saving. The live test touchdown displays the actual leading closer's name and a clearly labeled sample amount without changing a deal.
+
+Live visual QA found the CRM's inherited line height used more space than the isolated preview. The follow-up pins scoreboard line height and balances overflow pages so a smaller TV does not show an isolated last closer. Verified at 1920×1080 with inherited body line height 1.5: all 12 sample rows and team totals fit with equal scroll/client height.
