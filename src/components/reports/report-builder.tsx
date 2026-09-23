@@ -455,6 +455,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
               )}
             </div>
 
+            {result?.warning && <p role="status" className="px-4 py-3 text-xs text-amber-900 bg-amber-50">{result.warning}</p>}
             {error && (
               <div className="px-4 py-3 text-[12px] text-[#942b00] bg-[#fff2ef]">
                 Error: {error}

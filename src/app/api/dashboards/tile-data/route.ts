@@ -1,17 +1,12 @@
+import { runReport, type ReportFilter, type ReportSummarize } from "@/lib/reports/runner";
+import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { hasPermission } from "@/lib/permissions";
 import { analyticsApiAccess, definitionScope } from "@/lib/analytics-access";
 import { NextRequest, NextResponse } from "next/server";
 import { getQuery } from "@/lib/dashboards/queries";
 import { prisma } from "@/lib/prisma";
 
-/**
- * Render-time data endpoint. Given { kind, queryKey?, reportId?, config? }
- * returns one of:
- *   KPI / count / sum: { value, format }
- *   Bar:               { buckets: [...] }
- *   Report-backed:     { error } if Reports infra isn't ready yet — never
- *                      crashes.
- */
+/** Render dashboard queries and saved reports under the current viewer’s access. */
 export async function POST(req: NextRequest) {
   const gate = await analyticsApiAccess("Dashboards.View");
   if ("response" in gate) return gate.response;
@@ -29,32 +24,20 @@ export async function POST(req: NextRequest) {
       if (!reportId) {
         return NextResponse.json({ error: "reportId required" }, { status: 400 });
       }
-      // Try to look up the report. If the model isn't ready or the runner
-      // isn't available, return a soft error so the tile shows "not ready"
-      // instead of crashing the page.
-      try {
-        // The Reports agent may not have finished. Guard with a soft try.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const reportClient = (prisma as any).report;
-        if (!reportClient || typeof reportClient.findFirst !== "function") {
-          return NextResponse.json({
-            error: "report-backed tiles not yet available",
-          });
-        }
-        const report = await reportClient.findFirst({ where: { id: reportId, AND: [definitionScope(access)] } });
-        if (!report) {
-          return NextResponse.json({ error: "Report not found" }, { status: 404 });
-        }
-        // No runner shipped yet — surface a friendly stub.
-        return NextResponse.json({
-          error: "report-backed tiles not yet available",
-          reportName: report.name,
-        });
-      } catch {
-        return NextResponse.json({
-          error: "report-backed tiles not yet available",
-        });
-      }
+      const report = await prisma.report.findFirst({ where: { id: reportId, AND: [definitionScope(access)] } });
+      if (!report) return NextResponse.json({ error: "Report not found" }, { status: 404 });
+      const result = await runReport({
+        objectType: report.objectType,
+        columns: report.columns as string[],
+        filters: report.filters as unknown as ReportFilter[],
+        summarize: report.summarize as unknown as ReportSummarize[],
+        groupBy: report.groupBy,
+        sortBy: report.sortBy,
+        sortDir: report.sortDir === "desc" ? "desc" : "asc",
+        rowLimit: report.rowLimit,
+      });
+      if ("error" in result) return ssnSafeJson(result, { status: 400 });
+      return ssnSafeJson({ reportName: report.name, result });
     }
 
     if (!queryKey) {

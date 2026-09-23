@@ -29,6 +29,8 @@ export function DashboardClient({ initial, canEdit = false }: { initial: Dashboa
   const [data, setData] = useState<DashboardData>(initial);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshVersion, setRefreshVersion] = useState(0);
 
   async function addTile() {
     setBusy(true);
@@ -66,20 +68,23 @@ export function DashboardClient({ initial, canEdit = false }: { initial: Dashboa
   }
 
   async function updateTile(tileId: string, patch: Partial<DashboardTileData>) {
-    setData((d) => ({
-      ...d,
-      tiles: d.tiles.map((t) => (t.id === tileId ? { ...t, ...patch } : t)),
-    }));
-    await fetch(`/api/dashboards/${data.id}/tiles/${tileId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
-    });
+    setError(null);
+    try {
+      const res = await fetch(`/api/dashboards/${data.id}/tiles/${tileId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new Error("Could not save tile. Please try again.");
+      setData(d => ({ ...d, tiles: d.tiles.map(t => t.id === tileId ? { ...t, ...patch } : t) }));
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not save tile."); }
   }
 
   async function deleteTile(tileId: string) {
-    setData((d) => ({ ...d, tiles: d.tiles.filter((t) => t.id !== tileId) }));
-    await fetch(`/api/dashboards/${data.id}/tiles/${tileId}`, { method: "DELETE" });
+    setError(null);
+    try {
+      const res = await fetch(`/api/dashboards/${data.id}/tiles/${tileId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Could not delete tile. Please try again.");
+      setData(d => ({ ...d, tiles: d.tiles.filter(t => t.id !== tileId) }));
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not delete tile."); }
   }
 
   async function deleteDashboard() {
@@ -112,6 +117,7 @@ export function DashboardClient({ initial, canEdit = false }: { initial: Dashboa
           </div>
         </div>
         <div className="flex gap-2">
+          <button className="slds-button slds-button_neutral" onClick={() => setRefreshVersion(v => v + 1)}>Refresh</button>
           {canEdit && editing && (
             <button
               type="button"
@@ -134,7 +140,9 @@ export function DashboardClient({ initial, canEdit = false }: { initial: Dashboa
         </div>
       </div>
 
+      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       <DashboardGrid
+        key={refreshVersion}
         tiles={data.tiles}
         editing={canEdit && editing}
         onUpdate={updateTile}

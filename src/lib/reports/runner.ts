@@ -57,6 +57,8 @@ export interface ReportResult {
   groups?: ReportResultGroup[];
   totals?: Record<string, unknown>;
   rowCount: number;
+  truncated?: boolean;
+  warning?: string;
 }
 
 export type ReportRunOutcome = ReportResult | { error: string };
@@ -292,6 +294,7 @@ function computeSummary(
     let count = 0;
     for (const r of rows) {
       const v = r[s.field];
+      if (v === null || v === undefined || v === "") continue;
       const n = typeof v === "number" ? v : Number(v);
       if (Number.isFinite(n)) {
         sum += n;
@@ -365,7 +368,7 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
         ? { AND: whereClauses }
         : {};
 
-    const include = buildInclude(meta, columns, filters, groupBy, sortBy);
+    const include = buildInclude(meta, [...columns, ...(cfg.summarize ?? []).map(s => s.field)], filters, groupBy, sortBy);
 
     // orderBy: support relation.subfield (e.g. owner.name) by nesting
     let orderBy: Record<string, unknown> = { createdAt: "desc" };
@@ -399,7 +402,7 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
     for (const relation of new Set(relationKeys.filter((key): key is string => !!key).map(key => key.split(".")[0]))) {
       if (ANALYTICS_RELATIONS[relation]) scopeClauses.push(visibleRelation(access, relation));
     }
-    const args: Record<string, unknown> = { where: { AND: scopeClauses }, take, orderBy };
+    const args: Record<string, unknown> = { where: { AND: scopeClauses }, take: take + 1, orderBy };
     if (include) args.include = include;
 
     const dbRows = await redactAnalyticsRelations(
@@ -408,7 +411,8 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
     );
 
     // Project to flat rows
-    let flatRows: Record<string, unknown>[] = dbRows.map((r) => {
+    const truncated = dbRows.length > take;
+    let flatRows: Record<string, unknown>[] = dbRows.slice(0, take).map((r) => {
       const out: Record<string, unknown> = {};
       for (const colKey of columns) {
         const field = getField(cfg.objectType, colKey);
@@ -449,6 +453,8 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
       columns: uiColumns,
       rows: flatRows,
       rowCount: flatRows.length,
+      truncated,
+      warning: truncated ? `Results are limited to ${take.toLocaleString()} source records. Counts, charts, and totals cover only the displayed results. Narrow your filters for a complete report.` : undefined,
     };
 
     // Group / summarize

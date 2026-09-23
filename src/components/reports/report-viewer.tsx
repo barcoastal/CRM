@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { reportCsv } from "@/lib/reports/csv";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { ReportResult, ReportFilter, ReportSummarize } from "@/lib/reports/runner";
 
@@ -44,7 +45,17 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, groupB
   // SF shows a chart only after "Add Chart" - hidden by default.
   const [showChart, setShowChart] = useState(false);
 
-  async function run() {
+  function exportCsv() {
+    if (!result) return;
+    const url = URL.createObjectURL(new Blob(["\uFEFF", reportCsv(result)], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${name.replace(/[^a-z0-9_-]/gi, "_")}.csv`;
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  const run = useCallback(async () => {
     setRunning(true);
     setError(null);
     try {
@@ -57,8 +68,8 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, groupB
     } finally {
       setRunning(false);
     }
-  }
-  useEffect(() => { void run(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id]);
+  }, [id]);
+  useEffect(() => { void run(); }, [run]);
 
   // Chart data: per-group first summarized metric, else row count.
   const chart = useMemo(() => {
@@ -108,6 +119,7 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, groupB
           <div style={{ fontSize: 12, color: "#444444" }}>Report: {objectLabel}</div>
           <div style={{ fontSize: 18, fontWeight: 700, color: "#181818", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
         </div>
+        <button className="slds-button slds-button_neutral" disabled={running || !result || !!error} onClick={exportCsv}>Export CSV</button>
         <Link href="/reports" className="slds-button slds-button_neutral">All Reports</Link>
         <button className="slds-button slds-button_neutral" onClick={() => setShowChart((v) => !v)} style={{ cursor: "pointer" }}>
           {showChart ? "Remove Chart" : "Add Chart"}
@@ -129,6 +141,7 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, groupB
         ))}
       </div>
 
+      {result?.warning && <div role="status" style={{ padding: 12, background: "#fff7df", color: "#664d03" }}>{result.warning}</div>}
       {running && <div style={{ padding: 48, textAlign: "center", color: "#747474" }}>Running report...</div>}
       {error && <div style={{ padding: 24, color: "#c23934" }}>{error}</div>}
 
@@ -142,12 +155,12 @@ export function ReportViewer({ id, name, objectLabel, summarize, groupBy, groupB
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "170px 1fr", rowGap: 4, alignItems: "center", maxHeight: 420, overflowY: "auto" }}>
                 {chart.bars.map((b) => (
-                  <>
+                  <Fragment key={b.label}>
                     <div key={`${b.label}-l`} style={{ fontSize: 11, color: "#444444", textAlign: "right", paddingRight: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.label}</div>
                     <div key={`${b.label}-b`} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <div style={{ height: 14, width: `${Math.max(1, (b.value / chart.max) * 100)}%`, background: "#1b96ff", borderRadius: 2 }} />
                     </div>
-                  </>
+                  </Fragment>
                 ))}
               </div>
             </div>

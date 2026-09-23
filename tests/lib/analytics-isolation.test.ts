@@ -14,6 +14,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: { ...db, user: { findUnique: db.user, f
 import { analyticsAccess, analyticsScope, definitionScope } from "@/lib/analytics-access";
 import { runReport } from "@/lib/reports/runner";
 import { getQuery, listRegistry } from "@/lib/dashboards/queries";
+import { POST as tileData } from "@/app/api/dashboards/tile-data/route";
 import { POST as runSaved } from "@/app/api/reports/[id]/run/route";
 import { PATCH as editTile, DELETE as deleteTile } from "@/app/api/dashboards/[id]/tiles/[tileId]/route";
 import { GET as homeDashboard } from "@/app/api/dashboard/manager/route";
@@ -199,4 +200,38 @@ it("account-team access requires membership and object permission and revokes im
  expect(matches({...account,teamMembers:[]},analyticsScope(access,'account'))).toBe(false);
  expect(matches(account,analyticsScope({...access,permissions:[]},'account'))).toBe(false);
  expect(matches({...account,teamMembers:[{userId:'peer'}]},analyticsScope(access,'account'))).toBe(false);
+});
+
+
+describe("saved report dashboard tiles", () => {
+  const request = () => new NextRequest("http://localhost/api/dashboards/tile-data", { method: "POST", body: JSON.stringify({ kind: "report", reportId: "saved" }) });
+  it("runs saved reports under the viewer's record scope", async () => {
+    db.report.findFirst.mockResolvedValue({ ...config, name: "Pipeline", rowLimit: 2000 });
+    login("junior");
+    const response = await tileData(request());
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.result.rows.map((r: { name: string }) => r.name)).toEqual(["Junior deal"]);
+    expect(body.result.rows[0]["account.name"]).toBeNull();
+    expect(db.report.findFirst.mock.calls[0][0].where.AND).toEqual([{ OR: [{ isShared: true }, { createdById: "junior" }] }]);
+  });
+  it("requires report permission even with dashboard access", async () => {
+    login("agent", "SALES_REP", ["Dashboards.View"]);
+    expect((await tileData(request())).status).toBe(403);
+    expect(db.report.findFirst).not.toHaveBeenCalled();
+  });
+  it("does not run inaccessible report definitions", async () => {
+    db.report.findFirst.mockResolvedValue(null);
+    expect((await tileData(request())).status).toBe(404);
+    expect(db.opportunity.findMany).not.toHaveBeenCalled();
+  });
+  it("marks limited totals and excludes the extra detection row", async () => {
+    const result = await runReport({ ...config, rowLimit: 1 });
+    expect(result).toMatchObject({ rowCount: 1, truncated: true, totals: { totalDebt_sum: 100 } });
+  });
+  it("excludes missing values from averages", async () => {
+    db.opportunity.findMany.mockResolvedValue([{ totalDebt: null }, { totalDebt: 100 }]);
+    const result = await runReport({ ...config, columns: ["totalDebt"], summarize: [{ field: "totalDebt", kind: "avg" }] });
+    expect(result).toMatchObject({ totals: { totalDebt_avg: 100 } });
+  });
 });

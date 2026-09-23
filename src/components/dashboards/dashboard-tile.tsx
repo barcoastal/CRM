@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import type { ReportResult } from "@/lib/reports/runner";
 import { useEffect, useState } from "react";
 import { Trash2, ChevronLeft, ChevronRight, ChevronDown, BarChart3, TrendingUp, DollarSign } from "@/components/icons/lucide";
 import type { DashboardTileData } from "./dashboard-client";
@@ -17,7 +19,7 @@ interface ReportListItem {
 
 type ScalarData = { value: number; format?: "currency" | "number" | "percent" };
 type BarData = { buckets: { label: string; value: number }[] };
-type TileData = ScalarData | BarData | { error: string };
+type TileData = ScalarData | BarData | { error: string } | { reportName: string; result: ReportResult };
 
 const TILE_KINDS = [
   { value: "kpi", label: "KPI" },
@@ -238,6 +240,16 @@ export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
               <div className="text-[12px] font-semibold text-[#942b00]">Tile failed</div>
               <div className="text-[11px] text-[#747474] mt-1">{data.error}</div>
             </div>
+          </div>
+        ) : data && "result" in data ? (
+          <div className="h-full overflow-auto text-xs space-y-3">
+            <Link className="text-blue-700 underline" href={`/reports/${tile.reportId}`}>{data.reportName} · Open report</Link>
+            <div>{data.result.rowCount.toLocaleString()} records</div>
+            {data.result.warning && <p role="status" className="text-amber-800">{data.result.warning}</p>}
+            {data.result.groups?.length ? <BarChartView buckets={data.result.groups.map(g => ({ label: g.key, value: g.rows.length }))} /> : (
+              <table className="w-full text-left"><thead><tr>{data.result.columns.slice(0, 4).map(c => <th className="p-1" key={c.key}>{c.label}</th>)}</tr></thead><tbody>{data.result.rows.slice(0, 20).map((r, i) => <tr key={i}>{data.result.columns.slice(0, 4).map(c => <td className="p-1 border-t" key={c.key}>{String(r[c.key] ?? "—")}</td>)}</tr>)}</tbody></table>
+            )}
+            <p className="text-gray-500">{data.result.groups?.length ? "Record count by group" : "Preview: first 20 rows and 4 columns"}</p>
           </div>
         ) : tile.kind === "bar" && isBar(data) ? (
           <BarChartView buckets={data.buckets} />
