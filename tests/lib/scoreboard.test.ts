@@ -1,8 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { currentScoreboardPeriod, scoreboardMonthRange, targetPercent, totalScoreboard, unseenWins, validScoreboardPeriod, type WinEvent } from "@/lib/scoreboard-shared";
-const mocks = vi.hoisted(() => ({ users: vi.fn(), targets: vi.fn(), query: vi.fn(), history: vi.fn() }));
-vi.mock("@/lib/prisma", () => ({ prisma: { user: { findMany: mocks.users }, closerScoreboardTarget: { findMany: mocks.targets }, $queryRaw: mocks.query, opportunityHistory: { findMany: mocks.history } } }));
-import { monthlyScoreboard, scoreboardWins } from "@/lib/scoreboard";
+const mocks = vi.hoisted(() => ({ users: vi.fn(), targets: vi.fn(), query: vi.fn(), history: vi.fn(), handoffs: vi.fn() }));
+vi.mock("@/lib/prisma", () => ({ prisma: { user: { findMany: mocks.users }, closerScoreboardTarget: { findMany: mocks.targets }, $queryRaw: mocks.query, opportunityHistory: { findMany: mocks.history }, closerHandoff: { findMany: mocks.handoffs } } }));
+import { monthlyScoreboard, scoreboardWins, scoreboardPasses } from "@/lib/scoreboard";
 
 beforeEach(() => { vi.resetAllMocks(); mocks.users.mockResolvedValue([]); mocks.targets.mockResolvedValue([]); mocks.query.mockResolvedValue([]); mocks.history.mockResolvedValue([]); });
 describe("monthly scoreboard", () => {
@@ -38,6 +38,48 @@ describe("monthly scoreboard", () => {
     expect(mocks.query.mock.calls[0][0].sql).not.toContain("lastDispositionAt");
   });
   it("does not run an unbounded query when no closers are configured", async () => { expect(await monthlyScoreboard("2026-09")).toEqual([]); expect(mocks.query).not.toHaveBeenCalled(); });
+});
+
+describe("pass event feed", () => {
+  const now = new Date("2026-09-24T12:00:00Z");
+  const row = (id: string) => ({ id, createdAt: new Date("2026-09-24T11:59:50Z"), opportunityId: null, debt: null, debtLabel: "$100K–$250K", closer: { id: "closer-a", name: "Alex" }, fronter: { name: "Jamie" } });
+  it("starts without replaying past transfers", async () => {
+    expect(await scoreboardPasses(null, now)).toEqual({ events: [], cursor: { at: "2026-09-24T11:59:58.000Z", id: "" }, hasMore: false });
+    expect(mocks.handoffs).not.toHaveBeenCalled();
+  });
+  it("reports the sender and receiving closer without exposing client names", async () => {
+    mocks.handoffs.mockResolvedValue([row("a")]);
+    const result = await scoreboardPasses({ at: "2026-09-24T11:59:40Z", id: "" }, now);
+    expect(result.events[0]).toEqual({ kind: "pass", id: "pass:a", opportunityId: "", closerId: "closer-a", closerName: "Alex", fronterName: "Jamie", debt: null, debtLabel: "$100K–$250K", at: "2026-09-24T11:59:50.000Z" });
+    const query = mocks.handoffs.mock.calls[0][0];
+    expect(query.select).not.toHaveProperty("clientName");
+    expect(query.where.closer.is).toMatchObject({ isActive: true });
+    // Later CLOSED/LOST updates must neither erase a pass nor create a new one.
+    expect(query.where).not.toHaveProperty("status");
+    expect(query.where.OR[0]).toHaveProperty("createdAt");
+  });
+  it("paginates simultaneous transfers using raw IDs while namespacing event IDs", async () => {
+    mocks.handoffs.mockResolvedValue(Array.from({ length: 101 }, (_, i) => row(String(i).padStart(3, "0"))));
+    const result = await scoreboardPasses({ at: "2026-09-24T11:59:40Z", id: "" }, now);
+    expect(result.events).toHaveLength(100); expect(result.hasMore).toBe(true);
+    expect(result.cursor).toEqual({ at: "2026-09-24T11:59:50.000Z", id: "099" });
+    mocks.handoffs.mockResolvedValue([row("100")]);
+    const next = await scoreboardPasses(result.cursor, now);
+    expect(next.events[0].id).toBe("pass:100");
+    expect(mocks.handoffs.mock.calls[1][0].where.OR[1]).toEqual({ createdAt: new Date(result.cursor.at), id: { gt: "099" } });
+  });
+  it("bounds reconnects and handles missing sender records", async () => {
+    mocks.handoffs.mockResolvedValue([{ ...row("a"), fronter: null }]);
+    const result = await scoreboardPasses({ at: "2026-09-20T12:00:00Z", id: "" }, now);
+    expect(mocks.handoffs.mock.calls[0][0].where.OR[0].createdAt.gt).toEqual(new Date("2026-09-24T11:00:00Z"));
+    expect(result.events[0].fronterName).toBeNull();
+  });
+  it("queues passes and touchdowns chronologically without collisions or repeats", () => {
+    const win: WinEvent = { id: "a", opportunityId: "opp-a", closerId: "closer-a", closerName: "Alex", debt: 125000, at: now.toISOString() };
+    const pass = { ...win, kind: "pass" as const, id: "pass:a", fronterName: "Jamie", debtLabel: null, at: "2026-09-24T11:59:50Z" };
+    expect(unseenWins([win, pass, pass], new Set()).map((event) => event.id)).toEqual(["pass:a", "a"]);
+    expect(unseenWins([win, pass], new Set(["a", "pass:a"]))).toEqual([]);
+  });
 });
 
 describe("touchdown event feed", () => {

@@ -33,21 +33,3 @@ export function Touchdown({ event, onDismiss }: { event: WinEvent; onDismiss: ()
     <div className="sb-td-timer" />
   </div>;
 }
-
-/** Generated locally after an explicit sound-toggle gesture; no audio download. */
-export function playTouchdownSound(context: AudioContext) {
-  if (context.state !== "running") return;
-  const start = context.currentTime;
-  [392, 523.25, 659.25, 783.99, 1046.5].forEach((frequency, i) => {
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = "triangle";
-    oscillator.frequency.value = frequency;
-    gain.gain.setValueAtTime(0, start + i * .14);
-    gain.gain.linearRampToValueAtTime(.10, start + i * .14 + .025);
-    gain.gain.exponentialRampToValueAtTime(.001, start + i * .14 + (i === 4 ? 1.4 : .35));
-    oscillator.connect(gain); gain.connect(context.destination);
-    oscillator.start(start + i * .14); oscillator.stop(start + i * .14 + 1.5);
-    oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
-  });
-}
