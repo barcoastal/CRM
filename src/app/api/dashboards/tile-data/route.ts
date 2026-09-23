@@ -1,3 +1,4 @@
+import type { ReportFormula } from "@/lib/reports/formulas";
 import { runReport, type ReportFilter, type ReportSummarize } from "@/lib/reports/runner";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { hasPermission } from "@/lib/permissions";
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
       if (!report) return NextResponse.json({ error: "Report not found" }, { status: 404 });
       const result = await runReport({
         objectType: report.objectType,
+    formulas: report.formulas as unknown as ReportFormula[],
         columns: report.columns as string[],
         filters: report.filters as unknown as ReportFilter[],
         summarize: report.summarize as unknown as ReportSummarize[],

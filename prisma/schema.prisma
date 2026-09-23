@@ -88,6 +88,7 @@ model User {
   cadenceEnrollments        CadenceEnrollment[]             @relation("CadenceEnrolledBy")
   marketingSources          MarketingSource[]               @relation("MktSourceOwner")
   dashboards                Dashboard[]                     @relation("DashboardCreatedBy")
+  reportSubscriptions       ReportSubscription[]
   reportsCreated            Report[]                        @relation("ReportCreatedBy")
   quotas                    Quota[]                         @relation("QuotaUser")
   approvalProcessesCreated  ApprovalProcess[]               @relation("ApprovalProcessCreatedBy")
@@ -2645,6 +2646,40 @@ model ReportFolder {
   createdAt DateTime @default(now())
 }
 
+model ReportDelivery {
+  id String @id @default(cuid())
+  subscriptionId String
+  subscription ReportSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  scheduledFor DateTime
+  payload Json
+  status String @default("PENDING")
+  attempts Int @default(0)
+  firstAttemptAt DateTime?
+  lockedUntil DateTime?
+  lastError String?
+  sentAt DateTime?
+  providerMessageId String?
+  createdAt DateTime @default(now())
+  @@unique([subscriptionId, scheduledFor])
+  @@index([status, lockedUntil])
+}
+
+model ReportSubscription {
+  id String @id @default(cuid())
+  reportId String
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries ReportDelivery[]
+  frequency String
+  hourUtc Int
+  weekday Int @default(1)
+  nextRunAt DateTime
+  createdAt DateTime @default(now())
+  @@unique([reportId, userId])
+  @@index([nextRunAt])
+}
+
 model Report {
   id          String    @id @default(cuid())
   name        String
@@ -2657,6 +2692,8 @@ model Report {
   sortBy      String?
   sortDir     String    @default("asc") // asc | desc
   summarize   Json      @default("[]") // [{ field, kind: "count" | "sum" | "avg" }]
+  subscriptions ReportSubscription[]
+  formulas    Json      @default("[]")
   rowLimit    Int       @default(2000)
   folder      String    @default("Public Reports") // SF-style report folder
   isShared    Boolean   @default(true)

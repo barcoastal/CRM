@@ -1,3 +1,4 @@
+import { validateFormulas } from "@/lib/reports/formulas";
 import { analyticsApiAccess, definitionScope } from "@/lib/analytics-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
@@ -40,8 +41,12 @@ export async function POST(req: NextRequest) {
     return ssnSafeJson({ error: "Invalid objectType" }, { status: 400 });
   }
 
+  let formulas;
+  try { formulas = validateFormulas(body.formulas, objectType); }
+  catch (e) { return ssnSafeJson({ error: e instanceof Error ? e.message : "Invalid formulas" }, { status: 400 }); }
   const created = await prisma.report.create({
     data: {
+      formulas,
       name,
       description: typeof body.description === "string" ? body.description : null,
       objectType,

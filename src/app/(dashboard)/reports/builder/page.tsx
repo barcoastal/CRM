@@ -1,3 +1,4 @@
+import type { ReportFormula } from "@/lib/reports/formulas";
 import { definitionScope } from "@/lib/analytics-access";
 import { analyticsPageAccess } from "@/lib/analytics-page-access";
 import { redirect } from "next/navigation";
@@ -29,6 +30,7 @@ export default async function ReportBuilderPage({ searchParams }: PageProps) {
         metadata={meta}
         initial={{
           id: report.id,
+          formulas: report.formulas as unknown as ReportFormula[],
           name: report.name,
           description: report.description,
           columns: Array.isArray(report.columns) ? (report.columns as unknown as string[]) : [],
@@ -54,6 +56,7 @@ export default async function ReportBuilderPage({ searchParams }: PageProps) {
       metadata={meta}
       initial={{
         id: null,
+        formulas: [],
         name: `New ${meta.label} Report`,
         description: null,
         columns: meta.defaultColumns,

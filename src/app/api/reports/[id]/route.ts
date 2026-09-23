@@ -1,3 +1,4 @@
+import { validateFormulas } from "@/lib/reports/formulas";
 import { analyticsApiAccess, definitionScope } from "@/lib/analytics-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
@@ -46,6 +47,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (Array.isArray(body.summarize)) data.summarize = body.summarize;
   if (typeof body.rowLimit === "number") data.rowLimit = body.rowLimit;
   if (typeof body.isShared === "boolean") data.isShared = body.isShared;
+
+  if (body.formulas !== undefined || body.objectType !== undefined) {
+    try { data.formulas = validateFormulas(body.formulas ?? existing.formulas, typeof body.objectType === "string" ? body.objectType : existing.objectType); }
+    catch (e) { return ssnSafeJson({ error: e instanceof Error ? e.message : "Invalid formulas" }, { status: 400 }); }
+  }
 
   const updated = await prisma.report.update({ where: { id, AND: [definitionScope(access, true)] }, data: data as never });
 

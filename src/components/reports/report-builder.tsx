@@ -1,5 +1,7 @@
 "use client";
 
+import { FormulaEditor } from "./formula-editor";
+import type { ReportFormula } from "@/lib/reports/formulas";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -28,6 +30,7 @@ interface InitialState {
   sortDir: "asc" | "desc";
   summarize: ReportSummarize[];
   rowLimit: number;
+  formulas?: ReportFormula[];
 }
 
 interface Props {
@@ -114,7 +117,9 @@ function formatCell(v: unknown): string {
 
 export function ReportBuilder({ objectType, metadata, initial }: Props) {
   const router = useRouter();
+  const [formulas, setFormulas] = useState<ReportFormula[]>(initial.formulas ?? []);
   const fields = metadata.fields;
+  const summaryFields = [...fields, ...formulas.map(f => ({ key: f.key, label: f.label }))];
 
   const [name, setName] = useState(initial.name);
   const [description, setDescription] = useState(initial.description ?? "");
@@ -165,7 +170,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
   }
 
   function addFilter() {
-    const firstField = fields[0];
+    const firstField = metadata.fields[0];
     if (!firstField) return;
     setFilters((cur) => [...cur, { field: firstField.key, operator: "equals", value: "" }]);
   }
@@ -208,6 +213,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
           sortDir,
           summarize,
           rowLimit,
+          formulas,
         }),
       });
       const data = await res.json();
@@ -246,6 +252,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
         sortDir,
         summarize,
         rowLimit,
+        formulas,
       };
       const url = initial.id ? `/api/reports/${initial.id}` : "/api/reports";
       const method = initial.id ? "PATCH" : "POST";
@@ -307,6 +314,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
         </div>
       </div>
 
+      <FormulaEditor formulas={formulas} fields={metadata.fields} onChange={next => { setFormulas(next); setSummarize(current => current.filter(s => !s.field.startsWith("formula_") || next.some(f => f.key === s.field))); }} />
       <div className="grid grid-cols-[220px_minmax(0,1fr)_280px] gap-4">
         {/* ── Left: Fields panel ────────────────────────────────────── */}
         <aside
@@ -691,7 +699,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
                       onChange={(e) => updateSummarize(i, { field: e.target.value })}
                       className="flex-1 px-1.5 py-1 text-[11px] border border-[#e4e6f5] rounded bg-white"
                     >
-                      {fields.map((f) => (
+                      {summaryFields.map((f) => (
                         <option key={f.key} value={f.key}>
                           {f.label}
                         </option>

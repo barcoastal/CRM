@@ -25,6 +25,7 @@ export default async function ReportViewPage({ params }: PageProps) {
 
   return (
     <ReportViewer
+      canExport={access.isAdmin || hasPermission(access.permissions, "Reports.Export")}
       canEdit={access.isAdmin || (report.createdById === access.userId && hasPermission(access.permissions, "Reports.Edit"))}
       id={report.id}
       name={report.name}

@@ -235,3 +235,11 @@ describe("saved report dashboard tiles", () => {
     expect(result).toMatchObject({ totals: { totalDebt_avg: 100 } });
   });
 });
+
+
+it("calculates formula columns and summaries from scoped report rows", async () => {
+  login("junior");
+  const result = await runReport({ ...config, formulas: [{ key: "formula_half", label: "Half debt", left: "totalDebt", operator: "divide", right: 2 }], summarize: [{ field: "formula_half", kind: "sum" }] });
+  expect(result).toMatchObject({ rowCount: 1, totals: { formula_half_sum: 100 } });
+  if ("rows" in result) { expect(result.rows[0].formula_half).toBe(100); expect(result.rows[0]._recordUrl).toBe("/opportunities/b"); }
+});

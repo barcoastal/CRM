@@ -1,3 +1,4 @@
+import type { ReportFormula } from "@/lib/reports/formulas";
 import { analyticsApiAccess } from "@/lib/analytics-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
@@ -14,6 +15,7 @@ export async function POST(req: NextRequest) {
 
   const cfg: ReportConfig = {
     objectType: body.objectType,
+    formulas: body.formulas as ReportFormula[] | undefined,
     columns: Array.isArray(body.columns) ? (body.columns as string[]) : [],
     filters: Array.isArray(body.filters) ? (body.filters as ReportFilter[]) : [],
     groupBy: typeof body.groupBy === "string" ? body.groupBy : null,

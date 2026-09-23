@@ -1,3 +1,4 @@
+import { validateFormulas, evaluateFormula, type ReportFormula } from "./formulas";
 import { analyticsAccess, analyticsScope, ANALYTICS_RELATIONS, visibleRelation, redactAnalyticsRelations } from "@/lib/analytics-access";
 // Report runner: takes a ReportConfig (object + columns + filters + grouping +
 // summarize) and returns rows ready for the UI. The runner uses Prisma's
@@ -33,6 +34,7 @@ export interface ReportConfig {
   objectType: string;
   columns: string[];
   filters: ReportFilter[];
+  formulas?: ReportFormula[];
   groupBy?: string | null;
   sortBy?: string | null;
   sortDir?: "asc" | "desc";
@@ -315,6 +317,9 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
     const meta = getObjectMetadata(cfg.objectType);
     if (!meta) return { error: `Unknown objectType: ${cfg.objectType}` };
 
+    const formulas = validateFormulas(cfg.formulas, cfg.objectType);
+    const formulaFields = formulas.flatMap(f => [f.left, f.right]).filter((f): f is string => typeof f === "string");
+
     // Validate columns
     const knownKeys = new Set(meta.fields.map((f) => f.key));
     const columns = cfg.columns.filter((c) => knownKeys.has(c));
@@ -368,7 +373,7 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
         ? { AND: whereClauses }
         : {};
 
-    const include = buildInclude(meta, [...columns, ...(cfg.summarize ?? []).map(s => s.field)], filters, groupBy, sortBy);
+    const include = buildInclude(meta, [...columns, ...(cfg.summarize ?? []).map(s => s.field), ...formulaFields], filters, groupBy, sortBy);
 
     // orderBy: support relation.subfield (e.g. owner.name) by nesting
     let orderBy: Record<string, unknown> = { createdAt: "desc" };
@@ -398,7 +403,7 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
     }
     const scopeClauses = [analyticsScope(access, meta.prismaModel), where];
     // Relation filters, grouping and sorting cannot be used to infer hidden values.
-    const relationKeys = [...filters.map(f => f.field), groupBy, sortBy, ...(cfg.summarize ?? []).map(s => s.field)];
+    const relationKeys = [...formulaFields, ...filters.map(f => f.field), groupBy, sortBy, ...(cfg.summarize ?? []).map(s => s.field)];
     for (const relation of new Set(relationKeys.filter((key): key is string => !!key).map(key => key.split(".")[0]))) {
       if (ANALYTICS_RELATIONS[relation]) scopeClauses.push(visibleRelation(access, relation));
     }
@@ -423,6 +428,10 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
         const field = getField(cfg.objectType, groupBy);
         out[groupBy] = resolveValue(r, groupBy, field);
       }
+      for (const key of formulaFields) out[key] = resolveValue(r, key, getField(cfg.objectType, key));
+      for (const formula of formulas) out[formula.key] = evaluateFormula(formula, out);
+      const recordPaths: Record<string, string> = { Lead: "leads", Opportunity: "opportunities", Account: "accounts", Contact: "contacts", Case: "cases" };
+      if (recordPaths[cfg.objectType] && typeof r.id === "string") out._recordUrl = `/${recordPaths[cfg.objectType]}/${encodeURIComponent(r.id)}`;
       for (const s of cfg.summarize ?? []) {
         if (!(s.field in out)) {
           const field = getField(cfg.objectType, s.field);
@@ -448,6 +457,8 @@ export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
       key: c,
       label: meta.fields.find((f) => f.key === c)?.label ?? c,
     }));
+
+    uiColumns.push(...formulas.map(f => ({ key: f.key, label: f.label })));
 
     const result: ReportResult = {
       columns: uiColumns,
