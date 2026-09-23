@@ -32,7 +32,7 @@ export default async function ReportBuilderPage({ searchParams }: PageProps) {
           id: report.id,
           formulas: report.formulas as unknown as ReportFormula[],
           name: report.name,
-          description: report.description,
+          description: report.description?.replace(/\bSalesforce\b/gi, "source CRM").replace(/\bSF\b/g, "source") ?? null,
           columns: Array.isArray(report.columns) ? (report.columns as unknown as string[]) : [],
           filters: Array.isArray(report.filters) ? (report.filters as unknown as ReportFilter[]) : [],
           groupBy: report.groupBy,

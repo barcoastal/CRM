@@ -16,7 +16,7 @@ export default async function ReportsPage() {
     prisma.report.findMany({
       where: definitionScope(access),
       orderBy: { updatedAt: "desc" },
-      include: { createdBy: { select: { id: true, name: true } } },
+      include: { createdBy: { select: { id: true, name: true } }, subscriptions: { where: { userId: myId }, select: { frequency: true } } },
     }),
     prisma.reportFolder.findMany({ orderBy: { name: "asc" } }),
   ]);
@@ -32,7 +32,7 @@ export default async function ReportsPage() {
       reports={reports.map((r) => ({
         id: r.id,
         name: r.name,
-        description: r.description,
+        description: r.description?.replace(/\bSalesforce\b/gi, "source CRM").replace(/\bSF\b/g, "source") ?? null,
         folder: r.folder,
         objectType: r.objectType,
         createdById: r.createdById,
@@ -40,6 +40,7 @@ export default async function ReportsPage() {
         createdAt: r.createdAt.toISOString(),
         lastRunAt: r.lastRunAt?.toISOString() ?? null,
         isShared: r.isShared,
+        subscriptionFrequency: r.subscriptions[0]?.frequency ?? null,
       }))}
     />
   );

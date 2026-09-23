@@ -21,6 +21,7 @@ export interface ReportRow {
   createdAt: string;
   lastRunAt: string | null;
   isShared: boolean;
+  subscriptionFrequency?: string | null;
 }
 
 type RailKey =
@@ -161,7 +162,7 @@ export function ReportsHome({ reports, folders, myId }: { reports: ReportRow[]; 
                 <td style={td}>{r.folder}</td>
                 <td style={td}>{r.createdByName}</td>
                 <td style={td}>{new Date(r.createdAt).toLocaleString("en-US", { month: "numeric", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</td>
-                <td style={td}></td>
+                <td style={td}>{r.subscriptionFrequency ? `${r.subscriptionFrequency === "daily" ? "Daily" : "Weekly"} email` : "—"}</td>
                 <td style={{ ...td, position: "relative" }}>
                   <button
                     aria-label="Report actions"
