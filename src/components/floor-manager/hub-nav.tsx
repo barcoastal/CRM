@@ -9,6 +9,7 @@ const tabs = [
   { href: "/floor-manager/performance", label: "Closer Dashboard" },
   { href: "/floor-manager/on-call", label: "Closers On Call" },
   { href: "/floor-manager/closers", label: "Closer Setup" },
+  { href: "/floor-manager/scoreboard", label: "Scoreboard & TV" },
 ];
 
 export function FloorManagerNav() {

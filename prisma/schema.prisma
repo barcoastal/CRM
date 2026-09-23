@@ -91,6 +91,7 @@ model User {
   reportSubscriptions       ReportSubscription[]
   reportsCreated            Report[]                        @relation("ReportCreatedBy")
   quotas                    Quota[]                         @relation("QuotaUser")
+  scoreboardTargets         CloserScoreboardTarget[]
   approvalProcessesCreated  ApprovalProcess[]               @relation("ApprovalProcessCreatedBy")
   approvalRequestsSubmitted ApprovalRequest[]               @relation("ApprovalRequestSubmittedBy")
   approvalActions           ApprovalAction[]                @relation("ApprovalActionActor")
@@ -1297,6 +1298,22 @@ model OpportunityHistory {
   changedAt     DateTime    @default(now())
 
   @@index([opportunityId, changedAt])
+  @@index([changedAt])
+}
+
+// Monthly floor-scoreboard goals. Kept separate from forecasting quotas.
+model CloserScoreboardTarget {
+  id                     String   @id @default(cuid())
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  period                 String   // YYYY-MM, US Eastern calendar month
+  debtTarget             Float?
+  contractTarget         Int?
+  firstPaymentDebtTarget Float?
+  updatedAt              DateTime @updatedAt
+
+  @@unique([userId, period])
+  @@index([period])
 }
 
 // ============ OPPORTUNITY PAYMENT CALCULATOR (Lead-side equivalent for opps) ============
