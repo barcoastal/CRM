@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import type { WinEvent } from "@/lib/scoreboard-shared";
+import { CELEBRATION_MS, type WinEvent } from "@/lib/scoreboard-shared";
 
 export function Football({ className = "" }: { className?: string }) {
   return <svg className={className} viewBox="0 0 160 100" fill="none" aria-hidden="true">
@@ -30,6 +30,6 @@ export function Touchdown({ event, onDismiss }: { event: WinEvent; onDismiss: ()
       {event.debt !== null && <div className="sb-td-debt">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(event.debt)}<small>IN CLIENT DEBT</small></div>}
       <div className="sb-td-cheer">BIG PLAY. BIG IMPACT.</div>
     </div>
-    <div className="sb-td-timer" />
+    <div className="sb-td-timer" style={{ animationDuration: `${CELEBRATION_MS}ms` }} />
   </div>;
 }

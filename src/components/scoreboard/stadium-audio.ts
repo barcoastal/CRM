@@ -1,8 +1,10 @@
+import { CELEBRATION_MS } from "@/lib/scoreboard-shared";
+
 export interface StadiumAudio { touchdown: AudioBuffer }
 
 /** Audio is hosted by the CRM and only enabled after an explicit user gesture. */
 export async function loadStadiumAudio(context: AudioContext): Promise<StadiumAudio> {
-  const response = await fetch("/audio/scoreboard/football-touchdown-5s.mp3", { cache: "force-cache" });
+  const response = await fetch("/audio/scoreboard/football-touchdown-8s.mp3", { cache: "force-cache" });
   if (!response.ok) throw new Error("Touchdown audio could not load.");
   return { touchdown: await context.decodeAudioData(await response.arrayBuffer()) };
 }
@@ -12,25 +14,21 @@ export function playStadiumTouchdown(context: AudioContext, audio: StadiumAudio)
   const master = context.createGain();
   master.connect(context.destination);
   const start = context.currentTime;
+  const duration = CELEBRATION_MS / 1000;
   master.gain.setValueAtTime(.8, start);
-  master.gain.setValueAtTime(.8, start + 4.9);
-  master.gain.linearRampToValueAtTime(0, start + 5);
-  const sources = [
-    { buffer: audio.touchdown, delay: 0, volume: 1 },
-  ].map(({ buffer, delay, volume }) => {
-    const source = context.createBufferSource();
-    const gain = context.createGain();
-    source.buffer = buffer; gain.gain.value = volume;
-    source.connect(gain); gain.connect(master);
-    source.start(start + delay); source.stop(start + Math.min(buffer.duration, 5));
-    source.onended = () => { source.disconnect(); gain.disconnect(); };
-    return source;
-  });
+  master.gain.setValueAtTime(.8, start + duration - .1);
+  master.gain.linearRampToValueAtTime(0, start + duration);
+  const source = context.createBufferSource();
+  source.buffer = audio.touchdown;
+  source.connect(master);
+  source.start(start);
+  source.stop(start + duration);
+  source.onended = () => { source.disconnect(); master.disconnect(); };
   let stopped = false;
   return () => {
     if (stopped) return;
     stopped = true;
-    for (const source of sources) { try { source.stop(); } catch { /* Already ended. */ } }
+    try { source.stop(); } catch { /* Already ended. */ }
     master.disconnect();
   };
 }
