@@ -158,6 +158,7 @@ model User {
   extension      String?
   fax            String?
   mobile         String?
+  userCountry    String? // Source User_Country__c; agent location, separate from mailing country
   country        String?
   street         String?
   city           String?
@@ -553,6 +554,10 @@ model CadenceStep {
 }
 
 model CadenceEnrollment {
+  contactId        String?
+  contact          Contact? @relation("ContactCadenceEnrollments", fields: [contactId], references: [id], onDelete: SetNull)
+  automationKey    String? @unique
+  scheduledFor    DateTime?
   id               String       @id @default(cuid())
   cadenceId        String
   cadence          CallCadence  @relation(fields: [cadenceId], references: [id], onDelete: Cascade)
@@ -743,6 +748,7 @@ model AccountHistory {
 }
 
 model Contact {
+  cadenceEnrollments CadenceEnrollment[] @relation("ContactCadenceEnrollments")
   id               String    @id @default(cuid())
   sfId             String?   @unique // Salesforce 18-char ID
   sfDataJson       String? // Lossless SF row snapshot
@@ -1949,6 +1955,7 @@ model Event {
 // ============ PHASE 5: CASE MANAGEMENT ============
 
 model Case {
+  type            String? // Customer support request type
   id              String  @id @default(cuid())
   caseNumber      String  @unique
   recordType      String  @default("SUPPORT") // SUPPORT | PAYMENT_ISSUE | SKIP_PAYMENT | CANCELLATION | BANK_UPDATE | DOCUMENT_REQUEST
@@ -2763,6 +2770,7 @@ model ApprovalStep {
   // JSON criteria specific to this step (e.g. only fire if amount > X)
   criteria            Json              @default("[]")
   // Approver IDs (User.id). The first one to approve advances.
+  approverGroupIds    String[]          @default([]) // Resolve current active queue members at decision time
   approverUserIds     String[]          @default([])
   // For "manager of submitter" pattern: if true, use submitter's manager instead of a fixed list.
   useSubmitterManager Boolean           @default(false)

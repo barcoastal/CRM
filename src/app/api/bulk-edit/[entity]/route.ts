@@ -1,3 +1,5 @@
+import { triggerUpdateMany, makeCtx } from "@/lib/triggers/runner";
+import { assertCaseEditable } from "@/lib/automation/case-approvals";
 import { recordScope, type OwnedEntity } from "@/lib/record-access";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -86,6 +88,10 @@ export async function POST(
     // No soft-delete columns in the current schema -> hard delete.
     let deletedCount = 0;
     try {
+      if (e === "case") {
+        const cases = await prisma.case.findMany({ where: scopedWhere, select: { id: true } });
+        for (const item of cases) await assertCaseEditable(item.id, session.userId);
+      }
       const result = await model.deleteMany({ where: scopedWhere });
       deletedCount = result.count;
     } catch (err) {
@@ -121,10 +127,12 @@ export async function POST(
 
   let updatedCount = 0;
   try {
-    const result = await model.updateMany({
-      where: scopedWhere,
-      data,
-    });
+    const result = ["lead", "opportunity", "case"].includes(e)
+      ? await triggerUpdateMany(modelKey, scopedWhere, data, makeCtx(session.userId))
+      : await model.updateMany({ where: scopedWhere, data });
+    if (result.failures?.length) {
+      return NextResponse.json({ error: `${result.count} updated; ${result.failures.length} failed validation or automation.`, updated: result.count, failures: result.failures }, { status: 400 });
+    }
     updatedCount = result.count;
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Update failed";

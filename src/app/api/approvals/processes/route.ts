@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const r = await requireAuthOrRespond();
+  const r = await requireAuthOrRespond("Permission.Manage");
   if ("response" in r) return r.response;
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;

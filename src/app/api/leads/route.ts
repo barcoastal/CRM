@@ -1,3 +1,6 @@
+import { withAutomationErrors } from "@/lib/automation/errors";
+import { triggerCreateArgs, makeCtx } from "@/lib/triggers/runner";
+import type { Lead } from "@/generated/prisma/client";
 import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
@@ -64,7 +67,7 @@ export async function GET(request: NextRequest) {
   });
 }
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   const session = await auth();
   if (!session) {
     return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest) {
 
   const data = parsed.data;
 
-  const lead = await prisma.lead.create({
+  const lead = await triggerCreateArgs<Lead>("lead", {
     data: {
       businessName: data.businessName,
       contactName: data.contactName,
@@ -111,7 +114,9 @@ export async function POST(request: NextRequest) {
         select: { id: true, name: true, email: true },
       },
     },
-  });
+  }, makeCtx(session.user.id));
 
   return ssnSafeJson(lead, { status: 201 });
 }
+
+export const POST = withAutomationErrors(handlePOST);

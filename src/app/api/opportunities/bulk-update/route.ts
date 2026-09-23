@@ -2,7 +2,7 @@ import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { triggerUpdateMany, makeCtx } from "@/lib/triggers/runner";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 
 const bodySchema = z.object({
@@ -29,9 +29,9 @@ export async function PATCH(req: NextRequest) {
     return ssnSafeJson({ error: "Nothing to update" }, { status: 400 });
   }
 
-  const result = await prisma.opportunity.updateMany({
-    where: { id: { in: ids }, AND:[await recordScope("opportunity", assignedToId === undefined)] },
-    data,
-  });
-  return ssnSafeJson({ ok: true, updated: result.count });
+  const result = await triggerUpdateMany("opportunity",
+    { id: { in: ids }, AND: [await recordScope("opportunity", assignedToId === undefined)] }, data, makeCtx(r.session.userId));
+  return ssnSafeJson({ ok: !result.failures.length, updated: result.count, failures: result.failures,
+    ...(result.failures.length ? { error: `${result.count} updated; ${result.failures.length} failed validation or automation.` } : {}) },
+    { status: result.failures.length ? 400 : 200 });
 }

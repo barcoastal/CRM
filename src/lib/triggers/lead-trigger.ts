@@ -1,3 +1,5 @@
+import { AutomationValidationError } from "@/lib/automation/errors";
+import { applyLeadRouting } from "@/lib/automation/lead-routing";
 import { leadPaymentPopulated } from "../lead-payment-health";
 /**
  * Port of SF LeadTrigger / LeadTriggerHandler / LeadAfterTriggerHelper.
@@ -99,11 +101,12 @@ function recalcCreditorWeeklyTotal(sf: Record<string, unknown>): number {
 }
 
 export const leadTrigger: Trigger<Lead, LeadWrite> = {
-  async beforeInsert({ next }) {
+  async beforeInsert({ next, ctx }) {
+    await applyLeadRouting(next, undefined, ctx);
     // Run admin-authored validation rules first so a failed rule blocks the
     // write before any side-effecting state mutation below runs.
     const vr = await runRulesFor("Lead", next as Record<string, unknown>, "insert");
-    if (!vr.ok) throw new Error(vr.message);
+    if (!vr.ok) throw new AutomationValidationError(vr.message);
 
     // Carry over any sf snapshot the caller passed; we may write into it.
     const sf = parseSfData((next.sfDataJson as string | null | undefined) ?? null);
@@ -127,12 +130,13 @@ export const leadTrigger: Trigger<Lead, LeadWrite> = {
     next.sfDataJson = stringifySfData(sf);
   },
 
-  async beforeUpdate({ next, prev }) {
+  async beforeUpdate({ next, prev, ctx }) {
+    await applyLeadRouting(next, prev, ctx);
     // Run admin-authored validation rules against the merged proposed row so
     // a failed rule throws before any state mutation below.
     const proposed = { ...(prev as Record<string, unknown>), ...(next as Record<string, unknown>) };
     const vr = await runRulesFor("Lead", proposed, "update");
-    if (!vr.ok) throw new Error(vr.message);
+    if (!vr.ok) throw new AutomationValidationError(vr.message);
 
     // Status change -> roll previous status into lastDisposition
     if (next.status !== undefined && next.status !== prev.status) {
@@ -205,7 +209,8 @@ export const leadTrigger: Trigger<Lead, LeadWrite> = {
     next.sfDataJson = stringifySfData(sf);
   },
 
-  afterInsert({ row }) {
+  afterInsert({ row, ctx }) {
+    if (ctx.skip.has("Lead:postback")) return;
     // Fire-and-forget marketing postback. Note: inbound-driven Lead creation
     // also fires this directly from src/lib/marketing/inbound.ts; the trigger
     // path covers all OTHER creation sources (manual, ingest, importer).

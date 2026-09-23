@@ -8,7 +8,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
     prisma.user.findUnique({
       where: { id },
       select: {
-        id: true, name: true, email: true, role: true,
+        id: true, name: true, email: true, role: true, userCountry: true,
         profileId: true, hierarchyRoleId: true, managerId: true, isActive: true, isCloser: true, five9Username: true, mailboxAddress: true,
       },
     }),
@@ -23,6 +23,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
       userId={user.id}
       initial={{
         name: user.name,
+        userCountry: user.userCountry,
         email: user.email,
         role: user.role,
         profileId: user.profileId,

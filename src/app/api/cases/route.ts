@@ -1,3 +1,6 @@
+import { withAutomationErrors } from "@/lib/automation/errors";
+import { triggerCreateArgs, makeCtx } from "@/lib/triggers/runner";
+import type { Case } from "@/generated/prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -30,7 +33,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ items });
 }
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   const r = await requireAuthOrRespond("Case.Create");
   if ("response" in r) return r.response;
   const body = await req.json().catch(() => ({}));
@@ -40,13 +43,15 @@ export async function POST(req: NextRequest) {
   }
   const d = parsed.data;
   const caseNumber = await nextCaseNumber();
-  const newCase = await prisma.case.create({
+  const newCase = await triggerCreateArgs<Case>("case", {
     data: {
       ...d,
       caseNumber,
       slaDueAt: d.slaDueAt ? new Date(d.slaDueAt) : null,
       createdById: r.session.userId,
     },
-  });
+  }, makeCtx(r.session.userId));
   return NextResponse.json(newCase, { status: 201 });
 }
+
+export const POST = withAutomationErrors(handlePOST);

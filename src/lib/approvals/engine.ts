@@ -1,3 +1,6 @@
+import type { TriggerCtx } from "@/lib/triggers/types";
+import { CASE_APPROVAL_PROCESS_ID, caseApprovalEligible } from "@/lib/automation/case-policy";
+import type { Case } from "@/generated/prisma/client";
 // Approval Engine
 // SF-style Approval Processes. Admins define processes per entity type; when a
 // record matches the entry criteria, users can submit it for approval. The
@@ -124,14 +127,14 @@ function asActions(json: unknown): FinalAction[] {
 // Record loader
 // ---------------------------------------------------------------------------
 
-async function loadRecord(entityType: string, entityId: string): Promise<Record<string, unknown> | null> {
+async function loadRecord(entityType: string, entityId: string, db: TriggerCtx["prisma"] = prisma): Promise<Record<string, unknown> | null> {
   const model = ENTITY_MODELS[entityType];
   if (!model) return null;
   // The Prisma client is typed per-model; we access by string key for dynamic dispatch.
   // The `findUnique` call shape is identical across models that have `id` PKs.
   // We swallow runtime errors so callers see "no record" rather than 500.
   try {
-    const client = prisma as unknown as Record<string, { findUnique?: (args: { where: { id: string } }) => Promise<unknown> }>;
+    const client = db as unknown as Record<string, { findUnique?: (args: { where: { id: string } }) => Promise<unknown> }>;
     const r = await client[model]?.findUnique?.({ where: { id: entityId } });
     return (r as Record<string, unknown>) ?? null;
   } catch {
@@ -139,14 +142,12 @@ async function loadRecord(entityType: string, entityId: string): Promise<Record<
   }
 }
 
-async function updateRecord(entityType: string, entityId: string, data: Record<string, unknown>): Promise<void> {
+async function updateRecord(entityType: string, entityId: string, data: Record<string, unknown>, db: TriggerCtx["prisma"] = prisma): Promise<void> {
   const model = ENTITY_MODELS[entityType];
   if (!model) return;
-  try {
-    const client = prisma as unknown as Record<string, { update?: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown> }>;
+  {
+    const client = db as unknown as Record<string, { update?: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown> }>;
     await client[model]?.update?.({ where: { id: entityId }, data });
-  } catch {
-    // Swallow: invalid field on dynamic update should not break approval flow.
   }
 }
 
@@ -163,15 +164,15 @@ export async function findEligibleProcesses(entityType: string, entityId: string
   });
   const record = await loadRecord(entityType, entityId);
   if (!record) return [];
-  return processes.filter((p) => matchesAll(record, asRules(p.entryCriteria as unknown)));
+  return processes.filter((p) => matchesAll(record, asRules(p.entryCriteria as unknown)) && (p.id !== CASE_APPROVAL_PROCESS_ID || caseApprovalEligible(record as Partial<Case>)));
 }
 
 // ---------------------------------------------------------------------------
 // Submitter manager helper
 // ---------------------------------------------------------------------------
 
-async function managerOf(userId: string): Promise<string | null> {
-  const u = await prisma.user.findUnique({ where: { id: userId }, select: { managerId: true } });
+async function managerOf(userId: string, db: TriggerCtx["prisma"] = prisma): Promise<string | null> {
+  const u = await db.user.findUnique({ where: { id: userId }, select: { managerId: true } });
   return u?.managerId ?? null;
 }
 
@@ -179,8 +180,15 @@ async function managerOf(userId: string): Promise<string | null> {
 // Submit, approve, reject, recall
 // ---------------------------------------------------------------------------
 
-export async function submitForApproval(o: SubmitOpts): Promise<{ requestId: string }> {
-  const process = await prisma.approvalProcess.findUnique({
+export async function submitForApproval(o: SubmitOpts, db: TriggerCtx["prisma"] = prisma, afterCommit?: Array<() => Promise<void>>): Promise<{ requestId: string }> {
+  if (db === prisma) {
+    const effects: Array<() => Promise<void>> = [];
+    const result = await prisma.$transaction(tx => submitForApproval(o, tx, effects));
+    for (const effect of effects) await effect();
+    return result;
+  }
+  await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${"approval:" + o.entityType + ":" + o.entityId}))::text`;
+  const process = await db.approvalProcess.findUnique({
     where: { id: o.processId },
     include: { steps: { orderBy: { order: "asc" } } },
   });
@@ -189,10 +197,15 @@ export async function submitForApproval(o: SubmitOpts): Promise<{ requestId: str
   if (process.entityType !== o.entityType) throw new Error("Entity type mismatch");
 
   // Re-check entry criteria at submission time.
-  const record = await loadRecord(o.entityType, o.entityId);
+  const record = await loadRecord(o.entityType, o.entityId, db);
   if (!record) throw new Error("Record not found");
   if (!matchesAll(record, asRules(process.entryCriteria as unknown))) {
     throw new Error("Record no longer matches entry criteria");
+  }
+
+  if (process.id === CASE_APPROVAL_PROCESS_ID) {
+    if (!caseApprovalEligible(record as Partial<Case>)) throw new Error("Case does not meet approval criteria");
+    if (record.ownerId !== o.submitterUserId) throw new Error("Only the case owner can submit this process");
   }
 
   // Initial submitter check. Empty list => anyone can submit.
@@ -204,7 +217,7 @@ export async function submitForApproval(o: SubmitOpts): Promise<{ requestId: str
   }
 
   // Block duplicate pending request for the same entity.
-  const existing = await prisma.approvalRequest.findFirst({
+  const existing = await db.approvalRequest.findFirst({
     where: { entityType: o.entityType, entityId: o.entityId, status: "PENDING" },
   });
   if (existing) throw new Error("A pending approval request already exists for this record");
@@ -212,7 +225,10 @@ export async function submitForApproval(o: SubmitOpts): Promise<{ requestId: str
   const firstStep = process.steps[0];
   if (!firstStep) throw new Error("Process has no steps");
 
-  const request = await prisma.approvalRequest.create({
+  const resolvedApprovers = await resolveStepApproverIds(firstStep, o.submitterUserId, db);
+  if (!resolvedApprovers.length) throw new Error("Approval step has no active approvers");
+
+  const request = await db.approvalRequest.create({
     data: {
       processId: process.id,
       entityType: o.entityType,
@@ -225,7 +241,7 @@ export async function submitForApproval(o: SubmitOpts): Promise<{ requestId: str
     },
   });
 
-  await prisma.approvalAction.create({
+  await db.approvalAction.create({
     data: {
       requestId: request.id,
       stepId: firstStep.id,
@@ -235,13 +251,17 @@ export async function submitForApproval(o: SubmitOpts): Promise<{ requestId: str
     },
   });
 
+  if (process.id === CASE_APPROVAL_PROCESS_ID) {
+    await db.case.update({ where: { id: o.entityId }, data: { ownerId: null, ownerGroupId: firstStep.approverGroupIds[0], requiresApproval: true } });
+  }
+
   // Notify the current step's approvers (resolve manager-based steps).
   const approverIds = await resolveStepApproverIds(
-    { approverUserIds: firstStep.approverUserIds, useSubmitterManager: firstStep.useSubmitterManager },
-    o.submitterUserId,
+    { approverGroupIds: firstStep.approverGroupIds, approverUserIds: firstStep.approverUserIds, useSubmitterManager: firstStep.useSubmitterManager },
+    o.submitterUserId, db,
   );
   if (approverIds.length > 0) {
-    void notifyMany(approverIds, {
+    const send = async () => { await notifyMany(approverIds, {
       kind: "APPROVAL_REQUEST",
       title: `Approval needed: ${process.name}`,
       body: o.comments ?? null,
@@ -250,41 +270,48 @@ export async function submitForApproval(o: SubmitOpts): Promise<{ requestId: str
       entityId: request.id,
       actorId: o.submitterUserId,
       skipIfSelf: true,
-    });
+    }); };
+    if (afterCommit) afterCommit.push(send); else await send();
   }
 
   return { requestId: request.id };
 }
 
 async function resolveStepApproverIds(
-  step: { approverUserIds: string[]; useSubmitterManager: boolean },
+  step: { approverUserIds: string[]; approverGroupIds?: string[]; useSubmitterManager: boolean },
   submitterId: string | null,
+  db: TriggerCtx["prisma"] = prisma,
 ): Promise<string[]> {
   if (step.useSubmitterManager) {
     if (!submitterId) return [];
-    const mgr = await managerOf(submitterId);
+    const mgr = await managerOf(submitterId, db);
     return mgr ? [mgr] : [];
   }
-  return [...step.approverUserIds];
+  const members = step.approverGroupIds?.length ? await db.groupMember.findMany({
+    where: { groupId: { in: step.approverGroupIds }, user: { isActive: true } }, select: { userId: true },
+  }) : [];
+  return [...new Set([...step.approverUserIds, ...members.map(member => member.userId)])];
 }
 
 async function isActorAuthorizedForStep(
-  step: { approverUserIds: string[]; useSubmitterManager: boolean },
+  step: { approverUserIds: string[]; approverGroupIds?: string[]; useSubmitterManager: boolean },
   submitterId: string | null,
   actorId: string,
+  db: TriggerCtx["prisma"] = prisma,
 ): Promise<boolean> {
   if (step.useSubmitterManager) {
     if (!submitterId) return false;
-    const mgr = await managerOf(submitterId);
+    const mgr = await managerOf(submitterId, db);
     return mgr === actorId;
   }
-  return step.approverUserIds.includes(actorId);
+  return (await resolveStepApproverIds(step, submitterId, db)).includes(actorId);
 }
 
 async function runActions(
   entityType: string,
   entityId: string,
   actions: FinalAction[],
+  db: TriggerCtx["prisma"] = prisma,
 ): Promise<void> {
   const updates: Record<string, unknown> = {};
   for (const a of actions) {
@@ -293,7 +320,7 @@ async function runActions(
     }
   }
   if (Object.keys(updates).length > 0) {
-    await updateRecord(entityType, entityId, updates);
+    await updateRecord(entityType, entityId, updates, db);
   }
 }
 
@@ -301,8 +328,10 @@ export async function approveStep(o: {
   requestId: string;
   actorUserId: string;
   comments?: string;
-}): Promise<{ status: string }> {
-  const request = await prisma.approvalRequest.findUnique({
+}, db: TriggerCtx["prisma"] = prisma): Promise<{ status: string }> {
+  if (db === prisma) return prisma.$transaction(tx => approveStep(o, tx));
+  await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${"approval-request:" + o.requestId}))::text`;
+  const request = await db.approvalRequest.findUnique({
     where: { id: o.requestId },
     include: {
       process: { include: { steps: { orderBy: { order: "asc" } } } },
@@ -315,15 +344,16 @@ export async function approveStep(o: {
 
   const ok = await isActorAuthorizedForStep(
     {
+      approverGroupIds: request.currentStep.approverGroupIds,
       approverUserIds: request.currentStep.approverUserIds,
       useSubmitterManager: request.currentStep.useSubmitterManager,
     },
     request.submittedById,
-    o.actorUserId,
+    o.actorUserId, db,
   );
   if (!ok) throw new Error("You are not an approver for the current step");
 
-  await prisma.approvalAction.create({
+  await db.approvalAction.create({
     data: {
       requestId: request.id,
       stepId: request.currentStep.id,
@@ -339,14 +369,14 @@ export async function approveStep(o: {
   const next = idx >= 0 ? steps[idx + 1] : null;
 
   if (next) {
-    await prisma.approvalRequest.update({
+    await db.approvalRequest.update({
       where: { id: request.id },
       data: { currentStepId: next.id },
     });
     // Notify the next step's approvers.
     const nextApprovers = await resolveStepApproverIds(
-      { approverUserIds: next.approverUserIds, useSubmitterManager: next.useSubmitterManager },
-      request.submittedById,
+      { approverGroupIds: next.approverGroupIds, approverUserIds: next.approverUserIds, useSubmitterManager: next.useSubmitterManager },
+      request.submittedById, db,
     );
     if (nextApprovers.length > 0) {
       void notifyMany(nextApprovers, {
@@ -366,13 +396,17 @@ export async function approveStep(o: {
   await runActions(
     request.entityType,
     request.entityId,
-    asActions(request.process.finalApprovalActions as unknown),
+    asActions(request.process.finalApprovalActions as unknown), db,
   );
 
-  await prisma.approvalRequest.update({
+  await db.approvalRequest.update({
     where: { id: request.id },
     data: { status: "APPROVED", currentStepId: null, decidedAt: new Date() },
   });
+
+  if (request.processId === CASE_APPROVAL_PROCESS_ID) {
+    await db.case.update({ where: { id: request.entityId }, data: { approvedById: o.actorUserId, approvedAt: new Date(), approvalNotes: o.comments ?? null } });
+  }
 
   // Notify the submitter that their request was approved.
   if (request.submittedById) {
@@ -396,8 +430,10 @@ export async function rejectRequest(o: {
   requestId: string;
   actorUserId: string;
   comments: string;
-}): Promise<{ status: string }> {
-  const request = await prisma.approvalRequest.findUnique({
+}, db: TriggerCtx["prisma"] = prisma): Promise<{ status: string }> {
+  if (db === prisma) return prisma.$transaction(tx => rejectRequest(o, tx));
+  await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${"approval-request:" + o.requestId}))::text`;
+  const request = await db.approvalRequest.findUnique({
     where: { id: o.requestId },
     include: { process: true, currentStep: true },
   });
@@ -407,15 +443,16 @@ export async function rejectRequest(o: {
 
   const ok = await isActorAuthorizedForStep(
     {
+      approverGroupIds: request.currentStep.approverGroupIds,
       approverUserIds: request.currentStep.approverUserIds,
       useSubmitterManager: request.currentStep.useSubmitterManager,
     },
     request.submittedById,
-    o.actorUserId,
+    o.actorUserId, db,
   );
   if (!ok) throw new Error("You are not an approver for the current step");
 
-  await prisma.approvalAction.create({
+  await db.approvalAction.create({
     data: {
       requestId: request.id,
       stepId: request.currentStep.id,
@@ -428,13 +465,18 @@ export async function rejectRequest(o: {
   await runActions(
     request.entityType,
     request.entityId,
-    asActions(request.process.rejectionActions as unknown),
+    asActions(request.process.rejectionActions as unknown), db,
   );
 
-  await prisma.approvalRequest.update({
+  await db.approvalRequest.update({
     where: { id: request.id },
     data: { status: "REJECTED", currentStepId: null, decidedAt: new Date() },
   });
+
+  if (request.processId === CASE_APPROVAL_PROCESS_ID) {
+    const record = await db.case.findUniqueOrThrow({ where: { id: request.entityId } });
+    await db.case.update({ where: { id: record.id }, data: { ownerId: record.createdById, ownerGroupId: null, approvalNotes: o.comments } });
+  }
 
   // Notify the submitter that their request was rejected.
   if (request.submittedById) {
@@ -457,17 +499,20 @@ export async function rejectRequest(o: {
 export async function recallRequest(o: {
   requestId: string;
   actorUserId: string;
-}): Promise<{ status: string }> {
-  const request = await prisma.approvalRequest.findUnique({
+}, db: TriggerCtx["prisma"] = prisma): Promise<{ status: string }> {
+  if (db === prisma) return prisma.$transaction(tx => recallRequest(o, tx));
+  await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${"approval-request:" + o.requestId}))::text`;
+  const request = await db.approvalRequest.findUnique({
     where: { id: o.requestId },
   });
   if (!request) throw new Error("Request not found");
   if (request.status !== "PENDING") throw new Error("Request is not pending");
+  if (request.processId === CASE_APPROVAL_PROCESS_ID) throw new Error("Recall is disabled for this approval process");
   if (request.submittedById !== o.actorUserId) {
     throw new Error("Only the submitter can recall a request");
   }
 
-  await prisma.approvalAction.create({
+  await db.approvalAction.create({
     data: {
       requestId: request.id,
       stepId: request.currentStepId,
@@ -476,7 +521,7 @@ export async function recallRequest(o: {
     },
   });
 
-  await prisma.approvalRequest.update({
+  await db.approvalRequest.update({
     where: { id: request.id },
     data: { status: "RECALLED", currentStepId: null, decidedAt: new Date() },
   });
@@ -503,12 +548,13 @@ export async function listMyPendingApprovals(userId: string) {
     orderBy: { submittedAt: "desc" },
   });
 
+  const groupIds = (await prisma.groupMember.findMany({ where: { userId, user: { isActive: true } }, select: { groupId: true } })).map(m => m.groupId);
   return requests.filter((r) => {
     if (!r.currentStep) return false;
     if (r.currentStep.useSubmitterManager) {
       return r.submittedBy?.managerId === userId;
     }
-    return r.currentStep.approverUserIds.includes(userId);
+    return r.currentStep.approverUserIds.includes(userId) || r.currentStep.approverGroupIds.some(id => groupIds.includes(id));
   });
 }
 

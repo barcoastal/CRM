@@ -1,6 +1,8 @@
+import { WEB_LEAD_SOURCES } from "@/lib/automation/lead-routing";
 import { z } from "zod";
 
 export const LEAD_SOURCES = [
+  ...WEB_LEAD_SOURCES,
   "WEBSITE",
   "REFERRAL",
   "MAILER",

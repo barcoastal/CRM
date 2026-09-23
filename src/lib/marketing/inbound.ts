@@ -1,3 +1,5 @@
+import type { Lead } from "@/generated/prisma/client";
+import { triggerCreate, makeCtx } from "@/lib/triggers/runner";
 import { prisma } from "@/lib/prisma";
 import { firePostbackEvent } from "./postback";
 import { notify } from "@/lib/notifications/notify";
@@ -266,7 +268,7 @@ export async function processInboundPayload(opts: {
 
   // Create lead
   try {
-    const lead = await prisma.lead.create({ data: data as never });
+    const lead = await triggerCreate<Lead>("lead", data as Record<string, unknown>, makeCtx(null, ["Lead:postback"]));
 
     const log = await prisma.marketingInboundLog.create({
       data: {

@@ -3,6 +3,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 export interface TriggerCtx {
   prisma: PrismaClient | Omit<PrismaClient, "$transaction" | "$connect" | "$disconnect" | "$on" | "$use" | "$extends">;
   userId: string | null;
+  afterCommit?: Array<() => Promise<void>>;
   /** Set of "<entity>:<id>" pairs we've already processed in this request — prevents recursion */
   skip: Set<string>;
 }

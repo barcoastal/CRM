@@ -28,6 +28,7 @@ interface StepForm {
   id: string;
   order: number;
   name: string;
+  approverGroupIds?: string[];
   approverUserIds: string[];
   useSubmitterManager: boolean;
   allowSkip: boolean;
@@ -300,6 +301,7 @@ function StepRow({
             />
             Route to submitter&apos;s manager
           </label>
+          {!!step.approverGroupIds?.length && <p className="text-sm mb-2">Approvers include active members of the assigned queue. Manage membership in Queues.</p>}
           {!step.useSubmitterManager && (
             <SubmittersPicker
               users={users}

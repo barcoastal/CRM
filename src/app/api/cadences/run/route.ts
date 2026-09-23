@@ -11,6 +11,7 @@ import { runCadenceTick } from "@/lib/cadences";
  */
 export async function POST(request: NextRequest) {
   const required = process.env.CADENCE_RUN_SECRET;
+  if (!required) return NextResponse.json({ error: "Cadence cron access is not configured" }, { status: 503 });
   if (required) {
     const got =
       request.headers.get("x-cadence-secret") ??

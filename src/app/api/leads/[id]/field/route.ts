@@ -1,3 +1,6 @@
+import type { Lead } from "@/generated/prisma/client";
+import { triggerUpdate, makeCtx } from "@/lib/triggers/runner";
+import { AutomationValidationError } from "@/lib/automation/errors";
 import { canAccessRecord } from "@/lib/record-access";
 import { isSsnField, maskSsn } from "@/lib/ssn-privacy";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
@@ -74,13 +77,13 @@ export async function PATCH(
     if (result.typedColumn) updateData[result.typedColumn.name] = result.typedColumn.value;
     if (result.sfDataPatch) updateData.sfDataJson = mergeSfData(existing.sfDataJson, result.sfDataPatch);
 
-    const updated = await prisma.lead.update({ where: { id }, data: updateData });
+    const updated = await triggerUpdate<Lead>("lead", id, updateData, makeCtx(session.userId));
 
     // Field-level history row + audit log entry for the change. Logged on
     // failure (instead of swallowed) so missing FKs / migrations surface in
     // the dev console; the response still succeeds because the DB write
     // already landed.
-    await prisma.leadHistory.create({
+    if (result.typedColumn?.name !== "status") await prisma.leadHistory.create({
       data: {
         leadId: id,
         field: result.historyField,
@@ -101,7 +104,7 @@ export async function PATCH(
 
     return ssnSafeJson({ ok: true, value: isSsnField(fieldName) ? maskSsn(result.newDisplay) : result.newDisplay, lead: updated });
   } catch (e) {
-    if (e instanceof FieldUpdateError) {
+    if (e instanceof FieldUpdateError || e instanceof AutomationValidationError) {
       return ssnSafeJson({ error: e.message }, { status: 400 });
     }
     const msg = e instanceof Error ? e.message : "Update failed";

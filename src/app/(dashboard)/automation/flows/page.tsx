@@ -1,3 +1,4 @@
+import { BuiltinAutomationStatus } from "@/components/automation/builtin-status";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
@@ -71,6 +72,7 @@ export default async function FlowsListPage() {
 
   return (
     <div className="space-y-5">
+      <BuiltinAutomationStatus />
       <div className="flex items-center justify-between">
         <div>
           <h1

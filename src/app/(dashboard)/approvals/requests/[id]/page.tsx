@@ -1,3 +1,4 @@
+import { CASE_APPROVAL_PROCESS_ID } from "@/lib/automation/case-policy";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -66,10 +67,10 @@ export default async function ApprovalRequestDetailPage({
     if (request.currentStep.useSubmitterManager) {
       canApprove = request.submittedBy?.managerId === userId;
     } else {
-      canApprove = request.currentStep.approverUserIds.includes(userId);
+      canApprove = request.currentStep.approverUserIds.includes(userId) || await prisma.groupMember.count({ where: { userId, groupId: { in: request.currentStep.approverGroupIds }, user: { isActive: true } } }) > 0;
     }
   }
-  const canRecall = request.status === "PENDING" && request.submittedById === userId;
+  const canRecall = request.processId !== CASE_APPROVAL_PROCESS_ID && request.status === "PENDING" && request.submittedById === userId;
 
   const snapshot = (request.snapshot ?? {}) as Record<string, unknown>;
   const snapshotEntries = Object.entries(snapshot)
@@ -142,7 +143,7 @@ export default async function ApprovalRequestDetailPage({
                       <div className="text-[12px] text-[#747474]">
                         {step.useSubmitterManager
                           ? "Routes to submitter's manager"
-                          : step.approverUserIds.length > 0
+                          : step.approverGroupIds.length > 0 ? "Queue members" : step.approverUserIds.length > 0
                           ? `${step.approverUserIds.length} approver${step.approverUserIds.length === 1 ? "" : "s"}`
                           : "No approvers"}
                       </div>

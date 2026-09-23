@@ -1,9 +1,11 @@
+import { withAutomationErrors } from "@/lib/automation/errors";
+import { triggerCreateArgs, makeCtx } from "@/lib/triggers/runner";
+import type { Lead } from "@/generated/prisma/client";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { createLeadSchema } from "@/lib/validations/lead";
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   // Authenticate via API key
   const apiKey = request.headers.get("x-api-key");
   const expectedKey = process.env.LEAD_INGEST_API_KEY;
@@ -42,7 +44,7 @@ export async function POST(request: NextRequest) {
 
   const data = parsed.data;
 
-  const lead = await prisma.lead.create({
+  const lead = await triggerCreateArgs<Lead>("lead", {
     data: {
       businessName: data.businessName,
       contactName: data.contactName,
@@ -68,10 +70,12 @@ export async function POST(request: NextRequest) {
       gclid: data.gclid || null,
       fbclid: data.fbclid || null,
     },
-  });
+  }, makeCtx(null));
 
   return ssnSafeJson(
     { id: lead.id, businessName: lead.businessName, status: lead.status },
     { status: 201 }
   );
 }
+
+export const POST = withAutomationErrors(handlePOST);

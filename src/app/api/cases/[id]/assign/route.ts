@@ -1,10 +1,13 @@
+import type { Case } from "@/generated/prisma/client";
+import { triggerUpdate, makeCtx } from "@/lib/triggers/runner";
+import { withAutomationErrors } from "@/lib/automation/errors";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { assignCaseSchema } from "@/lib/validations/case";
 import { notify } from "@/lib/notifications/notify";
 
-export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+async function handlePOST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const r = await requireAuthOrRespond("Case.Edit");
   if ("response" in r) return r.response;
   const { id } = await ctx.params;
@@ -28,7 +31,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     data.ownerGroupId = d.ownerGroupId;
     if (d.ownerGroupId) data.ownerId = null;
   }
-  const updated = await prisma.case.update({ where: { id }, data });
+  const updated = await triggerUpdate<Case>("case", id, data, makeCtx(r.session.userId));
 
   // Notify the new owner when the owner actually changed (skip self).
   if (updated.ownerId && updated.ownerId !== before?.ownerId) {
@@ -46,3 +49,5 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
 
   return NextResponse.json(updated);
 }
+
+export const POST = withAutomationErrors(handlePOST);

@@ -19,6 +19,7 @@ export function UserForm({
   userId,
 }: {
   initial?: {
+    userCountry?: string | null;
     name: string;
     email: string;
     role: string;
@@ -38,6 +39,7 @@ export function UserForm({
   const router = useRouter();
   const isEdit = !!userId;
 
+  const [userCountry, setUserCountry] = useState(initial?.userCountry ?? "");
   const [name, setName] = useState(initial?.name ?? "");
   const [email, setEmail] = useState(initial?.email ?? "");
   const [password, setPassword] = useState("");
@@ -60,7 +62,7 @@ export function UserForm({
     setError(null);
 
     const body: Record<string, unknown> = {
-      name, email, role,
+      name, email, role, userCountry: userCountry.trim() || null,
       profileId: profileId || null,
       hierarchyRoleId: hierarchyRoleId || null,
       managerId: managerId || null,
@@ -145,6 +147,7 @@ export function UserForm({
       )}
 
       <Section title="Account Info">
+        <label className="block mb-4">Agent location<input className="block border rounded p-2" value={userCountry} onChange={e => setUserCountry(e.target.value)} /></label>
         <FieldGrid
           fields={[
             ["Name *", <input key="n" required value={name} onChange={(e) => setName(e.target.value)} className="slds-input" style={inputStyle} />],

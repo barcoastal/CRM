@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   const user = await prisma.user.findUnique({
     where: { id },
     select: {
-      id: true, name: true, email: true, role: true, avatar: true,
+      id: true, name: true, email: true, role: true, avatar: true, userCountry: true,
       isActive: true, lastLoginAt: true, createdAt: true, updatedAt: true, mailboxAddress: true,
       profile: { select: { id: true, name: true, label: true } },
       hierarchyRole: { select: { id: true, name: true } },
@@ -27,6 +27,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
 }
 
 const updateUserSchema = z.object({
+  userCountry: z.string().max(100).optional().nullable(),
   name: z.string().min(1).max(255).optional(),
   email: z.string().email().optional(),
   password: z.string().min(8).optional(),
@@ -86,6 +87,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   }
 
   const data: Record<string, unknown> = {};
+  if (d.userCountry !== undefined) data.userCountry = d.userCountry;
   if (d.name !== undefined) data.name = d.name;
   if (d.email !== undefined) data.email = d.email;
   if (d.password) data.passwordHash = await hash(d.password, 12);

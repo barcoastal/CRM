@@ -9,6 +9,7 @@ import {
 
 export const createCaseSchema = z.object({
   recordType: z.enum(CASE_RECORD_TYPES).default("SUPPORT"),
+  type: z.string().max(100).optional().nullable(),
   subject: z.string().min(1).max(255),
   description: z.string().optional().nullable(),
   status: z.enum(CASE_STATUSES).default("NEW"),

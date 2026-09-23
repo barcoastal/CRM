@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string; stepId: string }> }) {
-  const r = await requireAuthOrRespond();
+  const r = await requireAuthOrRespond("Permission.Manage");
   if ("response" in r) return r.response;
   const { stepId } = await ctx.params;
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
@@ -23,7 +23,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 }
 
 export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string; stepId: string }> }) {
-  const r = await requireAuthOrRespond();
+  const r = await requireAuthOrRespond("Permission.Manage");
   if ("response" in r) return r.response;
   const { stepId } = await ctx.params;
   await prisma.approvalStep.delete({ where: { id: stepId } });

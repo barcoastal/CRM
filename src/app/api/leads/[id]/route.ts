@@ -1,3 +1,6 @@
+import { withAutomationErrors } from "@/lib/automation/errors";
+import { triggerUpdateArgs, makeCtx } from "@/lib/triggers/runner";
+import type { Lead } from "@/generated/prisma/client";
 import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
@@ -45,7 +48,7 @@ export async function GET(
   return ssnSafeJson(lead);
 }
 
-export async function PATCH(
+async function handlePATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -89,58 +92,32 @@ export async function PATCH(
 
     const opportunityId = body.opportunityId || null;
 
-    // Update lead status and create client in a transaction
-    const updatePromises: Promise<unknown>[] = [
-      prisma.lead.update({
-        where: { id, AND: [await recordScope("lead")] },
-        data: { status: "ENROLLED" },
-        include: {
-          assignedTo: { select: { id: true, name: true, email: true } },
-        },
-      }),
-      prisma.client.create({
-        data: {
-          leadId: id,
-          opportunityId: opportunityId,
-          programStartDate: programStart,
-          programLength: enrollData.programLength,
-          monthlyPayment: enrollData.monthlyPayment,
-          totalEnrolledDebt: enrollData.totalEnrolledDebt,
-          assignedNegotiatorId: enrollData.assignedNegotiatorId || null,
-        },
-      }),
-    ];
-
-    // If enrolling from an opportunity, update its stage
-    if (opportunityId) {
-      updatePromises.push(
-        prisma.opportunity.update({
-          where: { id: opportunityId },
-          data: { stage: "CLOSED_WON_FIRST_PAYMENT" },
-        })
-      );
-    }
-
-    const results = await Promise.all(updatePromises);
-    const lead = results[0] as Awaited<ReturnType<typeof prisma.lead.update>>;
-    const client = results[1] as { id: string };
-
-    // Auto-generate payment schedule
-    const payments = [];
-    for (let i = 0; i < enrollData.programLength; i++) {
-      const scheduledDate = new Date(programStart);
-      scheduledDate.setMonth(scheduledDate.getMonth() + i);
-      payments.push({
-        clientId: client.id,
-        type: "CLIENT_PAYMENT",
-        amount: enrollData.monthlyPayment,
-        scheduledDate,
-        status: "SCHEDULED",
+    const leadScope = await recordScope("lead");
+    const opportunityScope = opportunityId ? await recordScope("opportunity") : null;
+    const afterCommit: Array<() => Promise<void>> = [];
+    const { lead, client } = await prisma.$transaction(async tx => {
+      const ctx = { ...makeCtx(session.user.id), prisma: tx, afterCommit };
+      const lead = await triggerUpdateArgs<Lead>("lead", {
+        where: { id, AND: [leadScope] }, data: { status: "ENROLLED" },
+        include: { assignedTo: { select: { id: true, name: true, email: true } } },
+      }, ctx);
+      const client = await tx.client.create({ data: {
+        leadId: id, opportunityId, programStartDate: programStart,
+        programLength: enrollData.programLength, monthlyPayment: enrollData.monthlyPayment,
+        totalEnrolledDebt: enrollData.totalEnrolledDebt, assignedNegotiatorId: enrollData.assignedNegotiatorId || null,
+      } });
+      if (opportunityId) await triggerUpdateArgs("opportunity", {
+        where: { id: opportunityId, AND: [opportunityScope ?? {}] }, data: { stage: "CLOSED_WON_FIRST_PAYMENT" },
+      }, ctx);
+      const payments = Array.from({ length: enrollData.programLength }, (_, i) => {
+        const scheduledDate = new Date(programStart);
+        scheduledDate.setMonth(scheduledDate.getMonth() + i);
+        return { clientId: client.id, type: "CLIENT_PAYMENT", amount: enrollData.monthlyPayment, scheduledDate, status: "SCHEDULED" };
       });
-    }
-    if (payments.length > 0) {
-      await prisma.payment.createMany({ data: payments });
-    }
+      if (payments.length) await tx.payment.createMany({ data: payments });
+      return { lead, client };
+    });
+    for (const effect of afterCommit) await effect();
 
     return ssnSafeJson({ ...lead, clientId: client.id });
   }
@@ -217,7 +194,7 @@ export async function PATCH(
   if (data.gclid !== undefined) updateData.gclid = data.gclid || null;
   if (data.fbclid !== undefined) updateData.fbclid = data.fbclid || null;
 
-  const lead = await prisma.lead.update({
+  const lead = await triggerUpdateArgs<Lead>("lead", {
     where: { id, AND: [await recordScope("lead")] },
     data: updateData,
     include: {
@@ -225,12 +202,12 @@ export async function PATCH(
         select: { id: true, name: true, email: true },
       },
     },
-  });
+  }, makeCtx(session.user.id));
 
   return ssnSafeJson(lead);
 }
 
-export async function DELETE(
+async function handleDELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -246,10 +223,14 @@ export async function DELETE(
     return ssnSafeJson({ error: "Lead not found" }, { status: 404 });
   }
 
-  const lead = await prisma.lead.update({
+  const lead = await triggerUpdateArgs<Lead>("lead", {
     where: { id, AND: [await recordScope("lead")] },
     data: { status: "LOST" },
-  });
+  }, makeCtx(session.user.id));
 
   return ssnSafeJson(lead);
 }
+
+export const PATCH = withAutomationErrors(handlePATCH);
+
+export const DELETE = withAutomationErrors(handleDELETE);

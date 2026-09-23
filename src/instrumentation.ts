@@ -16,6 +16,9 @@ export async function register() {
     const { scheduleProcessorPolling } = await import("@/lib/payment-processors/scheduler");
     scheduleProcessorPolling();
 
+    const { scheduleAutomation } = await import("@/lib/automation/scheduler");
+    scheduleAutomation();
+
     const { scheduleReportReminders } = await import("@/lib/reports/subscriptions");
     scheduleReportReminders();
     const { schedulePipelineHistory } = await import("@/lib/reports/pipeline-history");

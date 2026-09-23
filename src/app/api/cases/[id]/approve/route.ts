@@ -1,3 +1,4 @@
+import { approveStep } from "@/lib/approvals/engine";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -14,6 +15,12 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   }
   const before = await prisma.case.findUnique({ where: { id } });
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const pending = await prisma.approvalRequest.findFirst({ where: { entityType: "Case", entityId: id, status: "PENDING" } });
+  if (pending) {
+    try { await approveStep({ requestId: pending.id, actorUserId: r.session.userId, comments: parsed.data.approvalNotes }); }
+    catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Approval failed" }, { status: 400 }); }
+    return NextResponse.json(await prisma.case.findUnique({ where: { id } }));
+  }
   if (!before.requiresApproval) {
     return NextResponse.json({ error: "Case does not require approval" }, { status: 409 });
   }

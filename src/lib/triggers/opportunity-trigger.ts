@@ -1,3 +1,5 @@
+import { AutomationValidationError } from "@/lib/automation/errors";
+import { syncOpportunityCadences } from "@/lib/automation/opportunity-cadences";
 /**
  * Port of SF OpportunityTrigger / OpportunityTriggerHandler.
  * Source: docs/sf-export/sfdx-raw/classes/OpportunityTriggerHandler.cls
@@ -64,14 +66,14 @@ export const opportunityTrigger: Trigger<Opportunity, OppWrite> = {
       next as Record<string, unknown>,
       "insert",
     );
-    if (!vr.ok) throw new Error(vr.message);
+    if (!vr.ok) throw new AutomationValidationError(vr.message);
   },
 
   async beforeUpdate({ next, prev, ctx }) {
     // Run admin-authored validation rules against the merged proposed row.
     const proposed = { ...(prev as Record<string, unknown>), ...(next as Record<string, unknown>) };
     const vr = await runRulesFor("Opportunity", proposed, "update");
-    if (!vr.ok) throw new Error(vr.message);
+    if (!vr.ok) throw new AutomationValidationError(vr.message);
 
     // Stage change → snapshot prev stage + timestamp
     if (next.stage !== undefined && next.stage !== prev.stage) {
@@ -87,7 +89,7 @@ export const opportunityTrigger: Trigger<Opportunity, OppWrite> = {
         prev.stage !== STAGE_ARCHIVED_FINALIZED &&
         !ctx.skip.has(dedupSkip)
       ) {
-        throw new Error(
+        throw new AutomationValidationError(
           'Stage cannot be changed to "Archived - Finalized" directly. ' +
             "This transition is only allowed through the DeDuplication process."
         );
@@ -229,6 +231,8 @@ export const opportunityTrigger: Trigger<Opportunity, OppWrite> = {
         })
         .catch(() => undefined);
     }
+
+    await syncOpportunityCadences(row, prev);
 
     const stageChanged = row.stage !== prev.stage;
     if (!stageChanged) return;

@@ -1,3 +1,4 @@
+import { CASE_APPROVAL_TYPES } from "@/lib/automation/case-policy";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -104,6 +105,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           caseNumber={c.caseNumber}
           currentOwner={ownerDisplay}
           editFields={[
+            { label: "Type", key: "type", value: c.type ?? sfv("Type"), type: "select", options: CASE_APPROVAL_TYPES.map(value => ({ value, label: value })) },
             { label: "Subject", key: "subject", value: c.subject, required: true },
             { label: "Status", key: "status", type: "select", value: c.status, options: ["NEW", "OPEN", "IN_PROGRESS", "WAITING_ON_CUSTOMER", "ESCALATED", "RESOLVED", "CLOSED"].map((v) => ({ value: v, label: titleCase(v) ?? v })) },
             { label: "Priority", key: "priority", type: "select", value: c.priority, options: ["LOW", "NORMAL", "HIGH", "URGENT"].map((v) => ({ value: v, label: titleCase(v) ?? v })) },

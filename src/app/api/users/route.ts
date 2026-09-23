@@ -45,6 +45,7 @@ const createUserSchema = z.object({
   managerId: z.string().cuid().optional().nullable(),
   isActive: z.boolean().default(true),
   isCloser: z.boolean().default(false),
+  userCountry: z.string().max(100).optional().nullable(),
   five9Username: z.string().max(255).optional().nullable(),
   mailboxAddress: z.string().email().max(255).optional().nullable(),
 });
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
       managerId: d.managerId ?? null,
       isActive: d.isActive,
       isCloser: d.isCloser,
+      userCountry: d.userCountry || null,
       five9Username: d.five9Username || null,
       mailboxAddress: d.mailboxAddress ? d.mailboxAddress.toLowerCase() : null,
     },

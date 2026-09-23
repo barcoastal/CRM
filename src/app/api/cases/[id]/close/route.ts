@@ -1,9 +1,10 @@
+import { withAutomationErrors } from "@/lib/automation/errors";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { closeCase } from "@/lib/cases";
 import { closeCaseSchema } from "@/lib/validations/case";
 
-export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+async function handlePOST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const r = await requireAuthOrRespond("Case.Close");
   if ("response" in r) return r.response;
   const { id } = await ctx.params;
@@ -20,3 +21,5 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   });
   return NextResponse.json(result);
 }
+
+export const POST = withAutomationErrors(handlePOST);

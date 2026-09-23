@@ -1,3 +1,7 @@
+import { assertCaseEditable } from "@/lib/automation/case-approvals";
+import { withAutomationErrors } from "@/lib/automation/errors";
+import { triggerUpdateArgs, makeCtx } from "@/lib/triggers/runner";
+import type { Case } from "@/generated/prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -30,7 +34,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   return NextResponse.json(c);
 }
 
-export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+async function handlePATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const r = await requireAuthOrRespond("Case.Edit");
   if ("response" in r) return r.response;
   const { id } = await ctx.params;
@@ -47,7 +51,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (d.slaDueAt !== undefined) data.slaDueAt = d.slaDueAt ? new Date(d.slaDueAt) : null;
   if (d.status === "IN_PROGRESS" && !before.firstResponseAt) data.firstResponseAt = new Date();
 
-  const updated = await prisma.case.update({ where: { id }, data });
+  const updated = await triggerUpdateArgs<Case>("case", { where: { id }, data }, makeCtx(r.session.userId));
   await auditWrite({
     userId: r.session.userId, entity: "Case", entityId: id, action: "UPDATE",
     before: before as unknown as Record<string, unknown>,
@@ -56,12 +60,13 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   return NextResponse.json(updated);
 }
 
-export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+async function handleDELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const r = await requireAuthOrRespond("Case.Delete");
   if ("response" in r) return r.response;
   const { id } = await ctx.params;
   const before = await prisma.case.findUnique({ where: { id } });
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  await assertCaseEditable(id, r.session.userId);
   await prisma.caseComment.deleteMany({ where: { caseId: id } });
   await prisma.case.delete({ where: { id } });
   await auditWrite({
@@ -71,3 +76,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
   }).catch(() => null);
   return NextResponse.json({ ok: true });
 }
+
+export const PATCH = withAutomationErrors(handlePATCH);
+
+export const DELETE = withAutomationErrors(handleDELETE);

@@ -1,3 +1,6 @@
+import { withAutomationErrors } from "@/lib/automation/errors";
+import { triggerUpdateArgs, makeCtx } from "@/lib/triggers/runner";
+import type { Opportunity } from "@/generated/prisma/client";
 import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
@@ -60,7 +63,7 @@ export async function GET(
   });
 }
 
-export async function PATCH(
+async function handlePATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -117,7 +120,7 @@ export async function PATCH(
   if (data.assignedToId !== undefined) updateData.assignedToId = data.assignedToId || null;
   if (data.notes !== undefined) updateData.notes = data.notes || null;
 
-  const opportunity = await prisma.opportunity.update({
+  const opportunity = await triggerUpdateArgs<Opportunity>("opportunity", {
     where: { id, AND: [await recordScope("opportunity")] },
     data: updateData,
     include: {
@@ -135,7 +138,7 @@ export async function PATCH(
         select: { id: true, name: true, email: true },
       },
     },
-  });
+  }, makeCtx(access.session.userId));
 
   return ssnSafeJson({
     ...opportunity,
@@ -145,7 +148,7 @@ export async function PATCH(
   });
 }
 
-export async function DELETE(
+async function handleDELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -159,10 +162,10 @@ export async function DELETE(
     return ssnSafeJson({ error: "Opportunity not found" }, { status: 404 });
   }
 
-  const opportunity = await prisma.opportunity.update({
+  const opportunity = await triggerUpdateArgs<Opportunity>("opportunity", {
     where: { id, AND: [await recordScope("opportunity")] },
     data: { stage: "CLOSED" },
-  });
+  }, makeCtx(access.session.userId));
 
   return ssnSafeJson({
     ...opportunity,
@@ -171,3 +174,7 @@ export async function DELETE(
     updatedAt: opportunity.updatedAt.toISOString(),
   });
 }
+
+export const PATCH = withAutomationErrors(handlePATCH);
+
+export const DELETE = withAutomationErrors(handleDELETE);

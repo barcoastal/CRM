@@ -66,6 +66,7 @@ export default async function ApprovalProcessDetailPage({
           id: s.id,
           order: s.order,
           name: s.name,
+          approverGroupIds: s.approverGroupIds,
           approverUserIds: s.approverUserIds,
           useSubmitterManager: s.useSubmitterManager,
           allowSkip: s.allowSkip,

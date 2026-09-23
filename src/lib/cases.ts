@@ -1,3 +1,5 @@
+import type { Case } from "@/generated/prisma/client";
+import { triggerUpdateArgs, makeCtx } from "@/lib/triggers/runner";
 import { prisma } from "@/lib/prisma";
 import { nextEscalationLevel } from "@/lib/record-types";
 import { auditWrite } from "@/lib/audit";
@@ -33,7 +35,7 @@ export async function escalateCase(args: { caseId: string; performedById?: strin
     where: { developerName: next === "L2" ? "CS_L2" : "L3" },
   });
 
-  const updated = await prisma.case.update({
+  const updated = await triggerUpdateArgs<Case>("case", {
     where: { id: args.caseId },
     data: {
       escalationLevel: next,
@@ -41,7 +43,7 @@ export async function escalateCase(args: { caseId: string; performedById?: strin
       ownerGroupId: targetQueue?.id ?? current.ownerGroupId,
       ownerId: null,
     },
-  });
+  }, makeCtx(args.performedById ?? null));
 
   if (args.reason) {
     await prisma.caseComment.create({
@@ -83,14 +85,14 @@ export async function closeCase(args: {
 
   const status = args.outcome ?? "RESOLVED";
   const now = new Date();
-  const updated = await prisma.case.update({
+  const updated = await triggerUpdateArgs<Case>("case", {
     where: { id: args.caseId },
     data: {
       status,
       resolvedAt: current.resolvedAt ?? now,
       closedAt: status === "CLOSED" ? now : current.closedAt,
     },
-  });
+  }, makeCtx(args.performedById ?? null));
 
   if (args.resolutionNote) {
     await prisma.caseComment.create({
