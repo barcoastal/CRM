@@ -3,7 +3,7 @@ import { supervisorFeed } from "@/lib/five9/supervisor-feed";
 
 /**
  * Closer-tier transfer routing. A deal's debt maps to a preferred tier
- * (1/2/3, higher = bigger deals). When a fronter wants to transfer, we surface
+ * (1 = largest clients, 3 = smallest). When a fronter wants to transfer, we surface
  * the closers in the preferred tier who are free (Five9 READY), then fall back
  * to the nearest other tiers so the call is never lost.
  */

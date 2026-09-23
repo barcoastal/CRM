@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { closerDebtRange, closerTierConfigSchema } from "@/lib/closer-tier-config";
 
 export interface TierUser {
   id: string;
@@ -10,162 +11,151 @@ export interface TierUser {
   isCloser: boolean;
   closerTier: number | null;
 }
+type Assignment = { userId: string; tier: number | null; isCloser: boolean };
+const colors: Record<number, string> = { 1: "#6956b9", 2: "#0176d3", 3: "#2e844a" };
 
-const money = (n: number) => `$${n.toLocaleString("en-US")}`;
-
-export function CloserTiersManager({
-  initialTier1Max,
-  initialTier2Max,
-  users,
-}: {
+export function CloserTiersManager({ initialTier1Max, initialTier2Max, users, canEdit = true }: {
   initialTier1Max: number;
   initialTier2Max: number;
   users: TierUser[];
+  canEdit?: boolean;
 }) {
   const router = useRouter();
-  const [tier1Max, setTier1Max] = useState(initialTier1Max);
-  const [tier2Max, setTier2Max] = useState(initialTier2Max);
-  const [tiers, setTiers] = useState<Record<string, number | null>>(
-    Object.fromEntries(users.map((u) => [u.id, u.closerTier])),
-  );
-  const [q, setQ] = useState("");
-  const [showAll, setShowAll] = useState(false);
+  const [small, setSmall] = useState(String(initialTier1Max));
+  const [large, setLarge] = useState(String(initialTier2Max));
+  const [assignments, setAssignments] = useState<Record<string, Assignment>>(() => Object.fromEntries(
+    users.map((u) => [u.id, { userId: u.id, tier: u.closerTier, isCloser: u.isCloser || u.closerTier !== null }]),
+  ));
+  const [baseline, setBaseline] = useState(() => ({ small: String(initialTier1Max), large: String(initialTier2Max), assignments }));
+  const [query, setQuery] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [newUser, setNewUser] = useState("");
+  const [newTier, setNewTier] = useState("");
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const changed = useMemo(() => Object.values(assignments).filter((a) => {
+    const prev = baseline.assignments[a.userId];
+    return a.tier !== prev.tier || a.isCloser !== prev.isCloser;
+  }), [assignments, baseline]);
+  const dirty = small !== baseline.small || large !== baseline.large || changed.length > 0;
+  const tier1Max = small === "" ? NaN : Number(small);
+  const tier2Max = large === "" ? NaN : Number(large);
+  const valid = closerTierConfigSchema.safeParse({ tier1Max, tier2Max, assignments: changed }).success;
+  const roster = users.filter((u) => assignments[u.id].isCloser);
+  const needle = query.trim().toLowerCase();
+  const rows = roster.filter((u) => !needle || `${u.name} ${u.email}`.toLowerCase().includes(needle))
+    .sort((a, b) => (assignments[a.id].tier ?? 4) - (assignments[b.id].tier ?? 4) || a.name.localeCompare(b.name));
+  const candidates = users.filter((u) => !assignments[u.id].isCloser);
 
-  const rows = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    return users
-      .filter((u) => (showAll ? true : u.isCloser || tiers[u.id] != null))
-      .filter((u) => !needle || u.name.toLowerCase().includes(needle) || u.email.toLowerCase().includes(needle))
-      .sort((a, b) => {
-        const ta = tiers[a.id] ?? 99;
-        const tb = tiers[b.id] ?? 99;
-        return ta === tb ? a.name.localeCompare(b.name) : ta - tb;
-      });
-  }, [users, q, showAll, tiers]);
-
-  const counts = useMemo(() => {
-    const c = { 1: 0, 2: 0, 3: 0 } as Record<number, number>;
-    Object.values(tiers).forEach((t) => { if (t) c[t] = (c[t] ?? 0) + 1; });
-    return c;
-  }, [tiers]);
-
-  async function save() {
-    setMsg(null);
-    if (tier2Max <= tier1Max) { setMsg("Big-deal cutoff must be greater than the small-deal cutoff."); return; }
-    setSaving(true);
+  function change(userId: string, next: Partial<Assignment>) {
+    setMessage(null);
+    setAssignments((prev) => ({ ...prev, [userId]: { ...prev[userId], ...next } }));
+  }
+  function addCloser() {
+    if (!newUser || !newTier) return;
+    change(newUser, { isCloser: true, tier: Number(newTier) });
+    setNewUser(""); setNewTier(""); setAdding(false); setQuery("");
+  }
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    if (!valid || saving || !canEdit) return;
+    setMessage(null); setSaving(true);
     try {
-      const assignments = users.map((u) => ({ userId: u.id, tier: tiers[u.id] ?? null }));
-      const res = await fetch("/api/closer-tiers", {
+      const response = await fetch("/api/closer-tiers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier1Max, tier2Max, assignments }),
+        body: JSON.stringify({ tier1Max, tier2Max, assignments: changed }),
       });
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({}));
-        setMsg(e.error ?? "Save failed.");
-      } else {
-        setMsg("Saved.");
-        router.refresh();
-      }
-    } finally {
-      setSaving(false);
-    }
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "Could not save closer setup. Please try again.");
+      setBaseline({ small, large, assignments });
+      setMessage({ ok: true, text: "Closer setup saved. These tiers now apply to client routing." });
+      router.refresh();
+    } catch (error) {
+      setMessage({ ok: false, text: error instanceof Error ? error.message : "Could not save closer setup. Please try again." });
+    } finally { setSaving(false); }
   }
 
-  const card: React.CSSProperties = { background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, padding: 16, marginBottom: 16 };
-  const label: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: "#444", display: "block", marginBottom: 4 };
-  const input: React.CSSProperties = { border: "1px solid #c9c9c9", borderRadius: 4, padding: "6px 8px", fontSize: 13, width: 160 };
-
   return (
-    <div>
-      {/* Debt cutoffs */}
-      <div style={card}>
-        <h2 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 4px" }}>Debt cutoffs</h2>
-        <p style={{ fontSize: 12, color: "#747474", margin: "0 0 12px" }}>
-          <strong>Tier 1</strong> is the top tier for the biggest deals. A deal routes to{" "}
-          <strong>Tier 1</strong> at {money(tier2Max)} and above, <strong>Tier 2</strong> from{" "}
-          {money(tier1Max)} to {money(tier2Max)}, and <strong>Tier 3</strong> under {money(tier1Max)}.
-        </p>
-        <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-          <div>
-            <label style={label}>Small-deal cutoff (Tier 3 below)</label>
-            <input style={input} type="number" value={tier1Max} onChange={(e) => setTier1Max(Number(e.target.value))} />
-          </div>
-          <div>
-            <label style={label}>Big-deal cutoff (Tier 1 at/above)</label>
-            <input style={input} type="number" value={tier2Max} onChange={(e) => setTier2Max(Number(e.target.value))} />
-          </div>
+    <form className="fm-setup" onSubmit={save}>
+      {!canEdit && <div className="fm-notice">You can view closer eligibility here. An administrator can update the roster and debt limits.</div>}
+      <section className="fm-card" aria-labelledby="fm-tier-heading">
+        <h2 id="fm-tier-heading">Client debt by tier</h2>
+        <p className="fm-muted">Set the client debt size each tier handles. Tier 1 is the most senior tier, for the largest clients.</p>
+        <div className="fm-tier-grid">
+          {[1, 2, 3].map((tier) => (
+            <div key={tier} className="fm-tier-card" style={{ "--tier-color": colors[tier] } as CSSProperties}>
+              <span className="fm-tier-label">TIER {tier}{tier === 1 ? " · TOP TIER" : ""}</span>
+              <strong>{closerDebtRange(tier, tier1Max, tier2Max)}</strong>
+              <p>{roster.filter((u) => assignments[u.id].tier === tier).length} assigned · {tier === 1 ? "Largest" : tier === 2 ? "Mid-size" : "Smaller"} clients</p>
+            </div>
+          ))}
         </div>
-      </div>
-
-      {/* Closer assignments */}
-      <div style={card}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>
-            Closer tiers{" "}
-            <span style={{ fontWeight: 400, color: "#747474", fontSize: 12 }}>
-              (T1: {counts[1]} · T2: {counts[2]} · T3: {counts[3]})
-            </span>
-          </h2>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <input
-              placeholder="Search name or email"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              style={{ ...input, width: 200 }}
-            />
-            <label style={{ fontSize: 12, color: "#444", display: "inline-flex", gap: 4, alignItems: "center" }}>
-              <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} /> show all users
-            </label>
-          </div>
+        <div className="fm-fields">
+          <label htmlFor="fm-small">Tier 2 minimum client debt ($)
+            <input id="fm-small" className="fm-input" type="number" min="0" max="2147483647" step="1" required value={small} disabled={!canEdit || saving} onChange={(e) => { setSmall(e.target.value); setMessage(null); }} />
+          </label>
+          <label htmlFor="fm-large">Tier 1 minimum client debt ($)
+            <input id="fm-large" className="fm-input" type="number" min="0" max="2147483647" step="1" required value={large} disabled={!canEdit || saving} onChange={(e) => { setLarge(e.target.value); setMessage(null); }} />
+          </label>
         </div>
+        <p className="fm-muted" style={{ marginBottom: 0 }}>Clients below the Tier 2 minimum go to Tier 3. The exact cutoff qualifies for the higher tier. Limits apply to every closer in that tier; transfer availability may offer a fallback tier.</p>
+        {!valid && <div className="fm-notice fm-error" role="alert" style={{ marginTop: 12 }}>Enter nonnegative whole-dollar limits. The Tier 1 minimum must be greater than the Tier 2 minimum.</div>}
+      </section>
 
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead>
-            <tr style={{ textAlign: "left", color: "#444", borderBottom: "1px solid #e5e5e5" }}>
-              <th style={{ padding: "6px 8px" }}>Name</th>
-              <th style={{ padding: "6px 8px" }}>Email</th>
-              <th style={{ padding: "6px 8px", width: 160 }}>Tier</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((u) => (
-              <tr key={u.id} style={{ borderBottom: "1px solid #f1f1f1" }}>
-                <td style={{ padding: "6px 8px", fontWeight: 600 }}>{u.name}</td>
-                <td style={{ padding: "6px 8px", color: "#747474" }}>{u.email}</td>
-                <td style={{ padding: "6px 8px" }}>
-                  <select
-                    value={tiers[u.id] ?? ""}
-                    onChange={(e) => setTiers((p) => ({ ...p, [u.id]: e.target.value ? Number(e.target.value) : null }))}
-                    style={{ ...input, width: 150 }}
-                  >
-                    <option value="">Not a closer</option>
-                    <option value="1">Tier 1</option>
-                    <option value="2">Tier 2</option>
-                    <option value="3">Tier 3</option>
-                  </select>
-                </td>
-              </tr>
-            ))}
-            {rows.length === 0 && (
-              <tr><td colSpan={3} style={{ padding: 16, color: "#747474", textAlign: "center" }}>No matching users.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <button
-          onClick={save}
-          disabled={saving}
-          style={{ background: "#0176d3", color: "#fff", border: 0, borderRadius: 4, padding: "8px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.6 : 1 }}
-        >
-          {saving ? "Saving..." : "Save changes"}
-        </button>
-        {msg && <span style={{ fontSize: 13, color: msg === "Saved." ? "#2e844a" : "#ba0517" }}>{msg}</span>}
-      </div>
-    </div>
+      <section className="fm-card" aria-labelledby="fm-roster-heading">
+        <div className="fm-toolbar">
+          <div>
+            <h2 id="fm-roster-heading">Closer Setup <span style={{ color: "#606b79", fontSize: 13, fontWeight: 400 }}>· {roster.length} closers</span></h2>
+            <p className="fm-muted" style={{ marginBottom: 0 }}>Assign each closer a tier to set which clients they can handle.</p>
+          </div>
+          {canEdit && <button type="button" className="fm-button fm-button-secondary" disabled={saving || candidates.length === 0} onClick={() => setAdding(!adding)}>{adding ? "Cancel" : "+ Add closer"}</button>}
+        </div>
+        {adding && canEdit && (
+          <div className="fm-add-closer">
+            <select aria-label="User to add as a closer" className="fm-input" value={newUser} disabled={saving} onChange={(e) => setNewUser(e.target.value)}>
+              <option value="">Choose a CRM user…</option>
+              {candidates.map((u) => <option key={u.id} value={u.id}>{u.name} — {u.email}</option>)}
+            </select>
+            <select aria-label="Tier for new closer" className="fm-input" value={newTier} disabled={saving} onChange={(e) => setNewTier(e.target.value)}>
+              <option value="">Choose a tier…</option>
+              {[1, 2, 3].map((tier) => <option key={tier} value={tier}>Tier {tier} · {closerDebtRange(tier, tier1Max, tier2Max)}</option>)}
+            </select>
+            <button type="button" className="fm-button" disabled={!newUser || !newTier || saving || !valid} onClick={addCloser}>Add to roster</button>
+          </div>
+        )}
+        <input className="fm-input" aria-label="Search closers" placeholder="Search closer name or email" value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 280, marginBottom: 14 }} />
+        <div className="fm-table-wrap">
+          <table className="fm-table">
+            <thead><tr><th scope="col">Closer</th><th scope="col">Assigned tier</th><th scope="col">Client debt they handle</th>{canEdit && <th scope="col"><span className="sr-only">Actions</span></th>}</tr></thead>
+            <tbody>
+              {rows.map((user) => {
+                const tier = assignments[user.id].tier;
+                return (
+                  <tr key={user.id}>
+                    <td><strong>{user.name}</strong><small>{user.email}</small></td>
+                    <td><select aria-label={`Tier for ${user.name}`} className="fm-input" value={tier ?? ""} disabled={!canEdit || saving} onChange={(e) => change(user.id, { tier: e.target.value ? Number(e.target.value) : null })}>
+                      <option value="">Unassigned</option>
+                      <option value="1">Tier 1 · Top tier</option><option value="2">Tier 2</option><option value="3">Tier 3</option>
+                    </select></td>
+                    <td className="fm-debt-range">{closerDebtRange(tier, tier1Max, tier2Max)}</td>
+                    {canEdit && <td style={{ textAlign: "right" }}><button type="button" className="fm-remove" aria-label={`Remove ${user.name} from closer roster`} disabled={saving} onClick={() => change(user.id, { isCloser: false, tier: null })}>Remove</button></td>}
+                  </tr>
+                );
+              })}
+              {rows.length === 0 && <tr><td colSpan={canEdit ? 4 : 3} className="fm-empty">{needle ? "No closers match your search." : "No closers set up yet. Add a CRM user and choose their tier."}</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      {message && <div role={message.ok ? "status" : "alert"} className={`fm-notice ${message.ok ? "fm-success" : "fm-error"}`}>{message.text}</div>}
+      {canEdit && <div className="fm-actions">
+        <button className="fm-button" type="submit" disabled={saving || !dirty || !valid}>{saving ? "Saving…" : "Save closer setup"}</button>
+        {dirty && <button className="fm-button fm-button-secondary" type="button" disabled={saving} onClick={() => {
+          setSmall(baseline.small); setLarge(baseline.large); setAssignments(baseline.assignments); setMessage(null); setAdding(false);
+        }}>Discard changes</button>}
+        {dirty && <span style={{ fontSize: 13, color: "#7c5800" }}>Unsaved changes · Save to apply tiers and debt limits.</span>}
+      </div>}
+    </form>
   );
 }
