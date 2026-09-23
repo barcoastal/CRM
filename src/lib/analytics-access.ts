@@ -1,7 +1,8 @@
+import type { Prisma } from "@/generated/prisma/client";
 import { ownedRecordScope } from "@/lib/owned-record-scope";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hasPermission } from "@/lib/permissions";
+import { loadEffectivePermissions, hasPermission } from "@/lib/permissions";
 import { teamOwnerIds } from "@/lib/record-access";
 
 export type AnalyticsAccess = {
@@ -29,6 +30,17 @@ export async function analyticsAccess(required: string): Promise<AnalyticsAccess
   if (!isAdmin && !hasPermission(permissions, required)) throw new AnalyticsAccessError(403, "Forbidden");
   const users = isAdmin ? [] : await prisma.user.findMany({ select: { id: true, managerId: true } });
   return { userId: current.id, isAdmin, permissions, ownerIds: isAdmin ? [] : teamOwnerIds(current.id, users) };
+}
+
+/** Background report execution uses the same fresh permissions and team scope as interactive reports. */
+export async function analyticsAccessForUser(userId: string): Promise<AnalyticsAccess> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, role: true, isActive: true } });
+  if (!user?.isActive) throw new AnalyticsAccessError(401, "Inactive report recipient");
+  const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+  const permissions = Array.from(await loadEffectivePermissions(user.id));
+  if (!isAdmin && !hasPermission(permissions, "Reports.View")) throw new AnalyticsAccessError(403, "Report access removed");
+  const users = isAdmin ? [] : await prisma.user.findMany({ select: { id: true, managerId: true } });
+  return { userId, isAdmin, permissions, ownerIds: isAdmin ? [] : teamOwnerIds(userId, users) };
 }
 
 export async function analyticsApiAccess(required: string): Promise<{ access: AnalyticsAccess } | { response: Response }> {
@@ -61,6 +73,23 @@ export function analyticsScope(access: AnalyticsAccess, model: string): Record<s
   if(model==='account'&&hasPermission(access.permissions,'Account.View'))return {OR:[ownedRecordScope(model,access.ownerIds),{teamMembers:{some:{userId:access.userId}}}]};
   if (rule) return hasPermission(access.permissions, rule.permission)
     ? ownedRecordScope(model, access.ownerIds) : { id: { in: [] } };
+  if (model === "opportunitySnapshot" || model === "opportunityHistory") return { opportunity: { is: analyticsScope(access, "opportunity") } };
+  if (model === "client") return { AND: [
+    { lead: { is: analyticsScope(access, "lead") } },
+    { OR: [{ opportunityId: null }, { opportunity: { is: analyticsScope(access, "opportunity") } }] },
+  ] };
+  if (model === "debt") {
+    if (!hasPermission(access.permissions, "Debt.View")) return { id: { in: [] } };
+    return { AND: [
+      { OR: [{ opportunityId: { not: null } }, { clientId: { not: null } }] },
+      { OR: [{ opportunityId: null }, { opportunity: { is: analyticsScope(access, "opportunity") } }] },
+      { OR: [{ clientId: null }, { client: { is: analyticsScope(access, "client") } }] },
+    ] };
+  }
+  if (model === "payment") return hasPermission(access.permissions, "Payment.View") ? { AND: [
+    { client: { is: analyticsScope(access, "client") } },
+    { OR: [{ debtId: null }, { debt: { is: analyticsScope(access, "debt") } }] },
+  ] } : { id: { in: [] } };
   if (model === "envelope") {
     const parents = ["lead", "opportunity", "account"];
     // A signature envelope must have a visible parent, and no hidden linked parent.
@@ -75,6 +104,7 @@ export function analyticsScope(access: AnalyticsAccess, model: string): Record<s
 }
 
 export const ANALYTICS_RELATIONS: Record<string, string> = {
+  client: "client", debt: "debt",
   account: "account", primaryContact: "contact", contact: "contact",
   opportunity: "opportunity", lead: "lead", case: "case",
 };
@@ -89,7 +119,7 @@ export function visibleRelation(access: AnalyticsAccess, relation: string): Reco
 
 /** Mask inaccessible to-one relation projections without dropping an accessible parent. */
 export async function redactAnalyticsRelations<T extends Record<string, unknown>>(
-  rows: T[], relations: string[], access: AnalyticsAccess,
+  rows: T[], relations: string[], access: AnalyticsAccess, db: Prisma.TransactionClient = prisma,
 ): Promise<T[]> {
   if (access.isAdmin) return rows;
   const result = rows.map(row => ({ ...row }));
@@ -104,7 +134,7 @@ export async function redactAnalyticsRelations<T extends Record<string, unknown>
       for (const row of result) if (row[relation]) (row as Record<string, unknown>)[relation] = null;
       continue;
     }
-    const delegate = prisma[model as "account"] as unknown as {
+    const delegate = db[model as "account"] as unknown as {
       findMany(args: unknown): Promise<{ id: string }[]>;
     };
     const allowed = new Set((await delegate.findMany({

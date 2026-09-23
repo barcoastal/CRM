@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import type { RuntimeFilters } from "@/lib/reports/runtime-filters";
+import { useEffect, useState } from "react";
 import { Pencil, Eye, Plus, Trash2 } from "@/components/icons/lucide";
 import { DashboardGrid } from "./dashboard-grid";
 
@@ -27,6 +28,10 @@ export interface DashboardData {
 export function DashboardClient({ initial, canEdit = false }: { initial: DashboardData; canEdit?: boolean }) {
   const router = useRouter();
   const [data, setData] = useState<DashboardData>(initial);
+  const [filters, setFilters] = useState<RuntimeFilters>({});
+  const [draftFilters, setDraftFilters] = useState<RuntimeFilters>({});
+  const [owners, setOwners] = useState<{id:string;name:string}[]>([]);
+  useEffect(() => { fetch("/api/analytics/owners").then(r => r.ok ? r.json() : {items:[]}).then(r => setOwners(r.items ?? [])).catch(() => setOwners([])); }, []);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -141,8 +146,17 @@ export function DashboardClient({ initial, canEdit = false }: { initial: Dashboa
       </div>
 
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+      <section className="bg-white border rounded p-3 flex flex-wrap items-end gap-3 text-xs" aria-label="Dashboard filters">
+        <label>From (created/snapshot date)<input aria-label="Dashboard from date" type="date" className="block border rounded p-1" value={draftFilters.from ?? ""} onChange={e => setDraftFilters(f => ({...f, from:e.target.value || undefined}))}/></label>
+        <label>Through<input aria-label="Dashboard through date" type="date" className="block border rounded p-1" value={draftFilters.to ?? ""} onChange={e => setDraftFilters(f => ({...f, to:e.target.value || undefined}))}/></label>
+        <label>Owner<select aria-label="Dashboard owner" className="block border rounded p-1" value={draftFilters.ownerId ?? ""} onChange={e => setDraftFilters(f => ({...f, ownerId:e.target.value || undefined}))}><option value="">All accessible owners</option>{owners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select></label>
+        <label><input type="checkbox" checked={draftFilters.includeTeam ?? false} onChange={e => setDraftFilters(f => ({...f,includeTeam:e.target.checked}))}/> Include selected owner’s team</label>
+        <button className="slds-button slds-button_brand" onClick={() => setFilters({...draftFilters})}>Apply to all tiles</button>
+        <button className="slds-button slds-button_neutral" onClick={() => {setDraftFilters({});setFilters({});}}>Reset</button>
+      </section>
       <DashboardGrid
         key={refreshVersion}
+        runtimeFilters={filters}
         tiles={data.tiles}
         editing={canEdit && editing}
         onUpdate={updateTile}

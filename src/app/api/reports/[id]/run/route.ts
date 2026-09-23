@@ -1,3 +1,4 @@
+import type { ReportOptions } from "@/lib/reports/advanced";
 import type { ReportFormula } from "@/lib/reports/formulas";
 import { analyticsApiAccess, definitionScope } from "@/lib/analytics-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
@@ -19,6 +20,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
 
   const cfg: ReportConfig = {
     objectType: report.objectType,
+    options: report.options as unknown as ReportOptions,
     formulas: report.formulas as unknown as ReportFormula[],
     columns: Array.isArray(report.columns) ? (report.columns as unknown as string[]) : [],
     filters: Array.isArray(report.filters) ? (report.filters as unknown as ReportFilter[]) : [],

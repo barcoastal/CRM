@@ -18,5 +18,7 @@ export async function register() {
 
     const { scheduleReportReminders } = await import("@/lib/reports/subscriptions");
     scheduleReportReminders();
+    const { schedulePipelineHistory } = await import("@/lib/reports/pipeline-history");
+    schedulePipelineHistory();
   }
 }

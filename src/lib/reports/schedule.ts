@@ -1,5 +1,5 @@
 import { z } from "zod";
-export const reportScheduleSchema = z.object({ frequency: z.enum(["daily", "weekly"]), hourUtc: z.number().int().min(0).max(23), weekday: z.number().int().min(0).max(6).default(1) });
+export const reportScheduleSchema = z.object({ frequency: z.enum(["daily", "weekly"]), hourUtc: z.number().int().min(0).max(23), snapshotFormat: z.enum(["link", "csv"]).optional(), weekday: z.number().int().min(0).max(6).default(1) });
 export type ReportSchedule = z.infer<typeof reportScheduleSchema>;
 export function nextReportRun(schedule: ReportSchedule, now = new Date()): Date {
   const date = new Date(now);

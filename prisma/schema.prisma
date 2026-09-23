@@ -1246,6 +1246,7 @@ model Opportunity {
   tasks                       Task[]                          @relation("OpportunityTasks")
   events                      Event[]                         @relation("OpportunityEvents")
   emails                      EmailMessage[]                  @relation("OpportunityEmails")
+  snapshots                   OpportunitySnapshot[]
   history                     OpportunityHistory[]
   paymentCalculations         OpportunityPaymentCalculation[]
   envelopes                   Envelope[]                      @relation("OpportunityEnvelopes")
@@ -1266,6 +1267,23 @@ model Opportunity {
 }
 
 // ============ OPPORTUNITY HISTORY (SF Opportunity Field History parity) ============
+
+model OpportunitySnapshot {
+  id String @id @default(cuid())
+  opportunityId String
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  capturedAt DateTime @db.Date
+  stage String
+  amount Float?
+  totalDebt Float
+  isClosed Boolean
+  isWon Boolean
+  assignedToId String?
+  assignedToName String?
+  createdAt DateTime @default(now())
+  @@unique([opportunityId, capturedAt])
+  @@index([capturedAt])
+}
 
 model OpportunityHistory {
   id            String      @id @default(cuid())
@@ -2652,6 +2670,7 @@ model ReportDelivery {
   subscription ReportSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   scheduledFor DateTime
   payload Json
+  snapshot Json?
   status String @default("PENDING")
   attempts Int @default(0)
   firstAttemptAt DateTime?
@@ -2671,6 +2690,7 @@ model ReportSubscription {
   userId String
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   deliveries ReportDelivery[]
+  snapshotFormat String @default("link")
   frequency String
   hourUtc Int
   weekday Int @default(1)
@@ -2693,6 +2713,7 @@ model Report {
   sortDir     String    @default("asc") // asc | desc
   summarize   Json      @default("[]") // [{ field, kind: "count" | "sum" | "avg" }]
   subscriptions ReportSubscription[]
+  options     Json      @default("{}")
   formulas    Json      @default("[]")
   rowLimit    Int       @default(2000)
   folder      String    @default("Public Reports") // SF-style report folder

@@ -1,3 +1,4 @@
+import type { ReportOptions } from "@/lib/reports/advanced";
 import type { ReportFormula } from "@/lib/reports/formulas";
 import { analyticsApiAccess } from "@/lib/analytics-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
@@ -15,6 +16,7 @@ export async function POST(req: NextRequest) {
 
   const cfg: ReportConfig = {
     objectType: body.objectType,
+    options: body.options as ReportOptions | undefined,
     formulas: body.formulas as ReportFormula[] | undefined,
     columns: Array.isArray(body.columns) ? (body.columns as string[]) : [],
     filters: Array.isArray(body.filters) ? (body.filters as ReportFilter[]) : [],

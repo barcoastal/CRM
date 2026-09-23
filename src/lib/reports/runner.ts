@@ -1,17 +1,13 @@
-import { validateFormulas, evaluateFormula, type ReportFormula } from "./formulas";
-import { analyticsAccess, analyticsScope, ANALYTICS_RELATIONS, visibleRelation, redactAnalyticsRelations } from "@/lib/analytics-access";
-// Report runner: takes a ReportConfig (object + columns + filters + grouping +
-// summarize) and returns rows ready for the UI. The runner uses Prisma's
-// findMany with dynamic include + where, then post-processes in JS for JSON
-// path resolution, grouping, and summarize math.
-
+import type { Prisma } from "@/generated/prisma/client";
+import { reportPrefilter } from "./prefilter";
+import { createHash } from "node:crypto";
+import { validateFormulas, evaluateFormula, formulaDependencies, type ReportFormula } from "./formulas";
+import { reportOptionsSchema, groupingValue, type ReportOptions } from "./advanced";
+import { runtimeWhere, type RuntimeFilters } from "./runtime-filters";
+import { analyticsAccess, analyticsScope, redactAnalyticsRelations, type AnalyticsAccess } from "@/lib/analytics-access";
 import { prisma } from "@/lib/prisma";
-import {
-  getObjectMetadata,
-  getField,
-  type ObjectField,
-  type ObjectMetadata,
-} from "./object-metadata";
+import { getObjectMetadata, type ObjectField } from "./object-metadata";
+import { accountRelatedTotals } from "./related";
 
 export interface ReportFilter {
   field: string;
@@ -35,6 +31,8 @@ export interface ReportConfig {
   columns: string[];
   filters: ReportFilter[];
   formulas?: ReportFormula[];
+  options?: ReportOptions;
+  runtimeFilters?: RuntimeFilters;
   groupBy?: string | null;
   sortBy?: string | null;
   sortDir?: "asc" | "desc";
@@ -44,6 +42,9 @@ export interface ReportConfig {
 
 export interface ReportResultGroup {
   key: string;
+  id?: string;
+  path?: string[];
+  count?: number;
   rows: Record<string, unknown>[];
   summary: Record<string, unknown>;
 }
@@ -59,449 +60,194 @@ export interface ReportResult {
   groups?: ReportResultGroup[];
   totals?: Record<string, unknown>;
   rowCount: number;
+  displayedRowCount?: number;
+  summaryFormulas?: { key: string; label: string }[];
+  generatedAt?: string;
+  scopeHash?: string;
+  groupSubtotals?: {path:string[];count:number;summary:Record<string,unknown>}[];
   truncated?: boolean;
   warning?: string;
 }
 
 export type ReportRunOutcome = ReportResult | { error: string };
 
-const MAX_ROW_LIMIT = 10000;
 
-const OPERATORS = new Set([
-  "equals",
-  "not",
-  "contains",
-  "startsWith",
-  "endsWith",
-  "gt",
-  "gte",
-  "lt",
-  "lte",
-  "in",
-  "notIn",
-  "isNull",
-  "isNotNull",
-]);
-
-// ── Filter -> Prisma where ─────────────────────────────────────────────
-
-function coerceValue(field: ObjectField, raw: unknown): unknown {
-  if (raw === null || raw === undefined || raw === "") return raw;
-  if (field.type === "number") {
-    if (Array.isArray(raw)) return raw.map((v) => Number(v));
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : raw;
+const PAGE_SIZE = 1000;
+const MAX_GROUPS = 20000;
+const OPERATORS = new Set(["equals", "not", "contains", "startsWith", "endsWith", "gt", "gte", "lt", "lte", "in", "notIn", "isNull", "isNotNull"]);
+function pathValue(obj: unknown, key: string): unknown {
+  let value = obj;
+  for (const part of key.split(".")) {
+    if (!value || typeof value !== "object") return null;
+    value = (value as Record<string, unknown>)[part];
   }
-  if (field.type === "boolean") {
-    if (typeof raw === "boolean") return raw;
-    if (raw === "true" || raw === 1 || raw === "1") return true;
-    if (raw === "false" || raw === 0 || raw === "0") return false;
-    return raw;
-  }
-  if (field.type === "date") {
-    if (raw instanceof Date) return raw;
-    if (typeof raw === "string") {
-      const d = new Date(raw);
-      return isNaN(d.getTime()) ? raw : d;
-    }
-  }
-  return raw;
+  return value ?? null;
 }
-
-function setNested(target: Record<string, unknown>, path: string[], value: unknown) {
-  let cur = target;
-  for (let i = 0; i < path.length - 1; i++) {
-    const seg = path[i];
-    if (typeof cur[seg] !== "object" || cur[seg] === null) cur[seg] = {};
-    cur = cur[seg] as Record<string, unknown>;
-  }
-  cur[path[path.length - 1]] = value;
-}
-
-function buildFilterClause(field: ObjectField, operator: string, value: unknown): Record<string, unknown> | null {
-  // JSON-path filters: prefilter in the DB via substring match on the raw JSON
-  // text (sync writes compact JSON, so "Key":"Value" hits the exact key). The
-  // JS post-filter still runs after fetch for exactness; without the DB
-  // prefilter, only the newest rowLimit rows would ever be scanned.
-  if (field.source === "json") {
-    const jsonCol = field.jsonColumn;
-    if (!jsonCol) return null;
-    const jsonKey = field.key.startsWith(`${jsonCol}.`)
-      ? field.key.slice(jsonCol.length + 1)
-      : field.key;
-    const pat = (v: unknown) => `"${jsonKey}":${JSON.stringify(String(v))}`;
-    switch (operator) {
-      case "equals":
-        return { [jsonCol]: { contains: pat(value) } };
-      case "in":
-        return Array.isArray(value) && value.length > 0
-          ? { OR: value.map((v) => ({ [jsonCol]: { contains: pat(v) } })) }
-          : null;
-      case "contains":
-        return { [jsonCol]: { contains: String(value) } };
-      case "isNotNull":
-        return { AND: [{ [jsonCol]: { contains: `"${jsonKey}":` } }, { NOT: { [jsonCol]: { contains: `"${jsonKey}":""` } } }] };
-      default:
-        return null; // ranges etc. stay JS-side only
-    }
-  }
-  // Computed filters are JS-side.
-  if (field.source === "computed") return null;
-
-  const coerced = coerceValue(field, value);
-
-  let leaf: Record<string, unknown>;
-  switch (operator) {
-    case "equals":
-      leaf = { equals: coerced };
-      break;
-    case "not":
-      leaf = { not: coerced };
-      break;
-    case "contains":
-      leaf = field.type === "string" ? { contains: String(coerced), mode: "insensitive" } : { equals: coerced };
-      break;
-    case "startsWith":
-      leaf = { startsWith: String(coerced), mode: "insensitive" };
-      break;
-    case "endsWith":
-      leaf = { endsWith: String(coerced), mode: "insensitive" };
-      break;
-    case "gt":
-      leaf = { gt: coerced };
-      break;
-    case "gte":
-      leaf = { gte: coerced };
-      break;
-    case "lt":
-      leaf = { lt: coerced };
-      break;
-    case "lte":
-      leaf = { lte: coerced };
-      break;
-    case "in": {
-      const arr = Array.isArray(coerced) ? coerced : String(coerced ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-      leaf = { in: arr };
-      break;
-    }
-    case "notIn": {
-      const arr = Array.isArray(coerced) ? coerced : String(coerced ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-      leaf = { notIn: arr };
-      break;
-    }
-    case "isNull":
-      leaf = { equals: null };
-      break;
-    case "isNotNull":
-      leaf = { not: null };
-      break;
-    default:
-      return null;
-  }
-
-  const path = field.key.split(".");
-  const out: Record<string, unknown> = {};
-  setNested(out, path, leaf);
-  return out;
-}
-
-// ── Build the Prisma query ─────────────────────────────────────────────
-
-function buildInclude(meta: ObjectMetadata, columns: string[], filters: ReportFilter[], groupBy?: string | null, sortBy?: string | null): Record<string, unknown> | undefined {
-  const relations = new Set<string>();
-  const collect = (key: string) => {
-    const field = meta.fields.find((f) => f.key === key);
-    if (field?.source === "relation" && field.relation) relations.add(field.relation);
-  };
-  columns.forEach(collect);
-  filters.forEach((f) => collect(f.field));
-  if (groupBy) collect(groupBy);
-  if (sortBy) collect(sortBy);
-
-  if (relations.size === 0) return undefined;
-  const include: Record<string, unknown> = {};
-  for (const r of relations) include[r] = true;
-  return include;
-}
-
-// ── Resolve a dot path against a row ───────────────────────────────────
-
-function resolveValue(row: Record<string, unknown>, key: string, field: ObjectField | null): unknown {
-  if (!field) {
-    return resolvePath(row, key);
-  }
-  if (field.source === "column" || field.source === "relation") {
-    return resolvePath(row, key);
-  }
+function resolveValue(row: Record<string, unknown>, field: ObjectField): unknown {
   if (field.source === "json" && field.jsonColumn) {
-    const raw = row[field.jsonColumn];
-    if (raw == null) return null;
-    let parsed: unknown = null;
-    if (typeof raw === "string") {
-      try {
-        parsed = JSON.parse(raw);
-      } catch {
-        return null;
-      }
-    } else if (typeof raw === "object") {
-      parsed = raw;
-    }
-    // Strip jsonColumn from path
-    const sub = field.key.split(".").slice(1).join(".");
-    return resolvePath(parsed as Record<string, unknown>, sub);
+    let source = row[field.jsonColumn];
+    if (typeof source === "string") { try { source = JSON.parse(source); } catch { return null; } }
+    return pathValue(source, field.key.slice(field.jsonColumn.length + 1));
   }
-  return null;
+  return pathValue(row, field.key);
 }
-
-function resolvePath(obj: unknown, path: string): unknown {
-  if (!obj || typeof obj !== "object") return null;
-  const segs = path.split(".");
-  let cur: unknown = obj;
-  for (const seg of segs) {
-    if (cur == null || typeof cur !== "object") return null;
-    cur = (cur as Record<string, unknown>)[seg];
+type Selection = { [key: string]: true | { select: Selection } };
+function selectPath(selection: Selection, key: string) {
+  const parts = key.split("."); let node = selection;
+  for (const part of parts.slice(0, -1)) {
+    if (!node[part] || node[part] === true) node[part] = { select: { id: true } };
+    node = (node[part] as { select: Selection }).select;
   }
-  return cur ?? null;
+  node[parts[parts.length - 1]] = true;
 }
-
-// ── Group / summarize helpers ──────────────────────────────────────────
-
-function groupKey(value: unknown): string {
-  if (value === null || value === undefined) return "(blank)";
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  if (typeof value === "object") {
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
+async function redactTree(rows: Record<string, unknown>[], selection: Selection, access: AnalyticsAccess, db: Prisma.TransactionClient): Promise<Record<string, unknown>[]> {
+  const relations = Object.keys(selection).filter(k => selection[k] !== true);
+  const safe = await redactAnalyticsRelations(rows, relations, access, db);
+  for (const key of relations) {
+    const childRows = safe.flatMap(r => r[key] ? [r[key] as Record<string, unknown>] : []);
+    if (!childRows.length) continue;
+    const children = await redactTree(childRows, (selection[key] as { select: Selection }).select, access, db);
+    let index = 0;
+    for (const row of safe) if (row[key]) row[key] = children[index++];
   }
-  return String(value);
+  return safe;
 }
-
-function computeSummary(
-  rows: Record<string, unknown>[],
-  summarize: ReportSummarize[],
-): Record<string, unknown> {
-  const out: Record<string, unknown> = { _count: rows.length };
-  for (const s of summarize) {
-    if (s.kind === "count") {
-      // count of non-null values for the field
-      let n = 0;
-      for (const r of rows) if (r[s.field] !== null && r[s.field] !== undefined) n++;
-      out[`${s.field}_count`] = n;
-      continue;
+function matchesFilters(row: Record<string, unknown>, filters: ReportFilter[], fields: Map<string, ObjectField>) {
+  const groups = new Map<string, boolean>();
+  for (const filter of filters) {
+    const field = fields.get(filter.field)!;
+    let value = row[filter.field], raw = filter.value;
+    if (field.type === "date" && value != null && raw != null && !filter.operator.startsWith("is")) {
+      value = new Date(String(value)).getTime(); raw = new Date(String(raw)).getTime();
     }
-    let sum = 0;
-    let count = 0;
-    for (const r of rows) {
-      const v = r[s.field];
-      if (v === null || v === undefined || v === "") continue;
-      const n = typeof v === "number" ? v : Number(v);
-      if (Number.isFinite(n)) {
-        sum += n;
-        count++;
-      }
-    }
-    if (s.kind === "sum") out[`${s.field}_sum`] = sum;
-    if (s.kind === "avg") out[`${s.field}_avg`] = count > 0 ? sum / count : 0;
+    if (field.type === "number" && raw !== null && raw !== "" && !["in", "notIn"].includes(filter.operator)) raw = Number(raw);
+    if (field.type === "boolean" && typeof raw === "string") raw = raw === "true" ? true : raw === "false" ? false : raw;
+    const match = matchPostFilter(value, filter.operator, raw);
+    if (!filter.orGroup && !match) return false;
+    if (filter.orGroup) groups.set(filter.orGroup, (groups.get(filter.orGroup) ?? true) && match);
   }
-  return out;
+  return !groups.size || [...groups.values()].some(Boolean);
 }
-
-// ── Main entry ─────────────────────────────────────────────────────────
+type Accumulator = { count: number; values: Map<string, { sum: number; count: number; present: number }> };
+function accumulator(): Accumulator { return { count: 0, values: new Map() }; }
+function accumulate(acc: Accumulator, row: Record<string, unknown>, measures: ReportSummarize[]) {
+  acc.count++;
+  for (const field of new Set(measures.map(m => m.field))) {
+    const state = acc.values.get(field) ?? { sum: 0, count: 0, present: 0 };
+    const value = row[field];
+    if (value != null) state.present++;
+    if (value != null && value !== "" && Number.isFinite(Number(value))) { state.sum += Number(value); state.count++; }
+    acc.values.set(field, state);
+  }
+}
+function finish(acc: Accumulator, measures: ReportSummarize[], formulas: ReportFormula[], now: Date) {
+  const totals: Record<string, unknown> = { _count: acc.count };
+  for (const measure of measures) {
+    const v = acc.values.get(measure.field) ?? { sum: 0, count: 0, present: 0 };
+    totals[`${measure.field}_${measure.kind}`] = measure.kind === "count" ? v.present : measure.kind === "sum" ? v.sum : v.count ? v.sum / v.count : null;
+  }
+  for (const f of formulas) totals[f.key] = evaluateFormula(f, totals, now);
+  return totals;
+}
 
 export async function runReport(cfg: ReportConfig): Promise<ReportRunOutcome> {
-  const access = await analyticsAccess("Reports.View");
+  return runReportWithAccess(cfg, await analyticsAccess("Reports.View"));
+}
+/** Server-only explicit access entry point for scheduled snapshots. Never accept access from request JSON. */
+export async function runReportWithAccess(cfg: ReportConfig, access: AnalyticsAccess, db?: Prisma.TransactionClient): Promise<ReportRunOutcome> {
   try {
+    if (!db) return await prisma.$transaction(tx => runReportWithAccess(cfg, access, tx), { isolationLevel: "RepeatableRead", timeout: 120000, maxWait: 10000 });
+    const now = new Date();
+    const scopeHash = createHash("sha256");
+    scopeHash.update(JSON.stringify([access.userId, access.isAdmin, [...access.permissions].sort(), [...access.ownerIds].sort()]));
     const meta = getObjectMetadata(cfg.objectType);
-    if (!meta) return { error: `Unknown objectType: ${cfg.objectType}` };
-
+    if (!meta) throw new Error(`Unknown report type: ${cfg.objectType}`);
+    const fields = new Map(meta.fields.map(f => [f.key, f]));
     const formulas = validateFormulas(cfg.formulas, cfg.objectType);
-    const formulaFields = formulas.flatMap(f => [f.left, f.right]).filter((f): f is string => typeof f === "string");
-
-    // Validate columns
-    const knownKeys = new Set(meta.fields.map((f) => f.key));
-    const columns = cfg.columns.filter((c) => knownKeys.has(c));
-    if (columns.length === 0) {
-      // Fall back to defaults so the user always sees something
-      columns.push(...meta.defaultColumns.filter((c) => knownKeys.has(c)));
+    const rowFormulas = formulas.filter(f => f.scope !== "summary"), summaryFormulas = formulas.filter(f => f.scope === "summary");
+    const columns = (cfg.columns ?? []).filter(key => fields.has(key));
+    if (!columns.length) columns.push(...meta.defaultColumns);
+    const filters = cfg.filters ?? [];
+    for (const f of filters) if (!f || !fields.has(f.field) || !OPERATORS.has(f.operator)) throw new Error(`Unsupported report filter: ${f?.field ?? "unknown"}. Update the report filters before running.`);
+    const options = reportOptionsSchema.parse(cfg.options ?? {});
+    const groupings = options.groups.length ? options.groups : cfg.groupBy ? [{ field: cfg.groupBy, interval: "value" as const }] : [];
+    for (const g of groupings) if (!fields.has(g.field) || (g.interval !== "value" && fields.get(g.field)?.type !== "date")) throw new Error("Choose valid grouping fields and date intervals");
+    const measures = [...(cfg.summarize ?? [])];
+    for (const f of summaryFormulas) for (const key of formulaDependencies(f)) {
+      if (key === "_count") continue;
+      const match = key.match(/^(.*)_(sum|avg|count)$/)!;
+      if (!measures.some(m => m.field === match[1] && m.kind === match[2])) measures.push({ field: match[1], kind: match[2] as ReportSummarize["kind"] });
     }
-
-    // Validate filters — drop unknown fields and operators silently
-    const filters: ReportFilter[] = [];
-    for (const f of cfg.filters ?? []) {
-      if (!knownKeys.has(f.field)) continue;
-      if (!OPERATORS.has(f.operator)) continue;
-      filters.push(f);
+    for (const m of measures) if ((!fields.has(m.field) && !rowFormulas.some(f => f.key === m.field)) || !["sum", "avg", "count"].includes(m.kind)) throw new Error("Unsupported summary field");
+    const requestedSort = cfg.sortBy ?? (fields.has("createdAt") ? "createdAt" : fields.has("capturedAt") ? "capturedAt" : fields.has("changedAt") ? "changedAt" : null);
+    const dependencies = new Set([...columns, ...filters.map(f => f.field), ...groupings.map(g => g.field), ...measures.map(m => m.field), ...rowFormulas.flatMap(formulaDependencies), ...(requestedSort ? [requestedSort] : [])]);
+    const select: Selection = { id: true };
+    for (const key of dependencies) {
+      const field = fields.get(key); if (!field || field.source === "computed") continue;
+      selectPath(select, field.source === "json" ? field.jsonColumn! : field.key);
     }
-
-    const groupBy = cfg.groupBy && knownKeys.has(cfg.groupBy) ? cfg.groupBy : null;
-    const sortBy = cfg.sortBy && knownKeys.has(cfg.sortBy) ? cfg.sortBy : null;
-    const sortDir = cfg.sortDir === "desc" ? "desc" : "asc";
-
-    // Build where from DB-level filters (column + relation). JSON / computed
-    // are applied after fetch.
-    const whereClauses: Record<string, unknown>[] = [];
-    const groupClauses = new Map<string, Record<string, unknown>[]>();
-    const postFilters: ReportFilter[] = [];
-    for (const f of filters) {
-      const field = getField(cfg.objectType, f.field);
-      if (!field) continue;
-      const clause = buildFilterClause(field, f.operator, f.value);
-      // json/computed filters always post-filter too (DB clause is a prefilter)
-      if (field.source === "json" || field.source === "computed") postFilters.push(f);
-      if (!clause) { if (field.source !== "json" && field.source !== "computed") postFilters.push(f); continue; }
-      if (f.orGroup) {
-        const list = groupClauses.get(f.orGroup) ?? [];
-        list.push(clause);
-        groupClauses.set(f.orGroup, list);
-      } else {
-        whereClauses.push(clause);
+    const delegate = (db as unknown as Record<string, { findMany(args: unknown): Promise<Record<string, unknown>[]> }>)[meta.prismaModel];
+    if (!delegate) throw new Error("Report data source is unavailable");
+    const where = { AND: [analyticsScope(access, meta.prismaModel), await runtimeWhere(meta.prismaModel, cfg.runtimeFilters), reportPrefilter(filters, fields)] };
+    const limit = Math.min(10000, Math.max(1, Math.floor(cfg.rowLimit ?? 2000)));
+    if (!Number.isFinite(limit)) throw new Error("Invalid detail row limit");
+    const rows: Record<string, unknown>[] = [], totals = accumulator();
+    const groups = new Map<string, { key: string; path: string[]; acc: Accumulator }>();
+    const parentGroups = new Map<string, {path:string[];acc:Accumulator}>();
+    const rowPaths = new Map<Record<string, unknown>, string>();
+    const sortKey = requestedSort && (fields.has(requestedSort) || rowFormulas.some(f => f.key === requestedSort)) ? requestedSort : null;
+    const compare = (a: Record<string, unknown>, b: Record<string, unknown>) => (compareValues(a[sortKey!], b[sortKey!]) ?? 0) * ((!cfg.sortBy || cfg.sortDir === "desc") ? -1 : 1);
+    let cursor: string | undefined;
+    while (true) {
+      if (Date.now() - now.getTime() > 110000) throw new Error("This report needs narrower filters to complete. No partial totals were returned.");
+      const raw = await delegate.findMany({ where, select, orderBy: { id: "asc" }, take: PAGE_SIZE, ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}) });
+      if (!raw.length) break;
+      const lastId = String(raw[raw.length - 1].id);
+      if (cursor === lastId) throw new Error("Report pagination did not advance");
+      const page = await redactTree(raw, select, access, db);
+      if (meta.prismaModel === "account" && [...dependencies].some(k => k.startsWith("related."))) {
+        const related = await accountRelatedTotals(page.map(r => String(r.id)), access, db);
+        for (const r of page) r.related = related.get(String(r.id));
       }
-    }
-    // OR the groups together (each group internally ANDed), then AND with the rest.
-    if (groupClauses.size > 0) {
-      const orParts = [...groupClauses.values()].map((list) =>
-        list.length === 1 ? list[0] : { AND: list },
-      );
-      whereClauses.push(orParts.length === 1 ? orParts[0] : { OR: orParts });
-    }
-    const where: Record<string, unknown> = whereClauses.length === 1
-      ? whereClauses[0]
-      : whereClauses.length > 1
-        ? { AND: whereClauses }
-        : {};
-
-    const include = buildInclude(meta, [...columns, ...(cfg.summarize ?? []).map(s => s.field), ...formulaFields], filters, groupBy, sortBy);
-
-    // orderBy: support relation.subfield (e.g. owner.name) by nesting
-    let orderBy: Record<string, unknown> = { createdAt: "desc" };
-    if (sortBy) {
-      const sortField = getField(cfg.objectType, sortBy);
-      if (sortField) {
-        if (sortField.source === "relation") {
-          const path = sortBy.split(".");
-          const nested: Record<string, unknown> = {};
-          setNested(nested, path, sortDir);
-          orderBy = nested;
-        } else if (sortField.source === "column") {
-          orderBy = { [sortBy]: sortDir };
-        } else {
-          // json / computed sorts are post-processed
-          orderBy = { createdAt: "desc" };
+      for (const r of page) {
+        const row: Record<string, unknown> = {};
+        for (const key of dependencies) { const field = fields.get(key); if (field) row[key] = resolveValue(r, field); }
+        if (!matchesFilters(row, filters, fields)) continue;
+        for (const f of rowFormulas) row[f.key] = evaluateFormula(f, row, now);
+        const paths: Record<string, string> = { Lead: "leads", Opportunity: "opportunities", Account: "accounts", Case: "cases" };
+        if (paths[cfg.objectType]) row._recordUrl = `/${paths[cfg.objectType]}/${encodeURIComponent(String(r.id))}`;
+        const identity = (obj: Record<string, unknown>, tree: Selection): unknown[] => [obj.id, ...Object.entries(tree).filter(([,v]) => v !== true).map(([key,v]) => obj[key] ? identity(obj[key] as Record<string, unknown>, (v as {select:Selection}).select) : null)];
+        scopeHash.update(JSON.stringify(identity(r, select)));
+        if (r.related) scopeHash.update(String((r.related as Record<string, unknown>)._scopeHash ?? ""));
+        accumulate(totals, row, measures);
+        const path = groupings.map(g => groupingValue(row[g.field], g.interval));
+        if (path.length) {
+          const key = JSON.stringify(path);
+          let group = groups.get(key);
+          if (!group) { if (groups.size >= MAX_GROUPS) throw new Error("Too many groups. Narrow filters or use a broader date interval."); group = { key, path, acc: accumulator() }; groups.set(key, group); }
+          accumulate(group.acc, row, measures); rowPaths.set(row, key);
+          for (let level=1; level<path.length; level++) {const prefix=path.slice(0,level), parentKey=JSON.stringify(prefix);let parent=parentGroups.get(parentKey);if(!parent){parent={path:prefix,acc:accumulator()};parentGroups.set(parentKey,parent);}accumulate(parent.acc,row,measures);}
+        }
+        if (!sortKey) { if (rows.length < limit) rows.push(row); else rowPaths.delete(row); }
+        else {
+          // Keep only the best N detail rows; totals still accumulate every match.
+          if (rows.length < limit || compare(row, rows[rows.length - 1]) < 0) {
+            let lo = 0, hi = rows.length; while (lo < hi) { const mid = (lo + hi) >>> 1; if (compare(rows[mid], row) <= 0) lo = mid + 1; else hi = mid; }
+            rows.splice(lo, 0, row); if (rows.length > limit) rowPaths.delete(rows.pop()!);
+          } else rowPaths.delete(row);
         }
       }
+      cursor = lastId;
+      if (raw.length < PAGE_SIZE) break;
     }
-
-    const take = Math.min(Math.max(1, cfg.rowLimit ?? 2000), MAX_ROW_LIMIT);
-
-    // Run prisma findMany dynamically
-    const delegate = (prisma as unknown as Record<string, { findMany: (args: unknown) => Promise<unknown[]> }>)[meta.prismaModel];
-    if (!delegate?.findMany) {
-      return { error: `Prisma model not available: ${meta.prismaModel}` };
-    }
-    const scopeClauses = [analyticsScope(access, meta.prismaModel), where];
-    // Relation filters, grouping and sorting cannot be used to infer hidden values.
-    const relationKeys = [...formulaFields, ...filters.map(f => f.field), groupBy, sortBy, ...(cfg.summarize ?? []).map(s => s.field)];
-    for (const relation of new Set(relationKeys.filter((key): key is string => !!key).map(key => key.split(".")[0]))) {
-      if (ANALYTICS_RELATIONS[relation]) scopeClauses.push(visibleRelation(access, relation));
-    }
-    const args: Record<string, unknown> = { where: { AND: scopeClauses }, take: take + 1, orderBy };
-    if (include) args.include = include;
-
-    const dbRows = await redactAnalyticsRelations(
-      (await delegate.findMany(args)) as Record<string, unknown>[],
-      Object.keys(include ?? {}), access,
-    );
-
-    // Project to flat rows
-    const truncated = dbRows.length > take;
-    let flatRows: Record<string, unknown>[] = dbRows.slice(0, take).map((r) => {
-      const out: Record<string, unknown> = {};
-      for (const colKey of columns) {
-        const field = getField(cfg.objectType, colKey);
-        out[colKey] = resolveValue(r, colKey, field);
-      }
-      // Also resolve fields used in groupBy / summarize / postFilters
-      if (groupBy && !(groupBy in out)) {
-        const field = getField(cfg.objectType, groupBy);
-        out[groupBy] = resolveValue(r, groupBy, field);
-      }
-      for (const key of formulaFields) out[key] = resolveValue(r, key, getField(cfg.objectType, key));
-      for (const formula of formulas) out[formula.key] = evaluateFormula(formula, out);
-      const recordPaths: Record<string, string> = { Lead: "leads", Opportunity: "opportunities", Account: "accounts", Contact: "contacts", Case: "cases" };
-      if (recordPaths[cfg.objectType] && typeof r.id === "string") out._recordUrl = `/${recordPaths[cfg.objectType]}/${encodeURIComponent(r.id)}`;
-      for (const s of cfg.summarize ?? []) {
-        if (!(s.field in out)) {
-          const field = getField(cfg.objectType, s.field);
-          out[s.field] = resolveValue(r, s.field, field);
-        }
-      }
-      for (const pf of postFilters) {
-        if (!(pf.field in out)) {
-          const field = getField(cfg.objectType, pf.field);
-          out[pf.field] = resolveValue(r, pf.field, field);
-        }
-      }
-      return out;
-    });
-
-    // Apply post-filters (JSON / computed)
-    if (postFilters.length > 0) {
-      flatRows = flatRows.filter((row) => postFilters.every((pf) => matchPostFilter(row[pf.field], pf.operator, pf.value)));
-    }
-
-    // Columns for UI
-    const uiColumns: ReportResultColumn[] = columns.map((c) => ({
-      key: c,
-      label: meta.fields.find((f) => f.key === c)?.label ?? c,
-    }));
-
-    uiColumns.push(...formulas.map(f => ({ key: f.key, label: f.label })));
-
-    const result: ReportResult = {
-      columns: uiColumns,
-      rows: flatRows,
-      rowCount: flatRows.length,
-      truncated,
-      warning: truncated ? `Results are limited to ${take.toLocaleString()} source records. Counts, charts, and totals cover only the displayed results. Narrow your filters for a complete report.` : undefined,
-    };
-
-    // Group / summarize
-    const summarize = cfg.summarize ?? [];
-    if (groupBy) {
-      const groupsMap = new Map<string, Record<string, unknown>[]>();
-      for (const r of flatRows) {
-        const k = groupKey(r[groupBy]);
-        if (!groupsMap.has(k)) groupsMap.set(k, []);
-        groupsMap.get(k)!.push(r);
-      }
-      const groups: ReportResultGroup[] = [];
-      for (const [k, rows] of groupsMap.entries()) {
-        groups.push({ key: k, rows, summary: computeSummary(rows, summarize) });
-      }
-      // Sort groups alphabetically by key for deterministic output
-      groups.sort((a, b) => a.key.localeCompare(b.key));
-      result.groups = groups;
-      result.totals = computeSummary(flatRows, summarize);
-    } else if (summarize.length > 0) {
-      result.totals = computeSummary(flatRows, summarize);
-    }
-
+    const result: ReportResult = { columns: [...columns.map(key => ({ key, label: fields.get(key)!.label })), ...rowFormulas.map(f => ({ key: f.key, label: f.label }))], rows, rowCount: totals.count, displayedRowCount: rows.length, totals: finish(totals, measures, summaryFormulas, now), summaryFormulas: summaryFormulas.map(f => ({ key: f.key, label: f.label })), generatedAt: now.toISOString(), scopeHash: scopeHash.digest("hex"), truncated: totals.count > rows.length };
+    if (result.truncated) result.warning = `Showing ${rows.length.toLocaleString()} of ${totals.count.toLocaleString()} matching records. Counts, charts, group summaries and totals include all matches. Detail exports contain only displayed rows.`;
+    if (groupings.length) result.groups = [...groups.values()].sort((a,b) => a.path.join(" / ").localeCompare(b.path.join(" / "))).map(g => ({ id: g.key, key: g.path.join(" → "), path: g.path, count: g.acc.count, rows: rows.filter(row => rowPaths.get(row) === g.key), summary: finish(g.acc, measures, summaryFormulas, now) }));
+    if (parentGroups.size) result.groupSubtotals=[...parentGroups.values()].sort((a,b)=>a.path.join(" / ").localeCompare(b.path.join(" / "))).map(g=>({path:g.path,count:g.acc.count,summary:finish(g.acc,measures,summaryFormulas,now)}));
     return result;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return { error: msg };
-  }
+  } catch (error) { return { error: error instanceof Error ? error.message : "Report failed" }; }
 }
 
-/**
- * Compare two scalars for range operators. Numeric when both are numbers,
- * otherwise by date when both parse as dates (JSON fields store dates as ISO
- * strings, so Number() would give NaN), otherwise lexicographic. Returns null
- * when incomparable.
- */
 function compareValues(a: unknown, b: unknown): number | null {
   const na = Number(a);
   const nb = Number(b);

@@ -1,26 +1,20 @@
 "use client";
 import type { ReportFormula } from "@/lib/reports/formulas";
 import type { ObjectField } from "@/lib/reports/object-metadata";
-
 export function FormulaEditor({ formulas, fields, onChange }: { formulas: ReportFormula[]; fields: ObjectField[]; onChange: (value: ReportFormula[]) => void }) {
-  const numeric = fields.filter(f => f.type === "number" && f.source !== "computed");
-  const patch = (index: number, value: Partial<ReportFormula>) => onChange(formulas.map((f, i) => i === index ? { ...f, ...value } : f));
-  const operand = (formula: ReportFormula, index: number, side: "left" | "right") => <div className="flex gap-1">
-    <select aria-label={`${side} operand`} className="border rounded p-1 min-w-0 w-full" value={typeof formula[side] === "number" ? "constant" : formula[side]} onChange={e => patch(index, { [side]: e.target.value === "constant" ? 1 : e.target.value })}>
-      <option value="constant">Number</option>{numeric.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
-    </select>
-    {typeof formula[side] === "number" && <input aria-label={`${side} number`} type="number" step="any" className="border rounded p-1 w-20" value={formula[side]} onChange={e => patch(index, { [side]: Number(e.target.value) })} />}
-  </div>;
-  return <section className="bg-white rounded-xl p-4 text-xs space-y-3">
-    <div className="flex justify-between"><h2 className="font-bold">Formula columns</h2><button disabled={formulas.length >= 10} onClick={() => onChange([...formulas, { key: `formula_${crypto.randomUUID().replaceAll("-", "")}`, label: "New formula", left: numeric[0]?.key ?? 0, operator: "subtract", right: numeric[1]?.key ?? 0 }])} className="text-blue-700 disabled:opacity-50">+ Add formula</button></div>
-    <p className="text-gray-600">Calculate values for each row. Percentage = left ÷ right × 100. Missing values and division by zero produce a blank.</p>
-    {formulas.map((f, i) => <div key={f.key} className="border rounded p-2 space-y-2">
-      <div className="flex gap-2"><input aria-label="Formula name" className="border rounded p-1 flex-1 min-w-0" maxLength={80} value={f.label} onChange={e => patch(i, { label: e.target.value })} /><button aria-label={`Remove ${f.label}`} onClick={() => onChange(formulas.filter((_, j) => j !== i))}>Remove</button></div>
-      {operand(f, i, "left")}
-      <select aria-label="Formula operation" className="border rounded p-1 w-full" value={f.operator} onChange={e => patch(i, { operator: e.target.value as ReportFormula["operator"] })}>
-        <option value="add">Add +</option><option value="subtract">Subtract −</option><option value="multiply">Multiply ×</option><option value="divide">Divide ÷</option><option value="percent">Percentage %</option>
-      </select>
-      {operand(f, i, "right")}
-    </div>)}
-  </section>;
+  const numeric = fields.filter(f => f.type === "number"), dates = fields.filter(f => f.type === "date");
+  const patch = (index: number, value: Partial<ReportFormula>) => onChange(formulas.map((f,i) => i === index ? { ...f, ...value } : f));
+  const choices = (f: ReportFormula) => f.operator === "ageDays" || f.operator === "daysBetween" ? dates : f.scope === "summary" ? [{key:"_count",label:"Record count"}, ...numeric.flatMap(field => ["sum","avg","count"].map(kind => ({ key:`${field.key}_${kind}`,label:`${field.label} ${kind}` })))] : f.operator === "if" ? fields : numeric;
+  const operand = (f: ReportFormula, i: number, side: "left" | "right" | "whenTrue" | "whenFalse") => {
+    const value = f[side];
+    const condition = f.operator === "if" && (side === "left" || side === "right");
+    return <div className="flex gap-1"><select aria-label={`${side} operand`} className="border rounded p-1 min-w-0 flex-1" value={typeof value === "object" ? "literal" : typeof value === "number" ? "constant" : value ?? "constant"} onChange={e => patch(i,{[side]:e.target.value === "constant" ? 1 : e.target.value === "literal" ? {literal:""} : e.target.value})}><option value="constant">Number</option>{condition && <option value="literal">Text / value</option>}{choices(f).filter(c=>condition||!fields.find(field=>field.key===c.key)||fields.find(field=>field.key===c.key)?.type==="number"||f.operator==="daysBetween"||f.operator==="ageDays").map(c => <option key={c.key} value={c.key}>{c.label}</option>)}</select>{typeof value === "object" ? <input aria-label={`${side} value`} className="border rounded p-1 w-32" value={String(value.literal)} onChange={e=>patch(i,{[side]:{literal:e.target.value}})}/> : (typeof value === "number" || value === undefined) && <input aria-label={`${side} number`} type="number" step="any" className="border rounded p-1 w-24" value={value ?? 0} onChange={e => patch(i,{[side]:Number(e.target.value)})}/>}</div>;
+  };
+  return <section className="bg-white rounded-xl p-4 text-xs space-y-3"><div className="flex justify-between"><h2 className="font-bold">Formula columns and summary formulas</h2><button className="text-blue-700" disabled={formulas.length >= 10} onClick={() => onChange([...formulas,{key:`formula_${crypto.randomUUID().replaceAll("-","")}`,label:"New formula",left:numeric[0]?.key ?? 0,operator:"subtract",right:0}])}>+ Add formula</button></div><p>Row formulas calculate individual records. Summary formulas calculate group and grand totals. Date calculations use whole elapsed days; missing values and division by zero stay blank.</p>
+    <div className="grid md:grid-cols-2 gap-3">{formulas.map((f,i) => <div className="border rounded p-3 space-y-2" key={f.key}><div className="flex gap-2"><input aria-label="Formula name" className="border rounded p-1 flex-1 min-w-0" maxLength={80} value={f.label} onChange={e => patch(i,{label:e.target.value})}/><button onClick={() => onChange(formulas.filter((_,j)=>j!==i))}>Remove</button></div>
+      <select aria-label="Formula scope" className="border p-1" value={f.scope ?? "row"} onChange={e => patch(i,{scope:e.target.value as "row"|"summary",left:0,right:0,operator:"add"})}><option value="row">Individual rows</option><option value="summary">Group and grand totals</option></select>
+      <select aria-label="Formula operation" className="border p-1 ml-2" value={f.operator} onChange={e => { const operator=e.target.value as ReportFormula["operator"]; patch(i,{operator,...(operator==="if"?{comparison:"gt",whenTrue:1,whenFalse:0}:{}),...(operator==="daysBetween"||operator==="ageDays"?{left:dates[0]?.key??0,right:dates[1]?.key??dates[0]?.key??0}:{})}); }}>{[["add","Add +"],["subtract","Subtract −"],["multiply","Multiply ×"],["divide","Divide ÷"],["percent","Percentage %"],["if","IF condition"],...(f.scope!=="summary"?[["daysBetween","Days between dates"],["ageDays","Age in days"]]:[])].map(([key,label]) => <option key={key} value={key}>{label}</option>)}</select>
+      {operand(f,i,"left")}{f.operator==="if" && <select aria-label="IF comparison" className="border p-1" value={f.comparison??"gt"} onChange={e => patch(i,{comparison:e.target.value as ReportFormula["comparison"]})}>{["equals","not","gt","gte","lt","lte"].map(v => <option key={v}>{v}</option>)}</select>}
+      {f.operator!=="ageDays" && operand(f,i,"right")}{f.operator==="if" && <><div>Then</div>{operand(f,i,"whenTrue")}<div>Otherwise</div>{operand(f,i,"whenFalse")}</>}
+    </div>)}</div></section>;
 }

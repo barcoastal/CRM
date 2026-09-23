@@ -1,3 +1,4 @@
+import { reportOptionsSchema } from "@/lib/reports/advanced";
 import { validateFormulas } from "@/lib/reports/formulas";
 import { analyticsApiAccess, definitionScope } from "@/lib/analytics-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
@@ -48,6 +49,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (typeof body.rowLimit === "number") data.rowLimit = body.rowLimit;
   if (typeof body.isShared === "boolean") data.isShared = body.isShared;
 
+  if (body.options !== undefined) {
+    const options = reportOptionsSchema.safeParse(body.options);
+    if (!options.success) return ssnSafeJson({ error: "Invalid grouping options" }, { status: 400 });
+    data.options = options.data;
+  }
   if (body.formulas !== undefined || body.objectType !== undefined) {
     try { data.formulas = validateFormulas(body.formulas ?? existing.formulas, typeof body.objectType === "string" ? body.objectType : existing.objectType); }
     catch (e) { return ssnSafeJson({ error: e instanceof Error ? e.message : "Invalid formulas" }, { status: 400 }); }

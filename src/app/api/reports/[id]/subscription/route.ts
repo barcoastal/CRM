@@ -1,3 +1,4 @@
+import { hasPermission } from "@/lib/permissions";
 import { NextRequest } from "next/server";
 import { analyticsApiAccess, definitionScope } from "@/lib/analytics-access";
 import { prisma } from "@/lib/prisma";
@@ -18,6 +19,7 @@ export async function PUT(req: NextRequest, ctx: Context) {
   if (!report) return Response.json({ error: "Report not found" }, { status: 404 });
   const parsed = reportScheduleSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Choose a valid frequency, hour and weekday." }, { status: 400 });
+  if (parsed.data.snapshotFormat === "csv" && !gate.access.isAdmin && !hasPermission(gate.access.permissions, "Reports.Export")) return Response.json({ error: "Report export permission is required for snapshots." }, { status: 403 });
   if (!process.env.RESEND_API_KEY) return Response.json({ error: "Scheduled email is unavailable until email delivery is configured." }, { status: 503 });
   const data = { ...parsed.data, nextRunAt: nextReportRun(parsed.data) };
   const subscription = await prisma.reportSubscription.upsert({ where: { reportId_userId: { reportId: id, userId: gate.access.userId } }, create: { ...data, reportId: id, userId: gate.access.userId }, update: data });

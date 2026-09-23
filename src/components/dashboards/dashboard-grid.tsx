@@ -1,16 +1,18 @@
 "use client";
 
+import type { RuntimeFilters } from "@/lib/reports/runtime-filters";
 import type { DashboardTileData } from "./dashboard-client";
 import { DashboardTile } from "./dashboard-tile";
 
 interface Props {
   tiles: DashboardTileData[];
+  runtimeFilters?: RuntimeFilters;
   editing: boolean;
   onUpdate: (tileId: string, patch: Partial<DashboardTileData>) => Promise<void>;
   onDelete: (tileId: string) => Promise<void>;
 }
 
-export function DashboardGrid({ tiles, editing, onUpdate, onDelete }: Props) {
+export function DashboardGrid({ tiles, editing, onUpdate, onDelete, runtimeFilters }: Props) {
   if (tiles.length === 0) {
     return (
       <section
@@ -43,6 +45,7 @@ export function DashboardGrid({ tiles, editing, onUpdate, onDelete }: Props) {
             style={{ gridColumn: `span ${w}`, gridRow: `span ${h}` }}
           >
             <DashboardTile
+              runtimeFilters={runtimeFilters}
               tile={tile}
               editing={editing}
               onUpdate={(patch) => onUpdate(tile.id, patch)}

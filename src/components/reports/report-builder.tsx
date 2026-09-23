@@ -1,5 +1,7 @@
 "use client";
 
+import { GroupingEditor } from "./grouping-editor";
+import type { ReportOptions } from "@/lib/reports/advanced";
 import { FormulaEditor } from "./formula-editor";
 import type { ReportFormula } from "@/lib/reports/formulas";
 import { useMemo, useState } from "react";
@@ -31,6 +33,7 @@ interface InitialState {
   summarize: ReportSummarize[];
   rowLimit: number;
   formulas?: ReportFormula[];
+  options?: ReportOptions;
 }
 
 interface Props {
@@ -117,9 +120,10 @@ function formatCell(v: unknown): string {
 
 export function ReportBuilder({ objectType, metadata, initial }: Props) {
   const router = useRouter();
+  const [options, setOptions] = useState<ReportOptions>(initial.options ?? { groups: [] });
   const [formulas, setFormulas] = useState<ReportFormula[]>(initial.formulas ?? []);
   const fields = metadata.fields;
-  const summaryFields = [...fields, ...formulas.map(f => ({ key: f.key, label: f.label }))];
+  const summaryFields = [...fields, ...formulas.filter(f => f.scope !== "summary").map(f => ({ key: f.key, label: f.label }))];
 
   const [name, setName] = useState(initial.name);
   const [description, setDescription] = useState(initial.description ?? "");
@@ -214,6 +218,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
           summarize,
           rowLimit,
           formulas,
+          options,
         }),
       });
       const data = await res.json();
@@ -253,7 +258,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
         summarize,
         rowLimit,
         formulas,
-      };
+        options,      };
       const url = initial.id ? `/api/reports/${initial.id}` : "/api/reports";
       const method = initial.id ? "PATCH" : "POST";
       const res = await fetch(url, {
@@ -314,6 +319,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
         </div>
       </div>
 
+      <GroupingEditor fields={metadata.fields} groups={options.groups ?? []} onChange={groups => setOptions({ groups })} />
       <FormulaEditor formulas={formulas} fields={metadata.fields} onChange={next => { setFormulas(next); setSummarize(current => current.filter(s => !s.field.startsWith("formula_") || next.some(f => f.key === s.field))); }} />
       <div className="grid grid-cols-[220px_minmax(0,1fr)_280px] gap-4">
         {/* ── Left: Fields panel ────────────────────────────────────── */}
@@ -441,7 +447,7 @@ export function ReportBuilder({ objectType, metadata, initial }: Props) {
                 <div className="text-[13px] font-bold text-[#131b2e]">Preview</div>
                 {result && (
                   <div className="text-[11px] text-[#747474]">
-                    {result.rowCount} row{result.rowCount === 1 ? "" : "s"}
+                    {result.rowCount} matching row{result.rowCount === 1 ? "" : "s"}
                     {result.groups ? ` in ${result.groups.length} group${result.groups.length === 1 ? "" : "s"}` : ""}
                   </div>
                 )}

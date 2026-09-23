@@ -1,3 +1,4 @@
+vi.mock("@/lib/reports/snapshots", () => ({ createReportSnapshot: vi.fn(), canReadSnapshot: vi.fn().mockResolvedValue(true), snapshotAttachments: vi.fn().mockReturnValue([]) }));
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const db = vi.hoisted(() => ({ findMany: vi.fn(), updateMany: vi.fn(), permissions: vi.fn(), fetch: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { reportDelivery: { findMany: db.findMany, updateMany: db.updateMany } } }));
@@ -41,4 +42,13 @@ it("cancels a queued recipient after their CRM email changes", async () => {
 it("does not consume deliveries without provider configuration", async () => {
   vi.stubEnv("RESEND_API_KEY", "");
   expect(await deliverReportEmails(now)).toBe(0); expect(db.findMany).not.toHaveBeenCalled();
+});
+
+import { canReadSnapshot } from "@/lib/reports/snapshots";
+it("cancels CSV delivery when record membership changes before sending", async () => {
+  db.findMany.mockResolvedValue([{...item,snapshot:{config:{},result:{}}}]);
+  vi.mocked(canReadSnapshot).mockResolvedValue(false);
+  expect(await deliverReportEmails(now)).toBe(0);
+  expect(db.fetch).not.toHaveBeenCalled();
+  expect(db.updateMany.mock.calls[0][0].data.status).toBe("CANCELLED");
 });

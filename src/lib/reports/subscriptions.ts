@@ -1,8 +1,10 @@
+import { createReportSnapshot, canReadSnapshot, snapshotAttachments, type SavedSnapshot } from "./snapshots";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { hasPermission, loadEffectivePermissions } from "@/lib/permissions";
 import { nextReportRun, reportScheduleSchema } from "./schedule";
 import { z } from "zod";
-const emailPayloadSchema = z.object({ from: z.string().min(1), to: z.array(z.email()).length(1), subject: z.string(), text: z.string() });
+const emailPayloadSchema = z.object({ from: z.string().min(1), to: z.array(z.email()).length(1), subject: z.string(), text: z.string(), attachments: z.array(z.object({filename:z.string(),content:z.string()})).optional() });
 type SubscriptionAccess = { userId: string; user: { isActive: boolean; role: string; email: string }; report: { isShared: boolean; createdById: string | null } };
 async function allowed(item: SubscriptionAccess) {
   if (!item.user.isActive) return false;
@@ -25,11 +27,14 @@ export async function queueReportEmails(now = new Date()): Promise<number> {
     const base = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? "https://crm.coastaldebt-tools.com";
     const link = new URL(`/reports/${encodeURIComponent(item.reportId)}`, base);
     if (!["https:", "http:"].includes(link.protocol)) throw new Error("Invalid CRM URL for report emails");
-    const payload = { from: process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>", to: [item.user.email], subject: "Your scheduled CRM report", text: `Open your scheduled report:\n${link.href}\n\nSign in to see current results using your current permissions. Manage or cancel this schedule from the report's Schedule button.` };
+    let snapshot: SavedSnapshot | undefined;
+    let snapshotError: string | undefined;
+    if (item.snapshotFormat === "csv") { try { snapshot = await createReportSnapshot(item.reportId, item.userId); } catch (e) { snapshotError = e instanceof Error ? e.message : "Snapshot generation failed"; } }
+    const payload = { from: process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>", to: [item.user.email], subject: "Your scheduled CRM report", ...(snapshot ? { attachments: snapshotAttachments(snapshot) } : {}), text: `Open your scheduled report:\n${link.href}\n${snapshot ? `Snapshot captured ${snapshot.result.generatedAt}. Summaries cover all ${snapshot.result.rowCount} matching records; details contain ${snapshot.result.rows.length} rows.` : ""}\n\nSign in to see current results using your current permissions. Manage or cancel this schedule from the report's Schedule button.` };
     const created = await prisma.$transaction(async tx => {
       const claimed = await tx.reportSubscription.updateMany({ where: { id: item.id, nextRunAt: item.nextRunAt }, data: { nextRunAt: nextReportRun(schedule.data, now) } });
       if (!claimed.count) return false;
-      await tx.reportDelivery.create({ data: { subscriptionId: item.id, scheduledFor: item.nextRunAt, payload } });
+      await tx.reportDelivery.create({ data: { subscriptionId: item.id, scheduledFor: item.nextRunAt, payload, ...(snapshot ? {snapshot:snapshot as unknown as Prisma.InputJsonValue} : {}), ...(snapshotError ? {status:"FAILED",lastError:snapshotError.slice(0,200)} : {}) } });
       return true;
     });
     if (created) queued++;
@@ -45,6 +50,10 @@ export async function deliverReportEmails(now = new Date()): Promise<number> {
   for (const item of pending) {
     if (!await allowed(item.subscription)) {
       await prisma.reportDelivery.updateMany({ where: { id: item.id, status: "PENDING" }, data: { status: "CANCELLED", lastError: "Report access was removed." } });
+      continue;
+    }
+    if (item.snapshot && !await canReadSnapshot(item.snapshot as unknown as SavedSnapshot, item.subscription.userId)) {
+      await prisma.reportDelivery.updateMany({ where: { id: item.id, status: "PENDING" }, data: { status: "CANCELLED", lastError: "Snapshot access changed; open the live report for current results." } });
       continue;
     }
     const payload = emailPayloadSchema.safeParse(item.payload);

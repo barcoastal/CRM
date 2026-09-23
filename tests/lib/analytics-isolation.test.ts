@@ -10,7 +10,7 @@ const db = vi.hoisted(() => ({
   report: { findFirst: vi.fn(), update: vi.fn() }, dashboardTile: { findFirst: vi.fn(), update: vi.fn(), delete: vi.fn() },
 }));
 vi.mock("@/lib/auth", () => ({ auth: db.auth }));
-vi.mock("@/lib/prisma", () => ({ prisma: { ...db, user: { findUnique: db.user, findMany: db.users } } }));
+vi.mock("@/lib/prisma", () => {const client = { ...db, user: { findUnique: db.user, findMany: db.users } }; return { prisma: { ...client, $transaction: (fn: (tx: unknown) => unknown) => fn(client) } }; });
 import { analyticsAccess, analyticsScope, definitionScope } from "@/lib/analytics-access";
 import { runReport } from "@/lib/reports/runner";
 import { getQuery, listRegistry } from "@/lib/dashboards/queries";
@@ -225,9 +225,9 @@ describe("saved report dashboard tiles", () => {
     expect((await tileData(request())).status).toBe(404);
     expect(db.opportunity.findMany).not.toHaveBeenCalled();
   });
-  it("marks limited totals and excludes the extra detection row", async () => {
+  it("keeps full totals when the detail preview is limited", async () => {
     const result = await runReport({ ...config, rowLimit: 1 });
-    expect(result).toMatchObject({ rowCount: 1, truncated: true, totals: { totalDebt_sum: 100 } });
+    expect(result).toMatchObject({ rowCount: 2, displayedRowCount: 1, truncated: true, totals: { totalDebt_sum: 300 } });
   });
   it("excludes missing values from averages", async () => {
     db.opportunity.findMany.mockResolvedValue([{ totalDebt: null }, { totalDebt: 100 }]);

@@ -1,3 +1,4 @@
+vi.mock("@/lib/reports/snapshots", () => ({ createReportSnapshot: vi.fn(), canReadSnapshot: vi.fn().mockResolvedValue(true), snapshotAttachments: vi.fn().mockReturnValue([]) }));
 import { beforeEach, expect, it, vi } from "vitest";
 const db = vi.hoisted(() => ({ findMany: vi.fn(), deleteMany: vi.fn(), updateMany: vi.fn(), create: vi.fn(), permissions: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { reportSubscription: { findMany: db.findMany, deleteMany: db.deleteMany }, $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn({ reportSubscription: { updateMany: db.updateMany }, reportDelivery: { create: db.create } }) } }));
@@ -21,4 +22,21 @@ it.each(["inactive", "revoked", "private"])("removes a subscription when access 
   if (kind === "revoked") db.permissions.mockResolvedValue(new Set());
   expect(await queueReportEmails()).toBe(0);
   expect(db.deleteMany).toHaveBeenCalled(); expect(db.create).not.toHaveBeenCalled();
+});
+
+import { createReportSnapshot, snapshotAttachments } from "@/lib/reports/snapshots";
+it("persists a scheduled snapshot and its attachments with the occurrence", async () => {
+  db.findMany.mockResolvedValue([{...due,snapshotFormat:"csv"}]);
+  const snapshot={config:{objectType:"Opportunity",columns:[],filters:[]},result:{columns:[],rows:[],rowCount:12000,generatedAt:"2026-09-23T10:00:00Z"}};
+  vi.mocked(createReportSnapshot).mockResolvedValue(snapshot);
+  vi.mocked(snapshotAttachments).mockReturnValue([{filename:"report-summary.csv",content:"YQ=="}]);
+  expect(await queueReportEmails()).toBe(1);
+  expect(db.create.mock.calls[0][0].data).toMatchObject({snapshot,payload:{attachments:[{filename:"report-summary.csv",content:"YQ=="}]}});
+  expect(db.create.mock.calls[0][0].data.payload.text).toContain("12000 matching records");
+});
+it("records a failed snapshot without falling back to an incomplete email", async () => {
+  db.findMany.mockResolvedValue([{...due,snapshotFormat:"csv"}]);
+  vi.mocked(createReportSnapshot).mockRejectedValue(new Error("Report export permission was removed"));
+  await queueReportEmails();
+  expect(db.create.mock.calls[0][0].data).toMatchObject({status:"FAILED",lastError:"Report export permission was removed"});
 });

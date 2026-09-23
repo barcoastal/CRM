@@ -355,6 +355,37 @@ export const OBJECT_METADATA: Record<string, ObjectMetadata> = {
   },
 };
 
+// Related reports preserve one row per debt/payment; account totals never multiply joins.
+const column = (key: string, label: string, type: FieldType = "string"): ObjectField => ({ key, label, type, source: "column" });
+const relation = (key: string, label: string, type: FieldType = "string"): ObjectField => ({ key, label, type, source: "relation", relation: key.split(".").slice(0, -1).join(".") });
+OBJECT_METADATA.Debt = {
+  label: "Debt with Related Records", pluralLabel: "Debts with Opportunities and Accounts", prismaModel: "debt",
+  description: "One row per debt with related opportunity and account fields.",
+  fields: [column("id", "Debt ID"), column("creditorName", "Creditor"), column("status", "Debt Status"), column("originalBalance", "Original Balance", "number"), column("currentBalance", "Current Balance", "number"), column("enrolledBalance", "Enrolled Balance", "number"), column("settledAmount", "Settled Amount", "number"), column("settledDate", "Settled Date", "date"), column("createdAt", "Created At", "date"), relation("opportunity.name", "Opportunity"), relation("opportunity.stage", "Opportunity Stage"), relation("opportunity.account.name", "Account"), relation("opportunity.assignedTo.name", "Opportunity Owner")],
+  defaultColumns: ["creditorName", "currentBalance", "status", "opportunity.name", "opportunity.account.name"],
+};
+OBJECT_METADATA.Payment = {
+  label: "Payment with Related Records", pluralLabel: "Payments with Debts, Opportunities and Accounts", prismaModel: "payment",
+  description: "One row per payment with related debt and customer records.",
+  fields: [column("id", "Payment ID"), column("amount", "Amount", "number"), column("type", "Type"), column("status", "Status"), column("scheduledDate", "Scheduled Date", "date"), column("paidDate", "Paid Date", "date"), column("createdAt", "Created At", "date"), relation("debt.creditorName", "Creditor"), relation("debt.currentBalance", "Debt Balance", "number"), relation("client.opportunity.name", "Opportunity"), relation("client.opportunity.stage", "Opportunity Stage"), relation("client.opportunity.account.name", "Account"), relation("client.opportunity.assignedTo.name", "Opportunity Owner")],
+  defaultColumns: ["amount", "status", "scheduledDate", "debt.creditorName", "client.opportunity.name", "client.opportunity.account.name"],
+};
+OBJECT_METADATA.OpportunitySnapshot = {
+  label: "Pipeline History", pluralLabel: "Daily Pipeline History", prismaModel: "opportunitySnapshot",
+  description: "Daily observed pipeline values. History starts when daily capture is enabled; it does not reconstruct earlier days.",
+  fields: [column("id", "Snapshot ID"), column("capturedAt", "Snapshot Date", "date"), column("stage", "Stage at Snapshot"), column("amount", "Amount at Snapshot", "number"), column("totalDebt", "Debt at Snapshot", "number"), column("isClosed", "Was Closed", "boolean"), column("isWon", "Was Won", "boolean"), column("assignedToName", "Owner at Snapshot"), relation("opportunity.name", "Opportunity"), relation("opportunity.account.name", "Account")],
+  defaultColumns: ["capturedAt", "opportunity.name", "stage", "amount", "totalDebt", "assignedToName"],
+};
+OBJECT_METADATA.OpportunityHistory = {
+  label: "Opportunity Changes", pluralLabel: "Opportunity Field Changes", prismaModel: "opportunityHistory",
+  description: "Recorded field changes, including dates, old values and new values.",
+  fields: [column("id", "Change ID"), column("changedAt", "Changed At", "date"), column("field", "Field"), column("oldValue", "Previous Value"), column("newValue", "New Value"), relation("opportunity.name", "Opportunity"), relation("opportunity.account.name", "Account"), relation("changedBy.name", "Changed By")],
+  defaultColumns: ["changedAt", "opportunity.name", "field", "oldValue", "newValue"],
+};
+for (const [key, label] of [["opportunityCount", "Related Opportunity Count"], ["opportunityAmount", "Related Opportunity Amount"], ["debtBalance", "Related Debt Balance"], ["paymentAmount", "Related Completed Payments"]]) {
+  OBJECT_METADATA.Account.fields.push({ key: `related.${key}`, label, type: "number", source: "computed" });
+}
+
 export const REPORTABLE_OBJECT_TYPES = Object.keys(OBJECT_METADATA);
 
 export function getObjectMetadata(objectType: string): ObjectMetadata | null {

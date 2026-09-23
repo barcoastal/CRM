@@ -1,3 +1,5 @@
+import { runtimeFiltersSchema } from "@/lib/reports/runtime-filters";
+import type { ReportOptions } from "@/lib/reports/advanced";
 import type { ReportFormula } from "@/lib/reports/formulas";
 import { runReport, type ReportFilter, type ReportSummarize } from "@/lib/reports/runner";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
@@ -17,6 +19,8 @@ export async function POST(req: NextRequest) {
   const queryKey = typeof body.queryKey === "string" ? body.queryKey : null;
   const reportId = typeof body.reportId === "string" ? body.reportId : null;
 
+  const filters = runtimeFiltersSchema.safeParse(body.runtimeFilters ?? {});
+  if (!filters.success) return NextResponse.json({ error: "Invalid dashboard filters" }, { status: 400 });
   try {
     if (kind === "report") {
       if (!access.isAdmin && !hasPermission(access.permissions, "Reports.View")) {
@@ -29,6 +33,8 @@ export async function POST(req: NextRequest) {
       if (!report) return NextResponse.json({ error: "Report not found" }, { status: 404 });
       const result = await runReport({
         objectType: report.objectType,
+        runtimeFilters: filters.data,
+    options: report.options as unknown as ReportOptions,
     formulas: report.formulas as unknown as ReportFormula[],
         columns: report.columns as string[],
         filters: report.filters as unknown as ReportFilter[],
@@ -57,7 +63,7 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
       }
-      const data = await runner.run();
+      const data = await runner.run(filters.data);
       return NextResponse.json(data);
     }
 
@@ -68,7 +74,7 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    const data = await runner.run();
+    const data = await runner.run(filters.data);
     return NextResponse.json(data);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

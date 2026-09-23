@@ -1,5 +1,7 @@
 "use client";
 
+import { TrendChart } from "@/components/reports/trend-chart";
+import type { RuntimeFilters } from "@/lib/reports/runtime-filters";
 import Link from "next/link";
 import type { ReportResult } from "@/lib/reports/runner";
 import { useEffect, useState } from "react";
@@ -88,12 +90,13 @@ function formatNumber(n: number, fmt?: "currency" | "number" | "percent"): strin
 
 interface Props {
   tile: DashboardTileData;
+  runtimeFilters?: RuntimeFilters;
   editing: boolean;
   onUpdate: (patch: Partial<DashboardTileData>) => Promise<void>;
   onDelete: () => Promise<void>;
 }
 
-export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
+export function DashboardTile({ tile, editing, onUpdate, onDelete, runtimeFilters }: Props) {
   const [data, setData] = useState<TileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [titleDraft, setTitleDraft] = useState(tile.title);
@@ -111,6 +114,7 @@ export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            runtimeFilters,
             kind: tile.kind,
             queryKey: tile.queryKey,
             reportId: tile.reportId,
@@ -129,7 +133,7 @@ export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [tile.kind, tile.queryKey, tile.reportId, tile.config]);
+  }, [tile.kind, tile.queryKey, tile.reportId, tile.config, runtimeFilters]);
 
   // Fetch registry + reports lazily when editing.
   useEffect(() => {
@@ -246,10 +250,10 @@ export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
             <Link className="text-blue-700 underline" href={`/reports/${tile.reportId}`}>{data.reportName} · Open report</Link>
             <div>{data.result.rowCount.toLocaleString()} records</div>
             {data.result.warning && <p role="status" className="text-amber-800">{data.result.warning}</p>}
-            {data.result.groups?.length ? <BarChartView buckets={data.result.groups.map(g => ({ label: g.key, value: g.rows.length }))} /> : (
+            {data.result.groups?.length ? (tile.config.chartType === "line" ? <TrendChart points={data.result.groups.map(g=>({key:g.id??g.key,label:g.key,value:typeof tile.config.metric === "string" && tile.config.metric !== "_count" ? Number(g.summary[tile.config.metric] ?? 0) : g.count ?? g.rows.length}))}/> : <BarChartView buckets={data.result.groups.map(g => ({ label: g.key, value: typeof tile.config.metric === "string" && tile.config.metric !== "_count" ? Number(g.summary[tile.config.metric] ?? 0) : g.count ?? g.rows.length }))} />) : (
               <table className="w-full text-left"><thead><tr>{data.result.columns.slice(0, 4).map(c => <th className="p-1" key={c.key}>{c.label}</th>)}</tr></thead><tbody>{data.result.rows.slice(0, 20).map((r, i) => <tr key={i}>{data.result.columns.slice(0, 4).map(c => <td className="p-1 border-t" key={c.key}>{String(r[c.key] ?? "—")}</td>)}</tr>)}</tbody></table>
             )}
-            <p className="text-gray-500">{data.result.groups?.length ? "Record count by group" : "Preview: first 20 rows and 4 columns"}</p>
+            <p className="text-gray-500">{data.result.groups?.length ? `${typeof tile.config.metric === "string" ? tile.config.metric : "Record count"} by group` : "Preview: first 20 rows and 4 columns"}</p>
           </div>
         ) : tile.kind === "bar" && isBar(data) ? (
           <BarChartView buckets={data.buckets} />
@@ -332,6 +336,7 @@ export function DashboardTile({ tile, editing, onUpdate, onDelete }: Props) {
             </div>
           )}
 
+          {tile.kind === "report" && data && "result" in data && <div className="flex gap-2 text-xs"><select aria-label="Report chart measure" className="border p-1 min-w-0" value={String(tile.config.metric??"_count")} onChange={e=>onUpdate({config:{...tile.config,metric:e.target.value}})}><option value="_count">Record count</option>{Object.keys(data.result.totals??{}).filter(k=>k!=="_count").map(k=><option key={k} value={k}>{k}</option>)}</select><select aria-label="Report chart type" className="border p-1" value={String(tile.config.chartType??"bar")} onChange={e=>onUpdate({config:{...tile.config,chartType:e.target.value}})}><option value="bar">Bar</option><option value="line">Trend line</option></select></div>}
           <div className="flex items-center gap-2">
             <label className="text-[10px] font-semibold uppercase tracking-wider text-[#747474] w-12">
               Size

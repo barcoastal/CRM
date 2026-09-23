@@ -18,3 +18,26 @@ describe("report formulas", () => {
     expect(evaluateFormula({ ...formula, left: 1e308, right: 1e308, operator: "multiply" }, {})).toBeNull();
   });
 });
+
+it("supports IF conditions on rows and summary totals",()=>{
+  const row={totalDebt:500};
+  const conditional={key:"formula_flag",label:"Flag",operator:"if" as const,left:"totalDebt",right:100,comparison:"gte" as const,whenTrue:1,whenFalse:0};
+  expect(validateFormulas([conditional],"Opportunity")).toHaveLength(1);
+  expect(evaluateFormula(conditional,row)).toBe(1);
+  expect(evaluateFormula(conditional,{totalDebt:50})).toBe(0);
+  expect(evaluateFormula({...conditional,scope:"summary",left:"totalDebt_sum"},{totalDebt_sum:900})).toBe(1);
+  expect(()=>validateFormulas([{...conditional,whenTrue:undefined}],"Opportunity")).toThrow();
+});
+it("calculates whole elapsed days and age using a fixed report time",()=>{
+  const dateFormula={key:"formula_days",label:"Days",operator:"daysBetween" as const,left:"createdAt",right:"closeDate"};
+  expect(validateFormulas([dateFormula],"Opportunity")).toHaveLength(1);
+  expect(evaluateFormula(dateFormula,{createdAt:"2026-09-01T12:00:00Z",closeDate:"2026-09-04T12:00:00Z"})).toBe(3);
+  expect(evaluateFormula({...dateFormula,operator:"ageDays"},{createdAt:"2026-09-01T12:00:00Z"},new Date("2026-09-05T12:00:00Z"))).toBe(4);
+  expect(evaluateFormula(dateFormula,{createdAt:null,closeDate:"2026-09-04"})).toBeNull();
+});
+it("supports status-based IF conditions with literal comparison values",()=>{
+  const f={key:"formula_won",label:"Won amount",operator:"if" as const,left:"stage",right:{literal:"Closed Won"},comparison:"equals" as const,whenTrue:"amount",whenFalse:0};
+  expect(validateFormulas([f],"Opportunity")).toHaveLength(1);
+  expect(evaluateFormula(f,{stage:"Closed Won",amount:500})).toBe(500);
+  expect(evaluateFormula(f,{stage:"Working",amount:500})).toBe(0);
+});
