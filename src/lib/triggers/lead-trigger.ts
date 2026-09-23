@@ -1,6 +1,7 @@
 import { AutomationValidationError } from "@/lib/automation/errors";
 import { applyLeadRouting } from "@/lib/automation/lead-routing";
 import { leadPaymentPopulated } from "../lead-payment-health";
+import { syncLeadHealthFields } from "../lead-health-fields";
 /**
  * Port of SF LeadTrigger / LeadTriggerHandler / LeadAfterTriggerHelper.
  * Source: docs/sf-export/sfdx-raw/classes/LeadTriggerHandler.cls
@@ -103,6 +104,7 @@ function recalcCreditorWeeklyTotal(sf: Record<string, unknown>): number {
 export const leadTrigger: Trigger<Lead, LeadWrite> = {
   async beforeInsert({ next, ctx }) {
     await applyLeadRouting(next, undefined, ctx);
+    syncLeadHealthFields(next);
     // Run admin-authored validation rules first so a failed rule blocks the
     // write before any side-effecting state mutation below runs.
     const vr = await runRulesFor("Lead", next as Record<string, unknown>, "insert");
@@ -132,6 +134,7 @@ export const leadTrigger: Trigger<Lead, LeadWrite> = {
 
   async beforeUpdate({ next, prev, ctx }) {
     await applyLeadRouting(next, prev, ctx);
+    syncLeadHealthFields(next, prev);
     // Run admin-authored validation rules against the merged proposed row so
     // a failed rule throws before any state mutation below.
     const proposed = { ...(prev as Record<string, unknown>), ...(next as Record<string, unknown>) };

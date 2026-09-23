@@ -11,3 +11,5 @@ Reference verified September 17, 2026: live Salesforce Account Health Check Resu
 - Existing account permissions and record scope protect the page and its refreshed results. This change does not write account, task, or payment records.
 
 Validation: nine rule tests, TypeScript, ESLint, production build, and browser checks of the actual component's four status combinations and controls.
+
+September 23 live recheck: the same account has no Health Check in Account Engagement but shows both Welcome Call and First Payment results in Debt Settlement. The CRM follows the Debt Settlement account layout. App-specific visibility is not inferred from the Account Engagement layout.

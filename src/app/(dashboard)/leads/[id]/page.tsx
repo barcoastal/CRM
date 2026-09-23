@@ -1,4 +1,5 @@
 import { leadPaymentPopulated } from "@/lib/lead-payment-health";
+import { splitLeadName } from "@/lib/lead-health-fields";
 import { LeadViewTracker } from "@/components/leads/lead-view-tracker";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
@@ -949,12 +950,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <LeadHealthCheckCard
             status={lead.status}
             businessName={lead.sfId ? sf("Company") : lead.businessName}
-            firstName={lead.sfId ? sf("FirstName") : (lead.contactName.trim().includes(" ") ? lead.contactName.trim().split(/\s+/)[0] : null)}
-            lastName={lead.sfId ? sf("LastName") : lead.contactName.trim().split(/\s+/).slice(1).join(" ") || lead.contactName.trim()}
+            firstName={lead.sfId || "FirstName" in sfData ? sf("FirstName") : splitLeadName(lead.contactName).FirstName}
+            lastName={lead.sfId || "LastName" in sfData ? sf("LastName") : splitLeadName(lead.contactName).LastName}
             industry={lead.industry}
-            totalDebt={lead.sfId ? sfNum("Current_Total_Debt_Amount__c") : lead.totalDebtEst}
+            totalDebt={sfNum("Current_Total_Debt_Amount__c")}
             leadSource={lead.sfId ? sf("LeadSource") : lead.source}
-            isPaymentAmountPopulated={leadPaymentPopulated(sfData)}
+            isPaymentAmountPopulated={typeof sfData.Is_Payment_Amount_Populated__c === "boolean" ? sfData.Is_Payment_Amount_Populated__c : leadPaymentPopulated(sfData)}
             firstCreditorDebt={sfNum("Creditor_1_Total_Debt__c")}
             callDispositionPopulated={
               !!sf("CloserLookup__c") &&
