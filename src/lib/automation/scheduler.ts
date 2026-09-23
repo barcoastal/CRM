@@ -11,7 +11,7 @@ export function scheduleAutomation() {
     running = true;
     try {
       await ensureCaseApprovalProcess().catch(error => console.error("[case-approval-setup]", error.message));
-      await runCadenceTick(new Date(), true);
+      if (process.env.ENABLE_OPPORTUNITY_CADENCES === "true") await runCadenceTick(new Date(), true);
     } catch (error) {
       console.error("[automation]", error instanceof Error ? error.message : "Automation failed");
     } finally { running = false; }

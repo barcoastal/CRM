@@ -1,6 +1,6 @@
 # Automation implementation — September 23, 2026
 
-Status: implemented and tested locally; not deployed. This extends the initial automation parity audit, rather than certifying complete parity.
+Status: release candidate validated locally; production verification pending. This extends the initial automation parity audit, rather than certifying complete parity.
 
 ## Implemented
 
@@ -20,16 +20,16 @@ Both attempts to open the Cadences list with the signed-in user returned “You 
 
 ## Remaining parity and release checks
 
-- Obtain readable cadence definitions and configure their exact steps before claiming cadence parity.
+- Obtain readable cadence definitions and configure their exact steps before claiming cadence parity. Automatic enrollment and the automatic worker are disabled by default (`ENABLE_OPPORTUNITY_CADENCES=false`) until verification; manual cadence behavior remains available.
 - Verify production owner mappings, queue members, and custom user-country values. No production backfill or schema change was performed.
 - Source approval email alerts/templates are not mirrored; existing CRM notifications remain in use.
 - Specialized skip-payment financial operations, comment timestamp updates, and import/sync writes are outside the main-save integration. Imports deliberately do not replay these automations.
-- Reconcile the latest remote changes and revalidate before deployment; this working tree is based on `d91c2aa5`.
+- Merged the latest remote scoreboard release (`a053494a`) without conflicts and validated the combined release.
+- Live CRM users page confirms Seth Sweet, Ferron Mohamad, Allison Biscardi, and Yeislee Flores are active. Queue mapping by source ID still needs post-deployment verification.
 
 ## Validation
 
-- Full unit suite: 81 files passed, 578 tests passed; 3 files/10 tests skipped, including opt-in database tests.
+- Final combined unit suite: 83 files passed, 610 tests passed; 3 files/10 tests skipped, including opt-in database tests.
 - Opt-in local PostgreSQL integration: 4 tests passed, covering case submission/locking/authorization/approval/rejection and cadence deduplication/due execution. Fixtures roll back; no customer records or outbound messages were used.
-- Final focused routing, dispatch, and cadence suite: 17 tests passed after the last changes.
-- Final TypeScript check and whitespace check passed. Modified-file lint passed before the final enrollment transaction refactor.
-- Production webpack build passed with an 8 GB Node heap before the final scope-preservation and enrollment transaction refinements. A final release build is still required.
+- Final TypeScript, modified-file lint, and whitespace checks passed. The final PostgreSQL integration rerun passed all four tests.
+- Final combined production webpack build, including TypeScript checking, passed with an 8 GB Node heap (exit 0).

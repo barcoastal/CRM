@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Opportunity } from "@/generated/prisma/client";
 const mocks = vi.hoisted(() => ({ cancel: vi.fn(), account: vi.fn(), cadence: vi.fn(), user: vi.fn(), log: vi.fn(), enroll: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { cadenceEnrollment: { updateMany: mocks.cancel }, account: { findUnique: mocks.account }, callCadence: { findUnique: mocks.cadence }, user: { findFirst: mocks.user }, applicationLog: { create: mocks.log } } }));
@@ -7,11 +7,20 @@ import { syncOpportunityCadences } from "@/lib/automation/opportunity-cadences";
 const base = { id: "opp", accountId: "account", stage: "New", welcomeCallScheduled: null } as Opportunity;
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.stubEnv("ENABLE_OPPORTUNITY_CADENCES", "true");
   mocks.account.mockResolvedValue({ primaryContactId: "contact", ownerId: "account-owner" });
   mocks.cadence.mockImplementation(({ where }) => ({ id: where.name, isActive: true, steps: [{ id: "step1" }] }));
   mocks.user.mockResolvedValue({ id: "manager" });
 });
+afterEach(() => vi.unstubAllEnvs());
 describe("opportunity cadence entry", () => {
+  it("does not enroll or change existing reminders until verified cadences are enabled", async () => {
+    vi.stubEnv("ENABLE_OPPORTUNITY_CADENCES", "false");
+    await syncOpportunityCadences({ ...base, stage: "Closed Won First Payment Pending", welcomeCallScheduled: new Date() }, base);
+    expect(mocks.account).not.toHaveBeenCalled();
+    expect(mocks.cancel).not.toHaveBeenCalled();
+    expect(mocks.enroll).not.toHaveBeenCalled();
+  });
   it("schedules welcome work one day before the call for the account contact and owner", async () => {
     const when = new Date("2026-10-02T14:00:00Z");
     await syncOpportunityCadences({ ...base, welcomeCallScheduled: when }, base);

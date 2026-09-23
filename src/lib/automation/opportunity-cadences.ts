@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { enrollInCadence } from "@/lib/cadences";
 
 export async function syncOpportunityCadences(row: Opportunity, prev: Opportunity) {
+  if (process.env.ENABLE_OPPORTUNITY_CADENCES !== "true") return;
   const welcomeChanged = row.welcomeCallScheduled?.getTime() !== prev.welcomeCallScheduled?.getTime();
   const contractEntered = row.stage === "Closed Won First Payment Pending" && prev.stage !== row.stage;
   if (!welcomeChanged && !contractEntered) return;

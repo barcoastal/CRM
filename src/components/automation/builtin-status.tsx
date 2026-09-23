@@ -17,7 +17,7 @@ export async function BuiltinAutomationStatus() {
     <p>Web-lead assignment: {process.env.DISABLE_WEB_LEAD_ROUTING === "true" ? "Disabled" : owner ? `Ready · ${owner.name}` : "Setup needed: mapped active lead owner"}.</p>
     {(["Welcome Call", "Contract Signed"] as const).map(name => {
       const cadence = cadences.find(item => item.name === name);
-      return <p key={name}>{name}: {cadence?.isActive && cadence._count.steps && (name !== "Contract Signed" || manager) ? "Ready for automatic enrollment" : "Setup needed: active cadence, verified steps and mapped owner"}.</p>;
+      return <p key={name}>{name}: {process.env.ENABLE_OPPORTUNITY_CADENCES !== "true" ? "Automatic enrollment paused pending step verification" : cadence?.isActive && cadence._count.steps && (name !== "Contract Signed" || manager) ? "Ready for automatic enrollment" : "Setup needed: active cadence, verified steps and mapped owner"}.</p>;
     })}
     <p>Agent locations: {locations} active users configured. <Link href="/settings/users" className="text-blue-700">Manage users</Link></p>
   </section>;

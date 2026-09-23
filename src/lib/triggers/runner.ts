@@ -151,7 +151,7 @@ export async function triggerUpdateMany(model: string, where: Record<string, unk
   let count = 0;
   const failures: Array<{ id: string; error: string }> = [];
   for (const row of rows) {
-    try { await triggerUpdate(model, row.id, { ...data }, ctx); count++; }
+    try { await triggerUpdate(model, row.id, { ...data }, ctx, { id: row.id, AND: [where] }); count++; }
     catch (error) { failures.push({ id: row.id, error: error instanceof Error ? error.message : "Update failed" }); }
   }
   return { count, failures };
