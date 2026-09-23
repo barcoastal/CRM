@@ -11,12 +11,18 @@ export type NavItem = {
 
 const ORDER_KEY = "sf:navOrder.v2"; // v2: SF Debt Settlement tab order became the default
 const HIDDEN_KEY = "sf:navHidden.v2";
+const FLOOR_HUB_LEGACY = new Set(["/dialer/meetings", "/dialer/manager", "/dialer/closer-dashboard", "/dialer/on-call"]);
 
 export function loadNavPrefs(): { order: string[]; hidden: string[] } {
   try {
     const order = JSON.parse(localStorage.getItem(ORDER_KEY) ?? "[]") as string[];
     const hidden = JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? "[]") as string[];
-    return { order: Array.isArray(order) ? order : [], hidden: Array.isArray(hidden) ? hidden : [] };
+    // Keep the new hub where the first old floor tool was pinned, with one
+    // entry even when all four tools appeared in the saved navigation.
+    return {
+      order: Array.isArray(order) ? [...new Set(order.map((href) => FLOOR_HUB_LEGACY.has(href) ? "/floor-manager" : href))] : [],
+      hidden: Array.isArray(hidden) ? hidden : [],
+    };
   } catch {
     return { order: [], hidden: [] };
   }

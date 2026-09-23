@@ -25,6 +25,7 @@ interface ItemTile {
 }
 
 const APPS: AppTile[] = [
+  { label: "Floor Manager Hub", href: "/floor-manager", description: "Live floor, meetings, closer tiers and debt production" },
   { label: "Sales Operations", href: "/dashboard", description: "Full pipeline + reports" },
   { label: "Dashboards", href: "/dashboards", description: "KPIs and charts" },
   { label: "Sales Console", href: "/opportunities", description: "Closer workspace" },
