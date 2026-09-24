@@ -920,6 +920,7 @@ model Lead {
   aiCalls             AiCall[]
 
   @@index([contactName, id], map: "Lead_name_list_sort_idx")
+  @@index([createdAt(sort: Desc), id], map: "Lead_created_list_sort_idx")
   @@index([recordType])
   @@index([convertedAccountId])
   @@index([convertedContactId])

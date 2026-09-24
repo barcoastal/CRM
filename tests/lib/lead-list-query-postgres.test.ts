@@ -54,4 +54,18 @@ describe.skipIf(!process.env.LEAD_LIST_TEST_DATABASE_URL)('lead views in Postgre
     expect(await ids('All Leads',{search:"' OR TRUE --"})).toEqual([]);
     expect(await ids('All Leads',{status:'Archive Disposition'})).toEqual(['c']);
   });
+  it('pages without gaps and counts without changing view membership',async()=>{
+    const input={definition:LEAD_LIST_VIEWS.find(v=>v.value==='web-leads')!,scope:{assignedToId:'allowed'},userId:'allowed',recentIds:[]};
+    const run=async(options:Parameters<typeof leadListIdsQuery>[1])=>{const q=leadListIdsQuery(input,options);return (await db.query(q.text,q.values)).rows.map((r:{id:string})=>r.id);};
+    const first=await run({limit:1,offset:0});
+    const second=await run({limit:1,offset:1});
+    expect([...first,...second]).toEqual(await ids('Web Leads'));
+    expect(new Set(await run({ordered:false}))).toEqual(new Set([...first,...second]));
+  });
+  it('treats search wildcards literally while matching case insensitively',async()=>{
+    await db.query(`UPDATE "Lead" SET "businessName"='ACME 10%_off' WHERE id='a'`);
+    expect(await ids('Web Leads',{search:'acme 10%_'})).toEqual(['a']);
+    expect(await ids('Web Leads',{search:'%'})).toEqual(['a']);
+    expect(await ids('Web Leads',{search:'10X'})).toEqual([]);
+  });
 });
