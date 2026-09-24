@@ -20,11 +20,14 @@ async function main() {
   try {
     const selected = process.argv.slice(2);
     const entities = selected.length ? selected : [...SYNC_ENTITIES];
+    // Use one source cutoff for the whole dependency chain. A child created
+    // during the run belongs to the next window along with its new parent.
+    const now = new Date();
     const failures: string[] = [];
     console.log(`=== Salesforce sync started ${new Date().toISOString()} ===`);
     for (const entity of entities) {
       let code = 1;
-      try { code = await checkpointedEntity(entity, { stateDir, since: process.env.SF_SINCE, log: line => process.stdout.write(line) }); }
+      try { code = await checkpointedEntity(entity, { stateDir, since: process.env.SF_SINCE, now, log: line => process.stdout.write(line) }); }
       catch { console.error(`${entity}: runner error; checkpoint retained`); }
       if (code !== 0) failures.push(entity);
     }

@@ -3,8 +3,9 @@ import { execFile } from "node:child_process";
 
 const TRANSIENT = new Set(["P1001", "P1002", "P1008", "P1017", "P2024", "P2028", "P2034", "ECONNRESET", "ETIMEDOUT", "ECONNREFUSED", "EPIPE", "57P01", "40001", "40P01"]);
 export function errorCode(error: unknown): string {
-  const e = error as { code?: unknown; meta?: { code?: unknown } };
+  const e = error as { code?: unknown; message?: unknown; meta?: { code?: unknown } };
   if (e?.code === "P2010" && typeof e.meta?.code === "string") return e.meta.code;
+  if (typeof e?.message === "string" && /^(Query read timeout|Connection terminated unexpectedly)$/.test(e.message)) return "ETIMEDOUT";
   return typeof e?.code === "string" ? e.code : "UNKNOWN";
 }
 export async function retry<T>(run: () => Promise<T>, attempts = 3, delayMs = 500): Promise<T> {

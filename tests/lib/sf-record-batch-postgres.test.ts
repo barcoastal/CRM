@@ -11,6 +11,7 @@ describe.skipIf(!process.env.CLOSER_TEST_DATABASE_URL)("record batches in Postgr
       CREATE TEMP TABLE "Account" (id text PRIMARY KEY,"primaryContactId" text,"dateOfBirth" timestamp,"sfDataJson" text,"updatedAt" timestamp);
       CREATE TEMP TABLE "Opportunity" (id text PRIMARY KEY,"sfId" text UNIQUE,"primaryContactId" text,"dateOfBirth" timestamp,"contactSsn" text,"createdAt" timestamp,"updatedAt" timestamp);
       CREATE TEMP TABLE "PaymentSummaryLine" (id text PRIMARY KEY,"sfId" text UNIQUE,"totalAmount" numeric,"updatedAt" timestamp);
+      CREATE TEMP TABLE "Lead" (id text PRIMARY KEY,"sfId" text UNIQUE,"createdAt" timestamp,"updatedAt" timestamp);
       INSERT INTO "Account" VALUES ('primary',null,null,'{"Primary_Contact__c":"003source","keep":"yes"}',now()),('unrelated',null,null,'{"Primary_Contact__c":"003other"}',now());`);
   });
   afterAll(async () => { await db.end(); });
@@ -55,5 +56,11 @@ describe.skipIf(!process.env.CLOSER_TEST_DATABASE_URL)("record batches in Postgr
     expect((await db.query('SELECT "contactSsn" FROM "Opportunity" WHERE "sfId"=$1', ['006preserve'])).rows[0].contactSsn).toBe("existing");
     expect((await db.query('SELECT "contactSsn" FROM "Opportunity" WHERE "sfId"=$1', ['006set'])).rows[0].contactSsn).toBe("new");
     expect((await db.query('SELECT "contactSsn" FROM "Opportunity" WHERE "sfId"=$1', ['006clear'])).rows[0].contactSsn).toBeNull();
+  });
+  it("preserves explicit source modification dates used by the lead mapper", async () => {
+    const row = { sfId: "00Qsource", createdAt: new Date("2026-08-01T00:00Z"), updatedAt: new Date("2026-09-24T13:00Z") };
+    await apply("Lead", [row]);
+    await apply("Lead", [{ ...row, updatedAt: new Date("2026-09-24T14:00Z") }]);
+    expect((await db.query('SELECT to_char("updatedAt", \'YYYY-MM-DD HH24:MI:SS\') AS value FROM "Lead"')).rows[0].value).toBe("2026-09-24 14:00:00");
   });
 });

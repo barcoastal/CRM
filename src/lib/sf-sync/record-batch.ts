@@ -9,13 +9,14 @@ const TABLES = new Set(["Contact", "Opportunity", "Lead", "ProgramPlan", "Draft"
 export function recordUpsertQuery(table: string, rows: Record<string, unknown>[]) {
   if (!TABLES.has(table) || !rows.length) throw new Error("Invalid sync batch");
   const keys = Object.keys(rows[0]);
-  if (!keys.includes("sfId") || keys.some(k => !/^[A-Za-z][A-Za-z0-9_]*$/.test(k) || ["id", "updatedAt"].includes(k)) ||
+  if (!keys.includes("sfId") || keys.some(k => !/^[A-Za-z][A-Za-z0-9_]*$/.test(k) || k === "id") ||
     rows.some(row => keys.some(k => !(k in row)) || Object.keys(row).some(k => !keys.includes(k)))) throw new Error("Inconsistent sync fields");
   const columns = keys.map(k => Prisma.raw(`"${k}"`));
   const extraCreated = table !== "PaymentSummaryLine" && !keys.includes("createdAt");
-  const names = Prisma.join([Prisma.raw('"id"'), ...columns, ...(extraCreated ? [Prisma.raw('"createdAt"')] : []), Prisma.raw('"updatedAt"')]);
-  const values = Prisma.join([Prisma.raw('"id"'), ...columns, ...(extraCreated ? [Prisma.raw("NOW()")] : []), Prisma.raw("NOW()")]);
-  const assignments = Prisma.join([...keys.filter(k => k !== "sfId").map(k => Prisma.raw(`"${k}" = EXCLUDED."${k}"`)), Prisma.raw('"updatedAt" = NOW()')]);
+  const extraUpdated = !keys.includes("updatedAt");
+  const names = Prisma.join([Prisma.raw('"id"'), ...columns, ...(extraCreated ? [Prisma.raw('"createdAt"')] : []), ...(extraUpdated ? [Prisma.raw('"updatedAt"')] : [])]);
+  const values = Prisma.join([Prisma.raw('"id"'), ...columns, ...(extraCreated ? [Prisma.raw("NOW()")] : []), ...(extraUpdated ? [Prisma.raw("NOW()")] : [])]);
+  const assignments = Prisma.join([...keys.filter(k => k !== "sfId").map(k => Prisma.raw(`"${k}" = EXCLUDED."${k}"`)), ...(extraUpdated ? [Prisma.raw('"updatedAt" = NOW()')] : [])]);
   const relation = Prisma.raw(`"${table}"`);
   return Prisma.sql`INSERT INTO ${relation} (${names})
     SELECT ${values} FROM jsonb_populate_recordset(NULL::${relation}, ${JSON.stringify(rows.map(row => ({ ...row, id: randomUUID() })))}::jsonb)

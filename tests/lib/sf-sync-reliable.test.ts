@@ -13,6 +13,8 @@ describe("reliable Salesforce sync", () => {
   it("retries dropped database connections but does not retry validation failures", async () => {
     const work = vi.fn().mockRejectedValueOnce({ code: "P1017" }).mockResolvedValue("ok");
     expect(await retry(work, 3, 0)).toBe("ok"); expect(work).toHaveBeenCalledTimes(2);
+    const timeout = vi.fn().mockRejectedValueOnce(new Error("Query read timeout")).mockResolvedValue("ok");
+    expect(await retry(timeout, 3, 0)).toBe("ok"); expect(timeout).toHaveBeenCalledTimes(2);
     const bad = vi.fn().mockRejectedValue({ code: "P2002" });
     await expect(retry(bad, 3, 0)).rejects.toMatchObject({ code: "P2002" }); expect(bad).toHaveBeenCalledTimes(1);
   });

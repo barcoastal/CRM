@@ -37,9 +37,10 @@ function log(line: string): void {
   console.log(`[sf-sync] ${line}`);
 }
 
-function runEntity(entity: string): Promise<number> {
+function runEntity(entity: string, now: Date): Promise<number> {
   if ((SYNC_ENTITIES as readonly string[]).includes(entity)) return checkpointedEntity(entity, {
     stateDir: process.env.SF_SYNC_STATE_DIR ?? path.join(process.env.NODE_ENV === "production" ? "/data" : process.cwd(), "sf-sync-state"),
+    now,
     log: line => fs.appendFileSync(LOG_PATH, line),
   });
   return new Promise((resolve) => {
@@ -73,11 +74,12 @@ export function startSfSync(trigger: string): { started: boolean; reason?: strin
   void (async () => {
     log(`=== sync started (${trigger}) ===`);
     const failures: string[] = [];
+    const now = new Date();
     for (const entity of ENTITIES) {
       status.current = entity;
       log(`syncing ${entity}...`);
       let code = 1;
-      try { code = await runEntity(entity); }
+      try { code = await runEntity(entity, now); }
       catch { log(`${entity}: runner error; checkpoint retained`); }
       if (code !== 0) {
         failures.push(entity);
