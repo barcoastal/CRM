@@ -51,3 +51,4 @@ next-env.d.ts
 # icon pipeline logs
 scripts/icons/*.log
 .data/
+/sf-sync-state/

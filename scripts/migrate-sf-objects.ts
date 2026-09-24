@@ -1,5 +1,6 @@
 import { LEAD_PARITY_FIELDS, expandRelationshipFields } from "../src/lib/sf-sync/lead-fields";
-import { syncAccountCloser } from "../src/lib/account-team";
+import { importContactBatch, importRecordBatch } from "../src/lib/sf-sync/record-batch";
+import { importAccountBatch } from "../src/lib/sf-sync/account-batch";
 /**
  * Streaming Salesforce → CRM migration.
  *
@@ -16,15 +17,17 @@ import { syncAccountCloser } from "../src/lib/account-team";
  *   5. Resume-safe: re-running picks up where it left off (upsert by sfId)
  */
 
-import { PrismaClient } from "../src/generated/prisma/client";
+import { Prisma, PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import { addPredicate, incrementalCsv, retry, utcTimestamp, writeBatch } from "../src/lib/sf-sync/reliable";
 import { contactIdentity } from "../src/lib/sf-sync/contact-identity";
 import { opportunityContactIdentity } from "../src/lib/sf-sync/opportunity-contact";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 20 });
-const prisma = new PrismaClient({ adapter, log: process.argv[2] === "contact" ? [] : ["warn", "error"] });
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 5, keepAlive: true, connectionTimeoutMillis: 20_000, idleTimeoutMillis: 30_000, query_timeout: 120_000, statement_timeout: 120_000 });
+// Prisma error logging can include source record values; log sanitized codes instead.
+const prisma = new PrismaClient({ adapter, log: [] });
 
 const ENTITIES_ALL = ["contact", "account", "opportunity", "lead", "programplan", "draft", "debt", "fee", "case", "task", "event", "emailmessage", "accounthistory", "paymentsummary", "offer", "settlement"];
 const ENTITY = process.argv[2];
@@ -80,18 +83,24 @@ function effectiveSoql(entity: string): string {
     if(match){const fields=[...new Map([...match[1].split(',').map(s=>s.trim()),...LEAD_PARITY_FIELDS].map(field=>[field.toLowerCase(),field])).values()];base=base.replace(/^SELECT .*? FROM Lead/i,`SELECT ${fields.join(', ')} FROM Lead`);}
   }
   const since = process.env.SF_SINCE?.trim();
-  if (!base || !since) return base;
-  const pred = `LastModifiedDate >= ${since}`;
-  return / WHERE /i.test(base)
-    ? base.replace(/ WHERE /i, ` WHERE ${pred} AND `)
-    : `${base} WHERE ${pred}`;
+  const until = process.env.SF_UNTIL?.trim();
+  const ids = process.env.SF_ONLY_IDS?.split(",").filter(Boolean);
+  if (ids) {
+    if (!ids.length || ids.length > 200 || ids.some(id => !/^[a-zA-Z0-9]{15,18}$/.test(id))) throw new Error("Invalid source record IDs");
+    base = addPredicate(base, `Id IN (${ids.map(id => `'${id}'`).join(",")})`);
+  }
+  if (since) base = addPredicate(base, `LastModifiedDate >= ${utcTimestamp(since)}`);
+  if (until) base = addPredicate(base, `LastModifiedDate <= ${utcTimestamp(until)}`);
+  return base;
 }
 
-const CSV_PATH = `/tmp/sf-${ENTITY}.csv`;
+const CSV_PATH = process.env.SF_CSV_PATH ?? `/tmp/sf-${ENTITY}.csv`;
 
 async function exportFromSF(): Promise<void> {
-  console.log(`[${new Date().toISOString()}] Exporting ${ENTITY} from Salesforce (bulk API)…`);
-  if (process.env.SF_AUTH_URL) {
+  console.log(`[${new Date().toISOString()}] Exporting ${ENTITY} from Salesforce…`);
+  if (process.env.SF_SINCE || process.env.SF_ONLY_IDS) {
+    await incrementalCsv(effectiveSoql(ENTITY), CSV_PATH);
+  } else if (process.env.SF_AUTH_URL) {
     // Containerized path (Railway): direct Bulk API 2.0 REST - no sf CLI.
     const { bulkQueryToCsv } = await import("../src/lib/sf-sync/bulk-export");
     await bulkQueryToCsv(effectiveSoql(ENTITY), CSV_PATH);
@@ -172,20 +181,41 @@ async function loadUserMap(): Promise<Map<string, string>> {
   return m;
 }
 
-/** SF account Id -> CRM account.id (for parent/primary-account links). */
-async function loadAccountMap(): Promise<Map<string, string>> {
-  const rows = await prisma.account.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
-  const m = new Map<string, string>();
-  for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
-  return m;
+// Fetch only relationships referenced by this export, never the entire CRM.
+// The full-migration AccountHistory REST path has no CSV and uses cursor pages.
+async function referenceIds(prefixOrField: string): Promise<string[] | null> {
+  if (ENTITY === "accounthistory") return null;
+  const ids = new Set<string>();
+  let fieldIndex = -1;
+  let header = true;
+  for await (const cells of csvRecords(CSV_PATH)) {
+    if (header) { fieldIndex = cells.indexOf(prefixOrField); header = false; continue; }
+    const values = prefixOrField.length === 3 ? cells : fieldIndex >= 0 ? [cells[fieldIndex]] : [];
+    for (const value of values) if (/^[a-zA-Z0-9]{15,18}$/.test(value) && (prefixOrField.length !== 3 || value.startsWith(prefixOrField))) ids.add(value);
+  }
+  return [...ids];
 }
-
-/** SF contact Id -> CRM contact.id (for account primary-contact links). */
+async function referenceRows<T extends { id: string }>(ids: string[] | null, read: (args: { where: { sfId: { in: string[] } | { not: null } }; take: number; orderBy: { id: "asc" }; cursor?: { id: string }; skip?: number }) => Promise<T[]>): Promise<T[]> {
+  const rows: T[] = [];
+  if (ids) {
+    for (let i = 0; i < ids.length; i += 500) rows.push(...await retry(() => read({ where: { sfId: { in: ids.slice(i, i + 500) } }, take: 500, orderBy: { id: "asc" } })));
+  } else {
+    for (;;) {
+      const last = rows.at(-1);
+      const page = await retry(() => read({ where: { sfId: { not: null } }, take: 1000, orderBy: { id: "asc" }, ...(last ? { cursor: { id: last.id }, skip: 1 } : {}) }));
+      rows.push(...page);
+      if (page.length < 1000) break;
+    }
+  }
+  return rows;
+}
+async function loadAccountMap(): Promise<Map<string, string>> {
+  const rows = await referenceRows(await referenceIds("001"), args => prisma.account.findMany({ ...args, select: { id: true, sfId: true } }));
+  return new Map(rows.filter(r => r.sfId).map(r => [r.sfId!, r.id]));
+}
 async function loadContactMap(): Promise<Map<string, string>> {
-  const rows = await prisma.contact.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
-  const m = new Map<string, string>();
-  for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
-  return m;
+  const rows = await referenceRows(await referenceIds("003"), args => prisma.contact.findMany({ ...args, select: { id: true, sfId: true } }));
+  return new Map(rows.filter(r => r.sfId).map(r => [r.sfId!, r.id]));
 }
 
 async function migrateContacts(headers: string[], records: AsyncIterable<string[]>): Promise<void> {
@@ -206,39 +236,10 @@ async function migrateContacts(headers: string[], records: AsyncIterable<string[
 
   async function flush() {
     if (batch.length === 0) return;
-    const results = await Promise.allSettled(
-      batch.map((c) => prisma.$transaction(async (tx) => {
-        const contact = await tx.contact.upsert({
-          where: { sfId: c.sfId as string },
-          update: c,
-          create: c as never,
-        });
-        // These pages prefer their own identity fields over the linked Contact.
-        // Refresh them too, using only the explicit primary-contact relationship.
-        await tx.opportunity.updateMany({
-          where: { primaryContactId: contact.id },
-          data: { dateOfBirth: contact.birthdate, contactSsn: contact.ssn },
-        });
-        await tx.$executeRaw`
-          UPDATE "Account"
-          SET "dateOfBirth" = ${contact.birthdate},
-              "sfDataJson" = (COALESCE(NULLIF("sfDataJson", '')::jsonb, '{}'::jsonb)
-                || ${JSON.stringify({ SSN__c: contact.ssn, Date_of_Birth__c: contact.birthdate?.toISOString().slice(0, 10) ?? null, DOB__c: contact.birthdate?.toISOString().slice(0, 10) ?? null })}::jsonb)::text,
-              "updatedAt" = NOW()
-          WHERE "primaryContactId" = ${contact.id}
-        `;
-      }, { maxWait: 30_000, timeout: 30_000 })),
-    );
-    const failures = results.filter((r) => r.status === "rejected");
-    if (failures.length > 0) {
-      console.error(`[${new Date().toISOString()}] ${failures.length}/${batch.length} contact upserts failed`);
-      const codes = failures.map((r) => r.status === "rejected" && typeof r.reason?.code === "string" ? r.reason.code : "UNKNOWN");
-      console.error(`Contact failure codes: ${[...new Set(codes)].join(", ")}`);
-      throw new Error("Contact sync failed; identity values omitted from logs");
-    }
+    await importContactBatch(prisma, batch);
     count += batch.length;
     batch = [];
-    if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] Contact: ${count} imported`);
+    if (count % 500 === 0) console.log(`[${new Date().toISOString()}] Contact: ${count} imported`);
   }
 
   for await (const cells of records) {
@@ -260,7 +261,7 @@ async function migrateContacts(headers: string[], records: AsyncIterable<string[
       ownerId: users.get(cells[I.OwnerId]) ?? null,
       primaryAccountId: accounts.get(cells[I.AccountId]) ?? null,
     });
-    if (batch.length >= 10) await flush();
+    if (batch.length >= 50) await flush();
   }
   await flush();
   console.log(`[${new Date().toISOString()}] DONE Contact: ${count} total`);
@@ -287,20 +288,10 @@ async function migrateAccounts(headers: string[], records: AsyncIterable<string[
 
   async function flush() {
     if (batch.length === 0) return;
-    const aResults = await Promise.allSettled(
-      batch.map((a) => prisma.$transaction(async tx=>{
-        const account=await tx.account.upsert({where:{sfId:a.sfId as string},update:a,create:a as never});
-        await syncAccountCloser(tx,account);
-        return account;
-      })),
-    );
-    const aFail = aResults.filter((r) => r.status === "rejected");
-    if (aFail.length > 0) {
-      throw new Error(`Account sync failed: ${aFail.length}/${batch.length} upserts rejected; record values omitted`);
-    }
+    await importAccountBatch(prisma, batch);
     count += batch.length;
     batch = [];
-    if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] Account: ${count} imported`);
+    if (count % 500 === 0) console.log(`[${new Date().toISOString()}] Account: ${count} imported`);
   }
 
   // Column index for every selected field so the full row can be snapshotted
@@ -386,12 +377,7 @@ async function migrateOpportunities(headers: string[], records: AsyncIterable<st
     CloseDate: idx("CloseDate"), AccountId: idx("AccountId"), Description: idx("Description"),
     OwnerId: idx("OwnerId"),
   };
-  console.log(`[${new Date().toISOString()}] Loading account map…`);
-  const accountMap = new Map<string, string>();
-  const accounts = await prisma.account.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
-  for (const a of accounts) if (a.sfId) accountMap.set(a.sfId, a.id);
-  console.log(`[${new Date().toISOString()}] ${accountMap.size} accounts loaded.`);
-
+  const accountMap = await loadAccountMap();
   // Guard: refuse a stale/partial export (would null-overwrite good data).
   const requiredOpp = ["ContactId", "Total_Debt__c", "Current_Weekly_Payment__c", "Last_Disposition__c", "Version_Status__c"];
   const missingOpp = requiredOpp.filter((h) => idx(h) === -1);
@@ -399,10 +385,9 @@ async function migrateOpportunities(headers: string[], records: AsyncIterable<st
     throw new Error(`Opportunity CSV missing operational columns (${missingOpp.join(", ")}) - refusing to import. Delete the CSV and re-export.`);
   }
   const col = (h: string): number => idx(h);
-  const contactRows = await prisma.contact.findMany({
-    where: { sfId: { not: null } },
-    select: { id: true, sfId: true, birthdate: true, ssn: true },
-  });
+  const contactRows = await referenceRows(await referenceIds("003"), args => prisma.contact.findMany({
+    ...args, select: { id: true, sfId: true, birthdate: true, ssn: true },
+  }));
   const contactIdentities = new Map(contactRows.map((c) => [c.sfId!, c]));
   const users = await loadUserMap();
   let batch: Array<Record<string, unknown>> = [];
@@ -413,22 +398,10 @@ async function migrateOpportunities(headers: string[], records: AsyncIterable<st
     if (batch.length === 0) return;
     // UPSERT (not createMany/skipDuplicates) so stage/amount/owner changes in
     // SF refresh existing CRM deals nightly, not just brand-new ones.
-    const results = await Promise.allSettled(
-      batch.map((o) =>
-        prisma.opportunity.upsert({
-          where: { sfId: o.sfId as string },
-          update: o,
-          create: o as never,
-        }),
-      ),
-    );
-    const failures = results.filter((r) => r.status === "rejected");
-    if (failures.length > 0) {
-      throw new Error(`Sync batch failed: ${failures.length}/${batch.length} upserts rejected; record values omitted`);
-    }
+    await importRecordBatch(prisma, "Opportunity", batch);
     count += batch.length;
     batch = [];
-    if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] Opportunity: ${count} imported, ${skipped} skipped`);
+    if (count % 500 === 0) console.log(`[${new Date().toISOString()}] Opportunity: ${count} imported, ${skipped} skipped`);
   }
 
   for await (const cells of records) {
@@ -467,11 +440,13 @@ async function migrateOpportunities(headers: string[], records: AsyncIterable<st
       lastContactedAt: g("Last_Contacted_DateTime__c") ? new Date(g("Last_Contacted_DateTime__c")) : null,
       notes: cells[I.Description] || null,
       assignedToId: users.get(cells[I.OwnerId]) ?? null,
+      createdAt: g("CreatedDate") ? new Date(g("CreatedDate")) : undefined,
       sfDataJson: JSON.stringify(sfData),
     });
     if (batch.length >= 50) await flush();
   }
   await flush();
+  if (skipped) throw new Error(`Opportunity sync incomplete: ${skipped} missing accounts; checkpoint retained`);
   console.log(`[${new Date().toISOString()}] DONE Opportunity: ${count} total, ${skipped} skipped (no matching Account)`);
 }
 
@@ -497,19 +472,7 @@ async function migrateLeads(headers: string[], records: AsyncIterable<string[]>)
     if (batch.length === 0) return;
     // Upsert so status/owner changes in SF refresh existing leads (slow on the
     // full 600K table - runs on the mini overnight).
-    const results = await Promise.allSettled(
-      batch.map((l) =>
-        prisma.lead.upsert({
-          where: { sfId: l.sfId as string },
-          update: l,
-          create: l as never,
-        }),
-      ),
-    );
-    const failures = results.filter((r) => r.status === "rejected");
-    if (failures.length > 0) {
-      throw new Error(`Sync batch failed: ${failures.length}/${batch.length} upserts rejected; record values omitted`);
-    }
+    await importRecordBatch(prisma, "Lead", batch);
     count += batch.length;
     batch = [];
     if (count % 50000 < 100) console.log(`[${new Date().toISOString()}] Lead: ${count} imported`);
@@ -545,7 +508,7 @@ async function migrateLeads(headers: string[], records: AsyncIterable<string[]>)
 
 /** SF opportunity Id -> CRM opportunity.id (for program-plan links). */
 async function loadOpportunityMap(): Promise<Map<string, string>> {
-  const rows = await prisma.opportunity.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
+  const rows = await referenceRows(await referenceIds("006"), args => prisma.opportunity.findMany({ ...args, select: { id: true, sfId: true } }));
   const m = new Map<string, string>();
   for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
   return m;
@@ -587,18 +550,10 @@ async function migrateProgramPlans(headers: string[], records: AsyncIterable<str
 
   async function flush() {
     if (batch.length === 0) return;
-    const results = await Promise.allSettled(
-      batch.map((p) =>
-        prisma.programPlan.upsert({ where: { sfId: p.sfId as string }, update: p, create: p as never }),
-      ),
-    );
-    const failures = results.filter((r) => r.status === "rejected");
-    if (failures.length > 0) {
-      throw new Error(`Sync batch failed: ${failures.length}/${batch.length} upserts rejected; record values omitted`);
-    }
+    await importRecordBatch(prisma, "ProgramPlan", batch);
     count += batch.length;
     batch = [];
-    if (count % 5000 === 0) console.log(`[${new Date().toISOString()}] ProgramPlan: ${count} imported, ${skipped} skipped`);
+    if (count % 500 === 0) console.log(`[${new Date().toISOString()}] ProgramPlan: ${count} imported, ${skipped} skipped`);
   }
 
   for await (const cells of records) {
@@ -627,12 +582,13 @@ async function migrateProgramPlans(headers: string[], records: AsyncIterable<str
     if (batch.length >= 50) await flush();
   }
   await flush();
+  if (skipped) throw new Error(`ProgramPlan sync incomplete: ${skipped} missing dependencies; checkpoint retained`);
   console.log(`[${new Date().toISOString()}] DONE ProgramPlan: ${count} total, ${skipped} skipped (no matching Account)`);
 }
 
 /** SF program-plan Id -> CRM programPlan.id (for draft links). */
 async function loadPlanMap(): Promise<Map<string, string>> {
-  const rows = await prisma.programPlan.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
+  const rows = await referenceRows(await referenceIds("Program_Plan__c"), args => prisma.programPlan.findMany({ ...args, select: { id: true, sfId: true } }));
   const m = new Map<string, string>();
   for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
   return m;
@@ -663,15 +619,7 @@ async function migrateDrafts(headers: string[], records: AsyncIterable<string[]>
 
   async function flush() {
     if (batch.length === 0) return;
-    const results = await Promise.allSettled(
-      batch.map((d) =>
-        prisma.draft.upsert({ where: { sfId: d.sfId as string }, update: d, create: d as never }),
-      ),
-    );
-    const failures = results.filter((r) => r.status === "rejected");
-    if (failures.length > 0) {
-      throw new Error(`Sync batch failed: ${failures.length}/${batch.length} upserts rejected; record values omitted`);
-    }
+    await importRecordBatch(prisma, "Draft", batch);
     count += batch.length;
     batch = [];
     if (count % 25000 < 100) console.log(`[${new Date().toISOString()}] Draft: ${count} imported, ${skipped} skipped`);
@@ -711,6 +659,7 @@ async function migrateDrafts(headers: string[], records: AsyncIterable<string[]>
     if (batch.length >= 50) await flush();
   }
   await flush();
+  if (skipped) throw new Error(`Draft sync incomplete: ${skipped} missing dependencies; checkpoint retained`);
   console.log(`[${new Date().toISOString()}] DONE Draft: ${count} total, ${skipped} skipped (no matching Program Plan)`);
 }
 
@@ -728,11 +677,8 @@ function makeFlusher(
       if (row === null) { skipped++; return; }
       batch.push(row);
       if (batch.length >= 50) {
-        const results = await Promise.allSettled(batch.map(upsert));
-        const failures = results.filter((r) => r.status === "rejected");
-        if (failures.length > 0) {
-          throw new Error(`Sync batch failed: ${failures.length}/${batch.length} upserts rejected; record values omitted`);
-        }
+        if (label === "AccountHistory") await writeBatch(batch, upsert);
+        else await importRecordBatch(prisma, label, batch);
         count += batch.length;
         batch = [];
         if (count % logEvery < 50) console.log(`[${new Date().toISOString()}] ${label}: ${count} imported, ${skipped} skipped`);
@@ -740,13 +686,11 @@ function makeFlusher(
     },
     finish: async () => {
       if (batch.length > 0) {
-        const results = await Promise.allSettled(batch.map(upsert));
-        const failures = results.filter((r) => r.status === "rejected");
-        if (failures.length > 0) {
-          throw new Error(`Sync batch failed: ${failures.length}/${batch.length} upserts rejected; record values omitted`);
-        }
+        if (label === "AccountHistory") await writeBatch(batch, upsert);
+        else await importRecordBatch(prisma, label, batch);
         count += batch.length;
       }
+      if (skipped) throw new Error(`${label} sync incomplete: ${skipped} missing dependencies; checkpoint retained`);
       console.log(`[${new Date().toISOString()}] DONE ${label}: ${count} total, ${skipped} skipped`);
     },
   };
@@ -835,7 +779,7 @@ async function migrateFees(headers: string[], records: AsyncIterable<string[]>):
 }
 
 async function loadDraftMap(): Promise<Map<string, string>> {
-  const rows = await prisma.draft.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
+  const rows = await referenceRows(await referenceIds("Draft__c"), args => prisma.draft.findMany({ ...args, select: { id: true, sfId: true } }));
   const m = new Map<string, string>();
   for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
   return m;
@@ -872,7 +816,7 @@ async function migrateCases(headers: string[], records: AsyncIterable<string[]>)
 }
 
 async function loadOpportunityMapForSettlements(): Promise<Map<string, string>> {
-  const rows = await prisma.opportunity.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
+  const rows = await referenceRows(await referenceIds("006"), args => prisma.opportunity.findMany({ ...args, select: { id: true, sfId: true } }));
   const m = new Map<string, string>();
   for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
   return m;
@@ -914,7 +858,7 @@ async function migrateOffers(headers: string[], records: AsyncIterable<string[]>
 }
 
 async function loadOfferMap(): Promise<Map<string, string>> {
-  const rows = await prisma.offer.findMany({ where: { sfId: { not: null } }, select: { id: true, sfId: true } });
+  const rows = await referenceRows(await referenceIds("Offer__c"), args => prisma.offer.findMany({ ...args, select: { id: true, sfId: true } }));
   const m = new Map<string, string>();
   for (const r of rows) if (r.sfId) m.set(r.sfId, r.id);
   return m;
@@ -1131,6 +1075,24 @@ async function migrateAccountHistory(): Promise<void> {
   await f.finish();
 }
 
+async function backupExport() {
+  const directory = process.env.SF_SYNC_BACKUP_DIR;
+  const tables: Record<string, string> = { account: "Account", contact: "Contact", opportunity: "Opportunity" };
+  const table = tables[ENTITY];
+  if (!directory || !table) return;
+  fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const output = `${directory}/${ENTITY}-${Date.now()}.jsonl`;
+  fs.writeFileSync(output, "", { mode: 0o600 });
+  const ids = await referenceIds("Id") ?? [];
+  let count = 0;
+  for (let i = 0; i < ids.length; i += 500) {
+    const rows = await retry(() => prisma.$queryRaw<Record<string, unknown>[]>(Prisma.sql`SELECT * FROM ${Prisma.raw(`"${table}"`)} WHERE "sfId" IN (${Prisma.join(ids.slice(i, i + 500))})`));
+    if (rows.length) fs.appendFileSync(output, rows.map(row => JSON.stringify(row)).join("\n") + "\n");
+    count += rows.length;
+  }
+  console.log(`Backed up ${count} existing ${ENTITY} records before catch-up`);
+}
+
 async function main() {
   if (ENTITY === "accounthistory") {
     await migrateAccountHistory();
@@ -1150,8 +1112,10 @@ async function main() {
     process.exit(1);
   }
   const headers = first.value;
-  console.log(`Headers: ${headers.join(", ")}`);
+  console.log(`Verified export schema: ${headers.length} fields`);
 
+  if (process.env.SF_EXPORT_ONLY === "1") { await prisma.$disconnect(); return; }
+  await backupExport();
   const rest: AsyncIterable<string[]> = { [Symbol.asyncIterator]: () => gen };
 
   if (ENTITY === "contact") await migrateContacts(headers, rest);
@@ -1174,6 +1138,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(e);
-  process.exit(1);
+  console.error(`Sync failed (${(e as { code?: string }).code ?? "UNKNOWN"}): ${e instanceof Error && !e.message.includes("Invalid `prisma") ? e.message : "database error; record values omitted"}`);
+  void prisma.$disconnect().finally(() => { process.exitCode = 1; });
 });
