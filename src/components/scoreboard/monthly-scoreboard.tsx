@@ -29,8 +29,8 @@ function CloserRow({ row, rank, leader }: { row: MonthlyCloser; rank: number; le
     <td><span className={`sb-rank sb-rank-${rank}`}>{rank === 1 && leader ? <Trophy size={18} /> : String(rank).padStart(2, "0")}</span></td>
     <th scope="row"><div className="sb-closer"><span className="sb-avatar">{initials(row.name)}</span><span><strong>{row.name}</strong><small>{row.tier ? `TIER ${row.tier}` : "CLOSER"}{leader ? " · LEADING THE FIELD" : ""}</small></span></div></th>
     <td className="sb-muted">{row.debtTarget !== null && row.debtTarget > 0 ? money(row.debtTarget) : <span className="sb-no-goal">Not set</span>}</td>
-    <td className="sb-debt">{money(row.grossDebt)}</td>
-    <td><Progress actual={row.grossDebt} goal={row.debtTarget} /></td>
+    <td className="sb-debt">{money(row.wonDebt)}</td>
+    <td><Progress actual={row.wonDebt} goal={row.debtTarget} /></td>
     <td>{number(row.transfers)}</td>
     <td><strong>{number(row.signed)}</strong>{row.contractTarget !== null && row.contractTarget > 0 && <small className="sb-cell-note">of {number(row.contractTarget)} goal</small>}</td>
     <td className="sb-win-count">{number(row.won)}</td>
@@ -147,16 +147,16 @@ export function MonthlyScoreboard({ tv = false }: { tv?: boolean }) {
     {(error || feedError || notice) && <div className="sb-alert" role="status">{error || feedError || notice}{error.includes("session expired") && <a href="/login">Sign in</a>}{data && error && <span>Showing the last successful update.</span>}</div>}
 
     <div className="sb-stats">
-      <div className="sb-stat sb-stat-main"><span>GROSS DEBT ENROLLED</span><strong>{data ? money(totals.debt) : "—"}</strong><small>{completeGoals ? `${Math.round(targetPercent(totals.debt, totals.target) ?? 0)}% of ${money(totals.target)} team goal` : totals.targetCount ? `${totals.targetCount} of ${rows.length} closer goals configured` : "Set monthly goals to track team progress"}</small><div className="sb-stat-ball"><Football /></div></div>
+      <div className="sb-stat sb-stat-main"><span>TOTAL DEBT CLOSED</span><strong>{data ? money(totals.debt) : "—"}</strong><small>{completeGoals ? `${Math.round(targetPercent(totals.debt, totals.target) ?? 0)}% of ${money(totals.target)} team goal` : totals.targetCount ? `${totals.targetCount} of ${rows.length} closer goals configured` : "Set monthly goals to track team progress"}</small><div className="sb-stat-ball"><Football /></div></div>
       <div className="sb-stat"><span>CONTRACTS SIGNED</span><strong>{data ? number(totals.signed) : "—"}<small>deals</small></strong><small>{number(totals.transfers)} monthly transfers</small></div>
       <div className="sb-stat"><span>CLOSED WON</span><strong>{data ? number(totals.won) : "—"}<Flag size={23} /></strong><small>Keep moving the chains</small></div>
       <div className="sb-stat"><span>FIRST PAYMENT DEBT</span><strong>{data ? money(totals.paidDebt) : "—"}</strong><small>{number(totals.paid)} first payments completed</small></div>
     </div>
 
     <div className="sb-table-panel">
-      <div className="sb-table-heading"><h2><span /> Monthly closer standings</h2><span>RANKED BY GROSS DEBT <span className="sb-dot">·</span> {rows.length} CLOSERS</span></div>
-      <div className="sb-table-scroll" ref={tableArea}><table className="sb-table"><caption className="sr-only">Monthly closer production for {monthLabel(period)}, ranked by gross signed debt</caption><thead><tr><th scope="col">Rank</th><th scope="col">Closer</th><th scope="col">Monthly goal</th><th scope="col">Gross debt</th><th scope="col">Goal hit</th><th scope="col">Transfers</th><th scope="col">Signed</th><th scope="col">Won</th><th scope="col">1st paid</th><th scope="col">Net debt</th></tr></thead>
-        <tbody>{!data ? <tr><td colSpan={10} className="sb-empty">{error ? "Waiting for the scoreboard to reconnect…" : "Getting the field ready…"}</td></tr> : !rows.length ? <tr><td colSpan={10} className="sb-empty">Add your team in <Link href="/floor-manager/closers">Closer Setup</Link> to start the scoreboard.</td></tr> : visibleRows.map((row, i) => <CloserRow key={row.userId} row={row} rank={activePage * rowsPerPage + i + 1} leader={activePage === 0 && i === 0 && row.grossDebt > 0} />)}</tbody>
+      <div className="sb-table-heading"><h2><span /> Monthly closer standings</h2><span>RANKED BY CLOSED DEBT <span className="sb-dot">·</span> {rows.length} CLOSERS</span></div>
+      <div className="sb-table-scroll" ref={tableArea}><table className="sb-table"><caption className="sr-only">Monthly closer production for {monthLabel(period)}, ranked by closed debt</caption><thead><tr><th scope="col">Rank</th><th scope="col">Closer</th><th scope="col">Monthly goal</th><th scope="col">Closed debt</th><th scope="col">Goal hit</th><th scope="col">Transfers</th><th scope="col">Signed</th><th scope="col">Won</th><th scope="col">1st paid</th><th scope="col">Net debt</th></tr></thead>
+        <tbody>{!data ? <tr><td colSpan={10} className="sb-empty">{error ? "Waiting for the scoreboard to reconnect…" : "Getting the field ready…"}</td></tr> : !rows.length ? <tr><td colSpan={10} className="sb-empty">Add your team in <Link href="/floor-manager/closers">Closer Setup</Link> to start the scoreboard.</td></tr> : visibleRows.map((row, i) => <CloserRow key={row.userId} row={row} rank={activePage * rowsPerPage + i + 1} leader={activePage === 0 && i === 0 && row.wonDebt > 0} />)}</tbody>
         {rows.length > 0 && <tfoot><tr><th colSpan={2}>TEAM TOTALS</th><td>{completeGoals ? money(totals.target) : "—"}</td><td>{money(totals.debt)}</td><td>{completeGoals ? `${Math.round(targetPercent(totals.debt, totals.target) ?? 0)}%` : "—"}</td><td>{number(totals.transfers)}</td><td>{number(totals.signed)}</td><td>{number(totals.won)}</td><td>{number(totals.paid)}</td><td>{money(totals.netDebt)}</td></tr></tfoot>}
       </table></div>
     </div>
@@ -169,10 +169,10 @@ export function MonthlyScoreboard({ tv = false }: { tv?: boolean }) {
 
     {!tv && details && <div className="sb-details">
       <h3>The full picture</h3><div className="sb-table-scroll"><table className="sb-table"><thead><tr><th>Closer</th><th>Contracts out</th><th>Signed / goal</th><th>Canceled</th><th>Canceled debt</th><th>First paid debt / goal</th><th>First paid goal hit</th></tr></thead><tbody>{rows.map((row) => <tr key={row.userId}><th>{row.name}</th><td>{row.contractsOut}</td><td>{row.signed} / {row.contractTarget ?? "—"}</td><td>{row.canceled}</td><td>{money(row.canceledDebt)}</td><td>{money(row.paidDebt)} / {row.firstPaymentDebtTarget ? money(row.firstPaymentDebtTarget) : "—"}</td><td><Progress actual={row.paidDebt} goal={row.firstPaymentDebtTarget} /></td></tr>)}</tbody></table></div>
-      <p>Months use Eastern time. Transfers are opportunities created this month and currently assigned to the closer. Signed production uses the first contract signing date, with recorded stage history, close date, then creation date as fallbacks. Gross debt includes canceled signed deals; net debt subtracts signed deals now canceled, lost, or archived. Won and first paid reflect the current stage of that month’s signed deals. Contracts out are this month’s transfers currently in a Contract Sent stage.</p>
+      <p>Months use Eastern time. Transfers are opportunities created this month and currently assigned to the closer. Signed production uses the first contract signing date, with recorded stage history, close date, then creation date as fallbacks. Gross signed debt includes canceled signed deals; net debt subtracts signed deals now canceled or lost. Archived versions and unsigned drafts are excluded. Closed debt includes only deals currently Closed Won. Won and first paid reflect the current stage of that month’s signed deals. Contracts out are this month’s transfers currently in a Contract Sent stage.</p>
       <p>A new Floor Manager handoff throws a pass from the fronter to the assigned closer. A newly recorded transition into Closed Won scores a touchdown. The TV queues each play once. Opening a new TV session starts from now. Keep the TV tab open and signed in. Sound starts off; enable it for the transfer whoosh and football theme throughout the touchdown celebration.</p>
     </div>}
-    {editing && data && <TargetsEditor rows={data.rows} period={period} onClose={() => setEditing(false)} onSaved={() => setRevision((old) => old + 1)} />}
+    {editing && data && <TargetsEditor rows={data.rows.filter((row) => row.isActive)} period={period} onClose={() => setEditing(false)} onSaved={() => setRevision((old) => old + 1)} />}
     {event && (event.kind === "pass" ? <PassThrown key={event.id} event={event} onDismiss={dismiss} /> : <Touchdown key={event.id} event={event} onDismiss={dismiss} />)}
   </section>;
 }

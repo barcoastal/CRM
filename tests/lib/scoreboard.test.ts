@@ -26,14 +26,14 @@ describe("monthly scoreboard", () => {
     expect(targetPercent(8_176_000, 7_500_000)).toBeCloseTo(109.0133);
   });
   it("keeps zero-production closers, attaches goals, and subtracts canceled debt", async () => {
-    mocks.users.mockResolvedValue([{ id: "a", name: "Alex", closerTier: 1 }, { id: "b", name: "Blake", closerTier: 2 }]);
-    mocks.query.mockResolvedValue([{ userId: "b", transfers: 14, contractsOut: 2, signed: 5, grossDebt: 800000, canceled: 1, canceledDebt: 125000, won: 3, paid: 2, paidDebt: 240000 }]);
+    mocks.users.mockResolvedValue([{ id: "a", name: "Alex", closerTier: 1, isActive: true }, { id: "b", name: "Blake", closerTier: 2, isActive: true }]);
+    mocks.query.mockResolvedValue([{ userId: "b", transfers: 14, contractsOut: 2, signed: 5, grossDebt: 800000, canceled: 1, canceledDebt: 125000, won: 3, wonDebt: 600000, paid: 2, paidDebt: 240000 }]);
     mocks.targets.mockResolvedValue([{ userId: "b", debtTarget: 1000000, contractTarget: 10, firstPaymentDebtTarget: 500000 }]);
     const rows = await monthlyScoreboard("2026-09", new Date("2026-09-23T12:00:00Z"));
     expect(rows.map((row) => row.userId)).toEqual(["b", "a"]);
     expect(rows[0]).toMatchObject({ netDebt: 675000, debtTarget: 1000000, firstPaymentDebtTarget: 500000 });
     expect(rows[1]).toMatchObject({ grossDebt: 0, netDebt: 0, won: 0, debtTarget: null });
-    expect(totalScoreboard(rows)).toMatchObject({ debt: 800000, netDebt: 675000, target: 1000000, targetCount: 1, signed: 5, paid: 2 });
+    expect(totalScoreboard(rows)).toMatchObject({ debt: 600000, netDebt: 675000, target: 1000000, targetCount: 1, signed: 5, paid: 2 });
     // Unrelated edits to an opportunity must not move an old win into this month.
     expect(mocks.query.mock.calls[0][0].sql).not.toContain("lastDispositionAt");
   });

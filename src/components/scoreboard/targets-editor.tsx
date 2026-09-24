@@ -31,9 +31,9 @@ export function TargetsEditor({ rows: inputRows, period, onClose, onSaved }: {
     <DialogContent className="sb-goals-dialog" style={{ maxWidth: 880 }}>
       <DialogHeader><DialogTitle>Monthly goals · {period}</DialogTitle><DialogDescription>Set each closer’s goals for this month. Leave a field blank when no goal is set. Client debt eligibility stays in Closer Setup.</DialogDescription></DialogHeader>
       <form onSubmit={save}>
-        <div className="sb-goals-scroll"><table className="sb-goals-table"><thead><tr><th>Closer</th><th>Gross debt goal ($)</th><th>Signed contracts</th><th>First payment debt goal ($)</th></tr></thead>
+        <div className="sb-goals-scroll"><table className="sb-goals-table"><thead><tr><th>Closer</th><th>Closed debt goal ($)</th><th>Signed contracts</th><th>First payment debt goal ($)</th></tr></thead>
           <tbody>{draft.map((row, i) => <tr key={row.userId}><th>{rows[i].name}</th>
-            {(["debtTarget", "contractTarget", "firstPaymentDebtTarget"] as const).map((key) => <td key={key}><input type="number" min="0" max={key === "contractTarget" ? 1_000_000 : 1_000_000_000_000} step={key === "contractTarget" ? "1" : ".01"} value={row[key] ?? ""} placeholder="No goal" aria-label={`${rows[i].name} ${key === "debtTarget" ? "gross debt goal" : key === "contractTarget" ? "signed contract goal" : "first payment debt goal"}`} disabled={busy} onChange={(e) => update(row.userId, key, e.target.value)} /></td>)}
+            {(["debtTarget", "contractTarget", "firstPaymentDebtTarget"] as const).map((key) => <td key={key}><input type="number" min="0" max={key === "contractTarget" ? 1_000_000 : 1_000_000_000_000} step={key === "contractTarget" ? "1" : ".01"} value={row[key] ?? ""} placeholder="No goal" aria-label={`${rows[i].name} ${key === "debtTarget" ? "closed debt goal" : key === "contractTarget" ? "signed contract goal" : "first payment debt goal"}`} disabled={busy} onChange={(e) => update(row.userId, key, e.target.value)} /></td>)}
           </tr>)}</tbody></table></div>
         {error && <p className="sb-goals-error" role="alert">{error}</p>}
         <div className="sb-goals-actions"><button type="button" disabled={busy} onClick={onClose}>Cancel</button><button type="submit" disabled={busy}>{busy ? "Saving…" : "Save monthly goals"}</button></div>
