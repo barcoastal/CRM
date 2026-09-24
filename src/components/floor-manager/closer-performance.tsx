@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 
 interface Transfer { id: string; at: string; clientName: string | null; debt: number | null; debtLabel: string | null; tier: number | null; status: string; }
@@ -13,6 +13,7 @@ interface Row {
   transfers: Transfer[];
 }
 
+const money = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 const compact = (n: number) => (n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `$${Math.round(n / 1000)}K` : `$${Math.round(n || 0).toLocaleString()}`);
 const TIER = { 1: { c: "#7f8de1", label: "T1" }, 2: { c: "#0176d3", label: "T2" }, 3: { c: "#2e844a", label: "T3" } } as Record<number, { c: string; label: string }>;
 const fmtDate = (iso: string) => new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
@@ -80,7 +81,7 @@ export default function CloserDashboardPage() {
   const [cf, setCf] = useState(today);
   const [ct, setCt] = useState(today);
 
-  const { from, to } = useMemo(() => rangeFor(preset, cf, ct), [preset, cf, ct]);
+  const { from, to } = rangeFor(preset, cf, ct);
 
   function toggle(r: Row) {
     setOpen((p) => ({ ...p, [r.id]: !p[r.id] }));
@@ -96,6 +97,7 @@ export default function CloserDashboardPage() {
     let alive = true;
     async function load() {
       try {
+        const { from, to } = rangeFor(preset, cf, ct);
         const r = await fetch(`/api/dialer/closer-dashboard?from=${encodeURIComponent(iso(from))}&to=${encodeURIComponent(iso(to))}`);
         if (r.ok && alive) setRows((await r.json()).rows ?? []);
       } catch { /* ignore */ } finally { if (alive) setLoading(false); }
@@ -104,7 +106,7 @@ export default function CloserDashboardPage() {
     void load();
     const id = setInterval(load, 30000);
     return () => { alive = false; clearInterval(id); };
-  }, [from, to]);
+  }, [preset, cf, ct]);
 
   const t = rows.reduce((a, r) => ({ tr: a.tr + r.transferCount, cl: a.cl + r.closedCount, fp: a.fp + r.firstPaymentCount, trD: a.trD + r.transferDebt, clD: a.clD + r.closedDebt }), { tr: 0, cl: 0, fp: 0, trD: 0, clD: 0 });
   const rangeLabel = (() => {
@@ -157,7 +159,7 @@ export default function CloserDashboardPage() {
         <div style={card}><div style={cLbl}>Transfers</div><div style={cNum}>{t.tr}</div><div style={cSub}>{compact(t.trD)} in debt</div></div>
         <div style={card}><div style={cLbl}>Closed</div><div style={{ ...cNum, color: "#2e844a" }}>{t.cl}</div><div style={cSub}>signed this period</div></div>
         <div style={card}><div style={cLbl}>First payment</div><div style={{ ...cNum, color: "#0176d3" }}>{t.fp}</div><div style={cSub}>{t.cl ? Math.round((t.fp / t.cl) * 100) : 0}% of closed paid</div></div>
-        <div style={card}><div style={cLbl}>Debt closed</div><div style={{ ...cNum, color: "#2e844a" }}>{compact(t.clD)}</div><div style={cSub}>signed this period</div></div>
+        <div style={card}><div style={cLbl}>Debt closed</div><div style={{ ...cNum, color: "#2e844a" }}>{money(t.clD)}</div><div style={cSub}>signed this period</div></div>
       </div>
 
       {/* Per-closer table */}
@@ -194,7 +196,7 @@ export default function CloserDashboardPage() {
                     <td style={{ ...num, fontWeight: 700, color: "#c07a00" }}>{r.contractSentCount}</td>
                     <td style={{ ...num, fontWeight: 800, color: "#2e844a" }}>{r.closedCount}</td>
                     <td style={{ ...num, fontWeight: 700, color: "#0176d3" }}>{r.firstPaymentCount}</td>
-                    <td style={{ ...num, color: "#2e844a", fontWeight: 700 }}>{compact(r.closedDebt)}</td>
+                    <td style={{ ...num, color: "#2e844a", fontWeight: 700 }}>{money(r.closedDebt)}</td>
                     <td style={num}>{rate}%</td>
                   </tr>
                   {open[r.id] && (drill[r.id] ?? []).map((x) => (

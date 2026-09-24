@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { closerProduction, hasPeriodProduction } from "./closer-production";
+import { currentScoreboardPeriod, scoreboardMonthRange } from "./scoreboard-shared";
 import { supervisorFeed } from "@/lib/five9/supervisor-feed";
 
 /**
@@ -182,6 +184,7 @@ export interface CloserStat {
   tier: number | null;
   state: CloserState;
   free: boolean;
+  canReceiveTransfers: boolean;
   callsTaken: number; // transfers received this month
   debtAttempted: number; // sum of debt on those
   closedCount: number; // signed (Closed Won) this month
@@ -195,49 +198,24 @@ export interface CloserStat {
  */
 export async function closerStats(): Promise<CloserStat[]> {
   const closers = await prisma.user.findMany({
-    where: { isActive: true, closerTier: { not: null } },
-    select: { id: true, name: true, closerTier: true, five9Username: true, email: true },
+    where: { OR: [{ isCloser: true }, { closerTier: { not: null } }] },
+    select: { id: true, name: true, closerTier: true, isActive: true, five9Username: true, email: true },
   });
-  const ids = closers.map((c) => c.id);
-  if (ids.length === 0) return [];
-
-  const { startOfMonth } = easternBoundaries(Date.now());
-  // DB-side aggregation (indexed) - fast, no row fetching or OR scan.
-  const [transfers, closed] = await Promise.all([
-    prisma.opportunity.groupBy({
-      by: ["assignedToId"],
-      where: { assignedToId: { in: ids }, createdAt: { gte: startOfMonth } },
-      _count: { _all: true },
-      _sum: { totalDebt: true },
-    }),
-    prisma.opportunity.groupBy({
-      by: ["assignedToId"],
-      where: { assignedToId: { in: ids }, firstContractSignedDateOpp: { gte: startOfMonth }, stage: { contains: "Closed Won" } },
-      _count: { _all: true },
-      _sum: { totalDebt: true },
-    }),
-  ]);
-  const tBy = new Map(transfers.map((t) => [t.assignedToId, { c: t._count._all, d: t._sum.totalDebt ?? 0 }]));
-  const cBy = new Map(closed.map((x) => [x.assignedToId, { c: x._count._all, d: x._sum.totalDebt ?? 0 }]));
-
-  return closers
-    .map((u) => {
-      const state = simplifyState(supervisorFeed.getStateFor(u.five9Username ?? u.email, u.name)?.state ?? null);
-      const t = tBy.get(u.id);
-      const cl = cBy.get(u.id);
-      return {
-        id: u.id,
-        name: u.name,
-        tier: u.closerTier,
-        state,
-        free: state === "READY",
-        callsTaken: t?.c ?? 0,
-        debtAttempted: t?.d ?? 0,
-        closedCount: cl?.c ?? 0,
-        debtClosed: cl?.d ?? 0,
-      };
-    })
-    .sort((a, b) => (a.tier ?? 9) - (b.tier ?? 9) || b.closedCount - a.closedCount || a.name.localeCompare(b.name));
+  const now = new Date();
+  const { from } = scoreboardMonthRange(currentScoreboardPeriod(now));
+  const production = await closerProduction(closers.map((c) => c.id), from, now);
+  const byUser = new Map(production.map((p) => [p.userId, p]));
+  return closers.filter((u) => u.isActive || hasPeriodProduction(byUser.get(u.id))).map((u) => {
+    const p = byUser.get(u.id);
+    const canReceiveTransfers = u.isActive && u.closerTier !== null;
+    const state = canReceiveTransfers ? simplifyState(supervisorFeed.getStateFor(u.five9Username ?? u.email, u.name)?.state ?? null) : "OFFLINE";
+    return {
+      id: u.id, name: u.name, tier: u.closerTier, state, canReceiveTransfers,
+      free: canReceiveTransfers && state === "READY",
+      callsTaken: p?.transfers ?? 0, debtAttempted: p?.transferDebt ?? 0,
+      closedCount: p?.won ?? 0, debtClosed: p?.wonDebt ?? 0,
+    };
+  }).sort((a, b) => (a.tier ?? 9) - (b.tier ?? 9) || b.closedCount - a.closedCount || a.name.localeCompare(b.name));
 }
 
 export interface DashboardTransfer {
@@ -268,55 +246,29 @@ export interface CloserDashboardRow {
  * assigned to them (assignedToId = the closer, verified vs CloserLookup__c).
  * `now` is injected so the caller controls the clock.
  */
-const isWon = (stage: string | null) => !!stage && /closed won/i.test(stage);
-
 export async function closerDashboard(fromMs: number, toMs: number): Promise<CloserDashboardRow[]> {
-  const from = new Date(fromMs);
-  const to = new Date(toMs);
-  const base = { assignedToId: { not: null }, createdAt: { gte: from, lt: to } } as const;
-  const baseSigned = { assignedToId: { not: null }, firstContractSignedDateOpp: { gte: from, lt: to } } as const;
-
-  // All fast, indexed DB aggregations - no row fetching, no OR scan.
-  const [transfers, contractSent, closed, firstPayment] = await Promise.all([
-    prisma.opportunity.groupBy({ by: ["assignedToId"], where: base, _count: { _all: true }, _sum: { totalDebt: true } }),
-    prisma.opportunity.groupBy({ by: ["assignedToId"], where: { ...base, stage: { contains: "Contract Sent" } }, _count: { _all: true } }),
-    prisma.opportunity.groupBy({ by: ["assignedToId"], where: { ...baseSigned, stage: { contains: "Closed Won" } }, _count: { _all: true }, _sum: { totalDebt: true } }),
-    prisma.opportunity.groupBy({ by: ["assignedToId"], where: { ...baseSigned, stage: { contains: "First Payment Completed" } }, _count: { _all: true } }),
-  ]);
-
-  const trBy = new Map(transfers.map((t) => [t.assignedToId, { c: t._count._all, d: t._sum.totalDebt ?? 0 }]));
-  const csBy = new Map(contractSent.map((t) => [t.assignedToId, t._count._all]));
-  const clBy = new Map(closed.map((t) => [t.assignedToId, { c: t._count._all, d: t._sum.totalDebt ?? 0 }]));
-  const fpBy = new Map(firstPayment.map((t) => [t.assignedToId, t._count._all]));
-
-  const assigneeIds = [...new Set([...trBy.keys(), ...clBy.keys()].filter((x): x is string => !!x))];
-  if (assigneeIds.length === 0) return [];
-  const users = await prisma.user.findMany({ where: { id: { in: assigneeIds } }, select: { id: true, name: true, closerTier: true } });
-
-  return users
-    .map((u) => {
-      const tr = trBy.get(u.id);
-      const cl = clBy.get(u.id);
-      return {
-        id: u.id,
-        name: u.name,
-        tier: u.closerTier,
-        transferCount: tr?.c ?? 0,
-        transferDebt: tr?.d ?? 0,
-        contractSentCount: csBy.get(u.id) ?? 0,
-        closedCount: cl?.c ?? 0,
-        closedDebt: cl?.d ?? 0,
-        firstPaymentCount: fpBy.get(u.id) ?? 0,
-        transfers: [], // drill-down loaded lazily via closerTransfers()
-      };
-    })
-    .sort((a, b) => b.closedCount - a.closedCount || b.closedDebt - a.closedDebt || a.name.localeCompare(b.name));
+  const users = await prisma.user.findMany({
+    where: { OR: [{ isCloser: true }, { closerTier: { not: null } }] },
+    select: { id: true, name: true, closerTier: true, isActive: true },
+  });
+  const production = await closerProduction(users.map((u) => u.id), new Date(fromMs), new Date(toMs));
+  const byUser = new Map(production.map((p) => [p.userId, p]));
+  return users.filter((u) => u.isActive || hasPeriodProduction(byUser.get(u.id))).map((u) => {
+    const p = byUser.get(u.id);
+    return {
+      id: u.id, name: u.name, tier: u.closerTier,
+      transferCount: p?.transfers ?? 0, transferDebt: p?.transferDebt ?? 0,
+      contractSentCount: p?.contractsOut ?? 0,
+      closedCount: p?.won ?? 0, closedDebt: p?.wonDebt ?? 0,
+      firstPaymentCount: p?.paid ?? 0, transfers: [],
+    };
+  }).sort((a, b) => b.closedDebt - a.closedDebt || b.closedCount - a.closedCount || a.name.localeCompare(b.name));
 }
 
 /** Drill-down: one closer's transfers (received opps) in the range. */
 export async function closerTransfers(closerId: string, fromMs: number, toMs: number): Promise<DashboardTransfer[]> {
   const opps = await prisma.opportunity.findMany({
-    where: { assignedToId: closerId, createdAt: { gte: new Date(fromMs), lt: new Date(toMs) } },
+    where: { assignedToId: closerId, NOT: { stage: { startsWith: "Archived", mode: "insensitive" } }, createdAt: { gte: new Date(fromMs), lt: new Date(toMs) } },
     orderBy: { createdAt: "desc" },
     take: 300,
     select: { id: true, name: true, totalDebt: true, createdAt: true, stage: true },
@@ -364,7 +316,7 @@ export function easternBoundaries(now: number): { startOfToday: Date; startOfMon
   const h = Number(parts.hour) % 24;
   const elapsedMs = ((h * 3600) + Number(parts.minute) * 60 + Number(parts.second)) * 1000 + d.getMilliseconds();
   const startOfToday = new Date(d.getTime() - elapsedMs);
-  const startOfMonth = new Date(startOfToday.getTime() - (Number(parts.day) - 1) * 86_400_000);
+  const startOfMonth = scoreboardMonthRange(currentScoreboardPeriod(d)).from;
   return { startOfToday, startOfMonth };
 }
 

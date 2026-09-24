@@ -22,6 +22,7 @@ interface StatRow {
   debtAttempted: number;
   closedCount: number;
   debtClosed: number;
+  canReceiveTransfers: boolean;
 }
 
 const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
@@ -140,7 +141,7 @@ export default function FloorManagerPage() {
           <tbody>
             {scheduled.map((c) => {
               const when = c.requestedAt ? new Date(c.requestedAt).toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "-";
-              const opts = c.tier ? stats.filter((s) => s.tier === c.tier) : stats;
+              const opts = stats.filter((s) => s.canReceiveTransfers && (!c.tier || s.tier === c.tier));
               return (
                 <tr key={c.id}>
                   <td style={{ ...td, fontWeight: 600 }}>{when}</td>

@@ -11,6 +11,7 @@ export interface ScoreboardTarget {
 }
 export interface MonthlyCloser extends ScoreboardTarget {
   name: string;
+  isActive: boolean;
   tier: number | null;
   transfers: number;
   contractsOut: number;
@@ -20,6 +21,7 @@ export interface MonthlyCloser extends ScoreboardTarget {
   canceledDebt: number;
   netDebt: number;
   won: number;
+  wonDebt: number;
   paid: number;
   paidDebt: number;
 }
@@ -86,7 +88,7 @@ export function targetPercent(actual: number, target: number | null): number | n
 }
 export function totalScoreboard(rows: MonthlyCloser[]) {
   return rows.reduce((t, row) => ({
-    debt: t.debt + row.grossDebt, netDebt: t.netDebt + row.netDebt,
+    debt: t.debt + row.wonDebt, netDebt: t.netDebt + row.netDebt,
     target: t.target + (row.debtTarget ?? 0), targetCount: t.targetCount + (row.debtTarget !== null && row.debtTarget > 0 ? 1 : 0),
     signed: t.signed + row.signed, won: t.won + row.won, transfers: t.transfers + row.transfers,
     contractsOut: t.contractsOut + row.contractsOut, canceled: t.canceled + row.canceled,
