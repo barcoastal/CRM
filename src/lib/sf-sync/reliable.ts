@@ -32,6 +32,12 @@ export function addPredicate(soql: string, predicate: string) {
   const at = soql.search(/ WHERE /i);
   return at < 0 ? `${soql} WHERE ${predicate}` : `${soql.slice(0, at)} WHERE (${predicate}) AND (${soql.slice(at + 7)})`;
 }
+/** These CRM records require a parent. Source rows with no parent are outside
+ * this mapping; a populated parent missing from CRM must still fail/retry. */
+export function requireSourceParent(entity: string, soql: string) {
+  const field: Record<string, string> = { opportunity: "AccountId", programplan: "Client__c", draft: "Program_Plan__c", debt: "Opportunity__c", fee: "Program_Plan__c", paymentsummary: "Client__c" };
+  return field[entity] ? addPredicate(soql, `${field[entity]} != null`) : soql;
+}
 export function utcTimestamp(value: string) {
   const date = new Date(value);
   if (!value || Number.isNaN(date.getTime())) throw new Error("Invalid sync timestamp");

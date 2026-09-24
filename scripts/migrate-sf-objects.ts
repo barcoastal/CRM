@@ -21,7 +21,7 @@ import { Prisma, PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import { addPredicate, incrementalCsv, retry, utcTimestamp, writeBatch } from "../src/lib/sf-sync/reliable";
+import { addPredicate, incrementalCsv, requireSourceParent, retry, utcTimestamp, writeBatch } from "../src/lib/sf-sync/reliable";
 import { contactIdentity } from "../src/lib/sf-sync/contact-identity";
 import { opportunityContactIdentity } from "../src/lib/sf-sync/opportunity-contact";
 
@@ -77,7 +77,7 @@ const SOQL: Record<string, string> = {
  * runs with SF_SINCE unset and pulls everything.
  */
 function effectiveSoql(entity: string): string {
-  let base = SOQL[entity];
+  let base = requireSourceParent(entity, SOQL[entity]);
   if(entity==='lead'){
     const match=base.match(/^SELECT (.*?) FROM Lead/i);
     if(match){const fields=[...new Map([...match[1].split(',').map(s=>s.trim()),...LEAD_PARITY_FIELDS].map(field=>[field.toLowerCase(),field])).values()];base=base.replace(/^SELECT .*? FROM Lead/i,`SELECT ${fields.join(', ')} FROM Lead`);}

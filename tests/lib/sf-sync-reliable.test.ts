@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { addPredicate, incrementalCsv, nextWindow, retry, writeBatch } from "@/lib/sf-sync/reliable";
+import { addPredicate, incrementalCsv, nextWindow, requireSourceParent, retry, writeBatch } from "@/lib/sf-sync/reliable";
 import { checkpointedEntity } from "@/lib/sf-sync/checkpoint-runner";
 
 const directories: string[] = [];
@@ -44,6 +44,11 @@ describe("reliable Salesforce sync", () => {
   });
   it("keeps an existing OR filter within the checkpoint window", () => {
     expect(addPredicate("SELECT Id FROM Account WHERE A = 1 OR B = 2", "LastModifiedDate >= x")).toBe("SELECT Id FROM Account WHERE (LastModifiedDate >= x) AND (A = 1 OR B = 2)");
+  });
+  it("excludes source rows without a required parent without hiding unresolved populated references", () => {
+    expect(requireSourceParent("opportunity", "SELECT Id,AccountId FROM Opportunity")).toBe("SELECT Id,AccountId FROM Opportunity WHERE AccountId != null");
+    expect(requireSourceParent("fee", "SELECT Id FROM Fee__c")).toContain("Program_Plan__c != null");
+    expect(requireSourceParent("contact", "SELECT Id FROM Contact")).toBe("SELECT Id FROM Contact");
   });
   it("retains the last successful checkpoint after repeated failures", async () => {
     const stateDir = temp(), saved = { completedThrough: "2026-09-12T02:00:00.000Z", completedAt: "2026-09-12T02:01:00.000Z" };
