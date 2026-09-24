@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import { scoreboardMonthRange, type MonthlyCloser, type WinCursor, type WinPayload } from "./scoreboard-shared";
+import { scoreboardMonthRange, type MonthlyCloser, type PassPayload, type WinCursor, type WinPayload } from "./scoreboard-shared";
 
 type ProductionRow = {
   userId: string; transfers: number; contractsOut: number; signed: number; grossDebt: number;
@@ -98,6 +98,37 @@ export async function scoreboardWins(cursor: WinCursor | null, now = new Date())
       closerName: row.opportunity.assignedTo.name, debt: row.opportunity.totalDebt, at: row.changedAt.toISOString(),
     }] : []),
     cursor: hasMore && last ? { at: last.changedAt.toISOString(), id: last.id } : { at: new Date(until.getTime() - 5_000).toISOString(), id: "" },
+    hasMore,
+  };
+}
+
+/** A recorded Floor Manager handoff is a pass thrown to the selected closer. */
+export async function scoreboardPasses(cursor: WinCursor | null, now = new Date()): Promise<PassPayload> {
+  const until = new Date(now.getTime() - 2_000);
+  if (!cursor) return { events: [], cursor: { at: until.toISOString(), id: "" }, hasMore: false };
+  const lower = new Date(Math.max(Date.parse(cursor.at), now.getTime() - 60 * 60_000));
+  const rows = await prisma.closerHandoff.findMany({
+    where: {
+      createdAt: { lte: until },
+      OR: [{ createdAt: { gt: lower } }, { createdAt: lower, id: { gt: cursor.id } }],
+      closer: { is: { isActive: true, OR: [{ isCloser: true }, { closerTier: { not: null } }] } },
+    },
+    select: {
+      id: true, createdAt: true, opportunityId: true, debt: true, debtLabel: true,
+      closer: { select: { id: true, name: true } }, fronter: { select: { name: true } },
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: 101,
+  });
+  const hasMore = rows.length > 100;
+  const page = rows.slice(0, 100);
+  const last = page.at(-1);
+  return {
+    events: page.flatMap((row) => row.closer ? [{
+      kind: "pass" as const, id: `pass:${row.id}`, opportunityId: row.opportunityId ?? "",
+      closerId: row.closer.id, closerName: row.closer.name, fronterName: row.fronter?.name ?? null,
+      debt: row.debt, debtLabel: row.debtLabel, at: row.createdAt.toISOString(),
+    }] : []),
+    cursor: hasMore && last ? { at: last.createdAt.toISOString(), id: last.id } : { at: new Date(until.getTime() - 5_000).toISOString(), id: "" },
     hasMore,
   };
 }

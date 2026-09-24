@@ -1,6 +1,7 @@
 export const SCOREBOARD_TIMEZONE = "America/New_York";
 export const SCOREBOARD_POLL_MS = 8_000;
 export const CELEBRATION_MS = 8_000;
+export const PASS_CELEBRATION_MS = 5_500;
 
 export interface ScoreboardTarget {
   userId: string;
@@ -29,6 +30,7 @@ export interface ScoreboardPayload {
   canManage: boolean;
 }
 export interface WinEvent {
+  kind?: "touchdown";
   id: string;
   opportunityId: string;
   closerId: string;
@@ -37,8 +39,15 @@ export interface WinEvent {
   at: string;
   demo?: boolean;
 }
+export interface PassEvent extends Omit<WinEvent, "kind"> {
+  kind: "pass";
+  fronterName: string | null;
+  debtLabel: string | null;
+}
+export type ScoreboardEvent = WinEvent | PassEvent;
 export interface WinCursor { at: string; id: string }
 export interface WinPayload { events: WinEvent[]; cursor: WinCursor; hasMore: boolean }
+export interface PassPayload { events: PassEvent[]; cursor: WinCursor; hasMore: boolean }
 
 export function currentScoreboardPeriod(now = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: SCOREBOARD_TIMEZONE, year: "numeric", month: "2-digit" }).formatToParts(now);
@@ -86,7 +95,7 @@ export function totalScoreboard(rows: MonthlyCloser[]) {
 }
 
 /** Event IDs, rather than changing totals, prevent replays on each refresh. */
-export function unseenWins(events: WinEvent[], seen: Set<string>): WinEvent[] {
+export function unseenWins<T extends ScoreboardEvent>(events: T[], seen: Set<string>): T[] {
   const incoming = new Set<string>();
   return events.filter((event) => {
     if (seen.has(event.id) || incoming.has(event.id)) return false;

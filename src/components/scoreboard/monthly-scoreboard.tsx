@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, ChevronLeft, ChevronRight, Flag, Maximize, Minimize, Monitor, Settings2, Trophy, Volume2, VolumeX, Zap } from "lucide-react";
-import { CELEBRATION_MS, currentScoreboardPeriod, targetPercent, totalScoreboard, type MonthlyCloser, type WinEvent } from "@/lib/scoreboard-shared";
-import { Football, playTouchdownSound, Touchdown } from "./touchdown";
+import { CELEBRATION_MS, PASS_CELEBRATION_MS, currentScoreboardPeriod, targetPercent, totalScoreboard, type MonthlyCloser, type ScoreboardEvent } from "@/lib/scoreboard-shared";
+import { Football, Touchdown } from "./touchdown";
+import { PassThrown } from "./pass-thrown";
+import { loadStadiumAudio, playPassSound, playStadiumTouchdown, type StadiumAudio } from "./stadium-audio";
 import { TargetsEditor } from "./targets-editor";
 import { useScoreboard } from "./use-scoreboard";
 import "./scoreboard.css";
@@ -44,16 +46,19 @@ export function MonthlyScoreboard({ tv = false }: { tv?: boolean }) {
   const [editing, setEditing] = useState(false);
   const [details, setDetails] = useState(false);
   const [sound, setSound] = useState(false);
+  const [soundLoading, setSoundLoading] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [notice, setNotice] = useState("");
-  const [queue, setQueue] = useState<WinEvent[]>([]);
+  const [queue, setQueue] = useState<ScoreboardEvent[]>([]);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(12);
   const audio = useRef<AudioContext | null>(null);
+  const stadium = useRef<StadiumAudio | null>(null);
+  const stopSound = useRef<(() => void) | null>(null);
   const tableArea = useRef<HTMLDivElement | null>(null);
   const soundEnabled = useRef(false);
-  const addWins = useCallback((events: WinEvent[]) => { setQueue((old) => [...old, ...events]); setRevision((old) => old + 1); }, []);
-  const { data, error, feedError } = useScoreboard(period, tv && period === currentPeriod, revision, addWins);
+  const addEvents = useCallback((events: ScoreboardEvent[]) => { setQueue((old) => [...old, ...events]); setRevision((old) => old + 1); }, []);
+  const { data, error, feedError } = useScoreboard(period, tv && period === currentPeriod, revision, addEvents);
   const event = queue[0];
   const dismiss = useCallback(() => setQueue((old) => old.slice(1)), []);
   const rows = data?.rows ?? [];
@@ -87,25 +92,31 @@ export function MonthlyScoreboard({ tv = false }: { tv?: boolean }) {
     return () => clearInterval(timer);
   }, [pageCount, event]);
   const eventId = event?.id;
+  const eventKind = event?.kind;
   useEffect(() => {
     if (!eventId) return;
-    if (soundEnabled.current && audio.current) playTouchdownSound(audio.current);
-    const timer = setTimeout(dismiss, CELEBRATION_MS);
-    return () => clearTimeout(timer);
-  }, [eventId, dismiss]);
+    if (soundEnabled.current && audio.current) {
+      stopSound.current = eventKind === "pass" ? playPassSound(audio.current) : stadium.current ? playStadiumTouchdown(audio.current, stadium.current) : null;
+    }
+    const timer = setTimeout(dismiss, eventKind === "pass" ? PASS_CELEBRATION_MS : CELEBRATION_MS);
+    return () => { clearTimeout(timer); stopSound.current?.(); stopSound.current = null; };
+  }, [eventId, eventKind, dismiss]);
   useEffect(() => {
     const changed = () => setFullscreen(Boolean(document.fullscreenElement));
     document.addEventListener("fullscreenchange", changed);
-    return () => { document.removeEventListener("fullscreenchange", changed); void audio.current?.close(); };
+    return () => { document.removeEventListener("fullscreenchange", changed); stopSound.current?.(); void audio.current?.close(); };
   }, []);
 
   async function toggleSound() {
-    if (sound) { soundEnabled.current = false; setSound(false); return; }
+    if (sound) { soundEnabled.current = false; stopSound.current?.(); stopSound.current = null; setSound(false); return; }
+    setSoundLoading(true);
     try {
       audio.current ??= new AudioContext();
       await audio.current.resume();
+      stadium.current ??= await loadStadiumAudio(audio.current);
       soundEnabled.current = true; setSound(true); setNotice("");
-    } catch { setNotice("Sound is unavailable in this browser. The animation will still play."); }
+    } catch { setNotice("Touchdown audio could not load. Try enabling sound again; the animations still work."); }
+    finally { setSoundLoading(false); }
   }
   async function toggleFullscreen() {
     try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); setNotice(""); }
@@ -113,6 +124,9 @@ export function MonthlyScoreboard({ tv = false }: { tv?: boolean }) {
   }
   function testTouchdown() {
     setQueue((old) => [...old, { id: `demo-${Date.now()}`, opportunityId: "demo", closerId: rows[0]?.userId ?? "demo", closerName: rows[0]?.name ?? "Your next champion", debt: 125_000, at: new Date().toISOString(), demo: true }]);
+  }
+  function testPass() {
+    setQueue((old) => [...old, { kind: "pass", id: `demo-pass-${Date.now()}`, opportunityId: "demo", closerId: rows[0]?.userId ?? "demo", closerName: rows[0]?.name ?? "Your closer", fronterName: "The floor team", debt: 125_000, debtLabel: null, at: new Date().toISOString(), demo: true }]);
   }
 
   return <section className={`sb-board ${tv ? "sb-tv" : "sb-hub"}`} aria-label="Monthly closers scoreboard">
@@ -122,7 +136,8 @@ export function MonthlyScoreboard({ tv = false }: { tv?: boolean }) {
       <div className="sb-header-right"><div className="sb-period">{tv ? <span>{monthLabel(period)}</span> : <label><span className="sr-only">Scoreboard month</span><input type="month" value={period} min="2000-01" max="2099-12" onChange={(e) => { if (/^20\d{2}-(0[1-9]|1[0-2])$/.test(e.target.value)) setPeriod(e.target.value); }} /></label>}<span className={`sb-live ${error || feedError ? "sb-reconnecting" : ""}`}><i />{error || feedError ? "RECONNECTING" : period === currentPeriod ? "LIVE" : "MONTHLY VIEW"}</span></div>
         <div className="sb-controls">
           {!tv && <><a href="/scoreboard/tv" target="_blank" rel="noopener noreferrer" className="sb-button sb-button-gold"><Monitor size={15} /> Open TV display <ArrowUpRight size={14} /></a>{data?.canManage && <button className="sb-button" onClick={() => setEditing(true)} disabled={!rows.length}><Settings2 size={15} /> Monthly goals</button>}</>}
-          <button className={`sb-button ${sound ? "sb-sound-on" : ""}`} onClick={toggleSound} aria-pressed={sound}>{sound ? <Volume2 size={15} /> : <VolumeX size={15} />} Sound {sound ? "on" : "off"}</button>
+          <button className={`sb-button ${sound ? "sb-sound-on" : ""}`} onClick={toggleSound} disabled={soundLoading} aria-pressed={sound}>{sound ? <Volume2 size={15} /> : <VolumeX size={15} />} {soundLoading ? "Loading sound…" : `Sound ${sound ? "on" : "off"}`}</button>
+          <button className="sb-button" onClick={testPass} disabled={queue.length > 5}><ArrowUpRight size={15} /> Test pass</button>
           <button className="sb-button" onClick={testTouchdown} disabled={queue.length > 5}><Zap size={15} /> Test touchdown</button>
           {tv && <><button className="sb-button" onClick={toggleFullscreen}>{fullscreen ? <Minimize size={15} /> : <Maximize size={15} />}{fullscreen ? "Exit full screen" : "Full screen"}</button><Link className="sb-button sb-back" href="/floor-manager/scoreboard">Back to hub</Link></>}
         </div>
@@ -149,15 +164,15 @@ export function MonthlyScoreboard({ tv = false }: { tv?: boolean }) {
     <footer className="sb-footer"><span><i className="sb-status-dot" />{data ? `UPDATED ${new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", second: "2-digit" }).format(new Date(data.generatedAt))} ET` : "CONNECTING"}<span className="sb-dot">·</span>REFRESHES EVERY 8 SEC</span>
       {pageCount > 1 ? <div className="sb-pages"><button onClick={() => setPage((old) => (old + pageCount - 1) % pageCount)} aria-label="Previous closers"><ChevronLeft size={16} /></button><span>PAGE {activePage + 1} OF {pageCount} · AUTO ROTATES</span><button onClick={() => setPage((old) => (old + 1) % pageCount)} aria-label="Next closers"><ChevronRight size={16} /></button></div> : <span className="sb-footer-motto"><Football /> ONE TEAM. EVERY YARD.</span>}
       {!tv && <button onClick={() => setDetails((old) => !old)} aria-expanded={details}>{details ? "Hide" : "View"} full metrics & definitions</button>}
-      {tv && <span>NEW CLOSED WON → TOUCHDOWN{queue.length > 1 ? ` · ${queue.length - 1} UP NEXT` : ""}</span>}
+      {tv && <span>TRANSFER → PASS · CLOSED WON → TOUCHDOWN{queue.length > 1 ? ` · ${queue.length - 1} UP NEXT` : ""}</span>}
     </footer>
 
     {!tv && details && <div className="sb-details">
       <h3>The full picture</h3><div className="sb-table-scroll"><table className="sb-table"><thead><tr><th>Closer</th><th>Contracts out</th><th>Signed / goal</th><th>Canceled</th><th>Canceled debt</th><th>First paid debt / goal</th><th>First paid goal hit</th></tr></thead><tbody>{rows.map((row) => <tr key={row.userId}><th>{row.name}</th><td>{row.contractsOut}</td><td>{row.signed} / {row.contractTarget ?? "—"}</td><td>{row.canceled}</td><td>{money(row.canceledDebt)}</td><td>{money(row.paidDebt)} / {row.firstPaymentDebtTarget ? money(row.firstPaymentDebtTarget) : "—"}</td><td><Progress actual={row.paidDebt} goal={row.firstPaymentDebtTarget} /></td></tr>)}</tbody></table></div>
       <p>Months use Eastern time. Transfers are opportunities created this month and currently assigned to the closer. Signed production uses the first contract signing date, with recorded stage history, close date, then creation date as fallbacks. Gross debt includes canceled signed deals; net debt subtracts signed deals now canceled, lost, or archived. Won and first paid reflect the current stage of that month’s signed deals. Contracts out are this month’s transfers currently in a Contract Sent stage.</p>
-      <p>The TV celebrates newly recorded transitions into Closed Won, once per event, and queues simultaneous wins. Opening a new TV session starts from now. Keep the TV tab open and signed in. Sound starts off; use the sound toggle to enable the touchdown fanfare.</p>
+      <p>A new Floor Manager handoff throws a pass from the fronter to the assigned closer. A newly recorded transition into Closed Won scores a touchdown. The TV queues each play once. Opening a new TV session starts from now. Keep the TV tab open and signed in. Sound starts off; enable it for the transfer whoosh and football theme throughout the touchdown celebration.</p>
     </div>}
     {editing && data && <TargetsEditor rows={data.rows} period={period} onClose={() => setEditing(false)} onSaved={() => setRevision((old) => old + 1)} />}
-    {event && <Touchdown key={event.id} event={event} onDismiss={dismiss} />}
+    {event && (event.kind === "pass" ? <PassThrown key={event.id} event={event} onDismiss={dismiss} /> : <Touchdown key={event.id} event={event} onDismiss={dismiss} />)}
   </section>;
 }

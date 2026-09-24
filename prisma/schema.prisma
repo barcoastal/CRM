@@ -3339,6 +3339,7 @@ model CloserHandoff {
   @@index([closerId, status])
   @@index([fronterId])
   @@index([status, createdAt])
+  @@index([createdAt])
 }
 
 // A scheduled call booked by a client from a link the CRM emails them. The
