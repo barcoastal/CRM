@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 
 export type AccountTabKey =
   | "Details"
+  | "Account 2"
   | "Payment Calculator"
   | "Activities"
   | "Documents"
@@ -22,6 +23,7 @@ export type AccountTabKey =
 // link on the Details tab.
 const PRIMARY_TABS: AccountTabKey[] = [
   "Details",
+  "Account 2",
   "Payment Calculator",
   "Activities",
   "Documents",
