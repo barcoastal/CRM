@@ -9,11 +9,14 @@ CLI alias `coastal`. Optional arguments select entities, for example
 `account contact opportunity` for the frequent sales refresh.
 
 Each entity has an independent checkpoint. A successful import advances it to
-the start of that entity's export; the next run overlaps five minutes. Failed
+the run's shared source cutoff; the next run overlaps five minutes. Using one
+cutoff keeps newly created parents and children in the same window. Failed
 exports, writes, or missing required parents retain the checkpoint. A transient
 database failure is retried; an entity gets two attempts. Exports are paginated
 and atomically replaced. Writes use bounded batches with preserved source-field
 mappings, IDs, defaults, and explicit primary-contact relationships.
+Source records without a parent required by the CRM are excluded. A populated
+source parent that is missing from CRM still fails the import for recovery.
 
 The command uses a PID lock so the frequent sales job and full nightly job
 cannot overlap. A dead process's lock can be reclaimed; live jobs are never
