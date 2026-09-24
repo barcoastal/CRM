@@ -1,4 +1,5 @@
 import { RecordViewTracker } from "@/components/lists/record-view-tracker";
+import { usesCloserOpportunityView, closerOpportunityFields, closerOpportunitySnapshot } from "@/lib/opportunity-closer-view";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { SsnField } from "@/components/shared/ssn-field";
@@ -127,8 +128,17 @@ const OPP_PATH_OPEN_STAGES = OPP_STAGES.filter((st) => !st.startsWith("Closed"))
 
 export default async function OpportunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const viewerSession = await auth();
+  const [viewer, opportunityScope] = await Promise.all([
+    viewerSession?.user?.id ? prisma.user.findUnique({
+      where: { id: viewerSession.user.id },
+      select: { role: true, hierarchyRole: { select: { developerName: true, name: true } } },
+    }) : Promise.resolve(null),
+    recordScope("opportunity"),
+  ]);
+  const closerView = usesCloserOpportunityView(viewer);
   const rawRecord = await prisma.opportunity.findUnique({
-    where: { id, AND: [await recordScope("opportunity")] },
+    where: { id, AND: [opportunityScope] },
     include: {
       lead: {
         select: {
@@ -484,7 +494,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       <FieldGrid
           entityType="opportunity"
           entityId={opp.id}
-          fields={[
+          fields={closerOpportunityFields([
             // Row 1: Opportunity Name | Opportunity Owner
             E("Opportunity Name", oppName, "name", "text", { rawValue: opp.name ?? oppName }),
             E("Opportunity Owner", ownerDisplay, "assignedToId", "select", { rawValue: opp.assignedToId ?? null, options: ownerOptions }),
@@ -604,7 +614,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             ["", null],
             ["Latest Closer Notes", oppSf("Latest_Closer_Notes__c")],
             ["", null],
-          ]}
+          ], closerView)}
         />
 
       <Section title="Buyout Program">
@@ -954,7 +964,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   );
 
   const sfFieldsPanel = (
-    <SfDataSection sfDataJson={opp.sfDataJson} sfId={opp.sfId} />
+    <SfDataSection sfDataJson={closerOpportunitySnapshot(opp.sfDataJson, closerView)} sfId={opp.sfId} />
   );
 
   const sfOppIdDisplay = opp.sfId ?? opp.id.slice(-8).toUpperCase();

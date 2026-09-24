@@ -324,6 +324,72 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     select: { id: true, recipientName: true, recipientEmail: true, completedAt: true, collectedJson: true },
   });
 
+  // Account 2 is an alternate presentation of the same account, not a new record.
+  // Use the most recent opportunity the viewer is allowed to see, consistently
+  // for the client fallback and closer. Never pull a closer from a hidden opp.
+  const account2Opp = visibleOpps[0];
+  const account2ClientName = account.individualName ?? account.primaryContact?.fullName ?? account2Opp?.individualName ?? account2Opp?.name ?? (account.type === "PERSON" ? account.name : null);
+  const account2Closer = account2Opp?.assignedTo;
+  const account2Panel = (
+    <>
+      <Section title="Client & Business">
+        <FieldGrid entityType="account" entityId={account.id} fields={[
+          E("Client Name", account2ClientName, "individualName", "text", { rawValue: account.individualName ?? account2ClientName }),
+          E("Business Name", account.name, "name", "text", { rawValue: account.name }),
+          E("Account Owner (CS Rep)", account.ownerId ? <Link href={`/settings/users/${account.ownerId}`} style={{ color: "#0176d3" }}>{ownerName}</Link> : ownerName, "ownerId", "select", { rawValue: account.ownerId, options: ownerOptions }),
+          ["Opportunity Owner (Closer)", account2Closer ? <Link href={`/settings/users/${account2Closer.id}`} style={{ color: "#0176d3" }}>{account2Closer.name}</Link> : account2Opp?.closer ?? null],
+          E("Industry", account.industry ?? acctSf("Industry"), "industry", "text", { rawValue: account.industry }),
+          ["Phone #", phoneVal ? <CallButton phone={phoneVal} accountId={account.id} variant="link" label={phoneVal} /> : null, { fieldKey: "phone", type: "phone", rawValue: account.phone ?? phoneVal }],
+          E("Alternate Name", acctSf("Alternate_Name__c"), "Alternate_Name__c"),
+          E("Alternative #", account.alternatePhone, "alternatePhone", "phone", { rawValue: account.alternatePhone }),
+        ]} />
+        {account2Opp && <div style={{ padding: "8px 16px", fontSize: 12 }}><Link href={`/opportunities/${account2Opp.id}`} style={{ color: "#0176d3" }}>View opportunity: {account2Opp.name ?? "Opportunity"}</Link></div>}
+      </Section>
+      <Section title="Identifiers">
+        <FieldGrid entityType="account" entityId={account.id} fields={[
+          ["SSN", <SsnField key="account2-ssn" entity="account" id={id} masked={account.ssn ?? acctSf("SSN__c") ?? account.primaryContact?.ssn ?? null} />],
+          E("EIN #", account.ein ?? acctSf("EIN_Number_Tax_Id__c"), "ein", "text", { rawValue: account.ein }),
+          E("Lead #", acctSf("Lead_Number__c") ?? acctSf("Lead_Id__c") ?? acctSf("LeadId"), "Lead_Number__c"),
+          ["", null],
+        ]} />
+      </Section>
+      <Section title="Contact, Payments & Sync">
+        <FieldGrid entityType="account" entityId={account.id} fields={[
+          ["Last Contact Date/Time", lastContactedDateTimeDisplay],
+          ["", null],
+          ["Last Called Time", lastCalledTimeDisplay],
+          ["Last Emailed Time", lastEmailedTimeDisplay],
+          ["Last SMS", lastSMSTimeDisplay],
+          ["", null],
+          E("Legal Network", legalNetworkDisplay, "Legal_Network__c"),
+          ["", null],
+          ["Processor Status", processorStatusDisplay],
+          ["", null],
+          ["Total Debt", totalDebtSfDisplay],
+          ["", null],
+          ["Sync Status", acctSf("Sync_Status__c")],
+          ["Legal Network Sync", legalNetworkSyncStatusDisplay],
+          ["Sync Date/Time", syncedDateTimeDisplay ?? lastSyncedDateTimeDisplay],
+          ["", null],
+          ["Bank Sync", account.bankAccountSyncStatus ?? acctSf("Bank_Account_Sync_Status__c")],
+          ["First Sign Date", account.firstContractSignedDate?.toLocaleDateString() ?? acctSfDate("First_Contract_Signed_Date__c")],
+          E("First Draft Date", firstDraftDateDisplay, "First_Draft_Date__c", "date"),
+          ["First Payment Completed", firstPaymentCompletedDateDisplay ?? acctSfBool("First_Payment_Completed__c") ?? (account.firstPaymentReceived ? "Yes" : "No")],
+        ]} />
+      </Section>
+      <Section title="Negotiation & Legal">
+        <FieldGrid entityType="account" entityId={account.id} fields={[
+          ["Negotiator", <NegotiatorAssignment key={`account2:${account.id}:${account.assignedNegotiatorId ?? ""}`} accountId={account.id} currentId={account.assignedNegotiatorId} currentName={account.assignedNegotiator?.name ?? null} importedName={acctSf("Debt_Negotiator__c")} options={canAssignNegotiator ? ownerOptions : []} canAssign={canAssignNegotiator} />],
+          ["", null],
+          E("Negotiation Status", acctSf("NegotiationStatus__c"), "NegotiationStatus__c"),
+          ["", null],
+          E("Legal Status", account.legalStatus ?? acctSf("Legal_Status__c"), "legalStatus", "text", { rawValue: account.legalStatus }),
+          ["", null],
+        ]} />
+      </Section>
+    </>
+  );
+
   const detailsPanel = (
     <>
       {/* SF Dakota Enterprises Account Details — pair-by-pair parity with SF Lightning.
@@ -980,6 +1046,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         <AccountTabs
           panels={{
             Details: detailsPanel,
+            "Account 2": account2Panel,
             "Payment Calculator": calcPanel,
             Activities: activitiesPanel,
             Documents: documentsPanel,
