@@ -122,7 +122,7 @@ export interface LeadListQueryInput {
   sort?: string;
   dir?: string;
 }
-export function leadListIdsQuery(input: LeadListQueryInput): Prisma.Sql {
+export function leadListIdsQuery(input: LeadListQueryInput, options: { limit?: number; offset?: number; ordered?: boolean } = {}): Prisma.Sql {
   const {definition, userId, recentIds} = input;
   const conditions = [leadScopeSql(input.scope), ...definition.filters.map(leadFilterSql), ...(input.savedFilters??[]).map(savedLeadFilterSql)];
   // Converted records remain reachable through history, not ordinary lead lists.
@@ -132,7 +132,10 @@ export function leadListIdsQuery(input: LeadListQueryInput): Prisma.Sql {
   if (definition.scope === 'closer-pool') conditions.push(Prisma.sql`(left(${json('OwnerId')}, 15) = '00GVO000005sF0q' OR COALESCE(${nested('Owner', 'Name')}, ${json('Owner_Full_Name__c')}, u.name) = 'Closer Pool')`);
   if (definition.label === 'My Unread Leads') conditions.push(Prisma.sql`NOT EXISTS (SELECT 1 FROM "LeadViewHistory" vh WHERE vh."userId" = ${userId} AND vh."leadId" = l.id)`);
   if (input.search) {
-    const terms = [Prisma.sql`l."contactName"`, Prisma.sql`l."businessName"`, Prisma.sql`l.phone`, Prisma.sql`l.email`].map(f=>Prisma.sql`strpos(lower(COALESCE(${f}, '')), lower(${input.search!})) > 0`);
+    // ILIKE can use the existing trigram indexes. Escape wildcard characters
+    // so searching for % or _ still means a literal substring.
+    const pattern = `%${input.search.replace(/[\\%_]/g, '\\$&')}%`;
+    const terms = [Prisma.sql`l."contactName"`, Prisma.sql`l."businessName"`, Prisma.sql`l.phone`, Prisma.sql`l.email`].map(f=>Prisma.sql`${f} ILIKE ${pattern}`);
     conditions.push(Prisma.sql`(${Prisma.join(terms, ' OR ')})`);
   }
   for (const [name, column] of [['status',Prisma.sql`l.status`],['source',Prisma.sql`l.source`],['recordType',Prisma.sql`l."recordType"`],['assignedToId',Prisma.sql`l."assignedToId"`]] as const) {
@@ -141,6 +144,12 @@ export function leadListIdsQuery(input: LeadListQueryInput): Prisma.Sql {
   const sorts: Record<string, Prisma.Sql> = {name:Prisma.sql`l."contactName"`, phone:Prisma.sql`l.phone`,status:Prisma.sql`l.status`,source:Prisma.sql`l.source`,ownerFullName:Prisma.sql`u.name`,createdDate:Prisma.sql`l."createdAt"`,company:Prisma.sql`l."businessName"`,leadId:Prisma.sql`l."sfId"`};
   const sort = sorts[input.sort ?? ''] ?? (definition.label === 'Web Leads' ? sorts.createdDate : sorts.name);
   const dir = input.dir === 'desc' || (!input.sort && definition.label === 'Web Leads') ? Prisma.sql`DESC` : Prisma.sql`ASC`;
-  return Prisma.sql`SELECT l.id FROM "Lead" l LEFT JOIN "User" u ON u.id = l."assignedToId"
-    WHERE ${and(conditions)} ORDER BY ${sort} ${dir}, l.id ASC LIMIT 2001`;
+  const limit = Math.min(2001, Math.max(1, Math.floor(options.limit ?? 2001)));
+  const offset = Math.min(2000, Math.max(0, Math.floor(options.offset ?? 0)));
+  const order = options.ordered === false ? Prisma.empty : Prisma.sql`ORDER BY ${sort} ${dir}, l.id ASC`;
+  // Most views never read the owner table. Avoid adding a join to their plan.
+  const needsOwner = (options.ordered !== false && input.sort === 'ownerFullName') || definition.scope === 'closer-pool' || definition.filters.some(f => f.startsWith('Owner '));
+  const ownerJoin = needsOwner ? Prisma.sql`LEFT JOIN "User" u ON u.id = l."assignedToId"` : Prisma.empty;
+  return Prisma.sql`SELECT l.id FROM "Lead" l ${ownerJoin}
+    WHERE ${and(conditions)} ${order} LIMIT ${limit} OFFSET ${offset}`;
 }

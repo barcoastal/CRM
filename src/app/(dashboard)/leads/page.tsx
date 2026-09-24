@@ -79,7 +79,10 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const session = await auth();
   const myId = session?.user?.id ?? "";
 
-  const savedViews = await prisma.listView.findMany({where:{entity:'Lead',isSystem:false,OR:[{isShared:true},{ownerId:myId}]},orderBy:{name:'asc'}});
+  const [savedViews, scope] = await Promise.all([
+    prisma.listView.findMany({where:{entity:'Lead',isSystem:false,OR:[{isShared:true},{ownerId:myId}]},orderBy:{name:'asc'}}),
+    recordScope("lead"),
+  ]);
   const selectedView = savedViews.find(v=>`custom:${v.id}`===view);
   if(view.startsWith('custom:')&&!selectedView)notFound();
   const base = VIEWS.find(v=>v.value===(selectedView?.baseView||view)) ?? VIEWS.find(v=>v.value==='all')!;
@@ -87,13 +90,20 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const allViews = [...VIEWS,...savedViews.map(v=>({...base,value:`custom:${v.id}`,label:v.name}))];
   if(!sort&&selectedView?.sortField){sort=selectedView.sortField;dir=selectedView.sortDir==='desc'?'desc':'asc';}
   const selectedColumns=Array.isArray(selectedView?.columns)?selectedView.columns.filter((v):v is string=>typeof v==='string'):undefined;
-  const scope = await recordScope("lead");
   const where: Prisma.LeadWhereInput = { AND: [scope] };
-  const recent = await prisma.leadViewHistory.findMany({where:{userId:myId},orderBy:{viewedAt:"desc"},take:100,select:{leadId:true}});
+  const recent = base.scope === 'recent' ? await prisma.leadViewHistory.findMany({where:{userId:myId},orderBy:{viewedAt:"desc"},take:100,select:{leadId:true}}) : [];
   const recentIds = recent.map(r=>r.leadId);
-  const viewIds = await prisma.$queryRaw<Array<{id:string}>>(leadListIdsQuery({
+  const display = params.display === "kanban" ? "kanban" : "table";
+  const queryInput = {
     ...params, search, sort, dir, definition:base, scope, userId:myId, recentIds, savedFilters:(selectedView?.filters??[]) as unknown as ListFilter[],
-  }));
+  };
+  // Counts need no sorting. Fetch only the current page in display order instead
+  // of sorting 2,001 IDs before the first 50 rows can render.
+  const fetchWholeView = display === 'kanban' || base.scope === 'recent';
+  const [viewIds, countProbe] = await Promise.all([
+    prisma.$queryRaw<Array<{id:string}>>(leadListIdsQuery(queryInput, fetchWholeView ? {} : {limit:LIMIT,offset:(page-1)*LIMIT})),
+    fetchWholeView ? Promise.resolve(null) : prisma.$queryRaw<Array<{id:string}>>(leadListIdsQuery(queryInput,{ordered:false})),
+  ]);
   where.id = {in:viewIds.map(r=>r.id)};
   // Build prisma orderBy from sort key
   let orderBy: Prisma.LeadOrderByWithRelationInput =
@@ -106,8 +116,6 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       orderBy = { [key]: dir } as Prisma.LeadOrderByWithRelationInput;
     }
   }
-
-  const display = params.display === "kanban" ? "kanban" : "table";
 
   if (display === "kanban") {
     // Board columns = the top real statuses under the current filters.
@@ -178,14 +186,15 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const COUNT_CAP = 2000;
   const orderedIds = definition.scope === "recent" && !sort
     ? recentIds.filter(id=>viewIds.some(row=>row.id===id)) : viewIds.map(row=>row.id);
-  const pageIds = orderedIds.slice((page-1)*LIMIT,page*LIMIT);
+  const pageIds = fetchWholeView ? orderedIds.slice((page-1)*LIMIT,page*LIMIT) : orderedIds;
   const leads = await prisma.lead.findMany({
     where: { AND: [scope], id: { in: pageIds } },
     include: { assignedTo: { select: { id:true,name:true,email:true } } },
   });
   leads.sort((a,b)=>pageIds.indexOf(a.id)-pageIds.indexOf(b.id));
-  const countCapped = viewIds.length > COUNT_CAP;
-  const total = Math.min(COUNT_CAP,viewIds.length);
+  const matchedCount = (countProbe ?? viewIds).length;
+  const countCapped = matchedCount > COUNT_CAP;
+  const total = Math.min(COUNT_CAP,matchedCount);
 
   const rows: SfRow[] = leads.map((lead) => {
     let sfData: Record<string, unknown> = {};

@@ -25,7 +25,7 @@ describe('lead query authorization and filters',()=>{
   it('ANDs search and saved filters with permissions, binding hostile input',()=>{
     const q=leadListIdsQuery({definition:LEAD_LIST_VIEWS.find(v=>v.value==='my-leads')!,scope:{assignedToId:{in:['allowed']}},userId:'me',recentIds:[],search:"x' OR TRUE --",status:'Working Lead'});
     expect(q.text).not.toContain("x' OR TRUE --");
-    expect(q.values).toContain("x' OR TRUE --");
+    expect(q.values).toContain("%x' OR TRUE --%");
     expect(q.values).toContain('allowed');expect(q.values).toContain('me');
     expect(q.values).toContain('Working Lead');expect(q.values).toContain('archive disposition');
     expect(q.text).toContain(' AND ');
