@@ -164,7 +164,7 @@ export function UserForm({
               </label>,
             ],
             [
-              "Closer",
+              "Phone dialer",
               <label key="c" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
                 <input type="checkbox" checked={isCloser} onChange={(e) => setIsCloser(e.target.checked)} />
                 Show the phone dialer for this user
@@ -214,13 +214,13 @@ export function UserForm({
               </select>,
             ],
             [
-              "Hierarchy Role",
-              <select key="hr" value={hierarchyRoleId} onChange={(e) => setHierarchyRoleId(e.target.value)} style={inputStyle}>
+              "Role",
+              <div key="hr"><select aria-label="Role" value={hierarchyRoleId} onChange={(e) => setHierarchyRoleId(e.target.value)} style={inputStyle}>
                 <option value="">— Select a role —</option>
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
-              </select>,
+              </select><p className="mt-1 text-xs text-[#747474]">Closer uses the simplified opportunity view. Profile permissions stay separate.</p></div>,
             ],
             [
               "Manager",
