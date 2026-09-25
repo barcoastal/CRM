@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { closerProduction, hasPeriodProduction } from "./closer-production";
 import { currentScoreboardPeriod, scoreboardMonthRange } from "./scoreboard-shared";
 import { supervisorFeed } from "@/lib/five9/supervisor-feed";
+import { DEFAULT_TIER_CONFIG, tierForDebt, type TierConfig } from "./closer-tier-config";
+export { tierForDebt, type TierConfig } from "./closer-tier-config";
 
 /**
  * Closer-tier transfer routing. A deal's debt maps to a preferred tier
@@ -10,27 +12,9 @@ import { supervisorFeed } from "@/lib/five9/supervisor-feed";
  * to the nearest other tiers so the call is never lost.
  */
 
-export interface TierConfig {
-  tier1Max: number;
-  tier2Max: number;
-}
-
-const DEFAULT_CONFIG: TierConfig = { tier1Max: 100_000, tier2Max: 250_000 };
-
 export async function getTierConfig(): Promise<TierConfig> {
   const row = await prisma.closerTierConfig.findUnique({ where: { id: "singleton" } });
-  return row ? { tier1Max: row.tier1Max, tier2Max: row.tier2Max } : DEFAULT_CONFIG;
-}
-
-/**
- * Preferred tier for a debt amount. Tier 1 is the top tier (biggest deals),
- * Tier 3 the smallest. The two config cutoffs are the small/mid and mid/large
- * boundaries (defaults $100K and $250K).
- */
-export function tierForDebt(debt: number, cfg: TierConfig): 1 | 2 | 3 {
-  if (debt >= cfg.tier2Max) return 1; // large -> top tier
-  if (debt >= cfg.tier1Max) return 2; // mid
-  return 3; // small -> bottom tier
+  return row ? { tier1Max: row.tier1Max, tier2Max: row.tier2Max } : DEFAULT_TIER_CONFIG;
 }
 
 /**

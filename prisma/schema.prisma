@@ -10,6 +10,8 @@ datasource db {
 // ============ AUTH ============
 
 model User {
+  voiceAgent VoiceAgent?
+  voiceQueueMemberships VoiceQueueMember[]
   recordViews RecordViewHistory[]
   accountTeamMemberships AccountTeamMember[]
   id                String    @id @default(cuid())
@@ -918,6 +920,7 @@ model Lead {
   cadenceEnrollments  CadenceEnrollment[]      @relation("LeadCadenceEnrollments")
   leadLists           LeadListMember[]         @relation("LeadListsForLead")
   aiCalls             AiCall[]
+  voiceWebLead        VoiceWebLead?
 
   @@index([contactName, id], map: "Lead_name_list_sort_idx")
   @@index([createdAt(sort: Desc), id], map: "Lead_created_list_sort_idx")
@@ -966,6 +969,7 @@ model CallTranscript {
 // ============ CAMPAIGNS ============
 
 model Campaign {
+  voiceDialing       VoiceDialingCampaign?
   id                 String   @id @default(cuid())
   name               String
   description        String?
@@ -1068,6 +1072,7 @@ model CampaignAgent {
 // ============ CALLS ============
 
 model Call {
+  voiceCall VoiceCall?
   id           String    @id @default(cuid())
   direction    String    @default("OUTBOUND") // INBOUND, OUTBOUND
   status       String    @default("INITIATED") // INITIATED, RINGING, IN_PROGRESS, COMPLETED, NO_ANSWER, BUSY, FAILED, VOICEMAIL
@@ -3313,6 +3318,7 @@ model CloserTierConfig {
 // Backs the assignment console + per-closer production stats. One row per
 // lead handed to a closer.
 model CloserHandoff {
+  voiceCall    VoiceCall?
   id           String    @id @default(cuid())
   createdAt    DateTime  @default(now())
 
@@ -3422,4 +3428,171 @@ model RecordViewHistory {
  viewedAt DateTime @default(now())
  @@id([userId,entity,recordId])
  @@index([userId,entity,viewedAt])
+}
+
+// Native call center. These additive tables do not alter Five9 call history.
+model VoiceQueue {
+  id             String             @id @default(cuid())
+  name           String
+  phoneNumber    String             @unique
+  enabled        Boolean            @default(true)
+  maxWaitSeconds Int                @default(180)
+  greeting       String             @default("Thank you for calling. Please stay on the line for the next available agent.")
+  members        VoiceQueueMember[]
+  calls          VoiceCall[]
+  createdAt      DateTime           @default(now())
+}
+
+model VoiceQueueMember {
+  queueId String
+  userId  String
+  queue   VoiceQueue @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([queueId, userId])
+}
+
+model VoiceAgent {
+  userId       String   @id
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status       String   @default("OFFLINE")
+  activeCallId String?
+  standbyKey   String?  @unique
+  standbySid   String?  @unique
+  standbyReady Boolean  @default(false)
+  closerOpen   Boolean  @default(false)
+  heartbeatAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status, heartbeatAt])
+}
+
+model VoiceCall {
+  id                  String             @id @default(cuid())
+  callId              String?            @unique
+  call                Call?              @relation(fields: [callId], references: [id])
+  queueId             String?
+  queue               VoiceQueue?        @relation(fields: [queueId], references: [id])
+  leadId              String?
+  campaignId          String?
+  campaignContactId   String?
+  agentId             String?
+  openerId            String?
+  qualifiedAt         DateTime?
+  qualifiedDebt       Float?
+  qualificationNotes  String?
+  qualifiedDebts      Json?
+  transferRequestKey  String?
+  transferRequestedAt DateTime?
+  transferManagerId   String?
+  transferReviewedAt  DateTime?
+  transferTargetId    String?
+  transferReadyAt     DateTime?
+  transferReason      String?
+  salesStage          String             @default("OPENING")
+  closerHandoffId     String?            @unique
+  closerHandoff       CloserHandoff?      @relation(fields: [closerHandoffId], references: [id])
+  direction           String
+  workflow            String             @default("MANUAL")
+  status              String             @default("CONNECTING")
+  phoneNumber         String
+  fromNumber          String
+  customerSid         String?            @unique
+  conferenceSid       String?            @unique
+  customerDialStarted Boolean            @default(false)
+  held                Boolean            @default(false)
+  disposition         String?
+  notes               String?
+  recordingSid        String?
+  createdAt           DateTime           @default(now())
+  answeredAt          DateTime?
+  attemptStartedAt    DateTime?
+  customerAnsweredAt  DateTime?
+  customerJoinedAt    DateTime?
+  humanDetectedAt     DateTime?
+  bridgedAt           DateTime?
+  abandonedAt         DateTime?
+  machineResult       String?
+  endedAt             DateTime?
+  updatedAt           DateTime           @updatedAt
+  participants        VoiceParticipant[]
+  events              VoiceEvent[]
+
+  @@index([queueId, status, createdAt])
+  @@index([agentId, createdAt])
+  @@index([campaignContactId, status])
+  @@index([workflow, endedAt, createdAt])
+  @@index([phoneNumber, endedAt])
+  @@index([salesStage, transferTargetId])
+}
+
+// Native automatic outbound routing. Configuration starts disabled.
+model VoiceOutboundSettings {
+  id              String   @id @default("default")
+  webEnabled      Boolean  @default(false)
+  webEnabledAt    DateTime?
+  webMemberIds    String[] @default([])
+  ownerFirst      Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+}
+
+model VoiceWebLead {
+  leadId          String   @id
+  lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  receivedAt      DateTime
+  deadlineAt      DateTime
+  status          String   @default("WAITING")
+  reason          String?
+  voiceCallId     String?  @unique
+  attemptedAt     DateTime?
+  retryAt         DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status, deadlineAt])
+  @@index([status, retryAt])
+}
+
+model VoiceDialingCampaign {
+  campaignId      String   @id
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  status          String   @default("PAUSED")
+  maxLines        Int      @default(10)
+  lineScope       String   @default("TEAM")
+  pauseReason     String?
+  startedAt       DateTime?
+  updatedAt       DateTime @updatedAt
+}
+
+// One account-wide dispatch budget per second, shared by all server replicas.
+model VoiceDialerLease {
+  id              String   @id
+  expiresAt       DateTime
+}
+
+model VoiceParticipant {
+  id          String    @id @default(cuid())
+  voiceCallId String
+  voiceCall   VoiceCall @relation(fields: [voiceCallId], references: [id], onDelete: Cascade)
+  userId      String
+  role        String
+  mode        String?
+  callSid     String?
+  joinedAt    DateTime?
+  endedAt     DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([voiceCallId, userId])
+  @@index([callSid])
+}
+
+model VoiceEvent {
+  id          String    @id @default(cuid())
+  voiceCallId String
+  voiceCall   VoiceCall @relation(fields: [voiceCallId], references: [id], onDelete: Cascade)
+  actorId     String?
+  kind        String
+  detail      String?
+  createdAt   DateTime  @default(now())
+
+  @@index([voiceCallId, createdAt])
 }

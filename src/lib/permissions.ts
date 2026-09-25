@@ -29,6 +29,7 @@ export const PERMISSION_CATALOG = [
   "Task.View", "Task.Create", "Task.Edit", "Task.Delete",
   "Event.View", "Event.Create", "Event.Edit", "Event.Delete",
   "Call.View", "Call.Log", "Call.ListenRecording",
+  "CallCenter.Supervise",
   // Communications
   "Email.Send", "Email.MassSend", "SMS.Send",
   // Reports

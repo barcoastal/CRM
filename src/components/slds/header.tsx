@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { ObjectIcon } from "./icon";
 import { AppLauncher } from "./app-launcher";
 import { GlobalSearch } from "./global-search";
+import { useOptionalPhone } from "@/components/call-center/provider";
 import { FeedbackButton } from "@/components/slds/feedback-button";
 import { ConsoleNav, readNavMode, setNavMode } from "@/components/slds/console-nav";
 import { EditNavModal, applyNavPrefs, type NavItem } from "./edit-nav-modal";
@@ -75,6 +75,7 @@ const TABS: TabItem[] = [
   { label: "E-Sign", href: "/envelopes", entity: "ProgramPlan" },
   { label: "Integrations", href: "/integrations", entity: "Settings" },
   { label: "Dialer", href: "/dialer" },
+  { label: "Call Center", href: "/call-center" },
   { label: "Marketing", href: "/marketing", entity: "Campaign" },
   { label: "Sign Docs", href: "/sign-docs", entity: "ProgramPlan" },
   { label: "Campaigns", href: "/campaigns", entity: "Campaign" },
@@ -108,10 +109,15 @@ export function SldsHeader({
   const [visibleTabs, setVisibleTabs] = useState<NavItem[]>(TABS);
   const [navMode, setNavModeState] = useState<"console" | "standard">("console");
   const pathname = usePathname();
+  const phone = useOptionalPhone();
+  const allowedTabs = visibleTabs.filter(t => !phone || t.href !== "/floor-manager" || phone.data?.sales?.access.floor).map(t => t.href === "/call-center" && phone?.data?.sales?.access ? { ...t, href: phone.data.sales.access.home, label: phone.data.sales.access.floor ? "Live Floor" : phone.data.sales.access.closer ? "Closer Desk" : "Opener Desk" } : t);
 
   useEffect(() => {
-    setVisibleTabs(applyNavPrefs(TABS));
-    setNavModeState(readNavMode());
+    const frame = requestAnimationFrame(() => {
+      setVisibleTabs(applyNavPrefs(TABS));
+      setNavModeState(readNavMode());
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   return (
@@ -209,7 +215,7 @@ export function SldsHeader({
 
       {/* Row 2 — console workspace bar OR the standard horizontal tab nav */}
       {navMode === "console" ? (
-        <ConsoleNav appName={`${appName} Console`} objects={visibleTabs.map((t) => ({ label: t.label, href: t.href }))} />
+        <ConsoleNav appName={`${appName} Console`} objects={allowedTabs.map((t) => ({ label: t.label, href: t.href }))} />
       ) : (
       <div className="sf-nav-bar">
         <button
@@ -224,7 +230,7 @@ export function SldsHeader({
         </button>
         <Link href="/dashboard" className="sf-app-name">{appName}</Link>
         <nav className="sf-tab-nav">
-          {visibleTabs.slice(0, 11).map((t) => {
+          {allowedTabs.slice(0, 11).map((t) => {
             const active =
               pathname === t.href || (t.href !== "/dashboard" && pathname.startsWith(t.href));
             return (
@@ -240,11 +246,11 @@ export function SldsHeader({
               </Link>
             );
           })}
-          {visibleTabs.length > 11 && (
+          {allowedTabs.length > 11 && (
             <span style={{ position: "relative", display: "inline-flex", alignItems: "stretch" }}>
               <button
                 ref={moreBtnRef}
-                className={`sf-tab ${visibleTabs.slice(11).some((t) => pathname.startsWith(t.href)) ? "sf-tab-active" : ""}`}
+                className={`sf-tab ${allowedTabs.slice(11).some((t) => pathname.startsWith(t.href)) ? "sf-tab-active" : ""}`}
                 style={{ background: moreOpen ? "#f3f2f2" : undefined, border: 0, cursor: "pointer", height: "100%", display: "inline-flex", alignItems: "center" }}
                 onClick={() => {
                   setMoreOpen((v) => {
@@ -268,7 +274,7 @@ export function SldsHeader({
                   style={{ position: "fixed", top: morePos.top, right: morePos.right, zIndex: 9100, background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, boxShadow: "0 2px 6px rgba(0,0,0,0.15)", minWidth: 200, maxHeight: "70vh", overflowY: "auto", display: "block", padding: "4px 0" }}
                   onMouseLeave={() => setMoreOpen(false)}
                 >
-                  {visibleTabs.slice(11).map((t) => (
+                  {allowedTabs.slice(11).map((t) => (
                     <Link
                       key={t.href}
                       href={t.href}

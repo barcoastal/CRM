@@ -1,5 +1,19 @@
 import { z } from "zod";
 
+export interface TierConfig {
+  tier1Max: number;
+  tier2Max: number;
+}
+export const DEFAULT_TIER_CONFIG: TierConfig = {
+  tier1Max: 100_000,
+  tier2Max: 250_000,
+};
+export function tierForDebt(debt: number, cfg: TierConfig): 1 | 2 | 3 {
+  if (debt >= cfg.tier2Max) return 1;
+  if (debt >= cfg.tier1Max) return 2;
+  return 3;
+}
+
 export const closerTierConfigSchema = z.object({
   tier1Max: z.number().int().min(0).max(2_147_483_647),
   tier2Max: z.number().int().min(0).max(2_147_483_647),

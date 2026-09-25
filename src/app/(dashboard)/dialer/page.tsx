@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { DialerClient } from "@/components/dialer/dialer-client";
 import { Five9Client } from "./five9-client";
@@ -18,6 +19,7 @@ interface DialerPageProps {
 export default async function DialerPage({ searchParams }: DialerPageProps) {
   await auth();
   const params = await searchParams;
+  if (process.env.CRM_DIALER_MODE === "twilio") redirect("/call-center");
 
   const five9Domain = process.env.NEXT_PUBLIC_FIVE9_DOMAIN ?? null;
   const five9Station = process.env.NEXT_PUBLIC_FIVE9_DEFAULT_STATION ?? null;

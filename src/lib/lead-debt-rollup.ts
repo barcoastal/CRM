@@ -8,6 +8,7 @@
  * sync with the legacy SF formula.
  */
 
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 function normalizeToWeekly(amount: number, frequency: string): number {
@@ -28,8 +29,11 @@ function normalizeToWeekly(amount: number, frequency: string): number {
   }
 }
 
-export async function recalcLeadWeeklyPayment(leadId: string): Promise<number> {
-  const debts = await prisma.leadDebt.findMany({
+export async function recalcLeadWeeklyPayment(
+  leadId: string,
+  db: Pick<Prisma.TransactionClient, "leadDebt" | "lead"> = prisma,
+): Promise<number> {
+  const debts = await db.leadDebt.findMany({
     where: { leadId, status: "ACTIVE" },
     select: { paymentAmount: true, frequency: true },
   });
@@ -39,7 +43,7 @@ export async function recalcLeadWeeklyPayment(leadId: string): Promise<number> {
     total += normalizeToWeekly(d.paymentAmount, d.frequency);
   }
   total = Math.round(total * 100) / 100;
-  await prisma.lead.update({
+  await db.lead.update({
     where: { id: leadId },
     data: { currentTotalWeeklyPayment: total },
   });

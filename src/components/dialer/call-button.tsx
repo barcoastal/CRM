@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useOptionalPhone } from "@/components/call-center/provider";
 
 interface Props {
   phone: string | null | undefined;
@@ -14,8 +15,8 @@ interface Props {
 }
 
 /**
- * Click-to-dial button. Triggers Five9 makeCall on the agent's saved session.
- * If no Five9 session is active, the API returns a clear error toast.
+ * Click-to-dial uses the persistent native phone when enabled in the CRM.
+ * Existing Five9 routing remains available until the native cutover.
  */
 export function CallButton({
   phone,
@@ -27,6 +28,7 @@ export function CallButton({
   label = "Call",
 }: Props) {
   const [busy, setBusy] = useState(false);
+  const nativePhone = useOptionalPhone();
 
   async function dial() {
     if (!phone) {
@@ -35,6 +37,10 @@ export function CallButton({
     }
     setBusy(true);
     try {
+      if (nativePhone) {
+        await nativePhone.dial({ phone, leadId, opportunityId: _opportunityId, accountId: _accountId });
+        return;
+      }
       const res = await fetch("/api/dialer/five9/agent/click-to-dial", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -46,6 +52,8 @@ export function CallButton({
       } else {
         toast.error(data.error ?? "Failed to place call", { duration: 7000 });
       }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to place call");
     } finally {
       setBusy(false);
     }

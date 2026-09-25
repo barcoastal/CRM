@@ -5,8 +5,12 @@
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { supervisorFeed } = await import("@/lib/five9/supervisor-feed");
-    supervisorFeed.start();
+    if (process.env.CRM_DIALER_MODE !== "twilio") {
+      const { supervisorFeed } = await import("@/lib/five9/supervisor-feed");
+      supervisorFeed.start();
+    }
+    const { scheduleVoiceReconciliation } = await import("@/lib/call-center/scheduler");
+    scheduleVoiceReconciliation();
 
     // Nightly Salesforce -> CRM data sync (runs in this container; requires
     // the SF_AUTH_URL env var - see src/lib/sf-sync/runner.ts).

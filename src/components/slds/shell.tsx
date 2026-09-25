@@ -22,6 +22,7 @@ export function SldsShell({
     <div style={{ minHeight: "100vh", background: "#f3f3f3" }}>
       <SldsHeader userInitials={initials} userName={userName} />
       <main
+        className="sf-shell-main"
         style={{
           padding: 12,
           maxWidth: "100%",

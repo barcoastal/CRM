@@ -1,0 +1,323 @@
+.cc-handoff-requests {
+  background: #fff;
+  border: 1px solid #dfe6e2;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  color: #293a35;
+}
+.cc-handoff-requests > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  background: #f4f8f5;
+  border-bottom: 1px solid #e3ebe5;
+}
+.cc-handoff-requests h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+.cc-handoff-requests > header > span {
+  font-size: 12px;
+  color: #5b7768;
+}
+.cc-handoff-request {
+  padding: 20px 22px;
+  border-top: 1px solid #e5eae7;
+}
+.cc-handoff-request > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+.cc-handoff-request h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+.cc-handoff-request header p {
+  font-size: 12px;
+  color: #6a7972;
+  margin: 7px 0 0;
+}
+.cc-handoff-request header > span {
+  font-size: 12px;
+  color: #74837b;
+}
+.cc-handoff-origin {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin: 16px 0;
+  font-size: 12px;
+  color: #7b8580;
+}
+.cc-handoff-origin strong {
+  color: #415048;
+  font-weight: 500;
+  margin-left: 6px;
+}
+.cc-handoff-brief table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.cc-handoff-brief th,
+.cc-handoff-brief td {
+  text-align: left;
+  padding: 10px 0;
+  border-bottom: 1px solid #edf0ee;
+}
+.cc-handoff-brief th:last-child,
+.cc-handoff-brief td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.cc-handoff-brief thead th {
+  font-size: 11px;
+  font-weight: 500;
+  color: #819087;
+}
+.cc-handoff-brief tfoot th {
+  font-weight: 600;
+}
+.cc-handoff-brief p,
+.cc-handoff-review p {
+  font-size: 13px;
+  line-height: 1.65;
+  color: #63726a;
+  margin: 15px 0;
+}
+.cc-handoff-review {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cc-handoff-review label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  color: #65746b;
+}
+.cc-handoff-review select,
+.cc-handoff-review input {
+  width: 100%;
+}
+.cc-opener-origin {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  font-size: 11px;
+  color: #869099;
+}
+.cc-opener-origin strong {
+  font-weight: 500;
+  color: #4a5967;
+  margin-left: 5px;
+}
+.cc-opener-sf {
+  font-size: 10px;
+  color: #7a94a8;
+  margin-top: 12px;
+}
+.cc-debt-editor-head,
+.cc-debt-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(110px, 0.65fr) 30px;
+  gap: 12px;
+  align-items: center;
+}
+.cc-debt-editor-head {
+  font-size: 11px;
+  color: #7b8792;
+  margin-bottom: 10px;
+}
+.cc-debt-row {
+  margin-bottom: 10px;
+}
+.cc-console-opener .cc-debt-row input {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  padding: 12px;
+}
+.cc-console-opener .cc-debt-row input[type="number"] {
+  font-size: 16px;
+  font-weight: 500;
+}
+.cc-debt-row button {
+  border: 0;
+  background: transparent;
+  color: #9ba3ac;
+  padding: 4px;
+  cursor: pointer;
+}
+.cc-debt-row button:hover {
+  color: #b84955;
+}
+.cc-debt-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: none;
+  color: #337961;
+  font-size: 12px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.cc-debt-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #e8edf0;
+  padding: 16px 0 24px;
+  margin-top: 10px;
+}
+.cc-debt-total span {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #697884;
+  font-size: 12px;
+}
+.cc-debt-total small {
+  font-size: 10px;
+  color: #919ba5;
+}
+.cc-debt-total strong {
+  font-size: 22px;
+  font-weight: 600;
+  color: #34463e;
+  letter-spacing: -0.7px;
+  font-variant-numeric: tabular-nums;
+}
+.cc-opener-approval {
+  margin: 0 22px 22px;
+  border-bottom: 1px solid #e8eeea;
+  padding-bottom: 18px;
+}
+.cc-opener-approval ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.cc-opener-approval li {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  align-items: flex-start;
+  color: #86918a;
+  font-size: 11px;
+}
+.cc-opener-approval li > b {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #f0f3f1;
+  color: #8a9890;
+  font-size: 10px;
+  font-weight: 500;
+}
+.cc-opener-approval li.done > b {
+  color: #187357;
+  background: #eaf5ee;
+}
+.cc-opener-approval li > span {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cc-opener-approval strong {
+  color: #43564b;
+  font-size: 12px;
+  font-weight: 500;
+}
+.cc-opener-approval p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #7d887f;
+  margin: 8px 0 0;
+}
+.cc-opener-approval .cc-request-rejected {
+  color: #ad5862;
+}
+.cc-call-alert {
+  position: fixed;
+  z-index: 1000;
+  top: 100px;
+  right: 24px;
+  width: 340px;
+  padding: 17px 18px;
+  border: 1px solid #c4d9cb;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 30px #163b251a;
+  color: #344f3c;
+  font-family: Inter, system-ui, sans-serif;
+}
+.cc-call-alert strong {
+  display: block;
+  font-size: 14px;
+}
+.cc-call-alert p {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 7px 0 12px;
+}
+.cc-call-alert a {
+  font-size: 12px;
+  color: #187357;
+}
+.cc-call-alert button {
+  float: right;
+  border: 0;
+  background: transparent;
+  color: #65756a;
+  cursor: pointer;
+  font-size: 11px;
+}
+.cc-call-alert .cc-alert-audio {
+  float: none;
+  display: block;
+  margin-top: 14px;
+  padding: 0;
+  text-decoration: underline;
+}
+@media (max-width: 760px) {
+  .cc-opener-origin {
+    gap: 12px;
+  }
+  .cc-debt-row,
+  .cc-debt-editor-head {
+    grid-template-columns: minmax(0, 1fr) 100px 25px;
+    gap: 8px;
+  }
+  .cc-call-alert {
+    left: 14px;
+    right: 14px;
+    width: auto;
+  }
+}
+
+.cc-console-opener .cc-qualification .cc-debt-row input {
+  height: 44px;
+  background: #fafbfc;
+  border: 1px solid #e6e9ee;
+  border-radius: 9px;
+  padding: 11px 13px;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.cc-console-opener .cc-qualification .cc-debt-row input[type="number"] {
+  font-size: 16px;
+  font-weight: 500;
+}
