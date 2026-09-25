@@ -10,6 +10,7 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { checkpointedEntity, SYNC_ENTITIES } from "./checkpoint-runner";
 
 const LOG_PATH = "/tmp/sf-sync.log";
 // Plans before drafts (drafts FK onto plans); lead last (largest table).
@@ -36,7 +37,12 @@ function log(line: string): void {
   console.log(`[sf-sync] ${line}`);
 }
 
-function runEntity(entity: string): Promise<number> {
+function runEntity(entity: string, now: Date): Promise<number> {
+  if ((SYNC_ENTITIES as readonly string[]).includes(entity)) return checkpointedEntity(entity, {
+    stateDir: process.env.SF_SYNC_STATE_DIR ?? path.join(process.env.NODE_ENV === "production" ? "/data" : process.cwd(), "sf-sync-state"),
+    now,
+    log: line => fs.appendFileSync(LOG_PATH, line),
+  });
   return new Promise((resolve) => {
     const tsx = path.join(process.cwd(), "node_modules", ".bin", "tsx");
     const script = entity === "file" ? "scripts/sync-sf-files.ts" : "scripts/migrate-sf-objects.ts";
@@ -68,10 +74,13 @@ export function startSfSync(trigger: string): { started: boolean; reason?: strin
   void (async () => {
     log(`=== sync started (${trigger}) ===`);
     const failures: string[] = [];
+    const now = new Date();
     for (const entity of ENTITIES) {
       status.current = entity;
       log(`syncing ${entity}...`);
-      const code = await runEntity(entity);
+      let code = 1;
+      try { code = await runEntity(entity, now); }
+      catch { log(`${entity}: runner error; checkpoint retained`); }
       if (code !== 0) {
         failures.push(entity);
         log(`${entity} FAILED (exit ${code})`);
