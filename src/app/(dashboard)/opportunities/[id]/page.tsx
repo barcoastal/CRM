@@ -23,6 +23,8 @@ import { debtPaymentStatus } from "@/lib/debt-payment-status";
 import { ContactRolesList } from "@/components/accounts/contact-roles-list";
 import { AddContactButton } from "@/components/contacts/add-contact-button";
 import { RescheduleCalculator } from "@/components/shared/reschedule-calculator";
+import { LivePaymentGrid } from "@/components/program-plans/live-payment-grid";
+import { hasPermission } from "@/lib/permissions";
 import { generateRescheduleSchedule } from "@/lib/reschedule-schedule";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { RequestDocumentsButton } from "@/components/opportunities/request-documents-button";
@@ -182,6 +184,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
       },
       programPlans: {
         include: {
+          drafts: { orderBy: { scheduledDate: "asc" } },
           processor: { select: { name: true, code: true } },
           _count: { select: { drafts: true, fees: true } },
         },
@@ -829,8 +832,17 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
   const calcPanel = (
     <Section title="Payment Calculator">
+      {opp.programPlans.filter(p => ["ACTIVE", "PAUSED"].includes(p.status) && p.drafts.length > 0).map(plan => <div key={plan.id} style={{ marginBottom: 24 }}>
+        <h3 className="slds-text-heading_small">Scheduled payments</h3>
+        <LivePaymentGrid programPlanId={plan.id} canEdit={hasPermission(viewerSession?.user?.permissions ?? [], "Draft.Retry")} drafts={plan.drafts.map(d => ({ ...d, scheduledDate: d.scheduledDate.toISOString() }))} />
+      </div>)}
+      <h3 className="slds-text-heading_small" style={{ marginBottom: 12 }}>Payment calculation</h3>
       <RescheduleCalculator
+        key={latestCalc?.id ?? "initial"}
+        saveEndpoint={hasPermission(viewerSession?.user?.permissions ?? [], "Opportunity.Edit") ? `/api/opportunities/${opp.id}/calculator` : undefined}
         initial={{
+          savedState: latestCalc?.scheduleJson,
+          calculationId: latestCalc?.id,
           totalDebt: reschedDebt,
           termMonths: reschedTermMonths,
           noOfDebts: opp.debts.length,

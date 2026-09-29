@@ -168,18 +168,19 @@ export async function splitDraftManual(
   parts: Array<{ date: Date; amount: number }>,
 ): Promise<{ draftIds: string[] }> {
   if (parts.length < 2) throw new Error("A split needs at least 2 parts");
-  if (parts.some((p) => !(p.amount > 0))) throw new Error("Every part needs a positive amount");
+  if (parts.some(p => !Number.isFinite(p.amount) || p.amount <= 0 || p.amount > MAX_DRAFT_AMOUNT || Math.abs(p.amount * 100 - Math.round(p.amount * 100)) > 0.00001 || Number.isNaN(p.date.getTime()))) throw new Error("Each split needs a valid date and an amount between $0.01 and $10,000, with at most two decimal places");
   const draft = await prisma.draft.findUnique({ where: { id: draftId } });
   if (!draft) throw new Error("Draft not found");
   if (!PENDING_STATUSES.includes(draft.status)) throw new Error(`Only pending drafts can be split (this one is ${draft.status}).`);
 
   const r2 = (n: number) => Math.round(n * 100) / 100;
   const total = r2(parts.reduce((s, p) => s + p.amount, 0));
-  if (Math.abs(total - draft.amount) > 0.01) {
+  if (Math.round(total * 100) !== Math.round(draft.amount * 100)) {
     throw new Error(`Parts total $${total.toFixed(2)} but the payment is $${draft.amount.toFixed(2)} - they must match.`);
   }
   const weeklyFees = draft.feeService + draft.feeBank + draft.feeLegal;
-  if (parts[0].amount < weeklyFees) {
+  const orderedParts = parts.map(p => ({ ...p, date: toBusinessDay(p.date) })).sort((a, b) => a.date.getTime() - b.date.getTime());
+  if (orderedParts[0].amount < weeklyFees) {
     throw new Error(`Part 1 can't go below this week's fees ($${weeklyFees.toFixed(2)}).`);
   }
 
@@ -189,9 +190,7 @@ export async function splitDraftManual(
   let remProgram = r2(draft.feeProgram);
   let remEscrow = r2(draft.escrowAmount);
   const groupId = `split-${draft.id}`;
-  const rows = parts
-    .map((p, i) => ({ ...p, date: toBusinessDay(p.date), i }))
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
+  const rows = orderedParts
     .map((p, i) => {
       const feeService = i === 0 ? draft.feeService : 0;
       const feeBank = i === 0 ? draft.feeBank : 0;
@@ -225,7 +224,7 @@ export async function splitDraftManual(
 
   const created = await prisma.$transaction([
     prisma.draft.update({
-      where: { id: draft.id },
+      where: { id: draft.id, updatedAt: draft.updatedAt, status: { in: PENDING_STATUSES } },
       data: { ...rows[0], processorSyncStatus: "PENDING" },
     }),
     ...rows.slice(1).map((r) =>

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { ownedRecordScope } from "@/lib/owned-record-scope";
 import { prisma } from "@/lib/prisma";
+import { activeOpportunityFilter, canViewArchivedOpportunities } from "@/lib/opportunity-access";
 
 export type OwnedEntity = "lead" | "opportunity" | "account" | "contact";
 export const OWNER_FIELD = { lead: "assignedToId", opportunity: "assignedToId", account: "ownerId", contact: "ownerId" } as const;
@@ -26,13 +27,15 @@ export async function recordScope(entity: OwnedEntity, includeNegotiator = true)
     where: { id: session.user.id }, select: { id: true, role: true, isActive: true },
   });
   if (!current?.isActive) return { id: { in: [] } };
-  if (current.role === "ADMIN" || current.role === "SUPER_ADMIN") return {};
+  const archiveScope = entity === "opportunity" && !(await canViewArchivedOpportunities(current.id))
+    ? activeOpportunityFilter : null;
+  if (current.role === "ADMIN" || current.role === "SUPER_ADMIN") return archiveScope ?? {};
   const users = await prisma.user.findMany({ select: { id: true, managerId: true } });
   // Having actual reports, rather than a loosely named profile, defines a manager.
   // Include indirect reports; cycles terminate through the visited set.
   const scope=ownedRecordScope(entity, teamOwnerIds(current.id, users), includeNegotiator && hasPermission(session.user.permissions ?? [], entity === "account" ? "Account.View" : "Opportunity.View"));
   if(entity==='account'&&includeNegotiator&&hasPermission(session.user.permissions??[], 'Account.View'))return {OR:[scope,{teamMembers:{some:{userId:current.id}}}]};
-  return scope;
+  return archiveScope ? { AND: [scope, archiveScope] } : scope;
 }
 
 /** Guard parent-record subroutes before reading documents or running actions. */

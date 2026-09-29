@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { WirePaymentModal } from "./wire-payment-modal";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DispositionModal } from "@/components/leads/disposition-modal";
@@ -36,6 +37,7 @@ export function AccountHeaderButtons({
   defaultEmail,
   defaultPhone,
   editFields = [],
+  canLogWire = false,
 }: {
   accountId: string;
   accountName?: string;
@@ -43,11 +45,13 @@ export function AccountHeaderButtons({
   defaultEmail?: string | null;
   defaultPhone?: string | null;
   editFields?: EditField[];
+  canLogWire?: boolean;
 }) {
   const router = useRouter();
   const [modal, setModal] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [wireOpen, setWireOpen] = useState(false);
 
   async function sync() {
     setSyncing(true);
@@ -73,6 +77,8 @@ export function AccountHeaderButtons({
   return (
     <>
       <QuickActionsRow accountId={accountId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
+      {canLogWire && <button style={btn} onClick={() => setWireOpen(true)}>Log Wire Payment</button>}
+      {wireOpen && <WirePaymentModal accountId={accountId} onClose={() => setWireOpen(false)} />}
       {/* SF renders the record actions as ONE joined button group. */}
       <div style={{ display: "inline-flex", border: "1px solid #c9c9c9", borderRadius: 4, overflow: "hidden" }}>
         <button style={groupBtn} onClick={() => setModal(true)}>Disposition</button>

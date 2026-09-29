@@ -1,3 +1,4 @@
+import { canAccessDraft } from "@/lib/payments/access";
 /** Move a pending draft to a new date. */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -7,6 +8,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   const r = await requireAuthOrRespond("Draft.Retry");
   if ("response" in r) return r.response;
   const { id } = await ctx.params;
+  if (!await canAccessDraft(id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
   try {
     const body = (await req.json()) as { date?: string };
     if (!body.date || Number.isNaN(Date.parse(body.date))) {

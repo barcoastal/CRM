@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 /**
  * SF-parity "Files" and "Notes" related cards: two-across tiles like the
@@ -138,13 +141,21 @@ export function FilesCard({ files, total, viewAllHref }: { files: FileTile[]; to
 }
 
 export function NotesCard({ notes, total }: { notes: NoteTile[]; total: number }) {
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? notes : notes.slice(0, 6);
   return (
-    <CardShell icon="note" title="Notes" count={total}>
+    <CardShell icon="note" title="Notes" count={total} footer={notes.length > 6 ? (
+      <footer className="slds-card__footer">
+        <button type="button" className="slds-button slds-button_reset slds-text-link" aria-expanded={showAll} onClick={() => setShowAll(!showAll)}>
+          {showAll ? "Show fewer notes" : `Show all ${notes.length} notes`}
+        </button>
+      </footer>
+    ) : undefined}>
       {notes.length === 0 ? (
         <div style={{ padding: 12, color: "#747474", fontSize: 13 }}>No notes.</div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          {notes.map((n) => (
+          {visible.map((n) => (
             <a
               key={n.id}
               href={n.href}

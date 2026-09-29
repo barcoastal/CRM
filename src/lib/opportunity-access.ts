@@ -10,8 +10,16 @@ import { loadEffectivePermissions, hasPermission } from "@/lib/permissions";
 
 export const ARCHIVED_STAGE = "ARCHIVED";
 
+export const activeOpportunityFilter = {
+  NOT: { stage: { startsWith: "archive", mode: "insensitive" as const } },
+};
+
+export function isArchivedOpportunity(stage: string): boolean {
+  return /^archive/i.test(stage);
+}
+
 export async function canViewArchivedOpportunities(userId: string | null | undefined): Promise<boolean> {
-  if (!userId) return true;
+  if (!userId) return false;
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { isCloser: true } });
   if (!user?.isCloser) return true; // only closers are restricted
   const perms = await loadEffectivePermissions(userId);

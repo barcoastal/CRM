@@ -1,4 +1,7 @@
 "use client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { readCalculatorState } from "@/lib/payments/calculator-state";
 
 import { useMemo, useState } from "react";
 import {
@@ -18,6 +21,8 @@ const BONUS_PROGRAM_LENGTHS = [6, 7, 8, 9, 10, 11, 12];
 type DisplayRow = RescheduleRow & { _child?: boolean; _tenkPart?: number; _tenkOf?: number };
 
 export type RescheduleInitial = {
+  savedState?: unknown;
+  calculationId?: string | null;
   totalDebt?: number;
   termMonths?: number;
   citadelFee?: number;
@@ -65,10 +70,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
-export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial }) {
+export function RescheduleCalculator({ initial, saveEndpoint }: { initial?: RescheduleInitial; saveEndpoint?: string }) {
+  const router = useRouter();
+  const saved = readCalculatorState(initial?.savedState);
+  const [saving, setSaving] = useState(false);
+  const [calculationId, setCalculationId] = useState(initial?.calculationId ?? null);
   // Debt + citadel come from the deal (read-only in the calculator, like SF).
   const totalDebt = initial?.totalDebt ?? 0;
-  const [termMonths, setTermMonths] = useState(initial?.termMonths ?? 6);
+  const [termMonths, setTermMonths] = useState(saved?.termMonths ?? initial?.termMonths ?? 6);
   const citadelFee = initial?.citadelFee ?? RESCHEDULE_DEFAULTS.citadelFee;
   const noOfDebts = initial?.noOfDebts ?? 0;
   // Reschedule-only: number/amount of drafts already collected. Default 0 for a
@@ -76,19 +85,19 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
   const completedCount = initial?.completedDraftsCount ?? 0;
   const completedAmount = initial?.completedDraftsAmount ?? 0;
   const [firstPaymentDate, setFirstPaymentDate] = useState(
-    initial?.firstPaymentDate ?? new Date().toISOString().slice(0, 10),
+    saved?.firstPaymentDate ?? initial?.firstPaymentDate ?? new Date().toISOString().slice(0, 10),
   );
-  const [paymentProcessor, setPaymentProcessor] = useState(initial?.paymentProcessor ?? "SAS Processor");
-  const [weeklyPaymentDay, setWeeklyPaymentDay] = useState("Friday");
+  const [paymentProcessor, setPaymentProcessor] = useState(saved?.paymentProcessor ?? initial?.paymentProcessor ?? "SAS Processor");
+  const [weeklyPaymentDay, setWeeklyPaymentDay] = useState<string>(saved?.weeklyPaymentDay ?? "Friday");
   const [showRecalc, setShowRecalc] = useState(false);
   const [showSplit, setShowSplit] = useState(false);
   const [actionMenuRow, setActionMenuRow] = useState<number | null>(null);
-  const [splitRows, setSplitRows] = useState<SplitRow[] | null>(null);
+  const [splitRows, setSplitRows] = useState<SplitRow[] | null>(saved?.splitRows ?? null);
   // Per-row draft actions (Add / Edit / Skip) on regular draft rows.
-  const [skipped, setSkipped] = useState<Set<number>>(new Set());
+  const [skipped, setSkipped] = useState<Set<number>>(new Set(saved?.skipped));
   const [editingRow, setEditingRow] = useState<number | null>(null);
-  const [rowEdits, setRowEdits] = useState<Record<number, { date: string; amount: number }>>({});
-  const [extraRows, setExtraRows] = useState<(DisplayRow & { _after: number })[]>([]);
+  const [rowEdits, setRowEdits] = useState<Record<number, { date: string; amount: number }>>(saved?.rowEdits ?? {});
+  const [extraRows, setExtraRows] = useState<(DisplayRow & { _after: number })[]>(saved?.extraRows.map(r => ({ ...r, date: new Date(r.date), status: r.status as DisplayRow["status"] })) ?? []);
   const currentWeeklyPayment = initial?.currentWeeklyPayment ?? 0;
 
   const [refreshKey, setRefreshKey] = useState(0);
@@ -228,9 +237,26 @@ export function RescheduleCalculator({ initial }: { initial?: RescheduleInitial 
     return out;
   }, [finalRows, skipped, editingRow]);
 
+  async function saveCalculation() {
+    if (!saveEndpoint) return;
+    setSaving(true);
+    try {
+      const response = await fetch(saveEndpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+        totalDebt, programFeePeriod: termMonths, frequency: "WEEKLY", firstPaymentDate, citadelFee,
+        expectedCalculationId: calculationId,
+        scheduleState: { version: 1, termMonths, firstPaymentDate, weeklyPaymentDay, paymentProcessor, splitRows, skipped: [...skipped], rowEdits, extraRows },
+      }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to save calculation");
+      setCalculationId(data.id); toast.success("Payment calculation and splits saved"); router.refresh();
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Unable to save calculation"); }
+    finally { setSaving(false); }
+  }
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8 }}>
+        {saveEndpoint && <button className="slds-button slds-button_brand" disabled={saving || editingRow !== null} onClick={saveCalculation}>{saving ? "Saving…" : "Save calculation"}</button>}
         {splitRows && (
           <button
             onClick={() => setSplitRows(null)}

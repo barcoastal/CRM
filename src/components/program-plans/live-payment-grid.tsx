@@ -49,7 +49,7 @@ function money(n: number): string {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-export function LivePaymentGrid({ programPlanId, drafts }: { programPlanId: string; drafts: LiveDraftRow[] }) {
+export function LivePaymentGrid({ programPlanId, drafts, canEdit = true }: { programPlanId: string; drafts: LiveDraftRow[]; canEdit?: boolean }) {
   const router = useRouter();
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [editFor, setEditFor] = useState<string | null>(null);
@@ -70,12 +70,14 @@ export function LivePaymentGrid({ programPlanId, drafts }: { programPlanId: stri
       if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
       toast.success(okMsg);
       router.refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed");
-    } finally {
-      setBusy(false);
       setMenuFor(null);
       setEditFor(null);
+      return true;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+      return false;
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -110,7 +112,7 @@ export function LivePaymentGrid({ programPlanId, drafts }: { programPlanId: stri
       `/api/drafts/${splitFor.id}/split`,
       { method: "POST", body: JSON.stringify({ parts: splitParts.map((p) => ({ date: p.date, amount: Number(p.amount) })) }) },
       "Payment split",
-    ).then(() => setSplitFor(null));
+    ).then(ok => { if (ok) setSplitFor(null); });
   };
 
   // Running balance = cumulative escrow, SF-style (skipped/cancelled excluded).
@@ -152,7 +154,7 @@ export function LivePaymentGrid({ programPlanId, drafts }: { programPlanId: stri
             <button onClick={() => setChargeOpen(false)} style={btn}>Cancel</button>
           </span>
         ) : (
-          <button onClick={() => setChargeOpen(true)} style={btn}>Charge Now</button>
+          canEdit && <button onClick={() => setChargeOpen(true)} style={btn}>Charge Now</button>
         )}
       </div>
       <div style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, overflowX: "auto" }}>
@@ -168,7 +170,7 @@ export function LivePaymentGrid({ programPlanId, drafts }: { programPlanId: stri
           </thead>
           <tbody>
             {withBalance.map((d) => {
-              const pending = PENDING.includes(d.status);
+              const pending = canEdit && PENDING.includes(d.status);
               const s = sfStatus(d.status);
               const nsf = d.status === "FAILED";
               const isEditing = editFor === d.id;

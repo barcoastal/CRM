@@ -1,3 +1,4 @@
+import { canAccessDraft } from "@/lib/payments/access";
 /** Skip a pending draft and push all later pending drafts forward one period. */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -7,6 +8,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
   const r = await requireAuthOrRespond("Draft.Retry");
   if ("response" in r) return r.response;
   const { id } = await ctx.params;
+  if (!await canAccessDraft(id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
   try {
     const res = await skipDraft(id);
     return NextResponse.json({ ok: true, ...res });

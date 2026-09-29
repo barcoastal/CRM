@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     include: {
       owner: { select: { id: true, name: true, email: true } },
       contacts: { include: { contact: true } },
-      opportunities: true,
+      opportunities: { where: await recordScope("opportunity") },
       creditor: true,
       childAccounts: { select: { id: true, name: true, recordType: true } },
       parentAccount: { select: { id: true, name: true } },

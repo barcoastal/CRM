@@ -1,3 +1,4 @@
+import { canAccessDraft } from "@/lib/payments/access";
 /** Manually split a pending draft into chosen parts (SF "Edit Split"). */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -7,6 +8,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const r = await requireAuthOrRespond("Draft.Retry");
   if ("response" in r) return r.response;
   const { id } = await ctx.params;
+  if (!await canAccessDraft(id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
   try {
     const body = (await req.json()) as { parts?: Array<{ date?: string; amount?: number }> };
     const parts = (body.parts ?? [])

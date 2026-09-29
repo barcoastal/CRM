@@ -15,6 +15,7 @@ import {
 } from "@/lib/forecasting/categories";
 import { SubmitButton as SubmitForApprovalButton } from "@/components/approvals/submit-button";
 import { GetQuoteModal } from "@/components/opportunities/get-quote-modal";
+import { AmendOpportunityModal } from "./amend-opportunity-modal";
 
 const btn: React.CSSProperties = {
   background: "#fff",
@@ -76,18 +77,19 @@ export function OppHeaderButtons({
   const [contractModal, setContractModal] = useState(false);
   const [packetModal, setPacketModal] = useState(false);
   const [quoteModal, setQuoteModal] = useState(false);
+  const [amendOpen, setAmendOpen] = useState(false);
 
   async function updateOpp() {
     router.push(`/opportunities/${opportunityId}/edit`);
   }
 
   async function amendOpp() {
-    const res = await fetch(`/api/opportunities/${opportunityId}/amend`, { method: "POST" });
-    if (res.ok) router.refresh();
+    setAmendOpen(true);
   }
 
   return (
     <>
+      {amendOpen && <AmendOpportunityModal opportunityId={opportunityId} onClose={() => setAmendOpen(false)} />}
       <QuickActionsRow opportunityId={opportunityId} defaultEmail={defaultEmail} defaultPhone={defaultPhone} />
       <button
         onClick={() => setQuoteModal(true)}

@@ -9,7 +9,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { canViewArchivedOpportunities, ARCHIVED_STAGE } from "@/lib/opportunity-access";
+import { canViewArchivedOpportunities, isArchivedOpportunity } from "@/lib/opportunity-access";
 import { RecordPage, StatusPill } from "@/components/slds/record-page";
 import { PathSidePanelServer } from "@/components/path/path-side-panel-server";
 import { Section, FieldGrid } from "@/components/slds/section";
@@ -66,6 +66,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       primaryContact: { select: { id: true, fullName: true, email: true, phone: true, title: true, birthdate: true, ssn: true } },
       contacts: { include: { contact: true }, orderBy: { createdAt: "asc" } },
       opportunities: {
+        where: await recordScope("opportunity"),
         include: {
           debts: true,
           assignedTo: { select: { id: true, name: true, email: true } },
@@ -96,7 +97,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const canArchivedOpps = await canViewArchivedOpportunities(acctSession?.user?.id ?? "");
   const visibleOpps = canArchivedOpps
     ? account.opportunities
-    : account.opportunities.filter((o) => o.stage !== ARCHIVED_STAGE);
+    : account.opportunities.filter((o) => !isArchivedOpportunity(o.stage));
 
   const activity: ActivityItem[] = [
     ...account.tasks.map((t) => ({
@@ -305,7 +306,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const lastModifiedByDisplay = `${acctSf("LastModifiedBy_Full_Name__c") ?? ""}${acctSf("LastModifiedBy_Full_Name__c") ? `, ${account.updatedAt.toLocaleString()}` : account.updatedAt.toLocaleString()}`;
 
   const chainOpps = await prisma.opportunity.findMany({
-    where: { accountId: account.id },
+    where: { accountId: account.id, AND: [await recordScope("opportunity")] },
     select: { id: true, leadId: true },
   });
   const chainNotes = await fetchChainNotes({
@@ -629,9 +630,14 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   // payment management grid (real drafts, fee split, running balance,
   // skip/edit/charge). The projection calculator stays available below it.
   const livePlan = account.programPlans.find((p) => p.drafts.length > 0);
+  const savedCalculation = activeOpp ? await prisma.opportunityPaymentCalculation.findFirst({ where: { opportunityId: activeOpp.id }, orderBy: { savedAt: "desc" } }) : null;
   const projectionCalc = activeOpp ? (
     <RescheduleCalculator
+      key={savedCalculation?.id ?? "initial"}
+      saveEndpoint={hasPermission(acctSession?.user?.permissions ?? [], "Opportunity.Edit") ? `/api/opportunities/${activeOpp.id}/calculator` : undefined}
       initial={{
+        savedState: savedCalculation?.scheduleJson,
+        calculationId: savedCalculation?.id,
         totalDebt: activeOpp.totalDebt ?? totalDebt,
         termMonths: reschedTermMonths,
         noOfDebts: activeOpp._count?.debts ?? activeOpp.debts.length,
@@ -682,6 +688,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           <Link href={`/program-plans/${livePlan.id}`} style={{ color: "#0176d3" }}>Open Program Plan</Link>
         </div>
         <LivePaymentGrid
+          canEdit={hasPermission(acctSession?.user?.permissions ?? [], "Draft.Retry")}
           programPlanId={livePlan.id}
           drafts={[...livePlan.drafts]
             .sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime())
@@ -716,11 +723,11 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const noteDocs = account.documents.filter((d) => d.type === "NOTE");
   const fileDocs = account.documents.filter((d) => d.type !== "NOTE");
   const noteTiles = await Promise.all(
-    noteDocs.slice(0, 6).map(async (n) => {
+    noteDocs.map(async (n, index) => {
       let snippet = "";
       try {
         const fsMod = await import("node:fs/promises");
-        const raw = await fsMod.readFile(n.filePath, "utf8");
+        const raw = index < 6 ? await fsMod.readFile(n.filePath, "utf8") : "";
         snippet = raw.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim().slice(0, 180);
       } catch { /* file missing locally - snippet stays empty */ }
       return {
@@ -1011,6 +1018,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       ]}
       actions={
         <AccountHeaderButtons
+          canLogWire={hasPermission(acctSession?.user?.permissions ?? [], "Account.Edit") && hasPermission(acctSession?.user?.permissions ?? [], "Draft.Retry")}
           accountId={account.id}
           accountName={account.name}
           currentStage={account.clientStatus ?? account.stage}

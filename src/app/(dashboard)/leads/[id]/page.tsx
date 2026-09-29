@@ -2,6 +2,7 @@ import { leadPaymentPopulated } from "@/lib/lead-payment-health";
 import { splitLeadName } from "@/lib/lead-health-fields";
 import { LeadViewTracker } from "@/components/leads/lead-view-tracker";
 import { recordScope } from "@/lib/record-access";
+import { resolveLeadAccount } from "@/lib/lead-account";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { SsnField } from "@/components/shared/ssn-field";
 import { notFound } from "next/navigation";
@@ -123,6 +124,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   });
   if (!rawRecord) notFound();
   const lead = redactSsn(rawRecord);
+  const linkedAccount = await resolveLeadAccount(lead);
+  const companyLink = linkedAccount
+    ? <Link href={`/accounts/${linkedAccount.id}`} style={{ color: "#0176d3" }}>{lead.businessName || linkedAccount.name}</Link>
+    : <Link href={`/accounts?search=${encodeURIComponent(lead.businessName ?? "")}`} style={{ color: "#0176d3" }}>{lead.businessName || "Find account"}</Link>;
 
   const latestCalc = lead.paymentCalculations[0];
 
@@ -380,7 +385,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         entityId={lead.id}
         fields={[
           // Row 1: Company | EIN Number / Tax Id
-          E("Company", lead.businessName ?? sf("Company"), "businessName", "text", { rawValue: lead.businessName }),
+          E("Company", companyLink, "businessName", "text", { rawValue: lead.businessName }),
           E("EIN Number / Tax Id", lead.ein ?? sf("EIN_Number_Tax_Id__c"), "ein", "text", { rawValue: lead.ein }),
           // Row 2: Annual Revenue | Monthly Revenue
           E("Annual Revenue", lead.annualRevenue ? `$${lead.annualRevenue.toLocaleString()}` : sfDollar("AnnualRevenue"), "annualRevenue", "number", { rawValue: lead.annualRevenue ?? null }),
@@ -655,7 +660,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // breadcrumb at the very top of Details so users can jump to the converted
   // Account / Opportunity, but skip the big CTA banner entirely.
   const chainOppsForNotes = await prisma.opportunity.findMany({
-    where: { leadId: lead.id },
+    where: { leadId: lead.id, AND: [await recordScope("opportunity")] },
     select: { id: true, accountId: true },
   });
   const chainNotes = await fetchChainNotes({
@@ -909,7 +914,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       highlights={[
         // SF Lead detail highlights row (verified against the live org):
         // Company | Phone | Email | Lead Id.
-        { label: "Company", value: lead.businessName },
+        { label: "Company", value: companyLink },
         { label: "Phone", value: phoneVal },
         { label: "Email", value: emailVal },
         { label: "Lead Id", value: displayLeadId },
