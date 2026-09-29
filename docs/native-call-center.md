@@ -15,16 +15,18 @@ The `/call-center` entry sends each user to their assigned screen and provides h
 
 ## Opener, closer, and live floor
 
-The call center has separate pages inside the existing CRM shell, each protected on the server. There are no role-switching tabs. `/call-center` resolves the user's current account, Floor Manager closer assignment, and effective permissions before redirecting to the correct page.
+The call center has separate pages inside the existing CRM shell, each protected on the server. `/call-center` resolves the user's current account, Floor Manager closer assignment, and effective permissions before redirecting to the correct page.
 
 | Page | Access |
 |---|---|
-| `/call-center/opener` | Active callers without a closer flag/tier |
-| `/call-center/closer` | Active callers assigned as closers in Floor Manager |
+| `/call-center/opener` | Active callers without a closer flag/tier, or supervisors explicitly granted `CallCenter.ViewAllDesks` |
+| `/call-center/closer` | Active callers assigned as closers in Floor Manager, or supervisors explicitly granted `CallCenter.ViewAllDesks` |
 | `/call-center/live-floor` | Admins or explicit `CallCenter.Supervise` / `Modify.AllData` access, with calling permission |
 | `/call-center/manage` | The same supervisor access |
 
 Every page rechecks current database permissions and role assignments; old session admin claims cannot grant screen access. Direct unauthorized page URLs redirect to the person's own permitted home. The CRM navigation uses that same access result. Supervisors retain their own opener or closer calling desk according to their Floor Manager role, and can navigate to it separately. Existing APIs continue to enforce call ownership, closer qualification/availability, and supervisor team scope.
+
+Assign `CallCenter.ViewAllDesks` through a permission set to an individual supervisor who needs to inspect both desks. It requires existing calling and supervision access and is checked explicitly rather than inferred from an admin role. Authorized users receive a screen switcher on all four pages. Their actual calling role, tier, queue eligibility, and call-action permissions remain governed by the existing rules. Removing the grant restores the normal desk restrictions on the next permission check.
 
 The opener desk is a focused calling workspace with no left navigation rail or dashboard panels: current lead, call controls, lender-by-lender qualification, and transfer progress. It shows the imported lead source and brand, each lender and debt amount, a calculated total, and notes for the closer. The matching tier roster is read-only; the Floor Manager selects the receiving closer. The visual design uses the existing Inter typeface, a neutral canvas, a dark call-control bar, and soft input fields. The closer desk shows approved requests, availability controls, a client qualification brief, handoff timeline, and personal handoff history. The live floor has pending approvals, search and role/status filters, live call monitoring, closer coverage by debt tier, priority lead watch, and campaign capacity. Counts labeled recent reflect the bounded records loaded by the API; they are not lifetime totals.
 

@@ -42,6 +42,7 @@ import "./opener.css";
 import { HandoffRequests, HandoffBrief } from "./handoff-panels";
 import { APPROVAL_STAGES, debtTotal } from "@/lib/call-center/qualification";
 import { OperationsWorkspace } from "./operations-workspace";
+import { CallCenterScreenNavigation } from "./screen-navigation";
 import type { Overview, VoiceCall } from "./types";
 import { isTerminal } from "@/lib/call-center/model";
 import { closerDebtRange, tierForDebt } from "@/lib/closer-tier-config";
@@ -262,6 +263,7 @@ function ScreenFrame({
         </aside>
       )}
       <div className="cc-console-main">
+        <CallCenterScreenNavigation screen={screen} access={access} />
         {screen !== "opener" && (
           <header className="cc-console-top">
             <div>

@@ -35,6 +35,35 @@ beforeEach(() => {
   mocks.permissions.mockResolvedValue(new Set(["Call.Log"]));
 });
 describe("separate call-center screen access", () => {
+  it("an explicitly assigned manager can see all desks without changing their calling role", () => {
+    const user = { ...closer, role: "ADMIN" };
+    expect(callingAccess(user, ["Call.Log", "CallCenter.ViewAllDesks"])).toEqual({
+      opener: true, closer: true, floor: true, operations: true,
+      home: CALL_CENTER_PATHS.floor,
+    });
+    expect(user).toEqual({ ...closer, role: "ADMIN" });
+  });
+  it("the desk-view grant alone does not grant calling or supervision", () => {
+    expect(callingAccess(opener, ["Call.Log", "CallCenter.ViewAllDesks"]))
+      .toMatchObject({ opener: true, closer: false, floor: false, operations: false });
+    expect(callingAccess({ ...closer, role: "ADMIN" }, ["CallCenter.ViewAllDesks"]))
+      .toMatchObject({ opener: false, closer: false, floor: false, operations: false });
+    expect(callingAccess({ ...closer, role: "ADMIN", isActive: false }, ["Modify.AllData", "CallCenter.ViewAllDesks"]))
+      .toMatchObject({ opener: false, closer: false, floor: false, operations: false });
+  });
+  it.each(["opener", "closer", "floor", "operations"] as const)(
+    "allows an explicitly assigned manager to load %s directly", async screen => {
+      mocks.user.mockResolvedValue({ ...closer, role: "ADMIN" });
+      mocks.permissions.mockResolvedValue(new Set(["Call.Log", "CallCenter.ViewAllDesks"]));
+      await expect(requireCallCenterPage(screen)).resolves.toMatchObject({ [screen]: true });
+      expect(mocks.redirect).not.toHaveBeenCalled();
+    },
+  );
+  it("revoking all-desk access restores the current role's screen restrictions", async () => {
+    mocks.user.mockResolvedValue({ ...closer, role: "ADMIN" });
+    mocks.permissions.mockResolvedValue(new Set(["Call.Log"]));
+    await expect(requireCallCenterPage("opener")).rejects.toThrow(`REDIRECT:${CALL_CENTER_PATHS.floor}`);
+  });
   it("an opener receives only the opener desk", () => {
     expect(callingAccess(opener, ["Call.Log"])).toEqual({
       opener: true,
@@ -73,9 +102,9 @@ describe("separate call-center screen access", () => {
       callingAccess({ ...opener, role: "MANAGER" }, ["Call.Log"]),
     ).toMatchObject({ floor: false, operations: false });
   });
-  it("admins can supervise while their calling role remains distinct", () => {
+  it.each(["Call.Log", "Modify.AllData"])("admins with %s keep their assigned desk unless explicitly granted both", permission => {
     expect(
-      callingAccess({ ...closer, role: "ADMIN" }, ["Call.Log"]),
+      callingAccess({ ...closer, role: "ADMIN" }, [permission]),
     ).toMatchObject({
       opener: false,
       closer: true,

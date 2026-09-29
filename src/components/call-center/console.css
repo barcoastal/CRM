@@ -200,6 +200,33 @@
 .cc-console-main {
   min-width: 0;
 }
+.cc-console .cc-screen-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 24px;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+}
+.cc-console .cc-screen-navigation a {
+  padding: 9px 14px;
+  border-radius: 7px;
+  color: #52647c;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.cc-console .cc-screen-navigation a:hover {
+  background: #f1f5f9;
+}
+.cc-console .cc-screen-navigation a[aria-current="page"] {
+  background: #eaf2ff;
+  color: #175cd3;
+}
+.cc-console .cc-screen-navigation a:focus-visible {
+  outline: 2px solid #175cd3;
+  outline-offset: 2px;
+}
 .cc-console-top {
   height: 55px;
   background: #fff;

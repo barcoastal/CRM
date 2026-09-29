@@ -24,9 +24,12 @@ export function callingAccess(
       permissions.includes("Modify.AllData"));
   const closer = user.isCloser || typeof user.closerTier === "number";
   const manager = calling && canSupervise(user.role, permissions);
+  // Explicitly assigned supervisors can inspect both desks without changing
+  // their actual opener/closer assignment or call-routing eligibility.
+  const allDesks = manager && permissions.includes("CallCenter.ViewAllDesks");
   const screens = {
-    opener: calling && !closer,
-    closer: calling && closer,
+    opener: calling && (!closer || allDesks),
+    closer: calling && (closer || allDesks),
     floor: manager,
     operations: manager,
   };
