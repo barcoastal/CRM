@@ -85,6 +85,7 @@ export function PdfBoxPlacer({
   const [metas, setMetas] = useState<PageMeta[]>([]);
   const [scale, setScale] = useState(1);
   const [tool, setTool] = useState<Kind | null>(null);
+  const [textPreset, setTextPreset] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   // canvases are rendered imperatively; keep the loaded pdf doc around
@@ -236,7 +237,7 @@ export function PdfBoxPlacer({
       y: round2(yPts),
       width: def.w,
       height: def.h,
-      label: def.label,
+      label: kind === "text" && textPreset ? textPreset : def.label,
     };
     const [, setter] = listFor(kind);
     setter((prev) => [...prev, box]);
@@ -306,12 +307,12 @@ export function PdfBoxPlacer({
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         <span className="text-[12px] font-semibold text-[#444656] mr-1">Click a tool, then click the page to drop a box:</span>
         {(Object.keys(KIND) as Kind[]).map((k) => {
-          const active = tool === k;
+          const active = tool === k && !textPreset;
           return (
             <button
               key={k}
               type="button"
-              onClick={() => setTool(active ? null : k)}
+              onClick={() => { setTextPreset(null); setTool(active ? null : k); }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-semibold border"
               style={{
                 borderColor: KIND[k].color,
@@ -327,9 +328,22 @@ export function PdfBoxPlacer({
             </button>
           );
         })}
+        <button
+          type="button"
+          aria-pressed={tool === "text" && textPreset === "Full name"}
+          onClick={() => {
+            const active = tool === "text" && textPreset === "Full name";
+            setTool(active ? null : "text");
+            setTextPreset(active ? null : "Full name");
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-semibold border"
+          style={{ borderColor: KIND.text.color, color: textPreset ? "#fff" : KIND.text.color, background: textPreset ? KIND.text.color : "#fff" }}
+        >
+          Full name
+        </button>
         {tool ? (
           <span className="text-[12px] text-[#3052ff] font-semibold">
-            Placing {KIND[tool].label} — click the document
+            Placing {textPreset ?? KIND[tool].label} — click the document
           </span>
         ) : (
           <span className="text-[12px] text-[#747474]">{total} box{total === 1 ? "" : "es"} placed</span>

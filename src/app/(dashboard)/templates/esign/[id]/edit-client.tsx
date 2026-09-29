@@ -162,14 +162,20 @@ export function EditClient({ initial }: { initial: EditInitial }) {
   const [boxesMsg, setBoxesMsg] = useState<string | null>(null);
 
   // -------- Send a test envelope to myself --------
+  const [testEmail, setTestEmail] = useState("");
   const [sendingTest, setSendingTest] = useState(false);
   const [testResult, setTestResult] = useState<{ msg: string; url?: string } | null>(null);
 
   async function sendTest() {
+    if (sendingTest) return;
     setSendingTest(true);
     setTestResult(null);
     try {
-      const res = await fetch(`/api/esign/templates/${initial.id}/test-send`, { method: "POST" });
+      const res = await fetch(`/api/esign/templates/${initial.id}/test-send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(testEmail.trim() ? { recipientEmail: testEmail.trim() } : {}),
+      });
       const j = (await res.json().catch(() => ({}))) as {
         error?: string;
         signingUrl?: string;
@@ -182,7 +188,7 @@ export function EditClient({ initial }: { initial: EditInitial }) {
       }
       setTestResult({
         msg: j.emailSent
-          ? `Test sent to ${j.sentTo}. Check your email, or open it now:`
+          ? `Test sent to ${j.sentTo}. The recipient can check their email, or you can open it now:`
           : `Test created (email may not have sent). Open it now:`,
         url: j.signingUrl,
       });
@@ -264,26 +270,40 @@ export function EditClient({ initial }: { initial: EditInitial }) {
 
   return (
     <div className="space-y-6">
-      {/* Send a test envelope to myself */}
-      <div
+      {/* Send a test envelope to yourself or a selected recipient */}
+      <form
+        onSubmit={(event) => { event.preventDefault(); void sendTest(); }}
         className="bg-white rounded-xl p-4 flex items-center gap-3 flex-wrap"
         style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
       >
+        <div className="flex flex-col gap-1 w-full sm:w-72">
+          <label htmlFor="testRecipientEmail" className="text-[12px] font-semibold text-[#131b2e]">Test recipient email</label>
+          <input
+            id="testRecipientEmail"
+            type="email"
+            value={testEmail}
+            onChange={(event) => { setTestEmail(event.target.value); setTestResult(null); }}
+            placeholder="Leave blank to send to yourself"
+            maxLength={254}
+            disabled={sendingTest}
+            aria-describedby="testRecipientHelp"
+            className="border border-[#c9c9c9] rounded px-3 py-2 text-[13px] w-full"
+          />
+        </div>
         <button
-          type="button"
-          onClick={sendTest}
+          type="submit"
           disabled={sendingTest}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded text-white text-[13px] font-semibold disabled:opacity-50"
           style={{ background: "linear-gradient(135deg, #0034e4, #3052ff)" }}
         >
-          {sendingTest ? "Sending…" : "Send test to me"}
+          {sendingTest ? "Sending…" : testEmail.trim() ? "Send test" : "Send test to me"}
         </button>
-        <span className="text-[12px] text-[#747474]">
-          Sends this template to your own email so you can try the signing flow. (CRM data fields are
-          blank in a test.)
+        <span id="testRecipientHelp" className="text-[12px] text-[#747474]">
+          Enter an email to test the signing flow, or leave blank to send to yourself.
+          CRM data fields are blank in a test.
         </span>
         {testResult ? (
-          <div className="basis-full text-[12px] text-[#131b2e]">
+          <div role="status" className="basis-full text-[12px] text-[#131b2e]">
             {testResult.msg}{" "}
             {testResult.url ? (
               <a
@@ -297,7 +317,7 @@ export function EditClient({ initial }: { initial: EditInitial }) {
             ) : null}
           </div>
         ) : null}
-      </div>
+      </form>
 
       {/* Section 1: Details */}
       <Card title="Details">
@@ -428,8 +448,8 @@ export function EditClient({ initial }: { initial: EditInitial }) {
 
       {/* Section 3: Signature boxes */}
       <Card
-        title="Signature Boxes"
-        subtitle="Pick a tool, then click the document to drop a box where the signer should sign, initial, or date. Drag a box to move it, click × to remove. Save when done."
+        title="Signing Fields"
+        subtitle="Choose Signature, Full name, Initial, Date, Field, or Checkbox, then click the exact spot on the document. Drag markers to position them and label text fields for other details. Save before sending a test."
       >
         <PdfBoxPlacer
           pdfUrl={pdfUrl}

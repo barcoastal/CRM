@@ -1,11 +1,12 @@
 /**
- * Send a TEST envelope of this template to the logged-in user, so they can
+ * Send a TEST envelope of this template to the logged-in user or a selected recipient, so they can
  * preview/exercise the signing flow without a real opportunity. No
  * opportunity/account is attached and the merge context is empty (CRM data
  * fields render blank in a test), so nothing is written back to records.
  *
  *   POST /api/esign/templates/[id]/test-send
  */
+import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -13,11 +14,25 @@ import { readTemplatePdf, saveEnvelopePdf } from "@/lib/esign/storage";
 import { fillAcroForm, stampDataBoxes, type MergeContext } from "@/lib/esign/merge";
 import { renderSignRequestHtml, sendESignEmail } from "@/lib/esign/send-email";
 
-export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const r = await requireAuthOrRespond();
   if ("response" in r) return r.response;
   const { session } = r;
   const { id } = await ctx.params;
+
+  const rawBody = await req.text();
+  let body: unknown = {};
+  try {
+    if (rawBody.trim()) body = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
+  const parsed = z.object({
+    recipientEmail: z.string().trim().max(254).email().optional(),
+  }).safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Enter a valid recipient email address." }, { status: 400 });
+  }
 
   const template = await prisma.envelopeTemplate.findUnique({ where: { id } });
   if (!template) return NextResponse.json({ error: "Template not found" }, { status: 404 });
@@ -29,6 +44,11 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
   if (!user?.email) {
     return NextResponse.json({ error: "Your account has no email to send the test to." }, { status: 400 });
   }
+
+  const recipientEmail = parsed.data.recipientEmail ?? user.email;
+  const signerName = recipientEmail.toLowerCase() === user.email.toLowerCase()
+    ? user.name ?? user.email
+    : recipientEmail;
 
   const today = new Date().toISOString().slice(0, 10);
   const mergeCtx: MergeContext = { today, user };
@@ -57,8 +77,8 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
       recordType: template.recordType,
       status: "SENT",
       sentAt: new Date(),
-      signerName: user.name ?? user.email,
-      signerEmail: user.email,
+      signerName,
+      signerEmail: recipientEmail,
       templateName: template.name,
       documentName,
       pages: template.pageCount,
@@ -78,7 +98,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
   await prisma.envelopeEvent.createMany({
     data: [
       { envelopeId: envelope.id, eventType: "CREATED", details: `TEST from template ${template.name}` },
-      { envelopeId: envelope.id, eventType: "SENT", details: `TEST to ${user.email}` },
+      { envelopeId: envelope.id, eventType: "SENT", details: `TEST to ${recipientEmail}` },
     ],
   });
 
@@ -89,10 +109,10 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
 
   const emailRes = await sendESignEmail({
     from: fromAddress || defaultFrom,
-    to: user.email,
+    to: recipientEmail,
     subject: `[TEST] Please sign: ${template.name}`,
     html: renderSignRequestHtml({
-      signerName: user.name ?? user.email,
+      signerName,
       senderName: user.name ?? null,
       senderEmail: user.email,
       documentName,
@@ -106,6 +126,6 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
     envelopeId: envelope.id,
     signingUrl,
     emailSent: emailRes.ok,
-    sentTo: user.email,
+    sentTo: recipientEmail,
   });
 }
