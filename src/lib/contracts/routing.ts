@@ -30,6 +30,7 @@ export async function planPacket(opportunityId: string): Promise<PacketPlan> {
     legal,
     categories: [
       "COASTAL",
+      ...(opp.addendumRequired ? ["ADDENDUM" as const] : []),
       processor === "RAM" ? "PROCESSOR_RAM" : "PROCESSOR_SAS",
       legal === "Victory" ? "LEGAL_VICTORY" : "LEGAL_CITADEL",
     ],

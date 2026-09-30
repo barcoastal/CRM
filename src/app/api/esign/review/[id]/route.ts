@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { planPacket } from "@/lib/contracts/routing";
+import { listTemplates } from "@/lib/contracts/templates";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -48,9 +49,15 @@ export async function GET(_r: NextRequest, c: C) {
       { status: 400 },
     );
   const plan = await planPacket(id);
+  const templates = await listTemplates();
   const b = o.account;
   const contact = o.primaryContact;
   return NextResponse.json({
+    includeAddendum: !!o.addendumRequired,
+    documents: plan.categories.map((category) => {
+      const template = templates.find((item) => item.category === category)!;
+      return { name: template.originalName ?? template.label, available: !!template.originalName };
+    }),
     account: Object.fromEntries(
       [
         "name",

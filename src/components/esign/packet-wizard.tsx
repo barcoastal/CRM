@@ -28,6 +28,8 @@ export function PacketWizard({
   preview?: { config: PacketConfig; pdfUrl: string };
 }) {
   const [includeAddendum, setIncludeAddendum] = useState(false);
+  const [requiredAddendum, setRequiredAddendum] = useState(false);
+  const [plannedDocuments, setPlannedDocuments] = useState<{ name: string; available: boolean }[]>([]);
   const [reviewed, setReviewed] = useState(!opportunityId || !!initialId);
   const [reviewSigner, setReviewSigner] = useState({
     name: defaultName,
@@ -89,7 +91,7 @@ export function PacketWizard({
       return a;
     });
   }
-  async function prepare(generate = false) {
+  async function prepare(generate = false, signer = reviewSigner, addendum = includeAddendum) {
     if (config && !generate) {
       setStep(1);
       return;
@@ -109,7 +111,7 @@ export function PacketWizard({
       const form = new FormData();
       if (generate) {
         form.append("generate", "true");
-        form.append("includeAddendum", String(includeAddendum));
+        form.append("includeAddendum", String(addendum));
       }
       for (const item of selected)
         if (item.file) form.append("files", item.file);
@@ -143,8 +145,8 @@ export function PacketWizard({
         recipients: [
           {
             id: "primary",
-            name: reviewSigner.name,
-            email: reviewSigner.email,
+            name: signer.name,
+            email: signer.email,
             action: "SIGN",
             order: 1,
           },
@@ -233,9 +235,13 @@ export function PacketWizard({
     return (
       <ContractReview
         opportunityId={opportunityId}
-        onContinue={(name, email) => {
+        onContinue={(name, email, options) => {
           setReviewSigner({ name, email });
+          setIncludeAddendum(options.includeAddendum);
+          setRequiredAddendum(options.includeAddendum);
+          setPlannedDocuments(options.documents);
           setReviewed(true);
+          void prepare(true, { name, email }, options.includeAddendum);
         }}
       />
     );
@@ -316,7 +322,7 @@ export function PacketWizard({
               <h2>
                 Selected Documents (
                 {config?.documents.length ??
-                  items.filter((i) => i.selected).length}
+                  (items.length ? items.filter((i) => i.selected).length : plannedDocuments.length)}
                 )
               </h2>
               <div>
@@ -329,13 +335,13 @@ export function PacketWizard({
                   </button>
                 )}
                 <button
-                  disabled={!!config}
+                  disabled={busy || !!config}
                   onClick={() => setChooseTemplates((v) => !v)}
                 >
                   Add from CRM templates
                 </button>
                 <button
-                  disabled={!!config}
+                  disabled={busy || !!config}
                   onClick={() => fileInput.current?.click()}
                 >
                   Upload
@@ -392,6 +398,7 @@ export function PacketWizard({
                 )}
               </div>
             )}
+            {busy && !config && <p role="status" className={styles.hint}>Preparing your documents from CRM details…</p>}
             {config ? (
               config.documents.map((d) => (
                 <div className={styles.row} key={d.id}>
@@ -407,6 +414,14 @@ export function PacketWizard({
                   >
                     Review document
                   </a>
+                </div>
+              ))
+            ) : plannedDocuments.length && !items.length ? (
+              plannedDocuments.map((document) => (
+                <div className={styles.row} key={document.name}>
+                  <span className={styles.fileIcon}>DOC</span>
+                  <div className={styles.grow}><strong>{document.name}</strong><small>{document.available ? (busy ? "Preparing…" : "Template available") : "Required template not uploaded"}</small></div>
+                  {!document.available && <a href="/contracts/templates" target="_blank" rel="noopener noreferrer">Set up template</a>}
                 </div>
               ))
             ) : items.length ? (
@@ -471,9 +486,10 @@ export function PacketWizard({
               <input
                 type="checkbox"
                 checked={includeAddendum}
+                disabled={busy || !!config || requiredAddendum}
                 onChange={(e) => setIncludeAddendum(e.target.checked)}
               />{" "}
-              Include addendum when generating from CRM data
+              {requiredAddendum ? "Addendum required for this opportunity" : "Include addendum when generating from CRM data"}
             </label>
           )}
           <p className={styles.hint}>
