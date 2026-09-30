@@ -301,14 +301,23 @@ export function SignClient(props: Props) {
             </p>
           )}
           <div className={styles.welcomeActions}>
-            <span>English (US)</span>
+            <select aria-label="Language" defaultValue="en-US"><option value="en-US">English (US)</option></select>
             <div>
-              <button
-                className={styles.declineLink}
-                onClick={() => setDeclining(true)}
-              >
-                Decline to sign
-              </button>
+              <details className={styles.otherOptions}>
+                <summary>Other Options <span aria-hidden="true">⌄</span></summary>
+                <div className={styles.otherOptionsMenu}>
+                  <p>You can finish later by reopening the link in your email.</p>
+                  <button
+                    className={styles.declineLink}
+                    onClick={(event) => {
+                      event.currentTarget.closest("details")?.removeAttribute("open");
+                      setDeclining(true);
+                    }}
+                  >
+                    Decline to sign
+                  </button>
+                </div>
+              </details>
               {step === "welcome" && (
                 <button
                   className={styles.primary}
