@@ -2,15 +2,28 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { SignClient } from "./sign-client";
 
-type Box = { page: number; x: number; y: number; width: number; height: number; label?: string };
+type Box = {
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label?: string;
+};
 
-export default async function SignPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function SignPage({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
   const { token } = await params;
 
   const envelope = await prisma.envelope.findUnique({
     where: { signingToken: token },
     select: {
       id: true,
+      packet: { select: { config: true } },
+      createdBy: { select: { name: true } },
       status: true,
       signerName: true,
       signerEmail: true,
@@ -31,14 +44,29 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
 
   if (!envelope) notFound();
 
-  const isTerminal = envelope.status === "VOIDED" || envelope.status === "DECLINED";
-  const isExpired = envelope.expiresAt ? envelope.expiresAt < new Date() : false;
+  if (envelope.status === "DRAFT")
+    return (
+      <TerminalView
+        title="Waiting for your turn"
+        body="You will receive an invitation when it is your turn to sign."
+      />
+    );
+
+  const isTerminal =
+    envelope.status === "VOIDED" || envelope.status === "DECLINED";
+  const isExpired = envelope.expiresAt
+    ? envelope.expiresAt < new Date()
+    : false;
   const isCompleted = envelope.status === "COMPLETED";
 
   if (isTerminal) {
     return (
       <TerminalView
-        title={envelope.status === "DECLINED" ? "Document declined" : "Document withdrawn"}
+        title={
+          envelope.status === "DECLINED"
+            ? "Document declined"
+            : "Document withdrawn"
+        }
         body={
           envelope.voidReason ||
           (envelope.status === "DECLINED"
@@ -59,7 +87,10 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
   }
 
   if (isCompleted) {
-    const signedAt = envelope.completedAt?.toLocaleString("en-US", { dateStyle: "long", timeStyle: "short" });
+    const signedAt = envelope.completedAt?.toLocaleString("en-US", {
+      dateStyle: "long",
+      timeStyle: "short",
+    });
     return (
       <TerminalView
         title="Document signed"
@@ -71,6 +102,23 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
 
   return (
     <SignClient
+      senderName={envelope.createdBy?.name ?? "Coastal Debt Resolve"}
+      message={
+        (envelope.packet?.config as { message?: string } | undefined)?.message
+      }
+      documents={
+        (
+          envelope.packet?.config as
+            | {
+                documents?: {
+                  name: string;
+                  startPage: number;
+                  pageCount: number;
+                }[];
+              }
+            | undefined
+        )?.documents
+      }
       token={token}
       envelopeId={envelope.id}
       signerName={envelope.signerName}
@@ -96,10 +144,46 @@ function TerminalView({
   downloadHref?: string;
 }) {
   return (
-    <div style={{ background: "#f4f6f9", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div style={{ background: "#fff", borderRadius: 8, maxWidth: 480, padding: 32, textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#131b2e", marginBottom: 12 }}>{title}</h1>
-        <p style={{ fontSize: 14, color: "#444656", lineHeight: 1.5, marginBottom: 24 }}>{body}</p>
+    <div
+      style={{
+        background: "#f4f6f9",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 8,
+          maxWidth: 480,
+          padding: 32,
+          textAlign: "center",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: 22,
+            fontWeight: 700,
+            color: "#131b2e",
+            marginBottom: 12,
+          }}
+        >
+          {title}
+        </h1>
+        <p
+          style={{
+            fontSize: 14,
+            color: "#444656",
+            lineHeight: 1.5,
+            marginBottom: 24,
+          }}
+        >
+          {body}
+        </p>
         {downloadHref && (
           <a
             href={downloadHref}
@@ -119,9 +203,16 @@ function TerminalView({
             Download signed copy
           </a>
         )}
-        {downloadHref && <p><a href={downloadHref.replace("/signed-pdf", "/evidence")}>Download signing audit record</a></p>}
+        {downloadHref && (
+          <p>
+            <a href={downloadHref.replace("/signed-pdf", "/evidence")}>
+              Download signing audit record
+            </a>
+          </p>
+        )}
         <p style={{ marginTop: 28, fontSize: 11, color: "#747474" }}>
-          Coastal CRM e-Signature. Keep a copy of your completed document for your records.
+          Coastal CRM e-Signature. Keep a copy of your completed document for
+          your records.
         </p>
       </div>
     </div>

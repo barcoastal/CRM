@@ -8,7 +8,11 @@ import { prisma } from "@/lib/prisma";
 import { generateRescheduleSchedule } from "@/lib/reschedule-schedule";
 import type { MergeData } from "./docx-merge";
 
-const RESCHED = { settlementPercent: 43, programFeePercent: 20, retainerPercent: 10 };
+const RESCHED = {
+  settlementPercent: 43,
+  programFeePercent: 20,
+  retainerPercent: 10,
+};
 
 function usd(n: number): string {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -17,7 +21,9 @@ function mdY(d: Date): string {
   return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
 }
 
-export async function buildContractData(opportunityId: string): Promise<MergeData> {
+export async function buildContractData(
+  opportunityId: string,
+): Promise<MergeData> {
   const opp = await prisma.opportunity.findUnique({
     where: { id: opportunityId },
     include: {
@@ -33,10 +39,14 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
   const latestCalc = opp.paymentCalculations[0];
 
   // Deal parameters (same sourcing as the opportunity page's calculator).
-  const totalDebt = latestCalc?.totalDebt ?? opp.totalDebt ?? opp.debts.reduce((s, d) => s + (d.originalBalance ?? 0), 0);
+  const totalDebt =
+    latestCalc?.totalDebt ??
+    opp.totalDebt ??
+    opp.debts.reduce((s, d) => s + (d.originalBalance ?? 0), 0);
   const term = latestCalc?.programFeePeriod || 6;
   const citadel = latestCalc?.citadelFee ?? 145;
-  const firstPaymentDate = acct?.programStartDate ?? opp.firstDraftDate ?? new Date();
+  const firstPaymentDate =
+    acct?.programStartDate ?? opp.firstDraftDate ?? new Date();
 
   // Feed EVERY saved calculator input into the same engine so the contract's
   // payment structure matches the opportunity to the cent. Undefined values
@@ -76,17 +86,28 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
   }));
 
   // Debit schedule (group consecutive equal draft amounts).
-  const DebitSchedule: { DepositAmount: string; StartDate: string; NumberOfPayments: number }[] = [];
+  const DebitSchedule: {
+    DepositAmount: string;
+    StartDate: string;
+    NumberOfPayments: number;
+  }[] = [];
   for (const r of sched.rows) {
     const amt = r.weeklyDraftAmount;
     const last = DebitSchedule[DebitSchedule.length - 1];
     if (last && usd(amt) === last.DepositAmount) last.NumberOfPayments += 1;
-    else DebitSchedule.push({ DepositAmount: usd(amt), StartDate: mdY(r.date), NumberOfPayments: 1 });
+    else
+      DebitSchedule.push({
+        DepositAmount: usd(amt),
+        StartDate: mdY(r.date),
+        NumberOfPayments: 1,
+      });
   }
 
   // Effective percentages: saved calc if present, else the calculator defaults.
-  const settlementPct = latestCalc?.settlementPercentage ?? RESCHED.settlementPercent;
-  const programFeePct = latestCalc?.programFeePercent ?? RESCHED.programFeePercent;
+  const settlementPct =
+    latestCalc?.settlementPercentage ?? RESCHED.settlementPercent;
+  const programFeePct =
+    latestCalc?.programFeePercent ?? RESCHED.programFeePercent;
   const retainerPct = latestCalc?.retainerPercentage ?? RESCHED.retainerPercent;
   const serviceFeeVal = latestCalc?.serviceFee ?? 55;
 
@@ -94,7 +115,8 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
   const totalWithFees = sched.rows.reduce((s, r) => s + r.weeklyDraftAmount, 0);
 
   // Column totals for the schedule footer row (exact sums of the draft rows).
-  const sum = (pick: (r: (typeof sched.rows)[number]) => number) => sched.rows.reduce((s, r) => s + pick(r), 0);
+  const sum = (pick: (r: (typeof sched.rows)[number]) => number) =>
+    sched.rows.reduce((s, r) => s + pick(r), 0);
   const first = sched.rows[0];
 
   const now = new Date();
@@ -104,31 +126,43 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
     ClientCity: acct?.billingCity ?? "",
     ClientState: acct?.billingState?.trim() || opp.lead?.state?.trim() || "",
     ClientZip: acct?.billingZip ?? "",
-    ClientCounty: "", // no county field on Account yet
+    ClientCounty: acct?.billingCounty ?? "",
     ClientPhone: acct?.phone ?? opp.primaryContact?.phone ?? "",
     ClientEmail: acct?.email ?? opp.primaryContact?.email ?? "",
-    ClientSignerName: opp.lead?.contactName?.trim() || opp.primaryContact?.fullName?.trim() || acct?.name || "",
+    ClientSignerName:
+      opp.primaryContact?.fullName?.trim() ||
+      opp.lead?.contactName?.trim() ||
+      acct?.name ||
+      "",
     ContactFirstName: opp.primaryContact?.firstName ?? "",
     ContactLastName: opp.primaryContact?.lastName ?? "",
     ContactTitle: opp.primaryContact?.title ?? "",
     // SAS trust-accounting agreement client block
-    ContactDOB: opp.primaryContact?.birthdate ? mdY(opp.primaryContact.birthdate) : "",
+    ContactDOB: opp.primaryContact?.birthdate
+      ? mdY(opp.primaryContact.birthdate)
+      : "",
     ContactHomePhone: opp.primaryContact?.phone ?? acct?.phone ?? "",
-    ContactCellPhone: opp.primaryContact?.mobilePhone ?? opp.primaryContact?.phone ?? "",
+    ContactCellPhone:
+      opp.primaryContact?.mobilePhone ?? opp.primaryContact?.phone ?? "",
     BankName: acct?.bankName ?? "",
     BankRoutingNumber: acct?.bankRoutingNumber ?? "",
     BankAccountNumber: acct?.bankAccountNumber ?? "",
     BankAccountType: acct?.bankAccountType ?? "Checking",
-    BankIsChecking: (acct?.bankAccountType ?? "Checking") === "Checking" ? "X" : "",
+    BankIsChecking:
+      (acct?.bankAccountType ?? "Checking") === "Checking" ? "X" : "",
     BankIsSavings: acct?.bankAccountType === "Savings" ? "X" : "",
     // "Full SSN or TIN" on the RAM form: full SSN from the SF snapshot when
     // present, else the EIN, else the last-4 we hold natively.
     ClientSSN: (() => {
       try {
-        const sf = acct?.sfDataJson ? JSON.parse(acct.sfDataJson) as Record<string, unknown> : {};
+        const sf = acct?.sfDataJson
+          ? (JSON.parse(acct.sfDataJson) as Record<string, unknown>)
+          : {};
         const ssn = sf["SSN__c"];
         if (ssn) return String(ssn);
-      } catch { /* fall through */ }
+      } catch {
+        /* fall through */
+      }
       return acct?.ein ?? (acct?.ssnLast4 ? `***-**-${acct.ssnLast4}` : "");
     })(),
     ProgramState: acct?.billingState?.trim() || opp.lead?.state?.trim() || "",
@@ -136,7 +170,9 @@ export async function buildContractData(opportunityId: string): Promise<MergeDat
     ProgramLength: String(term),
     FirstPaymentDate: mdY(firstPaymentDate),
     FirstPaymentAmount: usd(first?.weeklyDraftAmount ?? 0),
-    FirstRetainerSetupFee: usd((first?.retainerFee ?? 0) + (first?.setupFee ?? 0)),
+    FirstRetainerSetupFee: usd(
+      (first?.retainerFee ?? 0) + (first?.setupFee ?? 0),
+    ),
     RetainerAmount: usd(t.retainerAmount),
     ProgramFeeAmount: usd(dispensationFee),
     DispensationFee: usd(dispensationFee),

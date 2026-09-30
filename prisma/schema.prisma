@@ -363,6 +363,7 @@ model Account {
   // billing address
   billingStreet     String?
   billingCity       String?
+  billingCounty     String?
   billingState      String?
   billingZip        String?
   billingCountry    String?   @default("US")
@@ -588,7 +589,29 @@ model CadenceEnrollment {
 
 // ============ ENVELOPE / E-SIGNATURE (replaces SF DocuSign integration) ============
 
+model SigningPacket {
+  id String @id @default(cuid())
+  status String @default("DRAFT")
+  name String
+  createdById String
+  opportunityId String?
+  config Json @default("{}")
+  preparedPdfPath String
+  completedDeliveryAt DateTime?
+  completedPdfPath String?
+  revision Int @default(1)
+  lastReminderAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  envelopes Envelope[]
+  @@index([createdById, status])
+}
+
 model Envelope {
+  packetId String?
+  packet SigningPacket? @relation(fields: [packetId], references: [id], onDelete: Restrict)
+  routingOrder Int @default(1)
+
   id            String       @id @default(cuid())
   // What this envelope is for
   recordType    String       @default("CONTRACT") // CONTRACT | BANK_CHANGE | DISCLOSURE | AMENDMENT | OTHER
@@ -678,6 +701,7 @@ model Envelope {
   @@index([leadId])
   @@index([status])
   @@index([signingToken])
+  @@index([packetId])
   @@index([templateId])
 }
 

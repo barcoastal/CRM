@@ -28,13 +28,52 @@ export type Box = {
 
 type Kind = "signature" | "initial" | "date" | "text" | "data" | "checkbox";
 
-const KIND: Record<Kind, { w: number; h: number; label: string; color: string; fill: string }> = {
-  signature: { w: 200, h: 40, label: "Signature", color: "#3052ff", fill: "rgba(48,82,255,0.12)" },
-  initial: { w: 80, h: 32, label: "Initial", color: "#16a34a", fill: "rgba(22,163,74,0.12)" },
-  date: { w: 130, h: 26, label: "Date", color: "#b45309", fill: "rgba(180,83,9,0.12)" },
-  text: { w: 200, h: 28, label: "Field", color: "#7c3aed", fill: "rgba(124,58,237,0.10)" },
-  data: { w: 180, h: 24, label: "CRM field", color: "#0891b2", fill: "rgba(8,145,178,0.10)" },
-  checkbox: { w: 18, h: 18, label: "Checkbox", color: "#0d9488", fill: "rgba(13,148,136,0.12)" },
+const KIND: Record<
+  Kind,
+  { w: number; h: number; label: string; color: string; fill: string }
+> = {
+  signature: {
+    w: 200,
+    h: 40,
+    label: "Signature",
+    color: "#3052ff",
+    fill: "rgba(48,82,255,0.12)",
+  },
+  initial: {
+    w: 80,
+    h: 32,
+    label: "Initial",
+    color: "#16a34a",
+    fill: "rgba(22,163,74,0.12)",
+  },
+  date: {
+    w: 130,
+    h: 26,
+    label: "Date",
+    color: "#b45309",
+    fill: "rgba(180,83,9,0.12)",
+  },
+  text: {
+    w: 200,
+    h: 28,
+    label: "Field",
+    color: "#7c3aed",
+    fill: "rgba(124,58,237,0.10)",
+  },
+  data: {
+    w: 180,
+    h: 24,
+    label: "CRM field",
+    color: "#0891b2",
+    fill: "rgba(8,145,178,0.10)",
+  },
+  checkbox: {
+    w: 18,
+    h: 18,
+    label: "Checkbox",
+    color: "#0d9488",
+    fill: "rgba(13,148,136,0.12)",
+  },
 };
 
 interface PageMeta {
@@ -89,7 +128,10 @@ export function PdfBoxPlacer({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   // canvases are rendered imperatively; keep the loaded pdf doc around
-  const pdfRef = useRef<{ numPages: number; getPage: (n: number) => Promise<unknown> } | null>(null);
+  const pdfRef = useRef<{
+    numPages: number;
+    getPage: (n: number) => Promise<unknown>;
+  } | null>(null);
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const dragRef = useRef<DragState | null>(null);
 
@@ -132,7 +174,9 @@ export function PdfBoxPlacer({
   }
 
   function updateMergeValue(index: number, mergeValue: string) {
-    setDataBoxes((prev) => prev.map((b, i) => (i === index ? { ...b, mergeValue } : b)));
+    setDataBoxes((prev) =>
+      prev.map((b, i) => (i === index ? { ...b, mergeValue } : b)),
+    );
   }
 
   // CRM merge fields grouped for the data-field picker.
@@ -158,7 +202,7 @@ export function PdfBoxPlacer({
         setLoading(true);
         const pdfjs = await import("pdfjs-dist");
         if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-          pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+          pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
         }
         const doc = await pdfjs.getDocument({ url: pdfUrl }).promise;
         if (cancelled) return;
@@ -200,8 +244,14 @@ export function PdfBoxPlacer({
         const canvas = canvasRefs.current[i];
         if (!canvas) continue;
         const page = (await doc.getPage(i + 1)) as {
-          getViewport: (o: { scale: number }) => { width: number; height: number };
-          render: (o: { canvasContext: CanvasRenderingContext2D; viewport: unknown }) => {
+          getViewport: (o: { scale: number }) => {
+            width: number;
+            height: number;
+          };
+          render: (o: {
+            canvasContext: CanvasRenderingContext2D;
+            viewport: unknown;
+          }) => {
             promise: Promise<void>;
           };
         };
@@ -279,7 +329,11 @@ export function PdfBoxPlacer({
     const nx = clamp(d.origX + dxPts, 0, meta.widthPts - b.width);
     // dragging down on screen lowers the box → decrease bottom-left y
     const ny = clamp(d.origY - dyPts, 0, meta.heightPts - b.height);
-    setter((prev) => prev.map((x, i) => (i === d.index ? { ...x, x: round2(nx), y: round2(ny) } : x)));
+    setter((prev) =>
+      prev.map((x, i) =>
+        i === d.index ? { ...x, x: round2(nx), y: round2(ny) } : x,
+      ),
+    );
   }
   function onBoxPointerUp(e: React.PointerEvent) {
     if (dragRef.current) {
@@ -305,14 +359,19 @@ export function PdfBoxPlacer({
     <div>
       {/* Toolbar */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span className="text-[12px] font-semibold text-[#444656] mr-1">Click a tool, then click the page to drop a box:</span>
+        <span className="text-[12px] font-semibold text-[#444656] mr-1">
+          Click a tool, then click the page to drop a box:
+        </span>
         {(Object.keys(KIND) as Kind[]).map((k) => {
           const active = tool === k && !textPreset;
           return (
             <button
               key={k}
               type="button"
-              onClick={() => { setTextPreset(null); setTool(active ? null : k); }}
+              onClick={() => {
+                setTextPreset(null);
+                setTool(active ? null : k);
+              }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-semibold border"
               style={{
                 borderColor: KIND[k].color,
@@ -337,7 +396,11 @@ export function PdfBoxPlacer({
             setTextPreset(active ? null : "Full name");
           }}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-semibold border"
-          style={{ borderColor: KIND.text.color, color: textPreset ? "#fff" : KIND.text.color, background: textPreset ? KIND.text.color : "#fff" }}
+          style={{
+            borderColor: KIND.text.color,
+            color: textPreset ? "#fff" : KIND.text.color,
+            background: textPreset ? KIND.text.color : "#fff",
+          }}
         >
           Full name
         </button>
@@ -346,7 +409,9 @@ export function PdfBoxPlacer({
             Placing {textPreset ?? KIND[tool].label} — click the document
           </span>
         ) : (
-          <span className="text-[12px] text-[#747474]">{total} box{total === 1 ? "" : "es"} placed</span>
+          <span className="text-[12px] text-[#747474]">
+            {total} box{total === 1 ? "" : "es"} placed
+          </span>
         )}
       </div>
 
@@ -355,7 +420,9 @@ export function PdfBoxPlacer({
           Couldn’t render the PDF: {error}
         </div>
       ) : null}
-      {loading ? <div className="text-[12px] text-[#747474]">Loading document…</div> : null}
+      {loading ? (
+        <div className="text-[12px] text-[#747474]">Loading document…</div>
+      ) : null}
 
       {/* Pages */}
       <div ref={containerRef} className="space-y-4">
@@ -364,11 +431,18 @@ export function PdfBoxPlacer({
           const cssH = meta.heightPts * scale;
           return (
             <div key={i} className="mx-auto" style={{ width: cssW }}>
-              <div className="text-[11px] text-[#747474] mb-1">Page {i + 1}</div>
+              <div className="text-[11px] text-[#747474] mb-1">
+                Page {i + 1}
+              </div>
               <div
                 onClick={(e) => onPageClick(i, e)}
                 className="relative shadow-sm border border-[#c9c9c9]"
-                style={{ width: cssW, height: cssH, cursor: tool ? "crosshair" : "default", background: "#fff" }}
+                style={{
+                  width: cssW,
+                  height: cssH,
+                  cursor: tool ? "crosshair" : "default",
+                  background: "#fff",
+                }}
               >
                 <canvas
                   ref={(el) => {
@@ -397,7 +471,11 @@ export function PdfBoxPlacer({
                           onPointerMove={onBoxPointerMove}
                           onPointerUp={onBoxPointerUp}
                           className="text-[11px] font-bold px-1"
-                          style={{ color: def.color, cursor: "move", touchAction: "none" }}
+                          style={{
+                            color: def.color,
+                            cursor: "move",
+                            touchAction: "none",
+                          }}
                           title="Drag to move"
                         >
                           ⠿
@@ -406,8 +484,14 @@ export function PdfBoxPlacer({
                       return (
                         <div
                           key={`${kind}-${idx}`}
-                          onPointerDown={gripDrag ? undefined : (e) => onBoxPointerDown(kind, idx, e)}
-                          onPointerMove={gripDrag ? undefined : onBoxPointerMove}
+                          onPointerDown={
+                            gripDrag
+                              ? undefined
+                              : (e) => onBoxPointerDown(kind, idx, e)
+                          }
+                          onPointerMove={
+                            gripDrag ? undefined : onBoxPointerMove
+                          }
                           onPointerUp={gripDrag ? undefined : onBoxPointerUp}
                           className="absolute flex items-center justify-center select-none"
                           style={{
@@ -436,7 +520,9 @@ export function PdfBoxPlacer({
                               {grip}
                               <input
                                 value={b.label ?? ""}
-                                onChange={(e) => updateLabel(kind, idx, e.target.value)}
+                                onChange={(e) =>
+                                  updateLabel(kind, idx, e.target.value)
+                                }
                                 onPointerDown={(e) => e.stopPropagation()}
                                 onClick={(e) => e.stopPropagation()}
                                 placeholder="Field label"
@@ -449,7 +535,9 @@ export function PdfBoxPlacer({
                               {grip}
                               <select
                                 value={b.mergeValue ?? ""}
-                                onChange={(e) => updateMergeValue(idx, e.target.value)}
+                                onChange={(e) =>
+                                  updateMergeValue(idx, e.target.value)
+                                }
                                 onPointerDown={(e) => e.stopPropagation()}
                                 onClick={(e) => e.stopPropagation()}
                                 className="flex-1 min-w-0 bg-transparent border-none outline-none text-[11px] font-semibold"
@@ -479,7 +567,9 @@ export function PdfBoxPlacer({
                                   the signer sees this as the checkbox prompt). */}
                               <input
                                 value={b.label ?? ""}
-                                onChange={(e) => updateLabel(kind, idx, e.target.value)}
+                                onChange={(e) =>
+                                  updateLabel(kind, idx, e.target.value)
+                                }
                                 onPointerDown={(e) => e.stopPropagation()}
                                 onClick={(e) => e.stopPropagation()}
                                 placeholder="Label this…"
