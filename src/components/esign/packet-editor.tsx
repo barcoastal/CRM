@@ -45,7 +45,7 @@ export function PacketEditor({
     <div className={styles.editor}>
       <aside className={styles.palette}>
         <label>
-          Assign fields to
+          <span className={styles.recipientCaption}>Assign fields to</span>
           <select
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
@@ -173,6 +173,7 @@ export function PacketEditor({
         )}
       </aside>
       <DocumentViewer
+        editorMode
         url={url}
         fields={
           config.fields.map((f, i) => ({ ...f, index: i })) as SigningField[]

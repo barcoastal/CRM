@@ -246,16 +246,16 @@ export function PacketWizard({
       />
     );
   return (
-    <div className={styles.wizard}>
+    <div className={`${styles.wizard} ${step === 2 && !sent ? styles.preparing : ""}`}>
       <header className={styles.header}>
         <img src="/brand/coastal-debt-logo.svg" alt="Coastal Debt" />
         <div>
           <small>Coastal eSign</small>
-          <h1>{sent ? "Envelope status" : "Send documents for signature"}</h1>
+          <h1>{sent ? "Envelope status" : step === 2 ? config?.subject || "Prepare documents" : "Send documents for signature"}</h1>
         </div>
         <a href={back}>Back to record</a>
       </header>
-      {!sent && (
+      {!sent && step !== 2 && (
         <nav className={styles.steps} aria-label="Sending progress">
           {["Documents", "Recipients", "Prepare & Send"].map((name, i) => (
             <span

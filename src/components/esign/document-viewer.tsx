@@ -5,6 +5,7 @@ import type { SigningField } from "@/lib/esign/fields";
 import styles from "./signing.module.css";
 export function DocumentViewer({
   url,
+  editorMode = false,
   fields,
   activeId,
   renderField,
@@ -15,6 +16,7 @@ export function DocumentViewer({
   onFieldMove,
 }: {
   url: string;
+  editorMode?: boolean;
   fields: SigningField[];
   activeId?: string | null;
   renderField: (f: SigningField) => React.ReactNode;
@@ -28,7 +30,7 @@ export function DocumentViewer({
   const [zoom, setZoom] = useState(1);
   const [fit, setFit] = useState(1);
   const [error, setError] = useState("");
-  const [showPages, setShowPages] = useState(false);
+  const [showPages, setShowPages] = useState(editorMode);
   const [search, setSearch] = useState("");
   const [matches, setMatches] = useState<number[]>([]);
   const pdf = useRef<PDFDocumentProxy | null>(null);
@@ -171,14 +173,23 @@ export function DocumentViewer({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   return (
-    <div className={styles.viewerShell}>
+    <div className={`${styles.viewerShell} ${editorMode ? styles.editorViewer : ""}`}>
+      {editorMode && <div className={styles.editorToolbar} aria-label="Document toolbar">
+        <button type="button" onClick={() => setZoom((v) => Math.max(0.5, v - 0.15))} aria-label="Zoom out">−</button>
+        <span>{Math.round(scale * 100)}%</span>
+        <button type="button" onClick={() => setZoom((v) => Math.min(2, v + 0.15))} aria-label="Zoom in">+</button>
+        <button type="button" onClick={() => setZoom(1)}>Fit</button>
+        <a href={url} target="_blank" rel="noopener noreferrer">Download</a>
+        <button type="button" aria-pressed={showPages} onClick={() => setShowPages((v) => !v)}>Documents</button>
+      </div>}
       {showPages && (
         <nav className={styles.pages} aria-label="Document pages">
           <h3>Documents</h3>
           {documents.length > 0
             ? documents.map((d) => (
-                <div key={d.startPage}>
-                  <strong>{d.name}</strong>
+                <details key={d.startPage} open>
+                  <summary>{d.name}</summary>
+                  <small>Pages: {d.pageCount}</small>
                   {Array.from({ length: d.pageCount }, (_, i) => (
                     <button key={i} onClick={() => go(d.startPage + i)}>
                       <PageThumbnail
@@ -188,7 +199,7 @@ export function DocumentViewer({
                       Page {i + 1}
                     </button>
                   ))}
-                </div>
+                </details>
               ))
             : pages.map((_, i) => (
                 <button key={i} onClick={() => go(i + 1)}>
@@ -293,7 +304,7 @@ export function DocumentViewer({
           </section>
         ))}
       </div>
-      <aside className={styles.viewerTools} aria-label="Document tools">
+      {!editorMode && <aside className={styles.viewerTools} aria-label="Document tools">
         <button
           onClick={() => setShowPages((v) => !v)}
           aria-pressed={showPages}
@@ -343,7 +354,7 @@ export function DocumentViewer({
           </button>
           <button onClick={() => setZoom(1)}>Fit</button>
         </div>
-      </aside>
+      </aside>}
     </div>
   );
 }

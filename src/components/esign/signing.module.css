@@ -501,3 +501,19 @@
 .field[data-editable="true"]::before {
   display: none;
 }
+
+.editorViewer { display: grid; grid-template-columns: minmax(0, 1fr) 215px; grid-template-rows: 49px minmax(0, 1fr); }
+.editorToolbar { grid-column: 1 / -1; grid-row: 1; display: flex; align-items: center; justify-content: center; gap: 12px; border-bottom: 1px solid #dedbe2; background: white; color: #5f5178; font-size: 12px; }
+.editorToolbar button { padding: 5px 10px; border: 0; color: #5f5178; }
+.editorToolbar a { color: #5f5178; padding-left: 14px; border-left: 1px solid #dedbe2; }
+.editorViewer .documentArea { grid-row: 2; grid-column: 1; background: #f0eef1; padding: 28px 30px 48px; }
+.editorViewer:not(:has(.pages)) { grid-template-columns: minmax(0, 1fr); }
+.editorViewer .pages { grid-row: 2; grid-column: 2; width: auto; border-left: 1px solid #d6d3da; border-right: 0; background: white; padding: 0; }
+.editorViewer .pages h3 { margin: 0; padding: 16px 20px; border-bottom: 1px solid #dedbe2; font-size: 13px; color: #433252; }
+.editorViewer .pages details { border-bottom: 1px solid #dedbe2; padding: 12px 18px; }
+.editorViewer .pages summary { cursor: pointer; font-size: 13px; overflow-wrap: anywhere; color: #433252; }
+.editorViewer .pages small { display: block; color: #777; margin: 8px 0; }
+.editorViewer .pages button { display: block; width: 100%; border-radius: 0; background: #eeedef; color: #666; padding: 4px; margin: 12px 0; text-align: left; }
+.editorViewer .pages button:focus { outline: 2px solid #587cff; }
+@media (max-width: 900px) { .editorViewer { grid-template-columns: minmax(0, 1fr) 150px; } .editorToolbar { gap: 5px; } }
+@media (max-width: 600px) { .editorViewer { grid-template-columns: minmax(0, 1fr); } .editorViewer .pages { display: none; } .editorToolbar a { display: none; } }
