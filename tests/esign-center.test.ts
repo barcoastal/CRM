@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   centerNavHref,
+  centerSource,
   centerPage,
   centerStatus,
   centerStatusWhere,
@@ -56,5 +57,30 @@ describe("e-sign center", () => {
     for (const value of [undefined, "-1", "1.2", "NaN", "Infinity"])
       expect(centerPage(value)).toBe(1);
     expect(centerPage("3")).toBe(3);
+  });
+});
+
+describe("signing system", () => {
+  it("labels native and imported records without treating other imports as native", () => {
+    expect(centerSource(null)).toBe("Coastal E-Sign");
+    expect(centerSource("DOCUSIGN")).toBe("DocuSign");
+    expect(centerSource("docusign")).toBe("DocuSign");
+    expect(centerSource("OTHER_PROVIDER")).toBe("OTHER_PROVIDER");
+  });
+  it("combines the selected system with signature status and search", () => {
+    const filter = centerWhere(
+      { source: "docusign", status: "signed", q: "Bar" },
+      now,
+    );
+    expect(filter.AND).toContainEqual({
+      externalSource: { equals: "DOCUSIGN", mode: "insensitive" },
+    });
+    expect(filter.AND).toContainEqual({
+      status: { in: ["SIGNED", "COMPLETED"] },
+    });
+    expect(centerWhere({ source: "coastal" }, now).AND).toContainEqual({
+      OR: [{ externalSource: null }, { externalSource: "" }],
+    });
+    expect(centerWhere({}, now).AND).toEqual([{}]);
   });
 });

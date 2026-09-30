@@ -237,3 +237,22 @@
     width: 100%;
   }
 }
+
+.sourceBadge {
+  display: inline-block;
+  white-space: nowrap;
+  padding: 4px 9px;
+  border-radius: 4px;
+  background: #edf1f7;
+  color: #444656;
+  font-size: 12px;
+  font-weight: 600;
+}
+.sourceBadge[data-source="Coastal E-Sign"] {
+  background: #e5f1ff;
+  color: #145b94;
+}
+.sourceBadge[data-source="DocuSign"] {
+  background: #f0e8fc;
+  color: #58328b;
+}
