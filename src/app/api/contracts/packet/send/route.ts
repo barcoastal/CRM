@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 /**
  * Send a deal's routed contract packet for signature. Auto-routes (Coastal +
  * processor + legal), fills each template with the deal's data, merges into one
@@ -88,6 +89,8 @@ export async function POST(request: NextRequest) {
       accountId: opp.accountId ?? null,
       recordType: "CONTRACT",
       status: "SENT",
+      signingToken: randomBytes(32).toString("hex"),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       sentAt: now,
       signerName,
       signerEmail,

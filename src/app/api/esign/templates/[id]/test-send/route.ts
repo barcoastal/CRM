@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 /**
  * Send a TEST envelope of this template to the logged-in user or a selected recipient, so they can
  * preview/exercise the signing flow without a real opportunity. No
@@ -76,6 +77,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       templateId: template.id,
       recordType: template.recordType,
       status: "SENT",
+      signingToken: randomBytes(32).toString("hex"),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       sentAt: new Date(),
       signerName,
       signerEmail: recipientEmail,

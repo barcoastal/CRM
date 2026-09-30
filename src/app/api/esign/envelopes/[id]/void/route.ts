@@ -37,19 +37,20 @@ export async function POST(
   }
 
   const now = new Date();
-  await prisma.$transaction([
-    prisma.envelope.update({
-      where: { id: envelope.id },
+  try { await prisma.$transaction(async tx => {
+    const changed = await tx.envelope.updateMany({
+      where: { id: envelope.id, status: { in: ["DRAFT", "SENT", "VIEWED"] } },
       data: { status: "VOIDED", voidedAt: now, voidReason: reason },
-    }),
-    prisma.envelopeEvent.create({
+    });
+    if (changed.count !== 1) throw new Error("State changed");
+    await tx.envelopeEvent.create({
       data: {
         envelopeId: envelope.id,
         eventType: "VOIDED",
         details: reason,
       },
-    }),
-  ]);
+    });
+  }); } catch { return NextResponse.json({error:"Envelope state changed. Reload before trying again."},{status:409}); }
 
   const defaultFrom = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
   const senderEmail = envelope.createdBy?.email ?? null;

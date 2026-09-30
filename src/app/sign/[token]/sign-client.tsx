@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { DISCLOSURE_VERSION, DISCLOSURE_TEXT, isFullNameField } from "@/lib/esign/disclosure";
 
 type Box = { page: number; x: number; y: number; width: number; height: number; label?: string };
 
@@ -54,7 +55,7 @@ export function SignClient({
     dateBoxes.forEach((_, i) => (d[String(i)] = todayStr()));
     return d;
   });
-  const [textValues, setTextValues] = useState<Record<string, string>>(() => {
+  const [otherTextValues, setTextValues] = useState<Record<string, string>>(() => {
     const d: Record<string, string> = {};
     textBoxes.forEach((_, i) => (d[String(i)] = ""));
     return d;
@@ -71,9 +72,35 @@ export function SignClient({
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
+  const [verified, setVerified] = useState(false);
+  const [verificationBusy, setVerificationBusy] = useState(false);
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [consent, setConsent] = useState(false);
+  const textValues = Object.fromEntries(textBoxes.map((box, i) => [String(i), isFullNameField(box) ? fullName.trim() : otherTextValues[String(i)] ?? ""]));
+  function changeName(value: string) {
+    setFullName(value);
+    setSignatureDataUrl(null);
+    setInitialDataUrl(null);
+  }
+  useEffect(() => {
+    fetch(`/api/esign/envelopes/by-token/${token}/verify`, {cache:"no-store"})
+      .then(r=>r.json()).then(d=>setVerified(d.verified === true)).catch(()=>{});
+  }, [token]);
+  async function verifyEmail(action: "send" | "verify") {
+    setVerificationBusy(true); setError(null);
+    try {
+      const res = await fetch(`/api/esign/envelopes/by-token/${token}/verify`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,code})});
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Verification failed"); return; }
+      if (data.sent) setCodeSent(true);
+      if (data.verified) setVerified(true);
+    } catch { setError("Verification failed. Please try again."); }
+    finally { setVerificationBusy(false); }
+  }
   const allTextFilled = textBoxes.every((_, i) => (textValues[String(i)] ?? "").trim() !== "");
   const allBoxesReady =
-    (signatureBoxes.length === 0 || signatureDataUrl !== null) && allTextFilled;
+    signatureBoxes.length > 0 && signatureDataUrl !== null && (initialBoxes.length === 0 || initialDataUrl !== null) && allTextFilled && !!fullName.trim() && verified && consent;
 
   function openAdopt(kind: "signature" | "initial") {
     setAdoptKind(kind);
@@ -81,6 +108,7 @@ export function SignClient({
   }
 
   async function finish() {
+    if (!allBoxesReady) { setError("Verify your email, complete required fields, and accept the signing disclosure first."); return; }
     if (!signatureDataUrl) {
       setError("Please adopt a signature first.");
       return;
@@ -102,6 +130,8 @@ export function SignClient({
           textValues,
           checkboxValues,
           fullName,
+          consent: true,
+          disclosureVersion: DISCLOSURE_VERSION,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -139,7 +169,7 @@ export function SignClient({
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: "#131b2e", marginBottom: 8 }}>You did it!</h1>
           <p style={{ fontSize: 14, color: "#444656", marginBottom: 24 }}>
-            Thank you for signing. The signed copy has been delivered to you and the sender by email.
+            Thank you for signing. Your signed copy is ready below. Email delivery is attempted separately; keep a downloaded copy for your records.
           </p>
           <a
             href={`/api/esign/envelopes/by-token/${token}/signed-pdf`}
@@ -158,10 +188,21 @@ export function SignClient({
           >
             Download signed copy
           </a>
+          <p><a href={`/api/esign/envelopes/by-token/${token}/evidence`}>Download signing audit record</a></p>
         </div>
       </div>
     );
   }
+
+  if (!verified) return (
+    <main style={{maxWidth:520, margin:"60px auto",padding:24}}>
+      <h1>Verify your email to review and sign</h1>
+      <p>We will send a one-time code to {signerEmail}. Verification confirms access to this mailbox.</p>
+      <button disabled={verificationBusy} onClick={()=>verifyEmail("send")}>{codeSent ? "Send another code" : "Send verification code"}</button>
+      {codeSent && <div style={{marginTop:20}}><label>Verification code <input autoComplete="one-time-code" inputMode="numeric" maxLength={6} value={code} onChange={e=>setCode(e.target.value)} /></label><button disabled={verificationBusy || code.length!==6} onClick={()=>verifyEmail("verify")}>Verify email</button></div>}
+      {error && <p role="alert">{error}</p>}
+    </main>
+  );
 
   return (
     <div style={{ background: "#fafafa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -268,9 +309,13 @@ export function SignClient({
             </Section>
           )}
 
-          {textBoxes.length > 0 && (
-            <Section label={`Fill in (${textBoxes.length})`}>
-              {textBoxes.map((b, i) => (
+          <Section label="Your full name">
+            <input aria-label="Your full name" value={fullName} maxLength={150} onChange={e=>changeName(e.target.value)} style={{width:"100%",padding:8}} />
+            <p style={{fontSize:12}}>Used for your signature and all full-name fields.</p>
+          </Section>
+          {textBoxes.some(b=>!isFullNameField(b)) && (
+            <Section label="Other required fields">
+              {textBoxes.map((b, i) => isFullNameField(b) ? null : (
                 <div key={`text-${i}`} style={{ marginBottom: 8 }}>
                   <div style={{ fontSize: 11, color: "#747474", marginBottom: 4 }}>
                     {b.label?.trim() ? b.label : `Field (page ${b.page})`}
@@ -321,6 +366,11 @@ export function SignClient({
             </Section>
           )}
 
+          <Section label="Electronic records and signing consent">
+            <p style={{fontSize:12,lineHeight:1.5}}>{DISCLOSURE_TEXT}</p>
+            <a href={`/api/esign/envelopes/by-token/${token}/pdf`} target="_blank" rel="noopener">Open / download document</a>
+            <label style={{display:"block",marginTop:12,fontSize:13}}><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)} /> I have reviewed the document, can retain a copy, and agree to the disclosure above.</label>
+          </Section>
           {error && (
             <div style={{ padding: 10, background: "#fef0ec", borderRadius: 4, fontSize: 12, color: "#942b00", marginBottom: 12 }}>
               {error}
@@ -346,7 +396,7 @@ export function SignClient({
               {submitting ? "Signing..." : "Finish & Sign"}
             </button>
             <p style={{ fontSize: 10, color: "#747474", textAlign: "center", marginTop: 8 }}>
-              By clicking Finish & Sign you agree your electronic signature is legally binding under the U.S. ESIGN Act and UETA.
+              Finish & Sign applies your adopted signature to this document and records your consent.
             </p>
           </div>
         </aside>
@@ -356,7 +406,7 @@ export function SignClient({
         <AdoptModal
           kind={adoptKind}
           fullName={fullName}
-          setFullName={setFullName}
+          setFullName={changeName}
           onCancel={() => setAdoptOpen(false)}
           onAdopt={(dataUrl) => {
             if (adoptKind === "signature") {

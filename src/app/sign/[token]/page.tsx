@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { SignClient } from "./sign-client";
 
@@ -32,21 +31,6 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
 
   if (!envelope) notFound();
 
-  if (envelope.status === "SENT") {
-    const hdrs = await headers();
-    const ip = (hdrs.get("x-forwarded-for") ?? "").split(",")[0]?.trim() || hdrs.get("x-real-ip") || null;
-    const ua = hdrs.get("user-agent") ?? null;
-    await prisma.$transaction([
-      prisma.envelope.update({
-        where: { id: envelope.id },
-        data: { status: "VIEWED", viewedAt: new Date() },
-      }),
-      prisma.envelopeEvent.create({
-        data: { envelopeId: envelope.id, eventType: "VIEWED", ipAddress: ip, userAgent: ua },
-      }),
-    ]);
-  }
-
   const isTerminal = envelope.status === "VOIDED" || envelope.status === "DECLINED";
   const isExpired = envelope.expiresAt ? envelope.expiresAt < new Date() : false;
   const isCompleted = envelope.status === "COMPLETED";
@@ -65,7 +49,7 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
     );
   }
 
-  if (isExpired) {
+  if (isExpired && !isCompleted) {
     return (
       <TerminalView
         title="This link has expired"
@@ -135,8 +119,9 @@ function TerminalView({
             Download signed copy
           </a>
         )}
+        {downloadHref && <p><a href={downloadHref.replace("/signed-pdf", "/evidence")}>Download signing audit record</a></p>}
         <p style={{ marginTop: 28, fontSize: 11, color: "#747474" }}>
-          Coastal CRM e-Signature. Electronic signatures are legally binding under the U.S. ESIGN Act and UETA.
+          Coastal CRM e-Signature. Keep a copy of your completed document for your records.
         </p>
       </div>
     </div>

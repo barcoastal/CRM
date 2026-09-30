@@ -41,16 +41,17 @@ export async function POST(
   const ua = request.headers.get("user-agent") ?? "";
   const voidReason = `Declined by signer: ${reason}`;
 
-  await prisma.$transaction([
-    prisma.envelope.update({
-      where: { id: envelope.id },
+  try { await prisma.$transaction(async tx => {
+    const changed = await tx.envelope.updateMany({
+      where: { id: envelope.id, status: { in: ["DRAFT", "SENT", "VIEWED"] } },
       data: {
         status: "DECLINED",
         voidedAt: now,
         voidReason,
       },
-    }),
-    prisma.envelopeEvent.create({
+    });
+    if (changed.count !== 1) throw new Error("State changed");
+    await tx.envelopeEvent.create({
       data: {
         envelopeId: envelope.id,
         eventType: "DECLINED",
@@ -58,8 +59,8 @@ export async function POST(
         ipAddress: ip || null,
         userAgent: ua || null,
       },
-    }),
-  ]);
+    });
+  }); } catch { return NextResponse.json({error:"Envelope state changed. Reload before trying again."},{status:409}); }
 
   const senderEmail = envelope.createdBy?.email ?? null;
   if (senderEmail) {
