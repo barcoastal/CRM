@@ -11,6 +11,7 @@
   flex-direction: column;
 }
 .shell button,
+.welcome button,
 .shell input,
 .shell textarea,
 .shell select {
@@ -59,6 +60,8 @@
   cursor: not-allowed;
 }
 .welcome {
+  --yellow: #ffcb22;
+  --ink: #33284d;
   min-height: 100dvh;
   background: #3d3157;
   display: grid;
@@ -95,6 +98,18 @@
   border: 0;
   border-radius: 4px;
 }
+.welcomeActions > div { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: flex-end; }
+.welcomeActions .declineLink { background: transparent; border: 0; color: #655f70; padding: 12px 8px; font-size: 13px; cursor: pointer; }
+.welcomeActions .declineLink:hover { text-decoration: underline; }
+.welcomeActions .primary { min-width: 130px; min-height: 48px; font-size: 16px; font-weight: 700; }
+.otherOptions { position: relative; }
+.otherOptions summary { list-style: none; cursor: pointer; background: #efedf2; color: #33284d; border-radius: 4px; padding: 14px 16px; font-size: 16px; }
+.otherOptions summary::-webkit-details-marker { display: none; }
+.otherOptions summary span { margin-left: 12px; }
+.otherOptionsMenu { position: absolute; right: 0; top: calc(100% + 6px); width: 240px; padding: 8px; background: white; border: 1px solid #dedce3; border-radius: 8px; box-shadow: 0 4px 16px #25163826; z-index: 10; }
+.otherOptionsMenu p { font-size: 13px; margin: 8px; color: #655f70; }
+.otherOptionsMenu .declineLink { display: block; width: 100%; text-align: left; font-size: 14px; }
+.otherOptionsMenu .declineLink:hover { background: #f4f3f5; }
 .notice {
   font-size: 13px !important;
   color: #61596d;

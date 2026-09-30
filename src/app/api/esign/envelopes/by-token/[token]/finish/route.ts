@@ -1,3 +1,4 @@
+import { esignPublicUrl } from "@/lib/esign/public-url";
 /**
  * Public Finish & Sign endpoint. Stamps the signer's signature, initials, and
  * date overlays onto the prepared PDF, appends a Certificate of Completion
@@ -584,7 +585,7 @@ export async function POST(
   // Fire dual-party email notifications. Failures don't roll back the signed
   // state; we just log an EMAIL_FAILED event so the dashboard can show it.
   const baseUrl =
-    process.env.NEXTAUTH_URL ?? "https://crm.coastaldebt-tools.com";
+    esignPublicUrl();
   const root = baseUrl.replace(/\/$/, "");
   const signedPdfUrl = `${root}/api/esign/envelopes/by-token/${envelope.signingToken}/signed-pdf`;
   const envelopeUrl = `${root}/envelopes/${envelope.id}`;

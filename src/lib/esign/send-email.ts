@@ -1,3 +1,5 @@
+import { invitationHtml } from "./email-template";
+import { esignPublicUrl } from "./public-url";
 /**
  * Lightweight Resend wrapper for envelope signer notifications.
  *
@@ -74,36 +76,12 @@ export function renderSignRequestHtml(args: {
   documentName: string;
   signingUrl: string;
 }): string {
-  const greeting = `Hi ${args.signerName.split(" ")[0] || "there"},`;
-  const senderLine = args.senderName
-    ? `${args.senderName}${args.senderEmail ? ` (${args.senderEmail})` : ""}`
-    : "Coastal Debt";
-  return `<!doctype html>
-<html>
-  <body style="margin:0;padding:24px;background:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#080707;">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;margin:0 auto;background:#fff;border-radius:6px;border:1px solid #dddbda;">
-      <tr>
-        <td style="padding:24px;">
-          <h1 style="margin:0 0 12px 0;font-size:18px;color:#080707;">Document ready to sign</h1>
-          <p style="margin:0 0 12px 0;font-size:14px;line-height:1.5;">${greeting}</p>
-          <p style="margin:0 0 16px 0;font-size:14px;line-height:1.5;">
-            ${senderLine} has sent you <strong>${args.documentName}</strong> to review and sign.
-          </p>
-          <p style="margin:0 0 24px 0;">
-            <a href="${args.signingUrl}" style="display:inline-block;background:#0070d2;color:#fff;text-decoration:none;padding:10px 18px;border-radius:4px;font-size:14px;font-weight:600;">
-              Review and sign
-            </a>
-          </p>
-          <p style="margin:0 0 8px 0;font-size:12px;color:#706e6b;">
-            Or copy and paste this link into your browser:
-          </p>
-          <p style="margin:0;font-size:12px;color:#0070d2;word-break:break-all;">${args.signingUrl}</p>
-        </td>
-      </tr>
-    </table>
-    <p style="text-align:center;margin:16px auto 0;font-size:11px;color:#706e6b;">Coastal Debt Resolve</p>
-  </body>
-</html>`;
+  return invitationHtml({
+    sender: args.senderName ?? "Coastal Debt Resolve",
+    message: `Hi ${args.signerName.split(" ")[0] || "there"},\n\nPlease review and electronically sign ${args.documentName}.\n${args.senderEmail ? `\nContact: ${args.senderEmail}` : ""}`,
+    url: args.signingUrl,
+    root: esignPublicUrl(),
+  });
 }
 
 /**

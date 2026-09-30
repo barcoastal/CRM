@@ -1,3 +1,4 @@
+import { esignPublicUrl } from "@/lib/esign/public-url";
 import { randomBytes } from "node:crypto";
 /**
  * Send an envelope from a template + opportunity. This is the entry point for
@@ -149,7 +150,7 @@ export async function POST(request: NextRequest) {
   const fromAddress = sender?.email
     ? `${sender.name ?? sender.email} <${sender.email}>`
     : defaultFrom;
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://crm.coastaldebt-tools.com";
+  const baseUrl = esignPublicUrl();
   const signingUrl = `${baseUrl.replace(/\/$/, "")}/sign/${envelope.signingToken}`;
 
   const emailRes = await sendESignEmail({
