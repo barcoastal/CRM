@@ -1,3 +1,4 @@
+import { esignPublicUrl } from "@/lib/esign/public-url";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { prisma } from "@/lib/prisma";
@@ -202,9 +203,7 @@ export async function deliverCompletedPacket(packetId: string) {
   const last = packet.envelopes.at(-1);
   if (!last) return;
   const c = packetConfigSchema.parse(packet.config);
-  const root = (
-    process.env.NEXTAUTH_URL ?? "https://crm.coastaldebt-tools.com"
-  ).replace(/\/$/, "");
+  const root = esignPublicUrl();
   for (const to of [...new Set(c.recipients.map((r) => r.email))]) {
     const key = `packet-completed-${packet.id}-${sha256(to).slice(0, 16)}`;
     if (

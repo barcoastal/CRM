@@ -1,3 +1,4 @@
+import { esignPublicUrl } from "@/lib/esign/public-url";
 import { randomBytes } from "node:crypto";
 /**
  * Send a TEST envelope of this template to the logged-in user or a selected recipient, so they can
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
 
   const defaultFrom = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
   const fromAddress = `${user.name ?? user.email} <${user.email}>`;
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://crm.coastaldebt-tools.com";
+  const baseUrl = esignPublicUrl();
   const signingUrl = `${baseUrl.replace(/\/$/, "")}/sign/${envelope.signingToken}`;
 
   const emailRes = await sendESignEmail({

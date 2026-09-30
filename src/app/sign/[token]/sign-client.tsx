@@ -304,7 +304,7 @@ export function SignClient(props: Props) {
             <span>English (US)</span>
             <div>
               <button
-                className={styles.button}
+                className={styles.declineLink}
                 onClick={() => setDeclining(true)}
               >
                 Decline to sign
