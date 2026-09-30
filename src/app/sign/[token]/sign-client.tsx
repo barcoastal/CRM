@@ -78,7 +78,7 @@ export function SignClient(props: Props) {
       .then((d) => setVerified(d.verified === true))
       .catch(() => {});
   }, [base, previewUrl]);
-  async function verify(action: "send" | "verify") {
+  async function verify(action: "send" | "verify" | "link") {
     setBusy(true);
     setError("");
     try {
@@ -321,9 +321,10 @@ export function SignClient(props: Props) {
               {step === "welcome" && (
                 <button
                   className={styles.primary}
-                  onClick={() => setStep(verified ? "review" : "verify")}
+                  disabled={busy}
+                  onClick={() => verified ? setStep("review") : void verify("link")}
                 >
-                  Continue
+                  {busy ? "Opening…" : "Continue"}
                 </button>
               )}
             </div>

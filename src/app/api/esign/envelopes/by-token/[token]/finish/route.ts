@@ -115,7 +115,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Email verification expired. Reload and verify your email again.",
+          "Your signing session expired. Reload and select Continue again.",
       },
       { status: 401 },
     );
@@ -130,12 +130,12 @@ export async function POST(
     where: {
       id: proof.eventId,
       envelopeId: envelope.id,
-      eventType: "EMAIL_VERIFIED",
+      eventType: { in: ["EMAIL_VERIFIED", "SIGNING_LINK_ACCESSED"] },
     },
   });
   if (!verification)
     return NextResponse.json(
-      { error: "Email verification required." },
+      { error: "Open your signing link and select Continue first." },
       { status: 401 },
     );
 

@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, ctx: Context) {
 export async function POST(req: NextRequest, ctx: Context) {
   const { token } = await ctx.params;
   const body = await req.json().catch(()=>null);
-  if (!body || !["send", "verify"].includes(body.action)) return NextResponse.json({error:"Invalid request"},{status:400});
+  if (!body || !["send", "verify", "link"].includes(body.action)) return NextResponse.json({error:"Invalid request"},{status:400});
   const e = await prisma.envelope.findUnique({where:{signingToken:token}});
   if (!e || !isSignable(e)) return NextResponse.json({error:"This signing link is unavailable or expired."},{status:410});
   if (!e.preparedPdfPath) return NextResponse.json({error:"Document unavailable. Contact the sender."},{status:409});
@@ -27,6 +27,12 @@ export async function POST(req: NextRequest, ctx: Context) {
   const code = String(randomInt(100000,1000000));
   const nonce = randomUUID();
   const now = new Date();
+  if (body.action === "link") {
+    const event = await prisma.envelopeEvent.create({data:{envelopeId:e.id,eventType:"SIGNING_LINK_ACCESSED",details:JSON.stringify({email:e.signerEmail,documentHash,method:"email signing link"}),ipAddress:ip,userAgent:ua}});
+    const response = NextResponse.json({verified:true});
+    response.cookies.set(proofCookie(e.id),signProof({envelopeId:e.id,email:e.signerEmail,documentHash,fieldsHash:signingFieldsHash(e),verifiedAt:now.toISOString(),expires:now.getTime()+1800000,eventId:event.id}),{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"strict",path:`/api/esign/envelopes/by-token/${token}`,maxAge:1800});
+    return response;
+  }
   // Serialize challenge creation and attempts across instances; enforce a shared rate limit.
   const result = await prisma.$transaction(async tx => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${e.id}))`;
