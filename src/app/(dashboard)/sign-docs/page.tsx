@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
   centerPage,
+  centerSource,
   centerStatus,
   centerStatusWhere,
   centerWhere,
@@ -17,6 +18,7 @@ import styles from "@/components/esign/center/center.module.css";
 type Params = {
   tab?: string;
   status?: string;
+  source?: string;
   q?: string;
   templateId?: string;
   sent?: string;
@@ -121,12 +123,19 @@ async function Documents({
 }) {
   const now = new Date();
   const where = centerWhere(params, now);
+  const scope = centerWhere({ ...params, status: "all" }, now);
   const [total, all, pending, signed, expired, templates] = await Promise.all([
     prisma.envelope.count({ where }),
-    prisma.envelope.count(),
-    prisma.envelope.count({ where: centerStatusWhere("pending", now) }),
-    prisma.envelope.count({ where: centerStatusWhere("signed", now) }),
-    prisma.envelope.count({ where: centerStatusWhere("expired", now) }),
+    prisma.envelope.count({ where: scope }),
+    prisma.envelope.count({
+      where: { AND: [scope, centerStatusWhere("pending", now)] },
+    }),
+    prisma.envelope.count({
+      where: { AND: [scope, centerStatusWhere("signed", now)] },
+    }),
+    prisma.envelope.count({
+      where: { AND: [scope, centerStatusWhere("expired", now)] },
+    }),
     prisma.envelopeTemplate.findMany({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
@@ -171,7 +180,7 @@ async function Documents({
         ].map(([count, label, status]) => (
           <Link
             key={status}
-            href={href({ status: String(status) })}
+            href={href({ ...params, page: undefined, status: String(status) })}
             className={styles.stat}
           >
             <strong>{Number(count).toLocaleString()}</strong>
@@ -201,6 +210,14 @@ async function Documents({
               </option>
             ))}
             <option value="completed">Completed only</option>
+          </select>
+        </label>
+        <label>
+          Signing system
+          <select name="source" defaultValue={params.source ?? ""}>
+            <option value="">All systems</option>
+            <option value="coastal">Coastal E-Sign</option>
+            <option value="docusign">DocuSign</option>
           </select>
         </label>
         <label>
@@ -236,6 +253,7 @@ async function Documents({
                 "Document / record",
                 "Recipient",
                 "Status",
+                "Signing system",
                 "Sent by",
                 "Sent",
                 "Viewed",
@@ -248,7 +266,7 @@ async function Documents({
           <tbody>
             {!rows.length && (
               <tr>
-                <td colSpan={7} className={styles.empty}>
+                <td colSpan={8} className={styles.empty}>
                   No documents match these filters.
                 </td>
               </tr>
@@ -282,7 +300,6 @@ async function Documents({
                         <Link href={record.href}>{record.name}</Link>
                       </small>
                     )}
-                    {row.externalSource && <small>{row.externalSource}</small>}
                     {row.packetId && row.createdBy?.id === userId && (
                       <small>
                         <Link href={`/envelopes/packets/${row.packetId}`}>
@@ -302,6 +319,14 @@ async function Documents({
                     {row.status === "DRAFT" && row.packetId && (
                       <small>Waiting for routing or send</small>
                     )}
+                  </td>
+                  <td>
+                    <span
+                      className={styles.sourceBadge}
+                      data-source={centerSource(row.externalSource)}
+                    >
+                      {centerSource(row.externalSource)}
+                    </span>
                   </td>
                   <td>{row.createdBy?.name ?? "—"}</td>
                   <td>{date(row.sentAt)}</td>

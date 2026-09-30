@@ -6,7 +6,7 @@ export default async function Page({
 }) {
   const params = await searchParams;
   const query = new URLSearchParams();
-  for (const key of ["status", "templateId", "sent", "q", "page"]) {
+  for (const key of ["status", "source", "templateId", "sent", "q", "page"]) {
     const value = params[key];
     if (typeof value === "string") query.set(key, value);
   }

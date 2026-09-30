@@ -40,12 +40,24 @@ export function centerStatusWhere(
   }
 }
 export function centerWhere(
-  params: { status?: string; q?: string; templateId?: string; sent?: string },
+  params: {
+    status?: string;
+    q?: string;
+    templateId?: string;
+    sent?: string;
+    source?: string;
+  },
   now: Date,
 ): Prisma.EnvelopeWhereInput {
   const filters: Prisma.EnvelopeWhereInput[] = [
     centerStatusWhere(params.status ?? "all", now),
   ];
+  if (params.source === "coastal")
+    filters.push({ OR: [{ externalSource: null }, { externalSource: "" }] });
+  if (params.source === "docusign")
+    filters.push({
+      externalSource: { equals: "DOCUSIGN", mode: "insensitive" },
+    });
   const q = params.q?.trim().slice(0, 200);
   if (q)
     filters.push({
@@ -102,4 +114,9 @@ export function isEsignPath(path: string) {
 }
 export function centerNavHref(href: string) {
   return isEsignPath(href) ? "/sign-docs" : href;
+}
+
+export function centerSource(source: string | null) {
+  if (!source) return "Coastal E-Sign";
+  return source.toUpperCase() === "DOCUSIGN" ? "DocuSign" : source;
 }
