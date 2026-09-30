@@ -230,7 +230,7 @@ export function PacketWizard({
         ),
       });
   }
-  const back = opportunityId ? `/opportunities/${opportunityId}` : "/envelopes";
+  const back = opportunityId ? `/opportunities/${opportunityId}` : "/sign-docs";
   if (!reviewed && opportunityId)
     return (
       <ContractReview
