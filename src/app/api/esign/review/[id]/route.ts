@@ -13,12 +13,6 @@ const schema = z.object({
     billingState: value.min(1),
     billingZip: value.min(1),
     billingCountry: value.min(1),
-    billingCounty: value
-      .min(1)
-      .refine(
-        (v) => !["usa", "us", "united states"].includes(v.toLowerCase()),
-        "Enter the county, not the country.",
-      ),
     bankName: value.min(1),
     bankRoutingNumber: z.string().regex(/^\d{9}$/),
     bankAccountNumber: z.string().regex(/^\d{4,17}$/),
@@ -64,7 +58,6 @@ export async function GET(_r: NextRequest, c: C) {
         "billingStreet",
         "billingCity",
         "billingState",
-        "billingCounty",
         "billingZip",
         "billingCountry",
         "bankName",

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./packet-wizard.module.css";
 const accountFields = [
   ["name", "Account Name"],
@@ -7,9 +7,8 @@ const accountFields = [
   ["billingStreet", "Billing Street"],
   ["billingCity", "Billing City"],
   ["billingState", "Billing State/Province"],
-  ["billingCounty", "Billing County"],
-  ["billingZip", "Billing Zip/Postal Code"],
   ["billingCountry", "Billing Country"],
+  ["billingZip", "Billing Zip/Postal Code"],
   ["bankName", "Bank Name"],
   ["bankRoutingNumber", "Bank Routing Number"],
   ["bankAccountNumber", "Bank Account Number"],
@@ -30,6 +29,12 @@ export function ContractReview({
     legalNetwork: string;
     processor: string;
   } | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const element = dialog.current;
+    element?.showModal();
+    return () => element?.close();
+  }, []);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -67,32 +72,34 @@ export function ContractReview({
     }
   }
   return (
-    <div className={styles.wizard}>
-      <header
-        style={{
-          background: "#be0018",
-          padding: 15,
-          textAlign: "center",
-          color: "white",
-          fontWeight: 700,
-        }}
-      >
-        Review the following Details
+    <dialog
+      ref={dialog}
+      className={`${styles.wizard} ${styles.reviewDialog}`}
+      aria-labelledby="contract-review-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        window.location.assign(`/opportunities/${opportunityId}`);
+      }}
+    >
+      <header className={styles.reviewHeader}>
+        <h1 id="contract-review-title">Review the following Details</h1>
+        <a href={`/opportunities/${opportunityId}`} aria-label="Close contract review">×</a>
       </header>
-      {error && <p className={styles.error}>{error}</p>}
       {!data ? (
-        <p style={{ padding: 40 }}>Loading contract details…</p>
+        <div className={styles.reviewScroll}>{error ? <p role="alert" className={styles.error}>{error}</p> : <p>Loading contract details…</p>}</div>
       ) : (
-        <form
+        <form className={styles.reviewForm}
           onSubmit={(e) => {
             e.preventDefault();
             void save();
           }}
         >
+          <div className={styles.reviewScroll}>
+          {error && <p role="alert" className={styles.error}>{error}</p>}
           <div className={styles.reviewGrid}>
             {accountFields.map(([key, label]) => (
               <label key={key}>
-                * {label}
+                <span className={styles.required}>*</span> {label}
                 {key === "bankAccountType" ? (
                   <select
                     required
@@ -122,7 +129,7 @@ export function ContractReview({
                 )}
               </label>
             ))}
-            <label>
+            <label className={styles.reviewRowStart}>
               SSN
               <input disabled value={data.ssn} />
             </label>
@@ -136,7 +143,7 @@ export function ContractReview({
               ["birthdate", "Birthdate"],
             ].map(([key, label]) => (
               <label key={key}>
-                * {label}
+                <span className={styles.required}>*</span> {label}
                 <input
                   required={key !== "birthdate"}
                   type={
@@ -179,7 +186,8 @@ export function ContractReview({
               />
             </label>
           </div>
-          <footer className={styles.footer}>
+          </div>
+          <footer className={styles.reviewFooter}>
             <a href={`/opportunities/${opportunityId}`}>Close</a>
             <button className={styles.primary} disabled={busy}>
               {busy ? "Saving…" : "Update and Prepare Contract"}
@@ -187,6 +195,6 @@ export function ContractReview({
           </footer>
         </form>
       )}
-    </div>
+    </dialog>
   );
 }
