@@ -959,6 +959,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             lastName={lead.sfId || "LastName" in sfData ? sf("LastName") : splitLeadName(lead.contactName).LastName}
             industry={lead.industry}
             totalDebt={sfNum("Current_Total_Debt_Amount__c")}
+            debts={lead.debts}
             leadSource={lead.sfId ? sf("LeadSource") : lead.source}
             isPaymentAmountPopulated={typeof sfData.Is_Payment_Amount_Populated__c === "boolean" ? sfData.Is_Payment_Amount_Populated__c : leadPaymentPopulated(sfData)}
             firstCreditorDebt={sfNum("Creditor_1_Total_Debt__c")}
