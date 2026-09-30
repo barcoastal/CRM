@@ -15,11 +15,11 @@ const palette: [PacketField["kind"], string, number, number][] = [
   ["text", "Title", 140, 22],
   ["text", "Text", 140, 22],
   ["text", "Number", 100, 22],
+  ["checkbox", "Checkbox", 18, 18],
   ["text", "Dropdown", 160, 24],
   ["text", "Radio", 170, 70],
-  ["checkbox", "Checkbox", 18, 18],
 ];
-const fieldIcons = [PenLine, PenLine, CalendarDays, UserRound, AtSign, Building2, BriefcaseBusiness, Type, Hash, ListFilter, CircleDot, SquareCheck];
+const fieldIcons = [PenLine, PenLine, CalendarDays, UserRound, AtSign, Building2, BriefcaseBusiness, Type, Hash, SquareCheck, ListFilter, CircleDot];
 const colors = ["#42afc8", "#eeb842", "#ae70cc", "#76af52", "#e97676"];
 export function PacketEditor({
   url,
