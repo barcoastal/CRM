@@ -1,7 +1,7 @@
 import {beforeEach,afterEach,it,expect,vi} from 'vitest';
 import {NextRequest} from 'next/server';
 const m=vi.hoisted(()=>({find:vi.fn(),history:vi.fn(),create:vi.fn(),used:vi.fn(),send:vi.fn(),document:vi.fn()}));
-vi.mock('@/lib/prisma',()=>({prisma:{envelope:{findUnique:m.find},$transaction:async(fn:(tx:unknown)=>unknown)=>fn({$executeRaw:vi.fn(),envelopeEvent:{findMany:m.history,create:m.create,findFirst:m.used}})}}));
+vi.mock('@/lib/prisma',()=>({prisma:{envelope:{findUnique:m.find},envelopeEvent:{create:m.create},$transaction:async(fn:(tx:unknown)=>unknown)=>fn({$executeRaw:vi.fn(),envelopeEvent:{findMany:m.history,create:m.create,findFirst:m.used}})}}));
 vi.mock('@/lib/esign/send-email',()=>({sendESignEmail:m.send}));
 vi.mock('@/lib/esign/evidence',async imp=>({...await imp<typeof import('@/lib/esign/evidence')>(),verifiedPreparedPdf:m.document}));
 import {POST} from '@/app/api/esign/envelopes/by-token/[token]/verify/route';
@@ -31,4 +31,21 @@ it('issues a short-lived HttpOnly proof bound to recipient, envelope and documen
  m.history.mockResolvedValue([challenge()]);const r=await req({action:'verify',code:'123456'});expect(r.status).toBe(200);
  const cookie=r.cookies.get('esign_e1')!;expect(cookie.httpOnly).toBe(true);expect(cookie.sameSite).toBe('strict');
  expect(readProof(cookie.value,e)).toMatchObject({documentHash:'hash',email:e.signerEmail,eventId:'verified1'});
+});
+
+it('opens a signing-link session without an OTP and records its actual authentication method',async()=>{
+ const r=await req({action:'link'});expect(r.status).toBe(200);
+ expect(m.send).not.toHaveBeenCalled();
+ expect(m.create.mock.calls[0][0].data.eventType).toBe('SIGNING_LINK_ACCESSED');
+ expect(JSON.parse(m.create.mock.calls[0][0].data.details).method).toBe('email signing link');
+ const cookie=r.cookies.get('esign_e1')!;
+ expect(cookie.httpOnly).toBe(true);
+ expect(readProof(cookie.value,e)).toMatchObject({documentHash:'hash',email:e.signerEmail,eventId:'verified1'});
+});
+it('rejects unavailable, expired, completed and voided links and damaged documents',async()=>{
+ for(const envelope of [null,{...e,expiresAt:new Date(0)},{...e,status:'COMPLETED'},{...e,status:'VOIDED'}]) {
+ m.find.mockResolvedValue(envelope);expect((await req({action:'link'})).status).toBe(410);
+ }
+ m.find.mockResolvedValue(e);m.document.mockRejectedValue(new Error('changed'));
+ expect((await req({action:'link'})).status).toBe(409);expect(m.create).not.toHaveBeenCalled();
 });
