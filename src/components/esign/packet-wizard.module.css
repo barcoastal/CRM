@@ -244,23 +244,56 @@
   color: #433252;
   background: white;
 }
-.palette > button {
+.fieldSearch {
   display: flex;
   align-items: center;
-  gap: 14px;
-  width: 100%;
-  padding: 12px 8px;
-  border: 0;
-  color: #433252;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 0 9px;
+  border: 1px solid #a9a0b3;
+  border-radius: 3px;
+  min-height: 38px;
 }
-.palette button span {
+.fieldSearch input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  padding: 8px 0;
+  background: transparent;
+  font-size: 13px;
+}
+.fieldSearch:focus-within { outline: 2px solid #625080; outline-offset: 1px; }
+.fieldSearch input:focus { outline: none; }
+.fieldSearch button { display: flex; padding: 2px; border: 0; background: transparent; }
+.fieldTools .fieldTool {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 38px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #433252;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.fieldTools .fieldTool:hover { background: #f2eff6; }
+.fieldTools .fieldTool:focus-visible { outline: 2px solid #625080; outline-offset: -2px; }
+.fieldIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 25px;
+  height: 25px;
   background: #b5e5ed;
-  padding: 5px;
+  border: 1px solid #7d969d;
   border-radius: 3px;
 }
-.palette .selected {
-  background: #e8e3f1;
-}
+.fieldTools .selected { background: #e8e3f1; box-shadow: inset 3px 0 #625080; font-weight: 600; }
+.fieldTools .fieldGroupStart { margin-top: 12px; border-top: 1px solid #e3dfe7; padding-top: 12px; border-radius: 0; }
 .palette h3 {
   font-size: 13px;
   margin: 22px 0 12px;

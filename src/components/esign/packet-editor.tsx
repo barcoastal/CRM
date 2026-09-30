@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { Search, PenLine, CalendarDays, UserRound, AtSign, Building2, BriefcaseBusiness, Type, Hash, ListFilter, CircleDot, SquareCheck, X } from "lucide-react";
 import { DocumentViewer } from "./document-viewer";
 import type { PacketConfig, PacketField } from "@/lib/esign/packet-config";
 import type { SigningField } from "@/lib/esign/fields";
@@ -18,6 +19,7 @@ const palette: [PacketField["kind"], string, number, number][] = [
   ["text", "Radio", 170, 70],
   ["checkbox", "Checkbox", 18, 18],
 ];
+const fieldIcons = [PenLine, PenLine, CalendarDays, UserRound, AtSign, Building2, BriefcaseBusiness, Type, Hash, ListFilter, CircleDot, SquareCheck];
 const colors = ["#42afc8", "#eeb842", "#ae70cc", "#76af52", "#e97676"];
 export function PacketEditor({
   url,
@@ -30,6 +32,7 @@ export function PacketEditor({
 }) {
   const signers = config.recipients.filter((r) => r.action === "SIGN");
   const [recipient, setRecipient] = useState(signers[0]?.id ?? "");
+  const [search, setSearch] = useState("");
   const [tool, setTool] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const chosen = config.fields.find((f) => f.id === selected);
@@ -54,17 +57,29 @@ export function PacketEditor({
             ))}
           </select>
         </label>
-        <h3>Standard fields</h3>
-        {palette.map(([, label]) => (
-          <button
-            key={label}
-            className={tool === label ? styles.selected : ""}
-            onClick={() => setTool(tool === label ? null : label)}
-          >
-            <span>＋</span>
-            {label}
-          </button>
-        ))}
+        <div className={styles.fieldSearch}>
+          <Search size={17} aria-hidden="true" />
+          <input aria-label="Search fields" placeholder="Search Fields" value={search} onChange={(e) => setSearch(e.target.value)} />
+          {search && <button type="button" aria-label="Clear field search" onClick={() => setSearch("")}><X size={16} /></button>}
+        </div>
+        <h3>Standard Fields</h3>
+        <div className={styles.fieldTools}>
+          {palette.map(([, label], index) => {
+            if (!label.toLowerCase().includes(search.toLowerCase().trim())) return null;
+            const Icon = fieldIcons[index];
+            return <button
+              type="button"
+              key={label}
+              aria-pressed={tool === label}
+              className={`${styles.fieldTool} ${tool === label ? styles.selected : ""} ${!search && [3, 7].includes(index) ? styles.fieldGroupStart : ""}`}
+              onClick={() => setTool(tool === label ? null : label)}
+            >
+              <span className={styles.fieldIcon}><Icon size={17} strokeWidth={1.6} aria-hidden="true" /></span>
+              {label}
+            </button>;
+          })}
+          {!palette.some(([, label]) => label.toLowerCase().includes(search.toLowerCase().trim())) && <p role="status">No matching fields.</p>}
+        </div>
         <p>
           Choose a field, then click its position on the document. Drag placed
           fields to move them.
