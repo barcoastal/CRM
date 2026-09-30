@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { centerNavHref } from "@/lib/esign/center";
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
@@ -62,7 +63,6 @@ const TABS: TabItem[] = [
   { label: "Events", href: "/events", entity: "Event" },
   { label: "Chatter", href: "/chatter", entity: "Lead" },
   { label: "Program Plans", href: "/program-plans", entity: "ProgramPlan" },
-  { label: "Contract Templates", href: "/contracts/templates", entity: "Opportunity" },
   { label: "Drafts", href: "/drafts", entity: "Draft" },
   { label: "Offers", href: "/offers", entity: "Offer" },
   { label: "Settlements", href: "/settlements", entity: "Settlement" },
@@ -70,14 +70,13 @@ const TABS: TabItem[] = [
   { label: "Emails", href: "/emails", entity: "Email" },
   { label: "Email Center", href: "/email-center", entity: "Email" },
   { label: "SMS", href: "/sms", entity: "Sms" },
-  { label: "Templates", href: "/email-templates", entity: "Email" },
+  { label: "Email Templates", href: "/email-templates", entity: "Email" },
   { label: "Files", href: "/files", entity: "ProgramPlan" },
-  { label: "E-Sign", href: "/envelopes", entity: "ProgramPlan" },
   { label: "Integrations", href: "/integrations", entity: "Settings" },
   { label: "Dialer", href: "/dialer" },
   { label: "Call Center", href: "/call-center" },
   { label: "Marketing", href: "/marketing", entity: "Campaign" },
-  { label: "Sign Docs", href: "/sign-docs", entity: "ProgramPlan" },
+  { label: "E-Sign Center", href: "/sign-docs", entity: "ProgramPlan" },
   { label: "Campaigns", href: "/campaigns", entity: "Campaign" },
 ];
 
@@ -232,7 +231,7 @@ export function SldsHeader({
         <nav className="sf-tab-nav">
           {allowedTabs.slice(0, 11).map((t) => {
             const active =
-              pathname === t.href || (t.href !== "/dashboard" && pathname.startsWith(t.href));
+              centerNavHref(pathname) === t.href || (t.href !== "/dashboard" && centerNavHref(pathname).startsWith(t.href));
             return (
               <Link
                 key={t.href}
@@ -250,7 +249,7 @@ export function SldsHeader({
             <span style={{ position: "relative", display: "inline-flex", alignItems: "stretch" }}>
               <button
                 ref={moreBtnRef}
-                className={`sf-tab ${allowedTabs.slice(11).some((t) => pathname.startsWith(t.href)) ? "sf-tab-active" : ""}`}
+                className={`sf-tab ${allowedTabs.slice(11).some((t) => centerNavHref(pathname).startsWith(t.href)) ? "sf-tab-active" : ""}`}
                 style={{ background: moreOpen ? "#f3f2f2" : undefined, border: 0, cursor: "pointer", height: "100%", display: "inline-flex", alignItems: "center" }}
                 onClick={() => {
                   setMoreOpen((v) => {

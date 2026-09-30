@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { centerNavHref } from "@/lib/esign/center";
 import { usePathname, useRouter } from "next/navigation";
 
 /**
@@ -166,8 +167,8 @@ export function ConsoleNav({
   };
 
   const currentObject =
-    objects.find((o) => o.href !== "/dashboard" && pathname.startsWith(o.href)) ??
-    objects.find((o) => pathname === o.href) ??
+    objects.find((o) => o.href !== "/dashboard" && centerNavHref(pathname).startsWith(o.href)) ??
+    objects.find((o) => centerNavHref(pathname) === o.href) ??
     objects[0];
 
   const primaries = tabs.filter((t) => !t.parentHref);

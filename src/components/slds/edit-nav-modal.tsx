@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { centerNavHref } from "@/lib/esign/center";
 import { ObjectIcon } from "./icon";
 
 export type NavItem = {
@@ -20,7 +21,7 @@ export function loadNavPrefs(): { order: string[]; hidden: string[] } {
     // Keep the new hub where the first old floor tool was pinned, with one
     // entry even when all four tools appeared in the saved navigation.
     return {
-      order: Array.isArray(order) ? [...new Set(order.map((href) => FLOOR_HUB_LEGACY.has(href) ? "/floor-manager" : href))] : [],
+      order: Array.isArray(order) ? [...new Set(order.map((href) => FLOOR_HUB_LEGACY.has(href) ? "/floor-manager" : centerNavHref(href)))] : [],
       hidden: Array.isArray(hidden) ? hidden : [],
     };
   } catch {

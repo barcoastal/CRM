@@ -39,7 +39,7 @@ export default async function EnvelopeDetailPage({ params }: { params: Promise<{
   return (
     <div style={{ padding: 20 }}>
       <div style={{ marginBottom: 12, fontSize: 12, color: "#747474" }}>
-        <Link href="/envelopes" style={{ color: "#0176d3" }}>Envelopes</Link>
+        <Link href="/sign-docs" style={{ color: "#0176d3" }}>E-Sign Center</Link>
         <span> / </span>
         <span>{envelope.documentName}</span>
       </div>
