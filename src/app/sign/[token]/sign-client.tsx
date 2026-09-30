@@ -228,7 +228,7 @@ export function SignClient(props: Props) {
             <p>Preview only. No agreement was signed or sent.</p>
           ) : (
             step === "done" && (
-              <>
+              <div className={styles.successActions}>
                 <a
                   className={styles.primary}
                   href={`${base}/signed-pdf`}
@@ -237,10 +237,10 @@ export function SignClient(props: Props) {
                 >
                   Download signed copy
                 </a>
-                <p>
-                  <a href={`${base}/evidence`}>Download signing record</a>
-                </p>
-              </>
+                <a className={styles.successRecord} href={`${base}/evidence`}>
+                  Download signing record
+                </a>
+              </div>
             )
           )}
         </div>

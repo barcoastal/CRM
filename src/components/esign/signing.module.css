@@ -378,6 +378,30 @@
 .success {
   text-align: center;
 }
+.successActions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+.successActions .primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  max-width: 100%;
+  line-height: 1.5;
+  text-decoration: none;
+  color: #25212f;
+}
+.successRecord {
+  display: inline-block;
+  padding: 8px;
+  line-height: 1.5;
+  color: #3052aa;
+  text-underline-offset: 3px;
+}
 .successIcon {
   margin: 36px auto;
   color: #368bce;
