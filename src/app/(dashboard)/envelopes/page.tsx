@@ -3,9 +3,18 @@
  * Server-rendered. Filter chips for status come from the URL ?status=SENT.
  */
 import Link from "next/link";
+import { PacketList } from "@/components/esign/packet-list";
 import { prisma } from "@/lib/prisma";
 
-const STATUSES = ["DRAFT", "SENT", "VIEWED", "SIGNED", "COMPLETED", "VOIDED", "DECLINED"];
+const STATUSES = [
+  "DRAFT",
+  "SENT",
+  "VIEWED",
+  "SIGNED",
+  "COMPLETED",
+  "VOIDED",
+  "DECLINED",
+];
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   DRAFT: { bg: "#ecebea", color: "#444444" },
@@ -37,6 +46,7 @@ export default async function EnvelopesListPage({
       take: 200,
       select: {
         id: true,
+        packetId: true,
         documentName: true,
         templateName: true,
         recordType: true,
@@ -45,7 +55,9 @@ export default async function EnvelopesListPage({
         status: true,
         sentAt: true,
         createdAt: true,
-        opportunity: { select: { id: true, name: true, account: { select: { name: true } } } },
+        opportunity: {
+          select: { id: true, name: true, account: { select: { name: true } } },
+        },
         template: { select: { id: true, name: true } },
       },
     }),
@@ -57,33 +69,74 @@ export default async function EnvelopesListPage({
 
   return (
     <div style={{ padding: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
         <div>
           <div style={{ fontSize: 12, color: "#747474" }}>E-Sign</div>
-          <h1 style={{ margin: 0, fontSize: 20 }}>Envelopes ({envelopes.length})</h1>
+          <h1 style={{ margin: 0, fontSize: 20 }}>
+            Envelopes ({envelopes.length})
+          </h1>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/templates/esign" style={btnStyle}>Manage Templates</Link>
+          <Link href="/envelopes/new">Send documents</Link>
+          <Link href="/templates/esign" style={btnStyle}>
+            Manage Templates
+          </Link>
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
-        <Link href="/envelopes" style={chip(!status && !templateId)}>All</Link>
+      <PacketList />
+      <div
+        style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}
+      >
+        <Link href="/envelopes" style={chip(!status && !templateId)}>
+          All
+        </Link>
         {STATUSES.map((s) => (
-          <Link key={s} href={`/envelopes?status=${s}`} style={chip(status === s)}>{s}</Link>
+          <Link
+            key={s}
+            href={`/envelopes?status=${s}`}
+            style={chip(status === s)}
+          >
+            {s}
+          </Link>
         ))}
       </div>
 
       {templates.length > 0 && (
-        <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 11, color: "#747474", alignSelf: "center" }}>TEMPLATE:</span>
-          <Link href={`/envelopes${status ? `?status=${status}` : ""}`} style={chip(!templateId)}>Any</Link>
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            marginBottom: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ fontSize: 11, color: "#747474", alignSelf: "center" }}>
+            TEMPLATE:
+          </span>
+          <Link
+            href={`/envelopes${status ? `?status=${status}` : ""}`}
+            style={chip(!templateId)}
+          >
+            Any
+          </Link>
           {templates.map((t) => {
             const params = new URLSearchParams();
             if (status) params.set("status", status);
             params.set("templateId", t.id);
             return (
-              <Link key={t.id} href={`/envelopes?${params.toString()}`} style={chip(templateId === t.id)}>
+              <Link
+                key={t.id}
+                href={`/envelopes?${params.toString()}`}
+                style={chip(templateId === t.id)}
+              >
                 {t.name}
               </Link>
             );
@@ -91,10 +144,23 @@ export default async function EnvelopesListPage({
         </div>
       )}
 
-      <article style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <article
+        style={{
+          background: "#fff",
+          border: "1px solid #c9c9c9",
+          borderRadius: 4,
+        }}
+      >
+        <table
+          style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+        >
           <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
+            <tr
+              style={{
+                background: "#fafaf9",
+                borderBottom: "1px solid #c9c9c9",
+              }}
+            >
               <th style={th}>Document</th>
               <th style={th}>Signer</th>
               <th style={th}>Status</th>
@@ -105,7 +171,12 @@ export default async function EnvelopesListPage({
           <tbody>
             {envelopes.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ padding: 24, textAlign: "center", color: "#747474" }}>No envelopes.</td>
+                <td
+                  colSpan={5}
+                  style={{ padding: 24, textAlign: "center", color: "#747474" }}
+                >
+                  No envelopes.
+                </td>
               </tr>
             ) : (
               envelopes.map((e) => {
@@ -113,34 +184,54 @@ export default async function EnvelopesListPage({
                 return (
                   <tr key={e.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
                     <td style={td}>
-                      <Link href={`/envelopes/${e.id}`} style={{ color: "#0176d3" }}>
+                      <Link
+                        href={
+                          e.packetId
+                            ? `/envelopes/packets/${e.packetId}`
+                            : `/envelopes/${e.id}`
+                        }
+                        style={{ color: "#0176d3" }}
+                      >
                         {e.documentName}
                       </Link>
                       {e.templateName && (
-                        <div style={{ fontSize: 11, color: "#747474" }}>{e.templateName}</div>
+                        <div style={{ fontSize: 11, color: "#747474" }}>
+                          {e.templateName}
+                        </div>
                       )}
                     </td>
                     <td style={td}>
                       <div>{e.signerName}</div>
-                      <div style={{ fontSize: 11, color: "#747474" }}>{e.signerEmail}</div>
+                      <div style={{ fontSize: 11, color: "#747474" }}>
+                        {e.signerEmail}
+                      </div>
                     </td>
                     <td style={td}>
-                      <span style={{
-                        background: tone.bg,
-                        color: tone.color,
-                        padding: "2px 8px",
-                        borderRadius: 12,
-                        fontSize: 11,
-                        fontWeight: 600,
-                      }}>
+                      <span
+                        style={{
+                          background: tone.bg,
+                          color: tone.color,
+                          padding: "2px 8px",
+                          borderRadius: 12,
+                          fontSize: 11,
+                          fontWeight: 600,
+                        }}
+                      >
                         {e.status}
                       </span>
                     </td>
-                    <td style={td}>{e.sentAt ? new Date(e.sentAt).toLocaleDateString() : ""}</td>
+                    <td style={td}>
+                      {e.sentAt ? new Date(e.sentAt).toLocaleDateString() : ""}
+                    </td>
                     <td style={td}>
                       {e.opportunity ? (
-                        <Link href={`/opportunities/${e.opportunity.id}`} style={{ color: "#0176d3" }}>
-                          {e.opportunity.name ?? e.opportunity.account?.name ?? e.opportunity.id.slice(-6)}
+                        <Link
+                          href={`/opportunities/${e.opportunity.id}`}
+                          style={{ color: "#0176d3" }}
+                        >
+                          {e.opportunity.name ??
+                            e.opportunity.account?.name ??
+                            e.opportunity.id.slice(-6)}
                         </Link>
                       ) : (
                         <span style={{ color: "#747474" }}>--</span>

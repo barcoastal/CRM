@@ -13,6 +13,7 @@ export interface ESignEmailArgs {
   subject: string;
   html: string;
   replyTo?: string | null;
+  idempotencyKey?: string;
 }
 
 export interface ESignEmailResult {
@@ -21,7 +22,9 @@ export interface ESignEmailResult {
   error?: string;
 }
 
-export async function sendESignEmail(args: ESignEmailArgs): Promise<ESignEmailResult> {
+export async function sendESignEmail(
+  args: ESignEmailArgs,
+): Promise<ESignEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return { ok: false, error: "RESEND_API_KEY not set" };
@@ -41,10 +44,16 @@ export async function sendESignEmail(args: ESignEmailArgs): Promise<ESignEmailRe
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
+        ...(args.idempotencyKey
+          ? { "Idempotency-Key": args.idempotencyKey }
+          : {}),
       },
       body: JSON.stringify(body),
     });
-    const data = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
+    const data = (await res.json().catch(() => ({}))) as {
+      id?: string;
+      message?: string;
+    };
     if (!res.ok) {
       return { ok: false, error: data.message ?? `HTTP ${res.status}` };
     }

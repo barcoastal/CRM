@@ -1,3 +1,4 @@
+import { requireAuthOrRespond } from "@/lib/api-auth";
 /**
  * Generate a deal's routed contract packet. POST { opportunityId } →  auto-routes
  * (Coastal + processor + legal), fills each stored template with the deal's data,
@@ -10,10 +11,18 @@ import { fillPacketToPdf } from "@/lib/contracts/docx-merge";
 import { planPacket, loadPacketTemplates } from "@/lib/contracts/routing";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuthOrRespond("Opportunity.View");
+  if ("response" in auth) return auth.response;
   try {
-    const body = (await req.json().catch(() => ({}))) as { opportunityId?: string };
+    const body = (await req.json().catch(() => ({}))) as {
+      opportunityId?: string;
+    };
     const opportunityId = body.opportunityId?.trim();
-    if (!opportunityId) return NextResponse.json({ error: "opportunityId required" }, { status: 400 });
+    if (!opportunityId)
+      return NextResponse.json(
+        { error: "opportunityId required" },
+        { status: 400 },
+      );
 
     const plan = await planPacket(opportunityId);
     const { templates } = await loadPacketTemplates(plan);
@@ -24,7 +33,11 @@ export async function POST(req: NextRequest) {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="contract-packet.pdf"`,
-        "X-Packet-Plan": JSON.stringify({ processor: plan.processor, legal: plan.legal, categories: plan.categories }),
+        "X-Packet-Plan": JSON.stringify({
+          processor: plan.processor,
+          legal: plan.legal,
+          categories: plan.categories,
+        }),
       },
     });
   } catch (e) {

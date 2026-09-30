@@ -1,3 +1,4 @@
+import { advancePacket } from "@/lib/esign/packet-routing";
 /**
  * Public decline endpoint. The signer can refuse to sign with a reason; the
  * envelope is moved to a terminal DECLINED state and the sender is notified.
@@ -7,7 +8,10 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { renderEnvelopeTerminatedHtml, sendESignEmail } from "@/lib/esign/send-email";
+import {
+  renderEnvelopeTerminatedHtml,
+  sendESignEmail,
+} from "@/lib/esign/send-email";
 
 function pickIp(req: NextRequest): string {
   const fwd = req.headers.get("x-forwarded-for");
@@ -27,9 +31,14 @@ export async function POST(
     where: { signingToken: token },
     include: { createdBy: { select: { name: true, email: true } } },
   });
-  if (!envelope) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!envelope)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  if (envelope.status === "COMPLETED" || envelope.status === "VOIDED" || envelope.status === "DECLINED") {
+  if (
+    envelope.status === "COMPLETED" ||
+    envelope.status === "VOIDED" ||
+    envelope.status === "DECLINED"
+  ) {
     return NextResponse.json(
       { error: `Envelope is ${envelope.status} and cannot be declined.` },
       { status: 400 },
@@ -41,29 +50,40 @@ export async function POST(
   const ua = request.headers.get("user-agent") ?? "";
   const voidReason = `Declined by signer: ${reason}`;
 
-  await prisma.$transaction([
-    prisma.envelope.update({
-      where: { id: envelope.id },
-      data: {
-        status: "DECLINED",
-        voidedAt: now,
-        voidReason,
-      },
-    }),
-    prisma.envelopeEvent.create({
-      data: {
-        envelopeId: envelope.id,
-        eventType: "DECLINED",
-        details: reason,
-        ipAddress: ip || null,
-        userAgent: ua || null,
-      },
-    }),
-  ]);
+  try {
+    await prisma.$transaction(async (tx) => {
+      const changed = await tx.envelope.updateMany({
+        where: { id: envelope.id, status: { in: ["DRAFT", "SENT", "VIEWED"] } },
+        data: {
+          status: "DECLINED",
+          voidedAt: now,
+          voidReason,
+        },
+      });
+      if (changed.count !== 1) throw new Error("State changed");
+      await tx.envelopeEvent.create({
+        data: {
+          envelopeId: envelope.id,
+          eventType: "DECLINED",
+          details: reason,
+          ipAddress: ip || null,
+          userAgent: ua || null,
+        },
+      });
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Envelope state changed. Reload before trying again." },
+      { status: 409 },
+    );
+  }
+
+  if (envelope.packetId) await advancePacket(envelope.packetId).catch(() => {});
 
   const senderEmail = envelope.createdBy?.email ?? null;
   if (senderEmail) {
-    const defaultFrom = process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
+    const defaultFrom =
+      process.env.EMAIL_FROM ?? "Coastal Debt <no-reply@coastaldebt.com>";
     try {
       const res = await sendESignEmail({
         from: defaultFrom,

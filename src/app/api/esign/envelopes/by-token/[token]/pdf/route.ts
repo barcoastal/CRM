@@ -10,10 +10,10 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { readEnvelopePdf, readTemplatePdf } from "@/lib/esign/storage";
+import { verifiedPreparedPdf, isSignable, readProof, proofCookie } from "@/lib/esign/evidence";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ token: string }> },
 ) {
   const { token } = await params;
@@ -23,6 +23,8 @@ export async function GET(
     select: {
       id: true,
       status: true,
+      expiresAt: true,
+      signerEmail: true,
       preparedPdfPath: true,
       templateId: true,
       documentName: true,
@@ -30,25 +32,20 @@ export async function GET(
   });
   if (!envelope) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  if (envelope.status === "DECLINED" || envelope.status === "VOIDED" || envelope.status === "COMPLETED") {
-    return NextResponse.json({ error: "Not available" }, { status: 404 });
-  }
-
-  let buf: Buffer | null = null;
+  if (!isSignable(envelope)) return NextResponse.json({error:"Not available"},{status:410});
+  const proof = readProof(request.cookies.get(proofCookie(envelope.id))?.value,envelope);
+  if (!proof) return NextResponse.json({error:"Verify your email first."},{status:401});
+  let buf: Buffer;
   try {
-    if (envelope.preparedPdfPath) {
-      buf = await readEnvelopePdf(envelope.preparedPdfPath);
-    } else if (envelope.templateId) {
-      const tpl = await prisma.envelopeTemplate.findUnique({
-        where: { id: envelope.templateId },
-        select: { pdfPath: true },
-      });
-      if (tpl) buf = await readTemplatePdf(tpl.pdfPath);
-    }
-  } catch {
-    return NextResponse.json({ error: "PDF read failed" }, { status: 500 });
-  }
-  if (!buf) return NextResponse.json({ error: "No PDF on envelope" }, { status: 404 });
+    if (!envelope.preparedPdfPath) throw new Error("No snapshot");
+    const prepared = await verifiedPreparedPdf(envelope.preparedPdfPath);
+    if (prepared.hash !== proof.documentHash) throw new Error("Document changed");
+    buf = prepared.bytes;
+  } catch { return NextResponse.json({error:"Document integrity check failed. Contact the sender."},{status:409}); }
+  await prisma.$transaction(async tx=>{
+    const changed = await tx.envelope.updateMany({where:{id:envelope.id,status:"SENT"},data:{status:"VIEWED",viewedAt:new Date()}});
+    if (changed.count) await tx.envelopeEvent.create({data:{envelopeId:envelope.id,eventType:"VIEWED",details:JSON.stringify({documentHash:proof.documentHash,verificationEventId:proof.eventId}),ipAddress:(request.headers.get("x-forwarded-for")??"").split(",")[0].trim(),userAgent:request.headers.get("user-agent")}});
+  });
 
   return new NextResponse(new Uint8Array(buf), {
     status: 200,

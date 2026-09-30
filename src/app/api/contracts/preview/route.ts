@@ -1,3 +1,4 @@
+import { requireAuthOrRespond } from "@/lib/api-auth";
 /**
  * Contract merge preview. POST a .docx template + an opportunityId; get back the
  * filled PDF. Lets us test the {{token}}/{{#table}} merge against a real deal
@@ -8,15 +9,30 @@ import { buildContractData } from "@/lib/contracts/merge-data";
 import { fillPacketToPdf } from "@/lib/contracts/docx-merge";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuthOrRespond("Opportunity.View");
+  if ("response" in auth) return auth.response;
   try {
     const form = await req.formData();
-    const files = form.getAll("file").filter((f): f is File => f instanceof File);
+    const files = form
+      .getAll("file")
+      .filter((f): f is File => f instanceof File);
     const opportunityId = String(form.get("opportunityId") ?? "");
-    if (files.length === 0) return NextResponse.json({ error: "No .docx file uploaded" }, { status: 400 });
-    if (!opportunityId) return NextResponse.json({ error: "opportunityId required" }, { status: 400 });
+    if (files.length === 0)
+      return NextResponse.json(
+        { error: "No .docx file uploaded" },
+        { status: 400 },
+      );
+    if (!opportunityId)
+      return NextResponse.json(
+        { error: "opportunityId required" },
+        { status: 400 },
+      );
 
     const templates = await Promise.all(
-      files.map(async (f) => ({ buffer: Buffer.from(await f.arrayBuffer()), name: f.name || "contract.docx" })),
+      files.map(async (f) => ({
+        buffer: Buffer.from(await f.arrayBuffer()),
+        name: f.name || "contract.docx",
+      })),
     );
     const data = await buildContractData(opportunityId);
     const pdf = await fillPacketToPdf(templates, data);

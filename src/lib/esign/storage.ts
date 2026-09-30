@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { createHash } from "node:crypto";
 
 /**
  * E-signature storage on disk.
@@ -76,15 +77,17 @@ export async function deleteTemplatePdf(relativePath: string): Promise<void> {
 
 /**
  * Save a merged-but-not-signed envelope PDF. The relative filename returned
- * is what we persist on Envelope.preparedPdfPath. Always overwrites: callers
- * that re-merge a template (eg. a future "regenerate" action) get an updated
- * blob without leaking the old one.
+ * is what we persist on Envelope.preparedPdfPath. Exclusive creation prevents
+ * in-place regeneration; changes require a new envelope. A SHA-256 sidecar
+ * anchors the bytes used for verification and signing.
  */
 export async function saveEnvelopePdf(buffer: Buffer, envelopeId: string): Promise<string> {
   await ensureDirs();
   const filename = `${envelopeId}.pdf`;
   const abs = path.join(envelopeDir(), filename);
-  await fs.writeFile(abs, buffer);
+  // An envelope snapshot cannot be regenerated in place after sending.
+  await fs.writeFile(abs, buffer, { flag: "wx" });
+  await fs.writeFile(`${abs}.sha256`, createHash("sha256").update(buffer).digest("hex"), { flag: "wx" });
   return filename;
 }
 

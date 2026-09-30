@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 /**
  * Send an envelope from a template + opportunity. This is the entry point for
  * the "Send Contract" button on the Opportunity detail page.
@@ -106,6 +107,8 @@ export async function POST(request: NextRequest) {
       leadId: null,
       recordType,
       status: "SENT",
+      signingToken: randomBytes(32).toString("hex"),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       sentAt: now,
       signerName,
       signerEmail,
