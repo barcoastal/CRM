@@ -19,7 +19,7 @@ export function ContractReview({
   onContinue,
 }: {
   opportunityId: string;
-  onContinue: (name: string, email: string) => void;
+  onContinue: (name: string, email: string, options: { includeAddendum: boolean; documents: { name: string; available: boolean }[] }) => void;
 }) {
   const [data, setData] = useState<{
     account: Record<string, string>;
@@ -28,6 +28,8 @@ export function ContractReview({
     totalDebt: number;
     legalNetwork: string;
     processor: string;
+    includeAddendum: boolean;
+    documents: { name: string; available: boolean }[];
   } | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -64,7 +66,7 @@ export function ContractReview({
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
-      onContinue(d.signerName, d.signerEmail);
+      onContinue(d.signerName, d.signerEmail, { includeAddendum: data.includeAddendum, documents: data.documents });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to save");
     } finally {

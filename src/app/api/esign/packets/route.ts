@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     if (generate) {
       if (!opportunityId) throw new Error("Choose an opportunity first.");
       const plan = await planPacket(opportunityId);
-      if (form.get("includeAddendum") === "true")
+      if (form.get("includeAddendum") === "true" && !plan.categories.includes("ADDENDUM"))
         plan.categories.splice(1, 0, "ADDENDUM");
       const { templates, missing } = await loadPacketTemplates(plan);
       if (missing.length)
