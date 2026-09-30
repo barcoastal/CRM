@@ -478,3 +478,20 @@
     display: none;
   }
 }
+
+/* Preparation workspace: keep the canvas between fixed, compact controls. */
+.preparing { height: calc(100dvh - 110px); min-height: 0; overflow: hidden; }
+.preparing .header { min-height: 58px; padding: 14px 22px; flex-shrink: 0; color: #5f5178; }
+.preparing .header img, .preparing .header small { display: none; }
+.preparing .header h1 { font-size: 16px; font-weight: 400; }
+.preparing .editor { flex: 1; height: auto; min-height: 0; }
+.preparing .footer { flex-shrink: 0; padding: 10px 24px; position: relative; }
+.preparing .footer .primary { background: #2d0d58; border-color: #2d0d58; }
+.preparing .palette { padding: 0 14px 18px; width: 235px; }
+.preparing .palette > label { display: flex; align-items: center; height: 49px; border-bottom: 1px solid #dedbe2; }
+.preparing .recipientCaption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.preparing .palette > label select { padding: 6px 10px; margin: 0; font-size: 13px; border-color: #a297b0; border-radius: 2px; }
+.preparing .fieldSearch { margin-top: 8px; }
+.wizard .fieldSearch input:not([type="checkbox"]):not([type="file"]) { padding: 8px 0; border: 0; margin: 0; background: transparent; border-radius: 0; font-size: 13px; }
+.preparing .palette h3 { font-weight: 600; margin: 18px 8px 12px; }
+@media (max-width: 760px) { .preparing .palette { width: 155px; padding: 0 7px 12px; } .preparing .header h1 { font-size: 13px; } }
