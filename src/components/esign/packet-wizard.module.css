@@ -385,17 +385,60 @@
 .reviewGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 28px 24px;
-  padding: 30px;
+  gap: 22px 24px;
 }
+.reviewRowStart { grid-column: 1; }
 .reviewGrid label {
   font-size: 14px;
   color: #555;
 }
+.wizard.reviewDialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(1120px, calc(100vw - 64px));
+  max-width: none;
+  max-height: calc(100dvh - 64px);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  box-shadow: 0 8px 32px #0005;
+  overflow: hidden;
+}
+.reviewDialog::backdrop { background: #0006; }
+.reviewHeader {
+  background: repeating-linear-gradient(45deg, #bf0019, #bf0019 24px, #b50018 24px, #b50018 48px);
+  color: white;
+  padding: 12px 48px;
+  position: relative;
+  text-align: center;
+  flex-shrink: 0;
+}
+.reviewHeader h1 { margin: 0; font-size: 18px; font-weight: 700; }
+.reviewHeader a { position: absolute; right: 16px; top: 7px; color: white; font-size: 26px; text-decoration: none; }
+.reviewForm { display: flex; flex-direction: column; min-height: 0; }
+.reviewScroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 24px; }
+.reviewDialog input:disabled { background: #f3f3f3; color: #706e6b; }
+.required { color: #ba0517; }
+.reviewFooter {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  border-top: 1px solid #dddbda;
+  background: #f3f3f3;
+}
+.reviewFooter a { border: 1px solid #747474; border-radius: 4px; padding: 10px 22px; color: #0176d3; background: white; text-decoration: none; }
 @media (max-width: 760px) {
+  .wizard.reviewDialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); }
+  .reviewScroll { padding: 16px; }
+  .reviewFooter { padding: 12px; flex-wrap: wrap; }
   .reviewGrid {
     grid-template-columns: 1fr;
-    padding: 20px;
+    padding: 0;
     gap: 15px;
   }
   .reviewGrid > div {
