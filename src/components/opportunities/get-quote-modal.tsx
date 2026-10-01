@@ -10,6 +10,8 @@ import { toast } from "sonner";
  */
 
 interface Figures {
+  paymentSchedule: { date: string; amount: number }[];
+  numberOfPayments: number;
   enrolledDebt: number;
   programCost: number;
   youSave: number;
@@ -20,7 +22,7 @@ interface Figures {
   weeklySaving: number | null;
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+const money = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export function GetQuoteModal({
   opportunityId,
@@ -31,6 +33,8 @@ export function GetQuoteModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const [revision, setRevision] = useState("");
+  const [requestId, setRequestId] = useState("");
   const [loading, setLoading] = useState(true);
   const [figures, setFigures] = useState<Figures | null>(null);
   const [email, setEmail] = useState("");
@@ -42,18 +46,28 @@ export function GetQuoteModal({
 
   useEffect(() => {
     if (!open) return;
+    const controller = new AbortController();
+    setFigures(null); setEmail(""); setName(""); setNote(""); setRevision("");
+    setRequestId(crypto.randomUUID());
     setLoading(true);
     setSent(false);
     setError(null);
-    fetch(`/api/opportunities/${opportunityId}/quote`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { figures: Figures; recipientEmail: string | null; recipientName: string | null }) => {
+    fetch(`/api/opportunities/${opportunityId}/quote`, { signal: controller.signal })
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || "Could not load the quote figures.");
+        return data;
+      })
+      .then((d: { revision: string; figures: Figures; recipientEmail: string | null; recipientName: string | null }) => {
+        if (controller.signal.aborted) return;
+        setRevision(d.revision);
         setFigures(d.figures);
         setEmail(d.recipientEmail ?? "");
         setName(d.recipientName ?? "");
       })
-      .catch(() => setError("Could not load the quote figures."))
-      .finally(() => setLoading(false));
+      .catch((e) => { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "Could not load the quote figures."); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
   }, [open, opportunityId]);
 
   async function send() {
@@ -67,7 +81,7 @@ export function GetQuoteModal({
       const res = await fetch(`/api/opportunities/${opportunityId}/quote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipientEmail: email, recipientName: name, note }),
+        body: JSON.stringify({ recipientEmail: email, recipientName: name, note, revision, requestId }),
       });
       const d = (await res.json().catch(() => ({}))) as { error?: string; sentTo?: string };
       if (!res.ok) {
@@ -105,12 +119,12 @@ export function GetQuoteModal({
       <div style={modal} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <h2 style={{ margin: 0, fontSize: 16, color: "#181818", flex: 1 }}>Get Quote</h2>
-          <button onClick={onClose} style={{ background: "none", border: 0, fontSize: 18, color: "#747474", cursor: "pointer" }}>
+          <button onClick={onClose} disabled={busy} style={{ background: "none", border: 0, fontSize: 18, color: "#747474", cursor: "pointer" }}>
             ×
           </button>
         </div>
         <p style={{ margin: "0 0 14px", fontSize: 13, color: "#747474" }}>
-          Emails the client a branded savings quote with payments, our BBB A+ rating, and client testimonials.
+          Emails the client a branded savings quote with the saved payment schedule, company information, and client testimonials.
         </p>
 
         {loading ? (
@@ -155,6 +169,7 @@ export function GetQuoteModal({
                 {row("Estimated program cost", money(figures.programCost))}
                 {row("Estimated weekly payment", money(figures.weeklyPayment))}
                 {row("Estimated monthly payment", money(figures.monthlyPayment))}
+                {row("Number of payments", String(figures.numberOfPayments))}
                 {row("Program length", `${figures.programMonths} months`)}
                 {figures.weeklySaving != null && figures.weeklySaving > 0
                   ? row("Weekly saving vs now", money(figures.weeklySaving), true)
@@ -162,6 +177,11 @@ export function GetQuoteModal({
               </div>
             )}
 
+            {figures && <details style={{ marginBottom: 14, fontSize: 13 }}>
+              <summary style={{ cursor: "pointer" }}>Review payment dates and amounts</summary>
+              <p style={{ color: "#667085" }}>This uses the saved calculation. Save calculator edits before opening a quote. Individual drafts may differ from the standard weekly estimate.</p>
+              <div style={{ maxHeight: 240, overflowY: "auto" }}>{figures.paymentSchedule.map((p, i) => <div key={i}>{row(`${i + 1}. ${p.date}`, money(p.amount))}</div>)}</div>
+            </details>}
             <label style={label}>Recipient email</label>
             <input value={email} onChange={(e) => setEmail(e.target.value)} style={input} type="email" />
 
@@ -183,7 +203,7 @@ export function GetQuoteModal({
               <button onClick={onClose} disabled={busy} style={btnGhost}>
                 Cancel
               </button>
-              <button onClick={send} disabled={busy || !figures} style={btn}>
+              <button onClick={send} disabled={busy || loading || !figures || !revision} style={btn}>
                 {busy ? "Sending…" : "Send Quote"}
               </button>
             </div>

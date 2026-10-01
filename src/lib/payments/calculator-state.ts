@@ -29,6 +29,7 @@ export const calculatorStateSchema = z.object({
     "Friday",
   ]),
   paymentProcessor: z.string().max(80),
+  moveDrafts: z.boolean().optional(),
   splitRows: z
     .array(
       z.object({

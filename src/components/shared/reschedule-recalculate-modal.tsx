@@ -1,23 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { generateRescheduleSchedule } from "@/lib/reschedule-schedule";
 
-/**
- * Program Recalculate modal — port of SF's `programPlanModal` LWC.
- *
- * Shows the client program options across payment terms (default: term−1, term,
- * term+1) as cards, each with the weekly payment, new program cost, total
- * estimated savings, and estimated weekly saving. A "Compare With Other Program"
- * toggle lets you add more terms. Terms in `bonusProgramLengths` show the
- * "Qualified for Extra Bonus" badge. Picking a card + Apply sets the term.
- *
- * Formulas are 1:1 with programPlanModal.js:
- *   programCost = settlement + programFee + setup + retainer + bank×term
- *               + service×(term×4−1) + bankSetup + citadel×term
- *   weekly      = (programCost − retainer − setup) / (term×4−1)
- *   totalSaving = totalDebt − programCost
- *   weeklySaving= currentWeeklyPayment − weekly
- */
+/** Compare program lengths using the same schedule math as the saved quote. */
 
 export type RecalcInputs = {
   totalDebt: number;
@@ -37,21 +23,14 @@ const money = (n: number) =>
   `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 function computeOption(term: number, i: RecalcInputs) {
-  const settlement = i.totalDebt * (i.settlementPercent / 100);
-  const programFee = i.totalDebt * (i.programFeePercent / 100);
-  const retainer = i.totalDebt * (i.retainerPercent / 100);
-  const N = term * 4 - 1;
-  const programCost = r2(
-    settlement +
-      programFee +
-      i.setupFee +
-      retainer +
-      i.monthlyBankFee * term +
-      i.serviceFee * N +
-      i.bankSetupFee +
-      i.citadelFee * term,
-  );
-  const weekly = r2((programCost - retainer - i.setupFee) / N);
+  const schedule = generateRescheduleSchedule({
+    totalDebt: i.totalDebt, termMonths: term, settlementPercent: i.settlementPercent,
+    programFeePercent: i.programFeePercent, retainerPercent: i.retainerPercent,
+    setupFee: i.setupFee, serviceFeePerPeriod: i.serviceFee, monthlyBankFee: i.monthlyBankFee,
+    bankSetupFee: i.bankSetupFee, citadelFee: i.citadelFee,
+  });
+  const programCost = r2(schedule.rows.reduce((sum, r) => sum + r.weeklyDraftAmount, 0));
+  const weekly = schedule.totals.weeklyDraftAmount;
   const totalSavings = r2(i.totalDebt - programCost);
   const weeklySaving = i.currentWeeklyPayment > 0 ? r2(i.currentWeeklyPayment - weekly) : null;
   return { term, weekly, programCost, totalSavings, weeklySaving };
@@ -72,7 +51,7 @@ export function RescheduleRecalculateModal({
   onApply: (term: number) => void;
   onClose: () => void;
 }) {
-  const defaultTerms = [currentTerm - 1, currentTerm, currentTerm + 1].filter((t) => t >= 1);
+  const defaultTerms = [currentTerm - 1, currentTerm, currentTerm + 1].filter((t) => t >= 1 && t <= 30);
   const [terms, setTerms] = useState<number[]>(defaultTerms);
   const [selected, setSelected] = useState<number>(currentTerm);
   const [showCompare, setShowCompare] = useState(false);
@@ -121,49 +100,22 @@ export function RescheduleRecalculateModal({
             </div>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 270px), 1fr))", gap: 12, overflowY: "auto", minHeight: 0, padding: "2px 4px 4px 2px" }}>
-            {options.map((o) => {
-              const isSel = o.term === selected;
-              const qualifies = bonusProgramLengths.includes(o.term);
-              return (
-                <div
-                  key={o.term}
-                  onClick={() => setSelected(o.term)}
-                  style={{
-                    ...card,
-                    minWidth: 0,
-                    cursor: "pointer",
-                    border: isSel ? "2px solid #1a96ff" : "1px solid #c9c9c9",
-                    position: "relative",
-                  }}
-                >
-                  {isSel && <div style={checkMark}>✓</div>}
-                  <div style={{ padding: 14 }}>
-                    {qualifies && <div style={bonusBadge}>✓ Qualified for Extra Bonus</div>}
-                    <div style={{ fontSize: 24, fontWeight: 700, color: o.weekly < 0 ? "#c23934" : "#181818" }}>
-                      {money(o.weekly)}
-                    </div>
-                    <div style={{ fontSize: 12, color: "#747474", marginBottom: 10 }}>Weekly Payment</div>
-                    <div style={cardLine}>
-                      <span>New Estimated Program Cost:</span>
-                      <b>{money(o.programCost)}</b>
-                    </div>
-                    <div style={cardLine}>
-                      <span>Total Estimated Savings:</span>
-                      <b>{money(o.totalSavings)}</b>
-                    </div>
-                    <div style={cardLine}>
-                      <span>Estimated Weekly Saving:</span>
-                      <b>{o.weeklySaving != null ? money(o.weeklySaving) : "-"}</b>
-                    </div>
-                    <div style={{ marginTop: 10, color: "#1a96ff", fontWeight: 600, fontSize: 13 }}>
-                      {o.term} Month Program
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div style={{ overflow: "auto", minHeight: 0 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead><tr>{["Select", "Program term", "Weekly payment", "Monthly estimate", "Program cost", "Estimated savings", "Weekly savings", "Bonus"].map(h => <th key={h} style={{ textAlign: "left", padding: "12px 10px", background: "#f3f6fb", whiteSpace: "nowrap" }}>{h}</th>)}</tr></thead>
+              <tbody>{options.map(o => <tr key={o.term} onClick={() => setSelected(o.term)} style={{ background: selected === o.term ? "#eef6ff" : "#fff", cursor: "pointer", borderBottom: "1px solid #e5e7eb" }}>
+                <td style={{ padding: 10 }}><input type="radio" name="quote-term" aria-label={`${o.term} month program`} checked={selected === o.term} onChange={() => setSelected(o.term)} /></td>
+                <td style={{ padding: 10, fontWeight: 700 }}>{o.term} months</td>
+                <td style={{ padding: 10 }}>{money(o.weekly)}</td>
+                <td style={{ padding: 10 }}>{money(o.weekly * 52 / 12)}</td>
+                <td style={{ padding: 10 }}>{money(o.programCost)}</td>
+                <td style={{ padding: 10 }}>{money(o.totalSavings)}</td>
+                <td style={{ padding: 10 }}>{o.weeklySaving == null ? "—" : money(o.weeklySaving)}</td>
+                <td style={{ padding: 10 }}>{bonusProgramLengths.includes(o.term) ? "Eligible" : "—"}</td>
+              </tr>)}</tbody>
+            </table>
           </div>
+          <p style={{ fontSize: 12, color: "#667085", marginBottom: 0 }}>Compare standard program estimates here. Apply a term, then use Edit Split in the payment table to set individual amounts and dates. Save the calculation before sending a quote.</p>
         </div>
       </div>
     </div>
@@ -200,30 +152,8 @@ const dialogHeader: React.CSSProperties = {
 };
 const xBtn: React.CSSProperties = { border: 0, background: "none", fontSize: 22, cursor: "pointer", color: "#747474", lineHeight: 1 };
 const card: React.CSSProperties = { background: "#fff", border: "1px solid #c9c9c9", borderRadius: 6 };
-const cardLine: React.CSSProperties = { display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, color: "#444444", padding: "2px 0" };
-const bonusBadge: React.CSSProperties = {
-  display: "inline-block",
-  background: "#2e844a",
-  color: "#fff",
-  fontSize: 11,
-  fontWeight: 700,
-  borderRadius: 12,
-  padding: "3px 10px",
-  marginBottom: 8,
-};
-const checkMark: React.CSSProperties = {
-  position: "absolute",
-  top: 6,
-  right: 6,
-  width: 18,
-  height: 18,
-  borderRadius: "50%",
-  background: "#0176d3",
-  color: "#fff",
-  fontSize: 12,
-  display: "grid",
-  placeItems: "center",
-};
+
+
 const btnBrand: React.CSSProperties = {
   background: "#0176d3",
   color: "#fff",

@@ -1,15 +1,9 @@
-/**
- * "Get Quote" for an opportunity: computes the client-facing savings and
- * payment figures from the deal's real debt + saved calculator inputs (same
- * math as the Total Payments Summary rail, so the numbers match to the cent),
- * and renders a marketing quote email (savings headline, payment breakdown,
- * BBB A+, testimonials, how-it-works).
- *
- * Marketing content (BBB rating, testimonials) is intentionally hardcoded and
- * conservative; edit QUOTE_MARKETING to change it. All figures are estimates
- * and the footer carries the required results-not-guaranteed disclaimer.
- */
+/** Branded opportunity quotes built from the saved payment calculation.
+ * The detailed dates and amounts include splits, edits and deferred payments.
+ * Marketing copy is maintained in QUOTE_MARKETING. */
 import { generateRescheduleSchedule } from "@/lib/reschedule-schedule";
+import { readCalculatorState } from "@/lib/payments/calculator-state";
+import { projectCalculation, collectibleRows, calculationError } from "@/lib/payments/calculator-projection";
 import { appBaseUrl } from "@/lib/document-request";
 
 export interface QuoteInputs {
@@ -17,9 +11,12 @@ export interface QuoteInputs {
   termMonths: number;
   citadelFee?: number | null;
   currentWeeklyPayment?: number | null;
+  savedState?: unknown;
+  firstPaymentDate?: string;
 }
 
 export interface QuoteFigures {
+  paymentSchedule: { date: string; amount: number }[];
   enrolledDebt: number;
   programCost: number;
   youSave: number;
@@ -34,20 +31,29 @@ export interface QuoteFigures {
 
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 
-/** Compute the quote figures. Mirrors the opp page's summaryValues exactly. */
+/** Compute client figures from the same projection used by the calculator and summary. */
 export function computeQuote(input: QuoteInputs): QuoteFigures {
-  const termMonths = input.termMonths > 0 ? input.termMonths : 6;
+  const state = readCalculatorState(input.savedState);
+  const termMonths = state?.termMonths ?? (input.termMonths > 0 ? input.termMonths : 6);
   const debt = input.totalDebt > 0 ? input.totalDebt : 0;
   const schedule = generateRescheduleSchedule({
     totalDebt: debt,
     termMonths,
     citadelFee: input.citadelFee ?? undefined,
+    firstPaymentDate: state?.firstPaymentDate ?? input.firstPaymentDate,
+    weeklyPaymentDay: state?.weeklyPaymentDay ?? "Friday",
   });
-  const programCost = round2(schedule.rows.reduce((s, r) => s + r.weeklyDraftAmount, 0));
+  if (state) {
+    const error = calculationError(schedule, state);
+    if (error) throw new Error(error);
+  }
+  const rows = collectibleRows(projectCalculation(schedule, state ?? { splitRows: null, skipped: [], rowEdits: {}, extraRows: [] }), state?.skipped);
+  const programCost = round2(rows.reduce((s, r) => s + r.weeklyDraftAmount, 0));
   const youSave = round2(debt - programCost);
   const weekly = schedule.totals.weeklyDraftAmount;
   const currentWeekly = input.currentWeeklyPayment && input.currentWeeklyPayment > 0 ? input.currentWeeklyPayment : null;
   return {
+    paymentSchedule: rows.map(r => ({ date: r.date.toISOString().slice(0, 10), amount: r.weeklyDraftAmount })).sort((a, b) => a.date.localeCompare(b.date)),
     enrolledDebt: debt,
     programCost,
     youSave: Math.max(0, youSave),
@@ -55,7 +61,7 @@ export function computeQuote(input: QuoteInputs): QuoteFigures {
     weeklyPayment: weekly,
     monthlyPayment: round2(weekly * (52 / 12)),
     programMonths: termMonths,
-    numberOfPayments: schedule.totals.noOfPayments,
+    numberOfPayments: rows.length,
     currentWeeklyPayment: currentWeekly,
     weeklySaving: currentWeekly != null ? round2(currentWeekly - weekly) : null,
   };
@@ -94,7 +100,7 @@ export const QUOTE_MARKETING = {
 };
 
 const money = (n: number): string =>
-  `$${Math.round(n).toLocaleString("en-US")}`;
+  `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 function esc(s: string): string {
   return s
@@ -231,11 +237,21 @@ export function renderQuoteEmail(args: {
                   ${paymentRow("You keep (estimated savings)", money(f.youSave), true)}
                   ${paymentRow("Estimated weekly payment", money(f.weeklyPayment))}
                   ${paymentRow("Estimated monthly payment", money(f.monthlyPayment))}
+                  ${paymentRow("Number of payments", String(f.numberOfPayments))}
                   ${paymentRow("Program length", `${f.programMonths} months`)}
                   ${f.weeklySaving != null && f.weeklySaving > 0 ? paymentRow("Lower than you pay now, each week", money(f.weeklySaving), true) : ""}
                 </table>
                 <div style="font-family:${font};font-size:11px;color:#98a2b3;padding-top:8px;">Figures are estimates based on the information you provided and may change after a full review.</div>
               </td></tr>
+            </table>
+          </td></tr>
+
+          <tr><td style="padding:16px 32px;">
+            <div style="font-family:${font};font-size:15px;font-weight:700;">Estimated payment schedule</div>
+            <div style="font-family:${font};font-size:12px;color:#667085;padding:8px 0;">Dates and amounts reflect the saved calculation, including split and deferred payments. The weekly estimate above is the standard draft; individual payments below may differ.</div>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+              ${f.paymentSchedule.map((p, i) => paymentRow(`${i + 1}. ${p.date}`, money(p.amount))).join("")}
+              ${paymentRow("Total estimated payments", money(f.programCost), true)}
             </table>
           </td></tr>
 

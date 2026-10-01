@@ -1,107 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-/**
- * Split Retainer and Setup Fee — port of SF programPlans' split feature.
- *
- * The upfront retainer + setup fee can be split across N payments.
- * SF: count = round((retainer + setup) / weekly draft). Each row carries a bank
- * fee (monthly bank once per new month + bank-setup on the first row) and a
- * citadel fee (once per new month, skipping the first month). The total
- * (retainer + setup + bank + citadel) is spread evenly across the N dates.
- */
-
-export type SplitRow = { date: string; amount: number; bankFee: number; citadelFee: number; setupFee: number };
-
-export type SplitParams = {
-  retainerAmount: number;
-  setupFee: number;
-  citadelFee: number;
-  monthlyBankFee: number;
-  bankSetupFee: number;
-  weeklyDraft: number;
-  firstPaymentDate: string;
-  weeklyPaymentDay: string;
-  /** $995 legal plan puts setup on row 0; else on row 1 (SF calculateSetupFee). */
-  legalPlanRequired?: boolean;
-};
-
-const WEEKDAY: Record<string, number> = {
-  Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6,
-};
+import { computeSplit, allocateSplitSetup, validateSplit, updateSplitFees, type SplitRow, type SplitParams } from "@/lib/payments/retainer-split";
+export { computeSplit, type SplitRow, type SplitParams } from "@/lib/payments/retainer-split";
 const r2 = (n: number) => Math.round(n * 100) / 100;
-const money = (n: number) =>
-  `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const iso = (d: Date) => d.toISOString().slice(0, 10);
-const monthKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}`;
-
-function splitDates(count: number, firstPaymentDate: string, weeklyPaymentDay: string): Date[] {
-  const offset = WEEKDAY[weeklyPaymentDay] ?? 5;
-  const out: Date[] = [];
-  let d = new Date(firstPaymentDate);
-  for (let i = 0; i < count; i++) {
-    if (i === 0) out.push(new Date(d));
-    else {
-      const n = new Date(d);
-      n.setDate(n.getDate() + 7);
-      n.setDate(n.getDate() - n.getDay() + offset);
-      out.push(n);
-      d = n;
-    }
-  }
-  return out;
-}
-
-/** Auto Split: the exact SF row set (count, per-row fees, even payment amount). */
-export function computeSplit(p: SplitParams): SplitRow[] {
-  const count = Math.max(1, Math.round((p.retainerAmount + p.setupFee) / (p.weeklyDraft || 1)));
-  const dates = splitDates(count, p.firstPaymentDate, p.weeklyPaymentDay);
-  const seenBank = new Set<string>();
-  const seenCit = new Set<string>();
-  if (dates.length) seenCit.add(monthKey(dates[0])); // citadel skips the first month
-  const fees = dates.map((d, i) => {
-    const mk = monthKey(d);
-    let bankFee = 0;
-    if (!seenBank.has(mk)) { bankFee += p.monthlyBankFee; seenBank.add(mk); }
-    if (i === 0) bankFee += p.bankSetupFee;
-    let citadelFee = 0;
-    if (p.citadelFee > 0 && !seenCit.has(mk)) { citadelFee = p.citadelFee; seenCit.add(mk); }
-    return { date: iso(d), bankFee, citadelFee };
-  });
-  const bankTotal = fees.reduce((s, f) => s + f.bankFee, 0);
-  const citTotal = fees.reduce((s, f) => s + f.citadelFee, 0);
-  const total = p.retainerAmount + p.setupFee + bankTotal + citTotal;
-  const per = r2(total / count);
-  // SF calculateSetupFee: setup fee lands on row 0 (legal plan) or row 1 (else).
-  const setupIdx = p.legalPlanRequired ? 0 : Math.min(1, count - 1);
-  return fees.map((f, i) => ({
-    ...f,
-    setupFee: i === setupIdx ? p.setupFee : 0,
-    amount: i === count - 1 ? r2(total - per * (count - 1)) : per,
-  }));
-}
+const money = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export function RescheduleSplitModal({
   params,
   existingRows,
   readOnly = false,
+  initialMoveDrafts = true,
   onApply,
   onClose,
 }: {
   params: SplitParams;
   existingRows?: SplitRow[] | null;
   readOnly?: boolean;
-  onApply: (rows: SplitRow[]) => void;
+  initialMoveDrafts?: boolean;
+  onApply: (rows: SplitRow[], moveDrafts: boolean) => void;
   onClose: () => void;
 }) {
   const [rows, setRows] = useState<SplitRow[]>(
     existingRows && existingRows.length ? existingRows : computeSplit(params),
   );
-  const [moveDrafts, setMoveDrafts] = useState(true);
+  const [moveDrafts, setMoveDrafts] = useState(initialMoveDrafts);
+  const appliedRows = readOnly ? rows : allocateSplitSetup(updateSplitFees(rows, params), params.setupFee, params.legalPlanRequired ? 0 : Math.min(1, rows.length - 1));
+  const validationError = validateSplit(appliedRows, params.retainerAmount, params.setupFee);
 
-  const bankTotal = useMemo(() => r2(rows.reduce((s, r) => s + r.bankFee, 0)), [rows]);
-  const citTotal = useMemo(() => r2(rows.reduce((s, r) => s + r.citadelFee, 0)), [rows]);
+  const bankTotal = r2(appliedRows.reduce((s, r) => s + r.bankFee, 0));
+  const citTotal = r2(appliedRows.reduce((s, r) => s + r.citadelFee, 0));
   const totalAmount = r2(rows.reduce((s, r) => s + r.amount, 0));
   let running = 0;
 
@@ -119,7 +48,7 @@ export function RescheduleSplitModal({
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 12 }}>
             <RO label="Retainer Fee" value={String(params.retainerAmount)} />
             <RO label="Setup Fee" value={String(params.setupFee)} />
-            <RO label="Total Citaldel Fee" value={String(citTotal)} />
+            <RO label="Total Citadel Fee" value={String(citTotal)} />
             <RO label="Total Bank Fee" value={String(bankTotal)} />
             <RO label="Total Amount" value={String(totalAmount)} />
           </div>
@@ -143,7 +72,7 @@ export function RescheduleSplitModal({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, i) => {
+                {appliedRows.map((row, i) => {
                   running = r2(running + row.amount);
                   return (
                     <tr key={i} style={{ borderBottom: "1px solid #f3f3f3" }}>
@@ -183,7 +112,7 @@ export function RescheduleSplitModal({
                       <td style={td}>
                         <input
                           type="number"
-                          step="any"
+                          step="0.01"
                           value={row.amount}
                           readOnly={readOnly}
                           onChange={(e) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, amount: Number(e.target.value) || 0 } : r)))}
@@ -198,6 +127,8 @@ export function RescheduleSplitModal({
             </table>
           </div>
 
+          {!readOnly && <p style={{ fontSize: 12, color: "#667085" }}>Applying a new split replaces any individual draft edits in this calculation.</p>}
+          {!readOnly && validationError && <p role="alert" style={{ color: "#c23934", fontSize: 12 }}>{validationError}</p>}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
             {readOnly ? <span /> : (
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
@@ -207,7 +138,7 @@ export function RescheduleSplitModal({
             )}
             <div style={{ display: "flex", gap: 8 }}>
               <button style={btnOutline} onClick={onClose}>Close</button>
-              {!readOnly && <button style={btnBrand} onClick={() => onApply(rows)}>Apply</button>}
+              {!readOnly && <button style={btnBrand} disabled={Boolean(validationError)} onClick={() => onApply(appliedRows, moveDrafts)}>Apply</button>}
             </div>
           </div>
         </div>

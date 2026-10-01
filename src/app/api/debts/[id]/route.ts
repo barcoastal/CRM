@@ -1,3 +1,4 @@
+import { canAccessRecord } from "@/lib/record-access";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -12,9 +13,20 @@ export async function PATCH(
   const { id } = await params;
 
   const existing = await prisma.debt.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!existing || (existing.opportunityId && !await canAccessRecord("opportunity", existing.opportunityId))) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
+  if (!body || typeof body !== "object" || Array.isArray(body)) return NextResponse.json({ error: "Invalid debt update" }, { status: 400 });
+  if (body.paymentFrequency !== undefined && body.paymentFrequency !== existing.paymentFrequency && !["DAILY", "WEEKLY", "MONTHLY"].includes(body.paymentFrequency)) {
+    return NextResponse.json({ error: "Choose Daily, Weekly, or Monthly." }, { status: 400 });
+  }
+  for (const field of ["paymentAmount", "originalBalance", "currentBalance", "enrolledBalance"] as const) {
+    const amount = body[field];
+    if (amount === undefined || (field === "paymentAmount" && amount === null)) continue;
+    if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0 || (["originalBalance", "enrolledBalance"].includes(field) && amount === 0))
+      return NextResponse.json({ error: "Enter valid nonnegative debt amounts; original and enrolled balances must be positive." }, { status: 400 });
+  }
+  if (typeof body.creditorName === "string" && !body.creditorName.trim()) return NextResponse.json({ error: "Creditor name is required." }, { status: 400 });
   const data: Record<string, unknown> = {};
   if (body.paymentStatus !== undefined) {
     if (!PAYMENT_STATUSES.includes(body.paymentStatus)) {
@@ -47,7 +59,7 @@ export async function DELETE(
   if ("response" in r) return r.response;
   const { id } = await params;
   const existing = await prisma.debt.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!existing || (existing.opportunityId && !await canAccessRecord("opportunity", existing.opportunityId))) return NextResponse.json({ error: "Not found" }, { status: 404 });
   await prisma.debt.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

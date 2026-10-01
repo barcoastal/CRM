@@ -2,6 +2,8 @@ import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuthOrRespond } from "@/lib/api-auth";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { createDebtSchema } from "@/lib/validations/debt";
 
@@ -44,10 +46,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session) {
-    return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
-  }
+  const r = await requireAuthOrRespond("Opportunity.Edit");
+  if ("response" in r) return r.response;
 
   const { id } = await params;
   if (!await canAccessRecord("opportunity", id)) return Response.json({ error: "Not found" }, { status: 404 });
@@ -57,8 +57,11 @@ export async function POST(
     return ssnSafeJson({ error: "Opportunity not found" }, { status: 404 });
   }
 
-  const body = await request.json();
-  const parsed = createDebtSchema.safeParse(body);
+  const body = await request.json().catch(() => null);
+  const parsed = createDebtSchema.extend({
+    paymentFrequency: z.enum(["DAILY", "WEEKLY", "MONTHLY"]),
+    paymentAmount: z.number().finite().nonnegative().nullable().optional(),
+  }).safeParse(body);
 
   if (!parsed.success) {
     return ssnSafeJson(

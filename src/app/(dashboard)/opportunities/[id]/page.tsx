@@ -26,6 +26,8 @@ import { AddContactButton } from "@/components/contacts/add-contact-button";
 import { RescheduleCalculator } from "@/components/shared/reschedule-calculator";
 import { LivePaymentGrid } from "@/components/program-plans/live-payment-grid";
 import { hasPermission } from "@/lib/permissions";
+import { readCalculatorState } from "@/lib/payments/calculator-state";
+import { projectCalculation, collectibleRows } from "@/lib/payments/calculator-projection";
 import { generateRescheduleSchedule } from "@/lib/reschedule-schedule";
 import { DocumentsUpload } from "@/components/leads/documents-upload";
 import { RequestDocumentsButton } from "@/components/opportunities/request-documents-button";
@@ -757,6 +759,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     <Section title={`Debt Information (${opp.debts.length})`}>
       <OppDebtInformation
         opportunityId={opp.id}
+        readOnly={!hasPermission(viewerSession?.user?.permissions ?? [], "Opportunity.Edit")}
         items={opp.debts.map((d) => ({
           id: d.id,
           creditorName: d.creditor?.account?.name ?? d.creditorName,
@@ -788,14 +791,15 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     : new Date().toISOString().slice(0, 10);
   // Server-side schedule so the right-rail Total Payments Summary matches the
   // calculator (and SF) to the cent for the deal's real inputs.
+  const savedSchedule = readCalculatorState(latestCalc?.scheduleJson);
   const reschedSchedule = generateRescheduleSchedule({
     totalDebt: reschedDebt,
-    termMonths: reschedTermMonths,
+    termMonths: savedSchedule?.termMonths ?? reschedTermMonths,
     citadelFee: latestCalc?.citadelFee ?? undefined,
-    firstPaymentDate: reschedFirstPaymentDate,
-    weeklyPaymentDay: "Friday",
+    firstPaymentDate: savedSchedule?.firstPaymentDate ?? reschedFirstPaymentDate,
+    weeklyPaymentDay: savedSchedule?.weeklyPaymentDay ?? "Friday",
   });
-  const rRows = reschedSchedule.rows;
+  const rRows = collectibleRows(projectCalculation(reschedSchedule, savedSchedule ?? { splitRows: null, skipped: [], rowEdits: {}, extraRows: [] }), savedSchedule?.skipped);
   const rSum = (fn: (r: (typeof rRows)[number]) => number) =>
     Math.round(rRows.reduce((s, r) => s + fn(r), 0) * 100) / 100;
   const rProgramCost = rSum((r) => r.weeklyDraftAmount);
@@ -803,13 +807,13 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   // − program weekly draft. Retainer is collected in a single upfront draft.
   const currentWeekly = opp.currentWeeklyPayment || totalWeekly;
   const summaryValues = {
-    programLengthMonths: reschedTermMonths,
+    programLengthMonths: savedSchedule?.termMonths ?? reschedTermMonths,
     retainerPaymentCount: rRows.filter((r) => r.retainerFee > 0).length,
     totalDebt: reschedDebt,
     totalProgramCost: rProgramCost,
-    totalRetainerFee: reschedSchedule.totals.retainerAmount,
-    totalProgramFee: reschedSchedule.totals.programFeeAmount,
-    totalSetupFee: reschedSchedule.totals.setupFee,
+    totalRetainerFee: rSum((r) => r.retainerFee),
+    totalProgramFee: rSum((r) => r.programFee),
+    totalSetupFee: rSum((r) => r.setupFee),
     totalProcessorFee: rSum((r) => r.bankFee),
     totalServiceFee: rSum((r) => r.serviceFee),
     totalEscrowAmount: rSum((r) => r.escrowAmount),

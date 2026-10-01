@@ -3,6 +3,8 @@ import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { generateRescheduleSchedule } from "@/lib/reschedule-schedule";
+import { calculationError } from "@/lib/payments/calculator-projection";
 import { calculatorStateSchema } from "@/lib/payments/calculator-state";
 
 function n(v: unknown): number | null {
@@ -25,6 +27,7 @@ export async function POST(
     return ssnSafeJson({ error: "Opportunity not found" }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
+  if (!body || typeof body !== "object" || Array.isArray(body)) return ssnSafeJson({ error: "Invalid calculation." }, { status: 400 });
   const state =
     body.scheduleState === undefined
       ? null
@@ -42,6 +45,13 @@ export async function POST(
       { error: "Reload the calculation before saving." },
       { status: 409 },
     );
+
+  if (state?.success) {
+    if (n(body.totalDebt) === null || body.totalDebt <= 0 || body.totalDebt > 100_000_000 || (body.citadelFee !== undefined && (n(body.citadelFee) === null || body.citadelFee < 0)))
+      return ssnSafeJson({ error: "Enter a positive debt amount and valid fees." }, { status: 400 });
+    const error = calculationError(generateRescheduleSchedule({ totalDebt: body.totalDebt, termMonths: state.data.termMonths, firstPaymentDate: state.data.firstPaymentDate, weeklyPaymentDay: state.data.weeklyPaymentDay, citadelFee: body.citadelFee }), state.data);
+    if (error) return ssnSafeJson({ error }, { status: 400 });
+  }
 
   // Accept both V1 names (settlementPercentage, monthlyBankFee, programFeePercent, retainerPercentage)
   // and V2 names (settlementPercent, bankFeePerPeriod, programFeePercent, retainerPercent).
@@ -69,13 +79,13 @@ export async function POST(
             ),
             programFeePercent: n(body.programFeePercent),
             totalSettlement: n(body.totalSettlement),
-            programFeePeriod:
+            programFeePeriod: state?.success ? state.data.termMonths :
               typeof (body.programFeePeriod ?? body.paymentTerm) === "number"
                 ? Math.round(body.programFeePeriod ?? body.paymentTerm)
                 : null,
             frequency:
               typeof body.frequency === "string" ? body.frequency : null,
-            firstPaymentDate: body.firstPaymentDate
+            firstPaymentDate: state?.success ? new Date(state.data.firstPaymentDate) : body.firstPaymentDate
               ? new Date(body.firstPaymentDate)
               : null,
             estimatedAmount: n(body.estimatedAmount),

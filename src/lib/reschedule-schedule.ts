@@ -102,7 +102,7 @@ function round2(n: number): number {
 }
 function addWeeks(d: Date, n: number): Date {
   const c = new Date(d);
-  c.setDate(c.getDate() + n * 7);
+  c.setUTCDate(c.getUTCDate() + n * 7);
   return c;
 }
 const WEEKDAY: Record<string, number> = {
@@ -111,13 +111,13 @@ const WEEKDAY: Record<string, number> = {
 /** SF getNextPaymentDateWeekly: next week's start (Sunday) + the chosen weekday. */
 function nextWeeklyDate(current: Date, dayOffset: number): Date {
   const d = new Date(current);
-  d.setDate(d.getDate() + 7); // into next week
-  d.setDate(d.getDate() - d.getDay()); // back to that week's Sunday
-  d.setDate(d.getDate() + dayOffset); // forward to the chosen weekday
+  d.setUTCDate(d.getUTCDate() + 7); // into next week
+  d.setUTCDate(d.getUTCDate() - d.getUTCDay()); // back to that week's Sunday
+  d.setUTCDate(d.getUTCDate() + dayOffset); // forward to the chosen weekday
   return d;
 }
 function monthKey(d: Date): string {
-  return `${d.getMonth() + 1}-${d.getFullYear()}`;
+  return `${d.getUTCMonth() + 1}-${d.getUTCFullYear()}`;
 }
 
 export function generateRescheduleSchedule(input: RescheduleInput): RescheduleResult {

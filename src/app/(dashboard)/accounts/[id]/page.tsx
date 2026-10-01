@@ -633,13 +633,14 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       initial={{
         savedState: savedCalculation?.scheduleJson,
         calculationId: savedCalculation?.id,
-        totalDebt: activeOpp.totalDebt ?? totalDebt,
-        termMonths: reschedTermMonths,
+        totalDebt: savedCalculation?.totalDebt ?? activeOpp.totalDebt ?? totalDebt,
+        termMonths: savedCalculation?.programFeePeriod ?? reschedTermMonths,
+        citadelFee: savedCalculation?.citadelFee ?? undefined,
         noOfDebts: activeOpp._count?.debts ?? activeOpp.debts.length,
         currentWeeklyPayment: activeOpp.currentWeeklyPayment ?? 0,
-        firstPaymentDate: (account.programPlans[0]?.firstDraftDate ?? account.programStartDate)
+        firstPaymentDate: savedCalculation?.firstPaymentDate?.toISOString().slice(0, 10) ?? ((account.programPlans[0]?.firstDraftDate ?? account.programStartDate)
           ? (account.programPlans[0]?.firstDraftDate ?? account.programStartDate)!.toISOString().slice(0, 10)
-          : new Date().toISOString().slice(0, 10),
+          : new Date().toISOString().slice(0, 10)),
       }}
     />
   ) : (

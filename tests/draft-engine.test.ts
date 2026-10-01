@@ -29,8 +29,8 @@ describe("$10K split rule", () => {
     expect(kids).toHaveLength(2);
     expect(kids[0].amount).toBe(10000);
     expect(kids[1].amount).toBeCloseTo(8629.32, 2);
-    expect(kids[0].date.getDay()).toBe(1); // Monday
-    expect(kids[1].date.getDay()).toBe(2); // Tuesday (consecutive business day)
+    expect(kids[0].date.getUTCDay()).toBe(1); // Monday
+    expect(kids[1].date.getUTCDay()).toBe(2); // Tuesday (consecutive business day)
   });
 
   it("weekly fees (service/bank/legal) ride the FIRST child only", () => {
@@ -57,7 +57,7 @@ describe("$10K split rule", () => {
   it("splits over weekends: Friday $25K -> Fri + Mon + Tue", () => {
     const kids = splitDraft(mkDraft({ date: new Date("2026-07-17"), amount: 25000, escrowAmount: 19868.75 }), "g1");
     expect(kids).toHaveLength(3);
-    expect(kids.map((k) => k.date.getDay())).toEqual([5, 1, 2]); // Fri, Mon, Tue
+    expect(kids.map((k) => k.date.getUTCDay())).toEqual([5, 1, 2]); // Fri, Mon, Tue
   });
 
   it("leaves small drafts untouched", () => {
@@ -133,10 +133,10 @@ describe("amount edit + rebalance", () => {
 
 describe("business-day helpers", () => {
   it("nextBusinessDay skips weekends", () => {
-    expect(nextBusinessDay(new Date("2026-07-17")).getDay()).toBe(1); // Fri -> Mon
+    expect(nextBusinessDay(new Date("2026-07-17")).getUTCDay()).toBe(1); // Fri -> Mon
   });
   it("toBusinessDay maps Saturday to Monday", () => {
-    expect(toBusinessDay(new Date("2026-07-18")).getDay()).toBe(1);
+    expect(toBusinessDay(new Date("2026-07-18")).getUTCDay()).toBe(1);
   });
   it("MAX_DRAFT_AMOUNT is $10K", () => {
     expect(MAX_DRAFT_AMOUNT).toBe(10000);

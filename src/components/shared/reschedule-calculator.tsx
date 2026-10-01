@@ -1,24 +1,22 @@
 "use client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { readCalculatorState } from "@/lib/payments/calculator-state";
+import { calculatorStateSchema, readCalculatorState } from "@/lib/payments/calculator-state";
 
 import { useMemo, useState } from "react";
 import {
   generateRescheduleSchedule,
   RESCHEDULE_DEFAULTS,
   type RescheduleResult,
-  type RescheduleRow,
 } from "@/lib/reschedule-schedule";
 import { RescheduleRecalculateModal } from "./reschedule-recalculate-modal";
-import { RescheduleSplitModal, computeSplit, type SplitRow, type SplitParams } from "./reschedule-split-modal";
-import { splitDraft, MAX_DRAFT_AMOUNT } from "@/lib/payments/draft-engine";
+import { RescheduleSplitModal, type SplitRow, type SplitParams } from "./reschedule-split-modal";
+import { projectCalculation, calculationError, type DisplayRow } from "@/lib/payments/calculator-projection";
 
 // Program lengths (months) that qualify for the "Extra Bonus" badge. Mirrors the
 // SF Qualified_For_Bonus_Program_Length__c custom setting; edit as needed.
 const BONUS_PROGRAM_LENGTHS = [6, 7, 8, 9, 10, 11, 12];
 
-type DisplayRow = RescheduleRow & { _child?: boolean; _tenkPart?: number; _tenkOf?: number };
 
 export type RescheduleInitial = {
   savedState?: unknown;
@@ -90,7 +88,8 @@ export function RescheduleCalculator({ initial, saveEndpoint }: { initial?: Resc
   const [paymentProcessor, setPaymentProcessor] = useState(saved?.paymentProcessor ?? initial?.paymentProcessor ?? "SAS Processor");
   const [weeklyPaymentDay, setWeeklyPaymentDay] = useState<string>(saved?.weeklyPaymentDay ?? "Friday");
   const [showRecalc, setShowRecalc] = useState(false);
-  const [showSplit, setShowSplit] = useState(false);
+  const [showSplit, setShowSplit] = useState<"edit" | "view" | null>(null);
+  const [moveDrafts, setMoveDrafts] = useState(saved?.moveDrafts ?? true);
   const [actionMenuRow, setActionMenuRow] = useState<number | null>(null);
   const [splitRows, setSplitRows] = useState<SplitRow[] | null>(saved?.splitRows ?? null);
   // Per-row draft actions (Add / Edit / Skip) on regular draft rows.
@@ -133,118 +132,23 @@ export function RescheduleCalculator({ initial, saveEndpoint }: { initial?: Resc
     legalPlanRequired: t.setupFee >= 995,
   };
 
-  // View Split: keep the parent setup/retainer summary row, then the highlighted
-  // split children (retainer = amount − setup − bank − citadel), then the program
-  // draws re-dated after the last split.
-  const round2 = (n: number) => Math.round(n * 100) / 100;
-  const displayRows: DisplayRow[] = useMemo(() => {
-    if (!splitRows || splitRows.length === 0) return result.rows;
-    const total = round2(splitRows.reduce((s, r) => s + r.amount, 0));
-    const bankT = round2(splitRows.reduce((s, r) => s + r.bankFee, 0));
-    const citT = round2(splitRows.reduce((s, r) => s + r.citadelFee, 0));
-    const parent: DisplayRow = {
-      index: 1, date: new Date(splitRows[0].date), weeklyDraftAmount: total,
-      programFee: 0, retainerFee: t.retainerAmount, setupFee: t.setupFee,
-      bankFee: bankT, serviceFee: 0, citadelFee: citT, escrowAmount: 0,
-      runningBalance: 0, status: "Pending",
-    };
-    let run = 0;
-    const children: DisplayRow[] = splitRows.map((s, i) => {
-      run = round2(run + s.amount);
-      return {
-        index: i + 2, date: new Date(s.date), weeklyDraftAmount: s.amount, programFee: 0,
-        retainerFee: round2(s.amount - s.bankFee - s.setupFee - s.citadelFee),
-        setupFee: s.setupFee, bankFee: s.bankFee, serviceFee: 0, citadelFee: s.citadelFee,
-        escrowAmount: 0, runningBalance: run, status: "Pending", _child: true,
-      };
-    });
-    const lastSplit = new Date(splitRows[splitRows.length - 1].date);
-    const reDated: DisplayRow[] = result.rows.slice(1).map((r, i) => {
-      const d = new Date(lastSplit);
-      d.setDate(d.getDate() + 7 * (i + 1));
-      return { ...r, index: 1 + children.length + i + 1, date: d };
-    });
-    return [parent, ...children, ...reDated];
-  }, [splitRows, result.rows, t.retainerAmount, t.setupFee]);
-
-  // Apply per-row Edit overrides and inserted (Add) rows.
-  const finalRows: DisplayRow[] = useMemo(() => {
-    const combined: DisplayRow[] = [];
-    for (const r of displayRows) {
-      combined.push(r);
-      extraRows.filter((x) => x._after === r.index).forEach((x) => combined.push(x));
-    }
-    const rows = combined.map((r) => {
-      const e = rowEdits[r.index];
-      return e ? { ...r, date: new Date(e.date), weeklyDraftAmount: e.amount } : r;
-    });
-    // Skipping a payment DEFERS it: the program still collects the full amount,
-    // so each skipped draft is re-added at the end (program extends by one week).
-    const deferred = rows.filter((r) => skipped.has(r.index) && r.index !== 1);
-    if (deferred.length && rows.length) {
-      let d = new Date(rows[rows.length - 1].date);
-      deferred.forEach((r, i) => {
-        d = new Date(d);
-        d.setDate(d.getDate() + 7);
-        rows.push({ ...r, index: -5000 - i, date: new Date(d), status: "Pending", _child: false, runningBalance: 0 });
-      });
-    }
-    return rows;
-  }, [displayRows, rowEdits, extraRows, skipped]);
-
-  // $10K rule (see docs/superpowers/specs/2026-07-09-flexible-payments-design.md):
-  // any draft over $10,000 renders as consecutive business-day children.
-  // Weekly fees (service/bank/legal) ride the first child. Rows being edited
-  // or skipped stay logical (unexpanded).
-  const tenKRows: DisplayRow[] = useMemo(() => {
-    const out: DisplayRow[] = [];
-    for (const r of finalRows) {
-      if (r.weeklyDraftAmount <= MAX_DRAFT_AMOUNT || skipped.has(r.index) || editingRow === r.index) {
-        out.push(r);
-        continue;
-      }
-      const kids = splitDraft(
-        {
-          date: r.date,
-          amount: r.weeklyDraftAmount,
-          feeRetainer: r.retainerFee,
-          feeProgram: r.programFee,
-          feeSetup: r.setupFee,
-          feeService: r.serviceFee,
-          feeBank: r.bankFee,
-          feeLegal: r.citadelFee,
-          escrowAmount: r.escrowAmount,
-        },
-        `tenk-${r.index}`,
-      );
-      kids.forEach((k, i) => {
-        out.push({
-          ...r,
-          date: k.date,
-          weeklyDraftAmount: k.amount,
-          retainerFee: k.feeRetainer,
-          programFee: k.feeProgram,
-          setupFee: k.feeSetup,
-          serviceFee: k.feeService,
-          bankFee: k.feeBank,
-          citadelFee: k.feeLegal,
-          escrowAmount: k.escrowAmount,
-          _tenkPart: i + 1,
-          _tenkOf: kids.length,
-        });
-      });
-    }
-    return out;
-  }, [finalRows, skipped, editingRow]);
+  const tenKRows = useMemo(() => projectCalculation(result, {
+    splitRows, moveDrafts, weeklyPaymentDay, skipped: [...skipped], rowEdits,
+    extraRows: extraRows.map(r => ({ ...r, date: r.date.toISOString() })),
+  }, editingRow), [result, splitRows, moveDrafts, weeklyPaymentDay, skipped, rowEdits, extraRows, editingRow]);
 
   async function saveCalculation() {
     if (!saveEndpoint) return;
+    const scheduleState = { version: 1, termMonths, firstPaymentDate, weeklyPaymentDay, paymentProcessor, splitRows, moveDrafts, skipped: [...skipped], rowEdits, extraRows: extraRows.map(r => ({ ...r, date: r.date.toISOString() })) };
+    const parsed = calculatorStateSchema.safeParse(scheduleState);
+    const error = parsed.success ? calculationError(result, parsed.data) : "Enter valid payment dates and positive amounts before saving.";
+    if (error) { toast.error(error); return; }
     setSaving(true);
     try {
       const response = await fetch(saveEndpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
         totalDebt, programFeePeriod: termMonths, frequency: "WEEKLY", firstPaymentDate, citadelFee,
         expectedCalculationId: calculationId,
-        scheduleState: { version: 1, termMonths, firstPaymentDate, weeklyPaymentDay, paymentProcessor, splitRows, skipped: [...skipped], rowEdits, extraRows },
+        scheduleState,
       }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to save calculation");
@@ -257,12 +161,13 @@ export function RescheduleCalculator({ initial, saveEndpoint }: { initial?: Resc
     <div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8 }}>
         {saveEndpoint && <button className="slds-button slds-button_brand" disabled={saving || editingRow !== null} onClick={saveCalculation}>{saving ? "Saving…" : "Save calculation"}</button>}
+        {(skipped.size > 0 || Object.keys(rowEdits).length > 0 || extraRows.length > 0) && <button className="slds-button slds-button_neutral" onClick={() => { setSkipped(new Set()); setRowEdits({}); setExtraRows([]); setEditingRow(null); }}>Reset draft edits</button>}
         {splitRows && (
           <button
-            onClick={() => setSplitRows(null)}
+            onClick={() => { setSplitRows(null); setRowEdits({}); setSkipped(new Set()); setExtraRows([]); }}
             style={{ background: "#fff", color: "#c23934", border: "1px solid #c9c9c9", padding: "7px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
           >
-            Clear Split
+            Clear split and draft edits
           </button>
         )}
         <button
@@ -339,7 +244,7 @@ export function RescheduleCalculator({ initial, saveEndpoint }: { initial?: Resc
             <input
               type="date"
               value={firstPaymentDate}
-              onChange={(e) => setFirstPaymentDate(e.target.value)}
+              onChange={(e) => { if (e.target.value) setFirstPaymentDate(e.target.value); }}
               style={inputStyle}
             />
           </Field>
@@ -395,7 +300,7 @@ export function RescheduleCalculator({ initial, saveEndpoint }: { initial?: Resc
               const ed = rowEdits[r.index];
               const dateVal = ed?.date ?? r.date.toISOString().slice(0, 10);
               const amtVal = ed?.amount ?? r.weeklyDraftAmount;
-              const isTenkChild = (r._tenkPart ?? 1) > 1;
+              const isTenkChild = (r._tenkPart ?? 1) > 1 || Boolean(r._child) || r.index <= -5000;
               return (
                 <tr
                   key={`${r.index}-${r._tenkPart ?? 0}`}
@@ -415,7 +320,7 @@ export function RescheduleCalculator({ initial, saveEndpoint }: { initial?: Resc
                       />
                     ) : (
                       <>
-                        {r.date.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
+                        {r.date.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", timeZone: "UTC" })}
                         {r._tenkPart && (
                           <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: "#8a4b00", background: "#ffe8c2", borderRadius: 8, padding: "1px 6px" }}>
                             {r._tenkPart}/{r._tenkOf} daily
@@ -428,7 +333,7 @@ export function RescheduleCalculator({ initial, saveEndpoint }: { initial?: Resc
                     {isEditing ? (
                       <input
                         type="number"
-                        step="any"
+                        step="0.01"
                         value={amtVal}
                         onChange={(e) => setRowEdits((m) => ({ ...m, [r.index]: { amount: Number(e.target.value) || 0, date: dateVal } }))}
                         style={{ width: 110, height: 28, padding: "0 6px", border: "1px solid #c9c7c5", borderRadius: 4, fontSize: 12 }}
@@ -474,8 +379,8 @@ export function RescheduleCalculator({ initial, saveEndpoint }: { initial?: Resc
                       >
                         {r.index === 1 ? (
                           <>
-                            <button onClick={() => { setActionMenuRow(null); setShowSplit(true); }} style={menuItem}>Edit Split</button>
-                            <button onClick={() => { setActionMenuRow(null); setSplitRows(computeSplit(splitParams)); }} style={menuItem}>View Split</button>
+                            <button onClick={() => { setActionMenuRow(null); setShowSplit("edit"); }} style={menuItem}>Edit Split</button>
+                            <button onClick={() => { setActionMenuRow(null); setShowSplit("view"); }} style={menuItem}>View Split</button>
                           </>
                         ) : (
                           <>
@@ -484,7 +389,7 @@ export function RescheduleCalculator({ initial, saveEndpoint }: { initial?: Resc
                                 setActionMenuRow(null);
                                 setExtraRows((xs) => [
                                   ...xs,
-                                  { ...r, index: -(xs.length + 1), _after: r.index, _child: false, status: "Pending", runningBalance: 0 },
+                                  { ...r, index: -(xs.length + 1), _after: r.index, _child: false, _tenkPart: undefined, _tenkOf: undefined, status: "Pending", runningBalance: 0 },
                                 ]);
                               }}
                               style={menuItem}
@@ -551,11 +456,15 @@ export function RescheduleCalculator({ initial, saveEndpoint }: { initial?: Resc
         <RescheduleSplitModal
           params={splitParams}
           existingRows={splitRows}
-          onApply={(rows) => {
+          readOnly={showSplit === "view"}
+          initialMoveDrafts={moveDrafts}
+          onApply={(rows, move) => {
+            setMoveDrafts(move);
+            setRowEdits({}); setSkipped(new Set()); setExtraRows([]);
             setSplitRows(rows);
-            setShowSplit(false);
+            setShowSplit(null);
           }}
-          onClose={() => setShowSplit(false)}
+          onClose={() => setShowSplit(null)}
         />
       )}
     </div>

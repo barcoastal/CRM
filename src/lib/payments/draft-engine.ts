@@ -36,15 +36,15 @@ const r2 = (n: number): number => Math.round(n * 100) / 100;
 export function nextBusinessDay(d: Date): Date {
   const out = new Date(d);
   do {
-    out.setDate(out.getDate() + 1);
-  } while (out.getDay() === 0 || out.getDay() === 6);
+    out.setUTCDate(out.getUTCDate() + 1);
+  } while (out.getUTCDay() === 0 || out.getUTCDay() === 6);
   return out;
 }
 
 /** First business day on-or-after d. */
 export function toBusinessDay(d: Date): Date {
   const out = new Date(d);
-  while (out.getDay() === 0 || out.getDay() === 6) out.setDate(out.getDate() + 1);
+  while (out.getUTCDay() === 0 || out.getUTCDay() === 6) out.setUTCDate(out.getUTCDate() + 1);
   return out;
 }
 
@@ -128,7 +128,7 @@ export function planSkip<T extends { date: Date }>(
   const shifted: { item: T; newDate: Date }[] = [];
   for (let i = skipIdx + 1; i < pending.length; i++) {
     const nd = new Date(pending[i].date);
-    nd.setDate(nd.getDate() + periodDays);
+    nd.setUTCDate(nd.getUTCDate() + periodDays);
     shifted.push({ item: pending[i], newDate: toBusinessDay(nd) });
   }
   return { shifted };

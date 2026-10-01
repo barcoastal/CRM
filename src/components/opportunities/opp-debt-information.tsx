@@ -154,8 +154,7 @@ export function OppDebtInformation({
         paymentFrequency: form.paymentFrequency,
         paymentAmount: form.paymentAmount === "" ? null : Number(form.paymentAmount),
         originalBalance: amt,
-        currentBalance: amt,
-        enrolledBalance: amt,
+        ...(editing ? {} : { currentBalance: amt, enrolledBalance: amt }),
         paymentStatus: form.status,
       };
       const url = editing
@@ -172,7 +171,8 @@ export function OppDebtInformation({
         resetForm();
         router.refresh();
       } else {
-        setError("Could not save the debt. Please try again.");
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Could not save the debt. Please try again.");
       }
     } catch {
       setError("Could not save the debt. Please check your connection.");
