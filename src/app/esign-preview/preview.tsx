@@ -14,6 +14,25 @@ const groups = {
   textBoxes: [
     { ...common, y: 290, height: 20, page: 1, label: "Full name" },
     { ...common, y: 290, height: 20, page: 3, label: "Full name" },
+    {
+      ...common,
+      y: 220,
+      height: 14,
+      width: 65,
+      page: 1,
+      label: "Agreement day",
+    },
+    {
+      ...common,
+      x: 170,
+      y: 220,
+      height: 14,
+      width: 75,
+      page: 1,
+      label: "Agreement month",
+    },
+    { ...common, y: 205, height: 14, page: 3, label: "Business name" },
+    { ...common, y: 222, height: 14, page: 3, label: "Title" },
   ],
   checkboxBoxes: [],
 };
@@ -49,12 +68,13 @@ export function Preview() {
       <div
         style={{
           position: "fixed",
-          bottom: 80,
-          left: 10,
+          top: 0,
+          right: 0,
           zIndex: 100,
           background: "#fff",
           border: "1px solid #ccc",
-          padding: 8,
+          padding: 2,
+          fontSize: 10,
         }}
       >
         Local preview · no emails or contracts{" "}
