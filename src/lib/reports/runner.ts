@@ -89,7 +89,7 @@ function resolveValue(row: Record<string, unknown>, field: ObjectField): unknown
     if (typeof source === "string") { try { source = JSON.parse(source); } catch { return null; } }
     return pathValue(source, field.key.slice(field.jsonColumn.length + 1));
   }
-  return pathValue(row, field.key);
+  return pathValue(row, field.dataPath ?? field.key);
 }
 type Selection = { [key: string]: true | { select: Selection } };
 function selectPath(selection: Selection, key: string) {
@@ -184,7 +184,7 @@ export async function runReportWithAccess(cfg: ReportConfig, access: AnalyticsAc
     const select: Selection = { id: true };
     for (const key of dependencies) {
       const field = fields.get(key); if (!field || field.source === "computed") continue;
-      selectPath(select, field.source === "json" ? field.jsonColumn! : field.key);
+      selectPath(select, field.source === "json" ? field.jsonColumn! : field.dataPath ?? field.key);
     }
     const delegate = (db as unknown as Record<string, { findMany(args: unknown): Promise<Record<string, unknown>[]> }>)[meta.prismaModel];
     if (!delegate) throw new Error("Report data source is unavailable");

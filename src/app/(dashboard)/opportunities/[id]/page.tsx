@@ -1,3 +1,4 @@
+import { taskActivity } from "@/lib/activity-presentation";
 import { RecordViewTracker } from "@/components/lists/record-view-tracker";
 import { usesCloserOpportunityView, closerOpportunityFields, closerOpportunitySnapshot } from "@/lib/opportunity-closer-view";
 import { recordScope } from "@/lib/record-access";
@@ -256,25 +257,15 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           done: m.status === "DELIVERED",
         })),
         ...opp.lead.tasks.map((t) => ({
+          ...taskActivity(t),
           id: `lead-task-${t.id}`,
-          type: (t.type === "CALL" ? "CALL" : "TASK") as ActivityItem["type"],
-          subject: t.subject,
           meta: `${t.disposition ?? t.outcome ?? ""} (lead-era)`,
-          date: t.dueDate ?? t.completedAt ?? t.createdAt,
-          done: t.status === "COMPLETED",
         })),
       ]
     : [];
 
   const oppActivity: ActivityItem[] = [
-    ...opp.tasks.map((t) => ({
-      id: t.id,
-      type: (t.type === "CALL" ? "CALL" : "TASK") as ActivityItem["type"],
-      subject: t.subject,
-      meta: t.outcome ?? t.disposition ?? null,
-      date: t.dueDate ?? t.completedAt ?? t.createdAt,
-      done: t.status === "COMPLETED",
-    })),
+    ...opp.tasks.map(taskActivity),
     ...opp.events.map((e) => ({
       id: e.id,
       type: "EVENT" as const,

@@ -1,3 +1,5 @@
+import { OppActivities } from "@/components/opportunities/opp-activities";
+import { taskActivity } from "@/lib/activity-presentation";
 import { RecordViewTracker } from "@/components/lists/record-view-tracker";
 import { AccountTeamManager } from "@/components/accounts/account-team-manager";
 import { NegotiatorAssignment } from "@/components/accounts/negotiator-assignment";
@@ -100,14 +102,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     : account.opportunities.filter((o) => !isArchivedOpportunity(o.stage));
 
   const activity: ActivityItem[] = [
-    ...account.tasks.map((t) => ({
-      id: t.id,
-      type: (t.type === "CALL" ? "CALL" : "TASK") as ActivityItem["type"],
-      subject: t.subject,
-      meta: t.outcome ?? t.disposition ?? null,
-      date: t.dueDate ?? t.completedAt ?? t.createdAt,
-      done: t.status === "COMPLETED",
-    })),
+    ...account.tasks.map(taskActivity),
     ...account.events.map((e) => ({
       id: e.id,
       type: "EVENT" as const,
@@ -743,30 +738,10 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     <>
     <NotesCard notes={noteTiles} total={noteDocs.length} />
     <Section title={`Activities (${activity.length})`}>
-      {activity.length === 0 ? (
-        <div style={{ padding: 24, textAlign: "center", color: "#747474" }}>No activity recorded.</div>
-      ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ background: "#fafaf9", borderBottom: "1px solid #c9c9c9" }}>
-              <th style={th}>Date</th>
-              <th style={th}>Type</th>
-              <th style={th}>Subject</th>
-              <th style={th}>Detail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...activity].sort((a, b) => b.date.getTime() - a.date.getTime()).map((a) => (
-              <tr key={a.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                <td style={td}>{a.date.toLocaleString()}</td>
-                <td style={td}>{a.type}</td>
-                <td style={td}>{a.subject}</td>
-                <td style={td}>{a.meta ?? "-"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <OppActivities context="account" items={activity.map(item => ({
+        id: item.id, type: item.type, subject: item.subject,
+        detail: typeof item.meta === "string" ? item.meta : "", date: item.date.toISOString(),
+      }))} />
     </Section>
     </>
   );

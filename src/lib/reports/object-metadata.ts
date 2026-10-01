@@ -23,6 +23,8 @@ export interface ObjectField {
    * Multiple fields can share the same relation key.
    */
   relation?: string;
+  /** Actual Prisma path when a saved report uses a legacy field key. */
+  dataPath?: string;
   /**
    * For `source: "json"`, the column on the model that holds the JSON string ("sfDataJson").
    */
@@ -180,7 +182,7 @@ const ACCOUNT_FIELDS: ObjectField[] = [
   { key: "sfDataJson.Closer__c", label: "Closer", type: "string", source: "json", jsonColumn: "sfDataJson" },
   { key: "owner.name", label: "Owner Name", type: "string", source: "relation", relation: "owner" },
   { key: "owner.email", label: "Owner Email", type: "string", source: "relation", relation: "owner" },
-  { key: "primaryContact.name", label: "Primary Contact", type: "string", source: "relation", relation: "primaryContact" },
+  { key: "primaryContact.name", label: "Primary Contact", type: "string", source: "relation", relation: "primaryContact", dataPath: "primaryContact.fullName" },
   { key: "sfDataJson.Legal_Network__c", label: "Legal Network", type: "string", source: "json", jsonColumn: "sfDataJson" },
 ];
 

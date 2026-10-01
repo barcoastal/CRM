@@ -1,3 +1,4 @@
+import { taskActivity } from "@/lib/activity-presentation";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { SsnField } from "@/components/shared/ssn-field";
@@ -146,14 +147,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
 
   // ---------- Activities & Chatter ----------
   const activity: ActivityItem[] = [
-    ...contact.tasks.map((t) => ({
-      id: t.id,
-      type: (t.type === "CALL" ? "CALL" : "TASK") as ActivityItem["type"],
-      subject: t.subject,
-      meta: t.outcome ?? t.disposition ?? null,
-      date: t.dueDate ?? t.completedAt ?? t.createdAt,
-      done: t.status === "COMPLETED",
-    })),
+    ...contact.tasks.map(taskActivity),
     ...contact.events.map((e) => ({
       id: e.id,
       type: "EVENT" as const,

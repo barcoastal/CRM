@@ -1,3 +1,4 @@
+import { taskActivity } from "@/lib/activity-presentation";
 import { leadPaymentPopulated } from "@/lib/lead-payment-health";
 import { splitLeadName } from "@/lib/lead-health-fields";
 import { LeadViewTracker } from "@/components/leads/lead-view-tracker";
@@ -140,14 +141,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       date: c.startedAt,
       done: c.status === "COMPLETED",
     })),
-    ...lead.tasks.map((t) => ({
-      id: t.id,
-      type: (t.type === "CALL" ? "CALL" : "TASK") as ActivityItem["type"],
-      subject: t.subject,
-      meta: t.outcome ?? t.disposition ?? null,
-      date: t.dueDate ?? t.completedAt ?? t.createdAt,
-      done: t.status === "COMPLETED",
-    })),
+    ...lead.tasks.map(taskActivity),
     ...lead.events.map((e) => ({
       id: e.id,
       type: "EVENT" as const,

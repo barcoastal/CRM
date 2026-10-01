@@ -2,10 +2,11 @@
 
 import { useState, type ReactNode } from "react";
 import { ObjectIcon } from "./icon";
+import { formatActivityDate, type ActivityType } from "@/lib/activity-presentation";
 
 export interface ActivityItem {
   id: string;
-  type: "TASK" | "EVENT" | "CALL" | "EMAIL" | "SMS";
+  type: ActivityType;
   subject: string;
   meta?: ReactNode;
   date: Date;
@@ -18,6 +19,8 @@ const ENTITY_BY_TYPE: Record<ActivityItem["type"], string> = {
   CALL: "Dialer",
   EMAIL: "Email",
   SMS: "Sms",
+  NOTE: "Note",
+  NOTIFICATION: "Task",
 };
 
 /**
@@ -35,7 +38,7 @@ export function ActivityRail({ items }: { items: readonly ActivityItem[] }) {
 
   const pastByMonth = new Map<string, ActivityItem[]>();
   for (const item of past) {
-    const key = item.date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    const key = item.date.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "America/New_York" });
     const arr = pastByMonth.get(key) ?? [];
     arr.push(item);
     pastByMonth.set(key, arr);
@@ -152,7 +155,7 @@ export function ActivityRail({ items }: { items: readonly ActivityItem[] }) {
 
       {/* Past — grouped by month */}
       {Array.from(pastByMonth.entries()).map(([month, list]) => (
-        <Section key={month} title={month} sub="Last Month">
+        <Section key={month} title={month}>
           {list.map((item) => (
             <ActivityRow key={item.id} item={item} />
           ))}
@@ -210,7 +213,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "auto 1fr auto",
+        gridTemplateColumns: "auto minmax(0, 1fr)",
         gap: 10,
         padding: "10px 12px",
         borderBottom: "1px solid #f3f3f3",
@@ -220,12 +223,10 @@ function ActivityRow({ item }: { item: ActivityItem }) {
       <ObjectIcon entity={entity} size="small" />
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 12, color: "#181818", fontWeight: 600 }}>{item.subject}</div>
+        <div style={{ fontSize: 11, color: "#747474", marginTop: 3 }}>{item.type === "NOTIFICATION" ? "Notification" : item.type.charAt(0) + item.type.slice(1).toLowerCase()} · {formatActivityDate(item.date)}</div>
         {item.meta && (
           <div style={{ fontSize: 11, color: "#747474", marginTop: 2 }}>{item.meta}</div>
         )}
-      </div>
-      <div style={{ fontSize: 11, color: "#747474", whiteSpace: "nowrap" }}>
-        {item.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
       </div>
     </div>
   );
