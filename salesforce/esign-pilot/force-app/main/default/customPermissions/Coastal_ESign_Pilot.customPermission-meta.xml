@@ -1,0 +1,1 @@
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata"><label>Coastal E-Sign Sandbox Pilot</label><description>Prepare and refresh test-only Coastal E-Sign packets in a sandbox.</description></CustomPermission>

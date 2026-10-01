@@ -1,3 +1,4 @@
+import { sandboxRecipientError } from "@/lib/esign/salesforce/policy";
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
@@ -59,6 +60,9 @@ export async function POST(
       { status: 400 },
     );
   const config = parsed.data;
+  const pilotError = sandboxRecipientError(p.salesforceSource, config);
+  if (pilotError)
+    return NextResponse.json({ error: pilotError }, { status: 400 });
   const { bytes } = await verifiedPreparedPdf(p.preparedPdfPath);
   const pdf = await PDFDocument.load(bytes);
   const errors = packetErrors(

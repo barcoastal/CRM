@@ -1,0 +1,6 @@
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+<classAccesses><apexClass>CoastalESignPilotController</apexClass><enabled>true</enabled></classAccesses>
+<customPermissions><enabled>true</enabled><name>Coastal_ESign_Pilot</name></customPermissions>
+<externalCredentialPrincipalAccesses><enabled>true</enabled><externalCredentialPrincipal>Coastal_ESign_Pilot_Auth-Pilot</externalCredentialPrincipal></externalCredentialPrincipalAccesses>
+<fieldPermissions><editable>true</editable><field>Opportunity.Coastal_Esign_Packet_Id__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>Opportunity.Coastal_Esign_Status__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>Opportunity.Coastal_Esign_File_Id__c</field><readable>true</readable></fieldPermissions><label>Coastal E-Sign Sandbox Pilot</label>
+</PermissionSet>
