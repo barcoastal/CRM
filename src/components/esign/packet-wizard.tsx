@@ -20,13 +20,25 @@ export function PacketWizard({
   defaultEmail = "",
   packetId: initialId,
   preview,
+  embedded,
 }: {
+  embedded?: { token: string; pdfUrl: string; onClose: () => void };
   opportunityId?: string;
   defaultName?: string;
   defaultEmail?: string;
   packetId?: string;
   preview?: { config: PacketConfig; pdfUrl: string };
 }) {
+  function packetFetch(url: string, options?: RequestInit) {
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...options?.headers,
+        ...(embedded ? { Authorization: `Bearer ${embedded.token}` } : {}),
+      },
+    });
+  }
+  const pdfUrl = embedded?.pdfUrl ?? preview?.pdfUrl;
   const [includeAddendum, setIncludeAddendum] = useState(false);
   const [requiredAddendum, setRequiredAddendum] = useState(false);
   const [plannedDocuments, setPlannedDocuments] = useState<
@@ -61,16 +73,17 @@ export function PacketWizard({
   const fileInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (preview) return;
-    fetch("/api/esign/templates")
-      .then((r) => r.json())
-      .then((d) =>
-        setTemplates(
-          (d.items ?? []).filter((t: { isActive: boolean }) => t.isActive),
-        ),
-      )
-      .catch(() => {});
+    if (!embedded)
+      fetch("/api/esign/templates")
+        .then((r) => r.json())
+        .then((d) =>
+          setTemplates(
+            (d.items ?? []).filter((t: { isActive: boolean }) => t.isActive),
+          ),
+        )
+        .catch(() => {});
     if (initialId)
-      fetch(`/api/esign/packets/${initialId}`)
+      packetFetch(`/api/esign/packets/${initialId}`)
         .then((r) => r.json())
         .then((d) => {
           if (d.error) throw new Error(d.error);
@@ -88,7 +101,9 @@ export function PacketWizard({
           );
         })
         .catch((e) => setError(e.message));
-  }, [initialId, preview]);
+    // Embedded credentials are fixed for the lifetime of this sender.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialId, preview, embedded]);
   function move(index: number, delta: number) {
     setItems((v) => {
       const a = [...v];
@@ -179,7 +194,7 @@ export function PacketWizard({
     setBusy(true);
     setError("");
     try {
-      const r = await fetch(`/api/esign/packets/${id}`, {
+      const r = await packetFetch(`/api/esign/packets/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ config, revision }),
@@ -207,7 +222,7 @@ export function PacketWizard({
     setBusy(true);
     setError("");
     try {
-      const r = await fetch(`/api/esign/packets/${id}/send`, {
+      const r = await packetFetch(`/api/esign/packets/${id}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ revision: latest, retry }),
@@ -274,7 +289,11 @@ export function PacketWizard({
                 : "Send documents for signature"}
           </h1>
         </div>
-        <a href={back}>Back to record</a>
+        {embedded ? (
+          <button onClick={embedded.onClose}>Back to record</button>
+        ) : (
+          <a href={back}>Back to record</a>
+        )}
       </header>
       {!sent && step !== 2 && (
         <nav className={styles.steps} aria-label="Sending progress">
@@ -301,7 +320,7 @@ export function PacketWizard({
         >
           Salesforce sandbox pilot — TEST, NOT A CONTRACT. Uses sample payment
           terms; delivery is limited to the configured test recipient.{" "}
-          <a href={salesforceReturnUrl}>Return to Salesforce</a>
+          {!embedded && <a href={salesforceReturnUrl}>Return to Salesforce</a>}
         </div>
       )}
       {error && (
@@ -314,7 +333,7 @@ export function PacketWizard({
           {preview ? (
             <p>Preview complete. No email or signing packet was sent.</p>
           ) : (
-            <PacketStatus id={id} />
+            <PacketStatus id={id} token={embedded?.token} />
           )}
           {!initialId && !preview && (
             <>
@@ -345,8 +364,15 @@ export function PacketWizard({
             </button>
           )}
           <p>
-            <a href={back}>Back to record</a> ·{" "}
-            <a href={`/envelopes/packets/${id}`}>View packet status</a>
+            {embedded ? (
+              <button onClick={embedded.onClose}>Back to record</button>
+            ) : (
+              <a href={back}>Back to record</a>
+            )}{" "}
+            ·{" "}
+            {!embedded && (
+              <a href={`/envelopes/packets/${id}`}>View packet status</a>
+            )}
           </p>
         </div>
       ) : step === 0 ? (
@@ -448,7 +474,7 @@ export function PacketWizard({
                     <small>{d.pageCount} pages</small>
                   </div>
                   <a
-                    href={`${preview?.pdfUrl ?? `/api/esign/packets/${id}/pdf`}#page=${d.startPage}`}
+                    href={`${pdfUrl ?? `/api/esign/packets/${id}/pdf`}#page=${d.startPage}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -714,7 +740,7 @@ export function PacketWizard({
       ) : (
         config && (
           <PacketEditor
-            url={preview?.pdfUrl ?? `/api/esign/packets/${id}/pdf`}
+            url={pdfUrl ?? `/api/esign/packets/${id}/pdf`}
             config={config}
             onChange={setConfig}
           />

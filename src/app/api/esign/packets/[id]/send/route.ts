@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
-import { requireAuthOrRespond } from "@/lib/api-auth";
+import { requirePacketAuth } from "@/lib/esign/salesforce/embed";
 import { packetConfigSchema, packetErrors } from "@/lib/esign/packet-config";
 import { verifiedPreparedPdf } from "@/lib/esign/evidence";
 import {
@@ -15,9 +15,9 @@ export async function POST(
   req: NextRequest,
   c: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAuthOrRespond("Opportunity.Edit");
-  if ("response" in auth) return auth.response;
   const { id } = await c.params;
+  const auth = await requirePacketAuth(req, id, "Opportunity.Edit");
+  if ("response" in auth) return auth.response;
   const body = await req.json().catch(() => null);
   const p = await prisma.signingPacket.findFirst({
     where: { id, createdById: auth.session.userId },

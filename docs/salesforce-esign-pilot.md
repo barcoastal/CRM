@@ -7,11 +7,10 @@ Salesforce is not a deployment target.
 ## Pilot behavior
 
 1. Open the configured TEST Opportunity in `newdocusig`.
-2. Choose the Coastal action. Review the account, email and debt, signer name,
-   SAS/RAM processor and optional addendum.
-3. Prepare once, then open the CRM sender. The existing CRM login is required;
-   the packet is scoped to the mapped CRM sender. Review Documents, Recipients,
-   and Prepare & Send. Field anchors come from the CRM Word templates.
+2. Choose the Coastal action. Complete the same native Salesforce details review
+   and validation used by the current Send Contract flow, or resume an existing packet.
+3. Documents, Recipients, Prepare & Send and packet status open inside Salesforce.
+   No separate CRM login or tab is required. Field anchors come from CRM Word templates.
 4. All pages are stamped TEST - NOT A CONTRACT; subjects start with [TEST].
    Both signing and copy recipients are restricted by the server to the approved
    test mailbox. No mail is sent during preparation.
@@ -25,11 +24,11 @@ Salesforce is not a deployment target.
   customer import and no changes to production Salesforce.
 - The test uses the CRM's six-month sample schedule defaults and Citadel legal
   plan. This is NOT verified parity with Salesforce quote/program-plan data.
-- The sender opens in a separate CRM tab, not an embedded Salesforce iframe.
+- The sender remains embedded inside Salesforce. The native review component is a separate copy of the sandbox DocuSign review UI, preserving its required-field, debt, schedule, payment and legal-network checks. Existing DocuSign components are not modified.
 - Status refresh is manual. StageName is not updated, avoiding copied Salesforce
   payment/welcome automations. Automatic status sync and quote/routing parity
   remain prerequisites for a live rollout.
-- One stable draft per Opportunity/pilot version, retry-safe preparation.
+- Reopening resumes the current packet. Completing a new details review prepares a fresh draft from current Salesforce values; old packets remain in the CRM audit history.
 - Signed PDF transfer is capped at 3.5 MB; larger packets remain downloadable
   from CRM. No signed-document retention policy is weakened by the integration.
 
@@ -57,3 +56,18 @@ metadata; the sender PATCH route cannot replace it.
 The sandbox metadata copies of the two Opportunity layouts and two Lightning
 pages only add the separate Coastal action. Existing DocuSign actions remain.
 Review current target metadata again before any later deployment to another org.
+
+## Embedded sender access
+
+The Salesforce action calls the Named Credential to request a 30-minute capability
+scoped to one packet, sandbox org and user. The fragment carries it into the
+embedded page and is immediately removed; browser API calls use an Authorization
+header. Only existing single-packet endpoints accept it, and each rechecks the
+active integration, owner, org and Opportunity. CRM account cookies are not
+required in the iframe. The shared machine credential never reaches the browser.
+Frame embedding is limited to the newdocusig Lightning origin, with a matching
+Salesforce CSP Trusted Site. Closing returns to the Opportunity without a CRM tab.
+
+A test Opportunity without debt, draft or debit-schedule records cannot pass the
+standard review validations. Its existing prepared sample can still be resumed.
+The merged payment terms remain sample defaults, not production quote parity.

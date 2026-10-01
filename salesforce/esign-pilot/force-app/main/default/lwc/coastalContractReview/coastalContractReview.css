@@ -1,0 +1,30 @@
+.sc-email-row {
+    padding: 0.5rem 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--lwc-colorBorder, #dddbda);
+}
+
+.sc-email-value-group {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--lwc-colorTextDefault, #181818);
+}
+
+.sc-email-edit-btn {
+    opacity: 0.45;
+    transition: opacity 0.15s;
+}
+
+.sc-email-edit-btn:hover {
+    opacity: 1;
+}
+
+.sc-email-input {
+    max-width: 300px;
+}
+
+.sc-email-actions {
+    display: flex;
+    gap: 0.5rem;
+}

@@ -15,7 +15,25 @@ type Packet = {
     expiresAt: string | null;
   }[];
 };
-export function PacketStatus({ id }: { id: string }) {
+export function PacketStatus({ id, token }: { id: string; token?: string }) {
+  async function download() {
+    const response = await fetch(
+      `/api/esign/packets/${id}/pdf${packet?.status === "COMPLETED" ? "?signed=true" : ""}`,
+      { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+    );
+    if (!response.ok) {
+      setError(
+        "Could not download. Reopen Coastal Sign if your session expired.",
+      );
+      return;
+    }
+    const url = URL.createObjectURL(await response.blob());
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Coastal-Sign-packet.pdf";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
   const [packet, setPacket] = useState<Packet | null>(null);
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
@@ -23,7 +41,10 @@ export function PacketStatus({ id }: { id: string }) {
   useEffect(() => {
     let active = true;
     const refresh = () =>
-      fetch(`/api/esign/packets/${id}`, { cache: "no-store" })
+      fetch(`/api/esign/packets/${id}`, {
+        cache: "no-store",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
         .then((r) => r.json())
         .then((p) => {
           if (active) {
@@ -40,14 +61,17 @@ export function PacketStatus({ id }: { id: string }) {
       active = false;
       clearInterval(timer);
     };
-  }, [id]);
+  }, [id, token]);
   async function voidPacket() {
     setBusy(true);
     setError("");
     try {
       const r = await fetch(`/api/esign/packets/${id}/void`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ reason }),
       });
       const d = await r.json();
@@ -78,15 +102,11 @@ export function PacketStatus({ id }: { id: string }) {
     >
       <div className={styles.cardHeader}>
         <h2>Packet status: {packet?.status ?? "Loading…"}</h2>
-        <a
-          href={`/api/esign/packets/${id}/pdf${packet?.status === "COMPLETED" ? "?signed=true" : ""}`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <button onClick={download}>
           {packet?.status === "COMPLETED"
             ? "Download signed packet"
-            : "View documents"}
-        </a>
+            : "Download documents"}
+        </button>
       </div>
       {error && <p role="alert">{error}</p>}
       {packet?.envelopes
