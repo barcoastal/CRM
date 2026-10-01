@@ -29,7 +29,9 @@ export function PacketWizard({
 }) {
   const [includeAddendum, setIncludeAddendum] = useState(false);
   const [requiredAddendum, setRequiredAddendum] = useState(false);
-  const [plannedDocuments, setPlannedDocuments] = useState<{ name: string; available: boolean }[]>([]);
+  const [plannedDocuments, setPlannedDocuments] = useState<
+    { name: string; available: boolean }[]
+  >([]);
   const [reviewed, setReviewed] = useState(!opportunityId || !!initialId);
   const [reviewSigner, setReviewSigner] = useState({
     name: defaultName,
@@ -50,6 +52,9 @@ export function PacketWizard({
   const [config, setConfig] = useState<PacketConfig | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [salesforceReturnUrl, setSalesforceReturnUrl] = useState<string | null>(
+    null,
+  );
   const [sent, setSent] = useState(false);
   const [deliveryFailed, setDeliveryFailed] = useState(false);
   const [status, setStatus] = useState("DRAFT");
@@ -72,7 +77,9 @@ export function PacketWizard({
           setConfig(d.config);
           setRevision(d.revision);
           setStatus(d.status);
-          setStep(d.status === "DRAFT" ? 1 : 3);
+          setStep(d.status === "DRAFT" ? (d.salesforceSource ? 0 : 1) : 3);
+          if (d.salesforceSource?.returnUrl)
+            setSalesforceReturnUrl(d.salesforceSource.returnUrl);
           setSent(d.status !== "DRAFT");
           setDeliveryFailed(
             d.envelopes?.some(
@@ -91,7 +98,11 @@ export function PacketWizard({
       return a;
     });
   }
-  async function prepare(generate = false, signer = reviewSigner, addendum = includeAddendum) {
+  async function prepare(
+    generate = false,
+    signer = reviewSigner,
+    addendum = includeAddendum,
+  ) {
     if (config && !generate) {
       setStep(1);
       return;
@@ -230,7 +241,9 @@ export function PacketWizard({
         ),
       });
   }
-  const back = opportunityId ? `/opportunities/${opportunityId}` : "/sign-docs";
+  const back =
+    salesforceReturnUrl ??
+    (opportunityId ? `/opportunities/${opportunityId}` : "/sign-docs");
   if (!reviewed && opportunityId)
     return (
       <ContractReview
@@ -246,12 +259,20 @@ export function PacketWizard({
       />
     );
   return (
-    <div className={`${styles.wizard} ${step === 2 && !sent ? styles.preparing : ""}`}>
+    <div
+      className={`${styles.wizard} ${step === 2 && !sent ? styles.preparing : ""}`}
+    >
       <header className={styles.header}>
         <img src="/brand/coastal-debt-logo.svg" alt="Coastal Debt" />
         <div>
           <small>Coastal eSign</small>
-          <h1>{sent ? "Envelope status" : step === 2 ? config?.subject || "Prepare documents" : "Send documents for signature"}</h1>
+          <h1>
+            {sent
+              ? "Envelope status"
+              : step === 2
+                ? config?.subject || "Prepare documents"
+                : "Send documents for signature"}
+          </h1>
         </div>
         <a href={back}>Back to record</a>
       </header>
@@ -269,6 +290,19 @@ export function PacketWizard({
             </span>
           ))}
         </nav>
+      )}
+      {salesforceReturnUrl && (
+        <div
+          style={{
+            padding: "12px 24px",
+            background: "#fff3cd",
+            color: "#574300",
+          }}
+        >
+          Salesforce sandbox pilot — TEST, NOT A CONTRACT. Uses sample payment
+          terms; delivery is limited to the configured test recipient.{" "}
+          <a href={salesforceReturnUrl}>Return to Salesforce</a>
+        </div>
       )}
       {error && (
         <div className={styles.error} role="alert">
@@ -322,7 +356,9 @@ export function PacketWizard({
               <h2>
                 Selected Documents (
                 {config?.documents.length ??
-                  (items.length ? items.filter((i) => i.selected).length : plannedDocuments.length)}
+                  (items.length
+                    ? items.filter((i) => i.selected).length
+                    : plannedDocuments.length)}
                 )
               </h2>
               <div>
@@ -398,7 +434,11 @@ export function PacketWizard({
                 )}
               </div>
             )}
-            {busy && !config && <p role="status" className={styles.hint}>Preparing your documents from CRM details…</p>}
+            {busy && !config && (
+              <p role="status" className={styles.hint}>
+                Preparing your documents from CRM details…
+              </p>
+            )}
             {config ? (
               config.documents.map((d) => (
                 <div className={styles.row} key={d.id}>
@@ -420,8 +460,25 @@ export function PacketWizard({
               plannedDocuments.map((document) => (
                 <div className={styles.row} key={document.name}>
                   <span className={styles.fileIcon}>DOC</span>
-                  <div className={styles.grow}><strong>{document.name}</strong><small>{document.available ? (busy ? "Preparing…" : "Template available") : "Required template not uploaded"}</small></div>
-                  {!document.available && <a href="/contracts/templates" target="_blank" rel="noopener noreferrer">Set up template</a>}
+                  <div className={styles.grow}>
+                    <strong>{document.name}</strong>
+                    <small>
+                      {document.available
+                        ? busy
+                          ? "Preparing…"
+                          : "Template available"
+                        : "Required template not uploaded"}
+                    </small>
+                  </div>
+                  {!document.available && (
+                    <a
+                      href="/contracts/templates"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Set up template
+                    </a>
+                  )}
                 </div>
               ))
             ) : items.length ? (
@@ -489,7 +546,9 @@ export function PacketWizard({
                 disabled={busy || !!config || requiredAddendum}
                 onChange={(e) => setIncludeAddendum(e.target.checked)}
               />{" "}
-              {requiredAddendum ? "Addendum required for this opportunity" : "Include addendum when generating from CRM data"}
+              {requiredAddendum
+                ? "Addendum required for this opportunity"
+                : "Include addendum when generating from CRM data"}
             </label>
           )}
           <p className={styles.hint}>

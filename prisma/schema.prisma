@@ -590,6 +590,7 @@ model CadenceEnrollment {
 // ============ ENVELOPE / E-SIGNATURE (replaces SF DocuSign integration) ============
 
 model SigningPacket {
+  salesforceSource Json?
   id String @id @default(cuid())
   status String @default("DRAFT")
   name String

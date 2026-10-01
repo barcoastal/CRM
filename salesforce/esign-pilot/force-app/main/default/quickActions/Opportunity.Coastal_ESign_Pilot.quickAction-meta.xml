@@ -1,0 +1,1 @@
+<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata"><label>Send with Coastal E-Sign (TEST)</label><lightningWebComponent>coastalEsignPilot</lightningWebComponent><optionsCreateFeedItem>false</optionsCreateFeedItem><type>LightningWebComponent</type></QuickAction>

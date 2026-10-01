@@ -6,6 +6,13 @@
  */
 import { prisma } from "@/lib/prisma";
 import { generateRescheduleSchedule } from "@/lib/reschedule-schedule";
+import type {
+  Account,
+  Contact,
+  Debt,
+  Opportunity,
+  OpportunityPaymentCalculation,
+} from "@/generated/prisma/client";
 import type { MergeData } from "./docx-merge";
 
 const RESCHED = {
@@ -35,6 +42,25 @@ export async function buildContractData(
     },
   });
   if (!opp) throw new Error("Opportunity not found");
+  return buildContractDataFromSnapshot(opp);
+}
+
+export type ContractDataSnapshot = Partial<Opportunity> & {
+  account: Partial<Account> | null;
+  primaryContact: Partial<Contact> | null;
+  lead?: {
+    contactName?: string | null;
+    businessName?: string | null;
+    state?: string | null;
+  } | null;
+  debts: Partial<Debt>[];
+  paymentCalculations: Partial<OpportunityPaymentCalculation>[];
+};
+
+/** Reuse the same merge engine for a reviewed external sandbox snapshot. */
+export function buildContractDataFromSnapshot(
+  opp: ContractDataSnapshot,
+): MergeData {
   const acct = opp.account;
   const latestCalc = opp.paymentCalculations[0];
 

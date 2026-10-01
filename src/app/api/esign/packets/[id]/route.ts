@@ -1,3 +1,4 @@
+import { sandboxRecipientError } from "@/lib/esign/salesforce/policy";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
@@ -45,6 +46,9 @@ export async function PATCH(req: NextRequest, c: C) {
   });
   if (!p)
     return NextResponse.json({ error: "Draft not available" }, { status: 409 });
+  const pilotError = sandboxRecipientError(p.salesforceSource, parsed.data);
+  if (pilotError)
+    return NextResponse.json({ error: pilotError }, { status: 400 });
   const old = p.config as { documents: unknown };
   const changed = await prisma.signingPacket.updateMany({
     where: { id, revision: body.revision, status: "DRAFT" },
