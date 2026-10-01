@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { DocumentViewer } from "@/components/esign/document-viewer";
 import { AdoptModal, DeclineModal } from "@/components/esign/adopt-signature";
 import { DISCLOSURE_TEXT, DISCLOSURE_VERSION } from "@/lib/esign/disclosure";
@@ -50,6 +50,38 @@ export function SignClient(props: Props) {
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState("");
   const [showConsent, setShowConsent] = useState(false);
+  const shellRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (step !== "review") return;
+    const viewport = window.visualViewport;
+    const resize = () => {
+      if (
+        window.matchMedia("(max-width: 700px)").matches &&
+        viewport &&
+        viewport.scale === 1
+      ) {
+        shellRef.current?.style.setProperty(
+          "--signing-height",
+          `${viewport.height}px`,
+        );
+        if (shellRef.current)
+          shellRef.current.dataset.keyboardOpen = String(
+            window.innerHeight - viewport.height > 120,
+          );
+      } else {
+        shellRef.current?.style.removeProperty("--signing-height");
+        if (shellRef.current) delete shellRef.current.dataset.keyboardOpen;
+      }
+    };
+    resize();
+    viewport?.addEventListener("resize", resize);
+    window.addEventListener("resize", resize);
+    return () => {
+      viewport?.removeEventListener("resize", resize);
+      window.removeEventListener("resize", resize);
+    };
+  }, [step]);
+  const activeField = fields.find((f) => f.id === active);
   const today = new Date().toISOString().slice(0, 10);
   const completed = new Set(
     fields
@@ -301,16 +333,24 @@ export function SignClient(props: Props) {
             </p>
           )}
           <div className={styles.welcomeActions}>
-            <select aria-label="Language" defaultValue="en-US"><option value="en-US">English (US)</option></select>
+            <select aria-label="Language" defaultValue="en-US">
+              <option value="en-US">English (US)</option>
+            </select>
             <div>
               <details className={styles.otherOptions}>
-                <summary>Other Options <span aria-hidden="true">⌄</span></summary>
+                <summary>
+                  Other Options <span aria-hidden="true">⌄</span>
+                </summary>
                 <div className={styles.otherOptionsMenu}>
-                  <p>You can finish later by reopening the link in your email.</p>
+                  <p>
+                    You can finish later by reopening the link in your email.
+                  </p>
                   <button
                     className={styles.declineLink}
                     onClick={(event) => {
-                      event.currentTarget.closest("details")?.removeAttribute("open");
+                      event.currentTarget
+                        .closest("details")
+                        ?.removeAttribute("open");
                       setDeclining(true);
                     }}
                   >
@@ -322,7 +362,9 @@ export function SignClient(props: Props) {
                 <button
                   className={styles.primary}
                   disabled={busy}
-                  onClick={() => verified ? setStep("review") : void verify("link")}
+                  onClick={() =>
+                    verified ? setStep("review") : void verify("link")
+                  }
                 >
                   {busy ? "Opening…" : "Continue"}
                 </button>
@@ -448,8 +490,47 @@ export function SignClient(props: Props) {
       />
     );
   }
+  function documentField(f: SigningField) {
+    if (f.kind === "name" || f.kind === "date") return field(f);
+    const label =
+      f.kind === "signature"
+        ? "Sign"
+        : f.kind === "initial"
+          ? "Initial"
+          : f.kind === "checkbox"
+            ? "Check"
+            : "Fill";
+    const appliedImage = applied[f.id]
+      ? f.kind === "signature"
+        ? signature
+        : f.kind === "initial"
+          ? initial
+          : null
+      : null;
+    return (
+      <>
+        <div className={styles.desktopField}>{field(f)}</div>
+        <button
+          type="button"
+          className={styles.mobileMarker}
+          aria-label={`${f.label ?? label}, page ${f.page}. Open field editor`}
+          onClick={() => setActive(f.id)}
+        >
+          {appliedImage ? (
+            <img src={appliedImage} alt={f.kind} />
+          ) : f.kind === "text" && values[String(f.index)] ? (
+            values[String(f.index)]
+          ) : completed.has(f.id) ? (
+            "✓"
+          ) : (
+            label
+          )}
+        </button>
+      </>
+    );
+  }
   return (
-    <div className={styles.shell}>
+    <div className={styles.shell} ref={shellRef}>
       <header className={styles.header}>
         {logo}
         <div className={styles.heading}>{documentName}</div>
@@ -490,11 +571,50 @@ export function SignClient(props: Props) {
         url={previewUrl ?? `${base}/pdf`}
         fields={fields}
         activeId={active}
-        renderField={field}
+        renderField={documentField}
         onReady={() => setLoaded(true)}
         onError={setError}
         documents={props.documents}
       />
+      {activeField &&
+        activeField.kind !== "date" &&
+        activeField.kind !== "name" && (
+          <section
+            className={styles.mobileFieldEditor}
+            aria-label="Current signing field"
+          >
+            <div className={styles.mobileFieldHeading}>
+              <strong>
+                {activeField.label ??
+                  (activeField.kind === "signature"
+                    ? "Your signature"
+                    : activeField.kind === "initial"
+                      ? "Your initials"
+                      : "Complete this field")}
+              </strong>
+              <span>Page {activeField.page}</span>
+            </div>
+            <div
+              key={activeField.id}
+              id={`mobile-${activeField.id}`}
+              className={styles.mobileFieldControl}
+            >
+              {field(activeField)}
+            </div>
+            {activeField.kind === "text" &&
+              textFieldError(
+                activeField,
+                values[String(activeField.index)] ?? "",
+              ) && (
+                <p role="alert">
+                  {textFieldError(
+                    activeField,
+                    values[String(activeField.index)] ?? "",
+                  )}
+                </p>
+              )}
+          </section>
+        )}
       {error && (
         <div role="alert" className={styles.error}>
           {error}

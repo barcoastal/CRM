@@ -134,7 +134,8 @@ export function AdoptModal({
     <div
       style={{
         position: "fixed",
-        inset: 0,
+        inset: "0 0 auto",
+        height: "var(--signing-height, 100dvh)",
         background: "rgba(8,13,30,0.55)",
         display: "flex",
         alignItems: "center",
@@ -149,7 +150,8 @@ export function AdoptModal({
           borderRadius: 8,
           width: "100%",
           maxWidth: 600,
-          overflow: "hidden",
+          maxHeight: "100%",
+          overflowY: "auto",
         }}
       >
         <div
@@ -195,7 +197,7 @@ export function AdoptModal({
                 padding: "8px 10px",
                 border: "1px solid #c9c9c9",
                 borderRadius: 4,
-                fontSize: 14,
+                fontSize: 16,
               }}
             />
           </div>
@@ -390,7 +392,8 @@ export function DeclineModal({
     <div
       style={{
         position: "fixed",
-        inset: 0,
+        inset: "0 0 auto",
+        height: "var(--signing-height, 100dvh)",
         background: "rgba(8,13,30,0.55)",
         display: "flex",
         alignItems: "center",
@@ -405,6 +408,8 @@ export function DeclineModal({
           borderRadius: 8,
           width: "100%",
           maxWidth: 480,
+          maxHeight: "100%",
+          overflowY: "auto",
           padding: 24,
         }}
       >
@@ -432,7 +437,7 @@ export function DeclineModal({
             padding: 10,
             border: "1px solid #c9c9c9",
             borderRadius: 4,
-            fontSize: 13,
+            fontSize: 16,
             color: "#131b2e",
             resize: "vertical",
           }}

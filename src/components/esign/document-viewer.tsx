@@ -88,7 +88,10 @@ export function DocumentViewer({
           1.35,
           Math.max(
             0.2,
-            (el.clientWidth - 80) / Math.max(...pages.map((p) => p.width), 612),
+            (el.clientWidth -
+              parseFloat(getComputedStyle(el).paddingLeft) -
+              parseFloat(getComputedStyle(el).paddingRight)) /
+              Math.max(...pages.map((p) => p.width), 612),
           ),
         ),
       ),
@@ -143,9 +146,13 @@ export function DocumentViewer({
       block: "center",
       inline: "center",
     });
-    target
-      ?.querySelector<HTMLElement>("button,input,select")
-      ?.focus({ preventScroll: true });
+    // Mobile fields are edited in the readable panel, not inside the scaled PDF.
+    // Never open the keyboard just because Next moved to a field.
+    if (!window.matchMedia("(max-width: 700px)").matches) {
+      target
+        ?.querySelector<HTMLElement>("button,input,select")
+        ?.focus({ preventScroll: true });
+    }
   }, [activeId, pages]);
   async function find() {
     const doc = pdf.current;
@@ -171,17 +178,45 @@ export function DocumentViewer({
     area.current
       ?.querySelector(`[data-page="${page}"]`)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (window.matchMedia("(max-width: 700px)").matches) setShowPages(false);
   }
   return (
-    <div className={`${styles.viewerShell} ${editorMode ? styles.editorViewer : ""}`}>
-      {editorMode && <div className={styles.editorToolbar} aria-label="Document toolbar">
-        <button type="button" onClick={() => setZoom((v) => Math.max(0.5, v - 0.15))} aria-label="Zoom out">−</button>
-        <span>{Math.round(scale * 100)}%</span>
-        <button type="button" onClick={() => setZoom((v) => Math.min(2, v + 0.15))} aria-label="Zoom in">+</button>
-        <button type="button" onClick={() => setZoom(1)}>Fit</button>
-        <a href={url} target="_blank" rel="noopener noreferrer">Download</a>
-        <button type="button" aria-pressed={showPages} onClick={() => setShowPages((v) => !v)}>Documents</button>
-      </div>}
+    <div
+      className={`${styles.viewerShell} ${editorMode ? styles.editorViewer : ""}`}
+      style={{ "--document-scale": scale } as React.CSSProperties}
+    >
+      {editorMode && (
+        <div className={styles.editorToolbar} aria-label="Document toolbar">
+          <button
+            type="button"
+            onClick={() => setZoom((v) => Math.max(0.5, v - 0.15))}
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+          <span>{Math.round(scale * 100)}%</span>
+          <button
+            type="button"
+            onClick={() => setZoom((v) => Math.min(2, v + 0.15))}
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+          <button type="button" onClick={() => setZoom(1)}>
+            Fit
+          </button>
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            Download
+          </a>
+          <button
+            type="button"
+            aria-pressed={showPages}
+            onClick={() => setShowPages((v) => !v)}
+          >
+            Documents
+          </button>
+        </div>
+      )}
       {showPages && (
         <nav className={styles.pages} aria-label="Document pages">
           <h3>Documents</h3>
@@ -304,57 +339,70 @@ export function DocumentViewer({
           </section>
         ))}
       </div>
-      {!editorMode && <aside className={styles.viewerTools} aria-label="Document tools">
-        <button
-          onClick={() => setShowPages((v) => !v)}
-          aria-pressed={showPages}
-        >
-          ▤<span>View pages</span>
-        </button>
-        <details>
-          <summary>
-            ⌕<span>Search</span>
-          </summary>
-          <div className={styles.search}>
-            <input
-              aria-label="Search document"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") void find();
-              }}
-            />
-            <button onClick={find}>Find</button>
-            {matches.map((p) => (
-              <button key={p} onClick={() => go(p)}>
-                Page {p}
-              </button>
-            ))}
+      {!editorMode && (
+        <aside className={styles.viewerTools} aria-label="Document tools">
+          <button
+            onClick={() => setShowPages((v) => !v)}
+            aria-pressed={showPages}
+            aria-label="View pages"
+          >
+            ▤<span>View pages</span>
+          </button>
+          <details>
+            <summary aria-label="Search document">
+              ⌕<span>Search</span>
+            </summary>
+            <div className={styles.search}>
+              <input
+                aria-label="Search document"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void find();
+                }}
+              />
+              <button onClick={find}>Find</button>
+              {matches.map((p) => (
+                <button key={p} onClick={() => go(p)}>
+                  Page {p}
+                </button>
+              ))}
+            </div>
+          </details>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Download document"
+          >
+            ↓<span>Download</span>
+          </a>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open or print document"
+          >
+            ▣<span>Open / print</span>
+          </a>
+          <div className={styles.zoom}>
+            <button
+              aria-label="Zoom in"
+              onClick={() => setZoom((v) => Math.min(2, v + 0.15))}
+            >
+              ＋
+            </button>
+            <span>{Math.round(scale * 100)}%</span>
+            <button
+              aria-label="Zoom out"
+              onClick={() => setZoom((v) => Math.max(0.5, v - 0.15))}
+            >
+              −
+            </button>
+            <button onClick={() => setZoom(1)}>Fit</button>
           </div>
-        </details>
-        <a href={url} target="_blank" rel="noopener noreferrer">
-          ↓<span>Download</span>
-        </a>
-        <a href={url} target="_blank" rel="noopener noreferrer">
-          ▣<span>Open / print</span>
-        </a>
-        <div className={styles.zoom}>
-          <button
-            aria-label="Zoom in"
-            onClick={() => setZoom((v) => Math.min(2, v + 0.15))}
-          >
-            ＋
-          </button>
-          <span>{Math.round(scale * 100)}%</span>
-          <button
-            aria-label="Zoom out"
-            onClick={() => setZoom((v) => Math.max(0.5, v - 0.15))}
-          >
-            −
-          </button>
-          <button onClick={() => setZoom(1)}>Fit</button>
-        </div>
-      </aside>}
+        </aside>
+      )}
     </div>
   );
 }
