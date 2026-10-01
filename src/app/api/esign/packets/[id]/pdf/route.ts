@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuthOrRespond } from "@/lib/api-auth";
+import { requirePacketAuth } from "@/lib/esign/salesforce/embed";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { signedDir } from "@/lib/esign/storage";
@@ -9,9 +9,9 @@ export async function GET(
   _r: NextRequest,
   c: { params: Promise<{ id: string }> },
 ) {
-  const a = await requireAuthOrRespond("Opportunity.View");
-  if ("response" in a) return a.response;
   const { id } = await c.params;
+  const a = await requirePacketAuth(_r, id, "Opportunity.View");
+  if ("response" in a) return a.response;
   const p = await prisma.signingPacket.findFirst({
     where: { id, createdById: a.session.userId },
   });

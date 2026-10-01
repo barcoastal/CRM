@@ -1,23 +1,21 @@
 <template>
-<lightning-card title="Coastal E-Sign — Sandbox Pilot" icon-name="standard:contract">
-<div class="slds-p-around_medium">
-<p class="slds-box slds-theme_warning slds-m-bottom_medium">TEST — NOT A CONTRACT. Uses sample payment terms and your CRM templates. Delivery is restricted to the configured test email.</p>
-<template lwc:if={busy}><lightning-spinner alternative-text="Preparing documents" size="small"></lightning-spinner></template>
-<template lwc:if={error}><div class="slds-text-color_error slds-m-bottom_medium" role="alert">{error}</div></template>
-<template lwc:if={data}>
-<dl class="slds-list_horizontal slds-wrap"><dt class="slds-item_label slds-truncate">Account</dt><dd class="slds-item_detail">{data.accountName}</dd><dt class="slds-item_label">Test recipient</dt><dd class="slds-item_detail">{data.email}</dd><dt class="slds-item_label">Total debt</dt><dd class="slds-item_detail"><lightning-formatted-number value={data.totalDebt} format-style="currency" currency-code="USD"></lightning-formatted-number></dd></dl>
-<template lwc:if={hasPacket}>
-<p class="slds-m-vertical_medium">Packet status: <strong>{data.status}</strong></p>
-<a href={data.url} target="_blank" rel="noopener noreferrer" class="slds-button slds-button_brand">Review and send in Coastal E-Sign</a>
-<lightning-button label="Refresh signing status" onclick={refresh} disabled={busy} class="slds-m-left_small"></lightning-button>
-<template lwc:if={fileUrl}><p class="slds-m-top_medium"><a href={fileUrl}>Open signed packet in Salesforce Files</a></p></template>
-<p class="slds-m-top_medium">After the test is signed, refresh to attach the completed PDF here. Opportunity stage stays unchanged during this pilot.</p>
+  <section class="workspace" role="dialog" aria-label="Send with Coastal Sign">
+    <header class="top"><strong>Coastal Sign</strong><span>Salesforce sandbox — TEST, NOT A CONTRACT</span><lightning-button label="Close" onclick={close}></lightning-button></header>
+    <template lwc:if={busy}><lightning-spinner alternative-text="Loading Coastal Sign" size="small"></lightning-spinner></template>
+    <template lwc:if={error}><div class="slds-notify slds-notify_alert slds-alert_error" role="alert">{error}</div></template>
+    <template lwc:if={senderUrl}><iframe src={senderUrl} title="Coastal Sign documents, recipients, prepare and send" referrerpolicy="no-referrer"></iframe></template>
+    <template lwc:else>
+      <div class="review">
+        <template lwc:if={hasPacket}>
+          <div class="slds-box slds-m-bottom_medium">Existing test packet: {data.status}
+            <lightning-button label="Resume packet in Salesforce" variant="brand" onclick={resume} disabled={busy} class="slds-m-left_small"></lightning-button>
+            <lightning-button label="Refresh signing status" onclick={refresh} disabled={busy} class="slds-m-left_small"></lightning-button>
+            <template lwc:if={fileUrl}><a href={fileUrl} class="slds-m-left_small">Signed packet in Salesforce Files</a></template>
+          </div>
+        </template>
+        <template lwc:if={showReview}><c-coastal-contract-review record-id={recordId} onreviewcomplete={reviewComplete}></c-coastal-contract-review></template>
+        <template lwc:else><lightning-button label="Retry opening sender" onclick={resume} disabled={busy}></lightning-button></template>
+      </div>
+    </template>
+  </section>
 </template>
-<template lwc:else>
-<lightning-input label="Signer full name" value={signerName} onchange={nameChange} required></lightning-input>
-<lightning-combobox label="Payment processor" value={processor} options={processors} onchange={processorChange}></lightning-combobox>
-<p class="slds-m-top_small">Legal plan for this sample: Citadel.</p>
-<lightning-input type="checkbox" label="Include addendum" checked={includeAddendum} onchange={addendumChange}></lightning-input>
-<lightning-button label="Prepare test packet" variant="brand" onclick={preparePacket} disabled={busy} class="slds-m-top_medium"></lightning-button>
-</template></template>
-</div></lightning-card></template>

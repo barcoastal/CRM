@@ -16,7 +16,10 @@
             System.assertEquals(UserInfo.getOrganizationId(),req.getHeader('X-Salesforce-Org-Id'));
             HttpResponse r=new HttpResponse();r.setStatusCode(fail?403:200);
             if(fail){r.setBody('{"error":"Pilot not allowed"}');return r;}
-            if(req.getMethod()=='POST'){
+            if(req.getEndpoint().endsWith('/session')) {
+                System.assertEquals(UserInfo.getUserId(),((Map<String,Object>)JSON.deserializeUntyped(req.getBody())).get('salesforceUserId'));
+                r.setBody('{"token":"payload.signature"}');
+            }else if(req.getMethod()=='POST'){
                 Map<String,Object> b=(Map<String,Object>)JSON.deserializeUntyped(req.getBody());
                 System.assertEquals(String.valueOf(oppId),b.get('opportunityId'));
                 System.assertEquals(UserInfo.getUserId(),b.get('salesforceUserId'));
@@ -53,5 +56,16 @@
         Boolean denied=false;try{CoastalESignPilotController.prepare(o.Id,'',false,'SAS');}catch(AuraHandledException e){denied=true;}System.assert(denied);
         Test.setMock(HttpCalloutMock.class,new Mock(o.Id,true));denied=false;try{CoastalESignPilotController.prepare(o.Id,'Test Signer',false,'SAS');}catch(AuraHandledException e){denied=true;}System.assert(denied);Test.stopTest();
         System.assertEquals(null,[SELECT Coastal_Esign_Packet_Id__c FROM Opportunity WHERE Id=:o.Id].Coastal_Esign_Packet_Id__c);
+    }}
+    @IsTest static void opensEmbeddedSenderInScopedSession(){System.runAs(pilot()){
+        Opportunity o=sample();o.Coastal_Esign_Packet_Id__c=PACKET;update o;
+        Test.setMock(HttpCalloutMock.class,new Mock(o.Id,false));Test.startTest();
+        String url=CoastalESignPilotController.openSender(o.Id);Test.stopTest();
+        System.assertEquals('https://crm.coastaldebt-tools.com/salesforce-sign/'+PACKET+'#payload.signature',url);
+    }}
+    @IsTest static void refusesSenderWithoutPacket(){System.runAs(pilot()){
+        Opportunity o=sample();Test.startTest();Boolean denied=false;
+        try{CoastalESignPilotController.openSender(o.Id);}catch(AuraHandledException e){denied=true;}
+        System.assert(denied);Test.stopTest();
     }}
 }

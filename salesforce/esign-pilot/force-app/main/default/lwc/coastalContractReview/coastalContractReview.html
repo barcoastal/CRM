@@ -1,0 +1,72 @@
+<template>
+    <template if:true={showSpinner}>
+        <lightning-spinner alternative-text="Loading"></lightning-spinner>
+    </template>
+    
+    <!-- Legal Network Evaluation Modal -->
+    <template if:true={showReEvaluationModal}>
+        <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-01" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">Legal Network Evaluation</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <p>Please click on the Proceed button to evaluate the Legal Network</p>
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={handleCancelReEvaluation}>Cancel</button>
+                    <button class="slds-button slds-button_brand" onclick={handleProceedReEvaluation}>Proceed</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+    <div if:true={isShowError}>
+        <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
+            <span class="slds-assistive-text">error</span>
+            <h2>{message}</h2>
+        </div>
+        <template if:true={recordForms}>
+            <template if:true={errorMessages}>
+                <ul class="slds-list_dotted">
+                    <template for:each={errorMessages} for:item="error">
+                        <li key={error.id} class="slds-item">
+                            <div class="slds-media__body" style="padding: 0.75rem;word-break:break-all;">
+                                <p class=" slds-has-error" style="color:red;" title={error}>{error}</p>
+                            </div>
+
+                        </li>
+                    </template>
+                </ul>
+            </template>
+            <template for:each={recordForms} for:item="recordForm">
+                <lightning-record-edit-form key={recordForm.recordId} record-id={recordForm.recordId}
+                    object-api-name={recordForm.objectName} density="comfy">
+                    <div class="slds-card__body_inner">
+                        <lightning-messages></lightning-messages>
+                        <lightning-layout multiple-rows="true" style="padding: 0.5rem;">
+                            <lightning-layout-item for:each={recordForm.fields} for:item="field" key={field}
+                                class="slds-p-around_xx-small" size="12" large-device-size="4" medium-device-size="12"
+                                small-device-size="12">
+                                <lightning-input-field class="stdInputField" autocomplete="off" required={field.isRequired}
+                                    data-objectname={recordForm.objectName} field-name={field.fieldApiName} disabled={field.isDisabled} onchange={handleChange}>
+                                </lightning-input-field>
+                            </lightning-layout-item>
+                        </lightning-layout>
+                    </div>
+                </lightning-record-edit-form>
+
+            </template>
+        </template>
+        <span if:true={recordForms} class="slds-grid" style="padding-bottom:3%;padding-right:34%;float:right">
+            <div class="slds-p-right_x-small slds-p-left_x-small">
+                <lightning-button label="Close" onclick={close}>
+                </lightning-button>
+            </div>
+            <div>
+                <lightning-button label="Update and Send Contract" variant="brand" onclick={checkPaymentBeforeSave}>
+                </lightning-button>
+            </div>
+        </span>
+    </div>
+</template>

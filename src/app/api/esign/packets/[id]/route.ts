@@ -1,13 +1,13 @@
 import { sandboxRecipientError } from "@/lib/esign/salesforce/policy";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuthOrRespond } from "@/lib/api-auth";
+import { requirePacketAuth } from "@/lib/esign/salesforce/embed";
 import { packetConfigSchema } from "@/lib/esign/packet-config";
 type C = { params: Promise<{ id: string }> };
 export async function GET(_r: NextRequest, c: C) {
-  const a = await requireAuthOrRespond("Opportunity.View");
-  if ("response" in a) return a.response;
   const { id } = await c.params;
+  const a = await requirePacketAuth(_r, id, "Opportunity.View");
+  if ("response" in a) return a.response;
   const p = await prisma.signingPacket.findFirst({
     where: { id, createdById: a.session.userId },
     include: {
@@ -31,9 +31,9 @@ export async function GET(_r: NextRequest, c: C) {
     : NextResponse.json({ error: "Not found" }, { status: 404 });
 }
 export async function PATCH(req: NextRequest, c: C) {
-  const a = await requireAuthOrRespond("Opportunity.Edit");
-  if ("response" in a) return a.response;
   const { id } = await c.params;
+  const a = await requirePacketAuth(req, id, "Opportunity.Edit");
+  if ("response" in a) return a.response;
   const body = await req.json().catch(() => null);
   const parsed = packetConfigSchema.safeParse(body?.config);
   if (!parsed.success || !Number.isInteger(body?.revision))
