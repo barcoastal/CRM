@@ -1,5 +1,5 @@
 <template>
-  <section class="workspace" role="dialog" aria-label="Send with Coastal Sign">
+  <section class={workspaceClass} role="dialog" aria-label="Send with Coastal Sign">
     <header class="top"><strong>Coastal Sign</strong><span>Salesforce sandbox — TEST, NOT A CONTRACT</span><lightning-button label="Close" onclick={close}></lightning-button></header>
     <template lwc:if={busy}><lightning-spinner alternative-text="Loading Coastal Sign" size="small"></lightning-spinner></template>
     <template lwc:if={error}><div class="slds-notify slds-notify_alert slds-alert_error" role="alert">{error}</div></template>
