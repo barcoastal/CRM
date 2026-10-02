@@ -245,9 +245,10 @@ export function SignClient(props: Props) {
       <div className={styles.welcome}>
         <div className={`${styles.welcomeCard} ${styles.success}`}>
           {logo}
-          <div className={styles.successIcon}>
+          <div className={styles.successIcon} aria-hidden="true">
             {step === "done" ? "✓" : "—"}
           </div>
+          <div className={styles.completionEyebrow}>Coastal Sign</div>
           <h1>
             {step === "done" ? "You’re finished signing!" : "Document declined"}
           </h1>
@@ -256,6 +257,12 @@ export function SignClient(props: Props) {
               ? "Your completed document and signing record are ready to download."
               : "The sender can follow up with you about another way to complete this document."}
           </p>
+          {step === "done" && (
+            <div className={styles.completedDocument}>
+              <span>Signed document</span>
+              <strong>{documentName}</strong>
+            </div>
+          )}
           {previewUrl ? (
             <p>Preview only. No agreement was signed or sent.</p>
           ) : (
