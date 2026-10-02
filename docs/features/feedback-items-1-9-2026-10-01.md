@@ -1,6 +1,6 @@
 # Feedback items 1–9 — October 1, 2026
 
-Scope: finish the remaining implementation gaps in the first nine feedback items. The user explicitly deferred item 4 and asked to leave it New. Feedback statuses are unchanged; changing them would notify reporters.
+Scope: finish the remaining implementation gaps in the first nine feedback items. The user explicitly deferred item 4 and asked to leave it New. At the user's request, items 1, 2, 3, 5, 6, 7, 8 and 9 were marked Done; item 4 remains New.
 
 | Item | Result |
 | --- | --- |
@@ -27,5 +27,8 @@ Scope: finish the remaining implementation gaps in the first nine feedback items
 - 27 schedule and draft-engine tests also passed with `TZ=America/New_York`, including DST and weekend date checks.
 - Read-only production checks of four opportunities referenced in feedback confirmed quote totals equal the sum of their payment schedules. Item 4 remains `NEW`.
 - Production build passed. The release also preserves the Salesforce signing pilot merged concurrently to main.
-- Browser automation was unavailable (CUA Node runtime could not start), so interactive browser verification could not be completed. No client emails were sent and no production financial records were created or edited for testing.
+- October 2 browser verification completed with headless Chrome against the production application build and a separate PostgreSQL QA database. All eight completed feedback workflows passed: term comparison and split save/reload, negotiator assignment, wire receipt/ledger, all notes, opportunity amendments/history, lead account navigation, saved-schedule quote delivery, and debt status/frequency saves.
+- Additional checks passed: exact-cent quote dates/amounts, outdated quote rejection, idempotent wire retries, duplicate wire-reference rejection, completed-payment preservation, read-only mutation denial, and quote record access. Email delivery was captured locally; real provider delivery and processor execution were not tested. No real client emails or debits were sent, and no production financial records were edited.
+- Browser inspection found a payment date bug: US timezones displayed a UTC-midnight payment on the previous date, and weekly split suggestions could lose a day at the spring daylight-saving transition. The live payment grid and split dialog now format and advance calendar dates in UTC. Six browser regression checks reproduced the failures before the fix and passed afterward in America/New_York, including wire dates, amended dates, and both ways to add weekly split installments.
+- The follow-up release passed its production build and 64 focused tests, including three new rendering regressions run with TZ=America/New_York. Saved-split and quote workflows were also rerun after incorporating the latest shared signing changes.
 - No schema migration is required. Changes apply to saved calculations/quote presentation; existing scheduled debits are not automatically regenerated.
