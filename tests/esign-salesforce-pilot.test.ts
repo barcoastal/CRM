@@ -1,3 +1,4 @@
+import { contractFixture } from "./fixtures/salesforce-contract";
 import { describe, it, expect } from "vitest";
 import { createHash } from "node:crypto";
 import {
@@ -25,7 +26,9 @@ const snapshot = snapshotSchema.parse({
   accountName: "TEST - Pilot",
   signerName: "Test Signer",
   signerEmail: config.recipientEmail,
+  street: "123 Test Street", city: "Fort Lauderdale", state: "Florida", postalCode: "33309", country: "United States",
   totalDebt: 150000,
+  processor: "SAS", includeAddendum:false, contract: contractFixture,
 });
 const source = {
   orgId: config.orgId,

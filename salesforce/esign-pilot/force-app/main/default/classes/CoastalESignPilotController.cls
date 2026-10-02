@@ -46,12 +46,7 @@ public with sharing class CoastalESignPilotController {
             throw new AuraHandledException('Use a TEST account with a signer name, email, positive debt amount and processor.');
         String requestId = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getOrganizationId()+':'+recordId+':pilot-v1'))).substring(0,32);
         if(renew) requestId=EncodingUtil.convertToHex(Crypto.generateAesKey(128));
-        Map<String,Object> s=new Map<String,Object>{
-            'opportunityId'=>String.valueOf(recordId),'requestId'=>requestId,'salesforceUserId'=>UserInfo.getUserId(),
-            'accountName'=>o.Account.Name,'signerName'=>signerName.trim(),'signerEmail'=>o.Email__c,
-            'street'=>empty(o.Account.BillingStreet),'city'=>empty(o.Account.BillingCity),'state'=>empty(o.Account.BillingState),
-            'postalCode'=>empty(o.Account.BillingPostalCode),'country'=>empty(o.Account.BillingCountry),
-            'totalDebt'=>o.Current_Total_Debt__c,'processor'=>processor,'includeAddendum'=>includeAddendum==true};
+        Map<String,Object> s=CoastalESignSnapshot.build(recordId,requestId);
         Map<String,Object> result=request('POST','',s);
         String packetId=(String)result.get('id');
         if(packetId==null || !Pattern.matches('sfp_[a-f0-9]{40}',packetId)) throw new AuraHandledException('Invalid packet returned by CRM.');

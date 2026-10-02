@@ -1,0 +1,11 @@
+:host { display: block; }
+.content { padding: 8px 16px 16px; position: relative; min-height: 130px; }
+.status { display: inline-block; background: #eef4ff; color: #17477b; border-radius: 16px; padding: 4px 12px; font-weight: 700; font-size: 12px; }
+.completed { background: #e3f5e9; color: #226237; }
+.description { margin: 12px 0; line-height: 1.5; }
+.recipient { display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.recipient span, .updated { color: #656565; font-size: 12px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.empty { text-align: center; color: #656565; padding: 20px 12px; }
+.empty p { margin-top: 16px; }
+.error { color: #ba0517; }

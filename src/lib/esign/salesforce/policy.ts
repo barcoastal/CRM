@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
+import { contractSchema } from "./contract-data";
 import type { PacketConfig } from "../packet-config";
 export const pilotConfigSchema = z.object({
   orgId: z.string().regex(/^00D[a-zA-Z0-9]{15}$/),
@@ -20,14 +21,15 @@ export const snapshotSchema = z.object({
   accountName: z.string().trim().min(1).max(150),
   signerName: z.string().trim().min(2).max(150),
   signerEmail: z.email(),
-  street: z.string().max(255).default(""),
-  city: z.string().max(100).default(""),
-  state: z.string().max(100).default(""),
-  postalCode: z.string().max(20).default(""),
-  country: z.string().max(80).default("United States"),
+  street: z.string().trim().min(1).max(255),
+  city: z.string().trim().min(1).max(100),
+  state: z.string().trim().min(1).max(100),
+  postalCode: z.string().trim().min(1).max(20),
+  country: z.string().trim().min(1).max(80),
   totalDebt: z.number().positive().max(10000000),
-  processor: z.enum(["SAS", "RAM"]).default("SAS"),
-  includeAddendum: z.boolean().default(false),
+  processor: z.enum(["SAS", "RAM"]),
+  includeAddendum: z.boolean(),
+  contract: contractSchema,
 });
 export type SalesforceSnapshot = z.infer<typeof snapshotSchema>;
 export const sourceSchema = z.object({
