@@ -62,6 +62,7 @@ const snapshot = {
   accountName: "TEST - Pilot",
   signerName: "Test Signer",
   signerEmail: pilot.recipientEmail,
+  street: "123 Test Street", city: "Fort Lauderdale", state: "Florida", postalCode: "33309", country: "United States",
   totalDebt: 150000,
   processor: "SAS", includeAddendum:false, contract: contractFixture,
 };

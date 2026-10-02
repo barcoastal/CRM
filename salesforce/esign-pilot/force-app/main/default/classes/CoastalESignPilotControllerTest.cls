@@ -6,7 +6,7 @@
         List<PermissionSetAssignment> grants=new List<PermissionSetAssignment>();
         for(PermissionSet ps:[SELECT Id FROM PermissionSet WHERE Name IN ('Coastal_ESign_Pilot','Modify_All_Data')]) grants.add(new PermissionSetAssignment(AssigneeId=u.Id,PermissionSetId=ps.Id));
         insert grants;
-        System.runAs(new User(Id=UserInfo.getUserId())) { createSample(); }
+        System.runAs(new User(Id=UserInfo.getUserId())) { Test.startTest(); createSample(); Test.stopTest(); }
     }
     private static User pilot(){return [SELECT Id FROM User WHERE Alias='cesgtest' LIMIT 1];}
     private static Opportunity sample(){return [SELECT Id,StageName FROM Opportunity WHERE Name='TEST - Pilot' LIMIT 1];}
@@ -60,10 +60,10 @@
         System.assertEquals('Working Opportunity',saved.StageName);System.assertEquals('COMPLETED',saved.Coastal_Esign_Status__c);System.assertNotEquals(null,saved.Coastal_Esign_File_Id__c);
         System.assertEquals(1,[SELECT count() FROM ContentDocumentLink WHERE LinkedEntityId=:o.Id]);
     }}
-    @IsTest static void completionRefreshDoesNotDuplicateExistingFile(){Opportunity o=sample();System.runAs(pilot()){Test.startTest();
+    @IsTest static void completionRefreshDoesNotDuplicateExistingFile(){Opportunity o=sample();System.runAs(pilot()){
         ContentVersion v=new ContentVersion(Title='TEST signed copy',PathOnClient='test.pdf',VersionData=Blob.valueOf('%PDF-1.4 test'),FirstPublishLocationId=o.Id);insert v;
         o.Coastal_Esign_Packet_Id__c=PACKET;o.Coastal_Esign_File_Id__c=[SELECT ContentDocumentId FROM ContentVersion WHERE Id=:v.Id].ContentDocumentId;update o;
-        Test.setMock(HttpCalloutMock.class,new Mock(o.Id,false));CoastalESignPilotController.refreshStatus(o.Id);Test.stopTest();
+        Test.setMock(HttpCalloutMock.class,new Mock(o.Id,false));Test.startTest();CoastalESignPilotController.refreshStatus(o.Id);Test.stopTest();
         System.assertEquals(1,[SELECT count() FROM ContentDocumentLink WHERE LinkedEntityId=:o.Id]);
     }}
     @IsTest static void rejectsInvalidSnapshotAndRemoteFailure(){Opportunity o=sample();System.runAs(pilot()){Test.startTest();
