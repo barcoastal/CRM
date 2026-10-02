@@ -486,7 +486,7 @@
   max-height: 90dvh;
   overflow: auto;
 }
-.modal input,
+.modal input:not([type="checkbox"]):not([type="radio"]),
 .modal textarea {
   width: 100%;
   padding: 10px;
@@ -910,5 +910,95 @@
   .shell[data-keyboard-open="true"] .header,
   .shell[data-keyboard-open="true"] .viewerTools {
     display: none;
+  }
+}
+
+/* Keep consent readable without letting generic form styles stretch its checkbox. */
+.consentModal {
+  display: flex;
+  flex-direction: column;
+  max-width: 640px;
+  padding: 0;
+  overflow: hidden;
+  max-height: calc(100dvh - 40px);
+}
+.consentModal h2 {
+  flex: none;
+  margin: 0;
+  padding: 24px 28px 18px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.35;
+  border-bottom: 1px solid #e7e4eb;
+}
+.consentBody {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px 28px;
+}
+.consentBody p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.consentModal .consent {
+  display: flex;
+  width: 100%;
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 16px;
+  border: 1px solid #ddd7e6;
+  border-radius: 8px;
+  background: #f7f5fa;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.consentModal .consent input[type="checkbox"] {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  margin: 2px 0 0;
+  padding: 0;
+  accent-color: #4d20a3;
+}
+.consentModal .consent span {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.consentModal .modalActions {
+  flex: none;
+  margin: 0;
+  padding: 16px 28px;
+  border-top: 1px solid #e7e4eb;
+  background: white;
+}
+.consentModal .modalActions button {
+  min-height: 48px;
+}
+@media (max-width: 700px) {
+  .consentModal {
+    max-height: calc(100dvh - 40px);
+  }
+  .consentModal h2 {
+    padding: 20px;
+    font-size: 18px;
+  }
+  .consentBody {
+    padding: 20px;
+  }
+  .consentModal .modalActions {
+    padding: 14px 20px;
+    flex-wrap: wrap;
+  }
+  .consentModal .modalActions button {
+    flex: 1 1 120px;
+    padding: 12px;
+    font-size: 14px;
   }
 }

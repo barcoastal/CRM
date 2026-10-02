@@ -670,21 +670,33 @@ export function SignClient(props: Props) {
           <section
             role="dialog"
             aria-modal="true"
-            aria-label="Electronic signing consent"
-            className={styles.modal}
+            aria-labelledby="signing-consent-title"
+            className={`${styles.modal} ${styles.consentModal}`}
           >
-            <h2>Electronic records and signature disclosure</h2>
-            <p>{DISCLOSURE_TEXT}</p>
-            <label className={styles.consent}>
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-              />
-              I have reviewed the document, can retain a copy, and agree to the
-              disclosure above.
-            </label>
+            <h2 id="signing-consent-title">
+              Electronic records and signature disclosure
+            </h2>
+            <div className={styles.consentBody}>
+              <p>{DISCLOSURE_TEXT}</p>
+              <label className={styles.consent}>
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                />
+                <span>
+                  I have reviewed the document, can retain a copy, and agree to
+                  the disclosure above.
+                </span>
+              </label>
+            </div>
             <div className={styles.modalActions}>
+              <button
+                className={styles.button}
+                onClick={() => setShowConsent(false)}
+              >
+                Back to document
+              </button>
               <button
                 className={styles.primary}
                 onClick={() => setShowConsent(false)}
