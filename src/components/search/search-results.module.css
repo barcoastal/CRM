@@ -1,0 +1,294 @@
+.layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+  color: #181818;
+  font-size: 13px;
+}
+.sidebar {
+  background: #fff;
+  border: 1px solid #c9c9c9;
+  min-height: calc(100vh - 122px);
+  position: sticky;
+  top: 12px;
+}
+.sidebar h1 {
+  font-size: 19px;
+  font-weight: 700;
+  padding: 22px 20px 8px;
+  margin: 0;
+}
+.query {
+  color: #706e6b;
+  padding: 0 20px 18px;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-bottom: 1px solid #dddbda;
+}
+.sidebar nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 10px 16px;
+  border-left: 4px solid transparent;
+  text-decoration: none;
+  color: #181818;
+  gap: 12px;
+}
+.sidebar nav a:hover {
+  background: #f3f3f3;
+}
+.sidebar nav a.active {
+  border-left-color: #0176d3;
+  background: #eef4fb;
+  font-weight: 700;
+}
+.count {
+  padding: 1px 7px;
+  min-width: 26px;
+  border: 1px solid #dddbda;
+  background: white;
+  border-radius: 14px;
+  font-size: 12px;
+  text-align: center;
+  font-weight: 600;
+}
+.results {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 4px;
+  min-height: 36px;
+  color: #444;
+}
+.toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.toolbar select {
+  border: 1px solid #c9c9c9;
+  background: #fff;
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: #0176d3;
+  min-height: 30px;
+}
+.card {
+  border: 1px solid #c9c9c9;
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px #00000008;
+}
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  background: #f3f3f3;
+  border-bottom: 1px solid #c9c9c9;
+}
+.cardHeader h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 3px;
+}
+.cardHeader p {
+  font-size: 12px;
+  color: #444;
+  margin: 0;
+}
+.card a,
+.empty a {
+  color: #0176d3;
+  text-decoration: none;
+}
+.card a:hover,
+.empty a:hover {
+  text-decoration: underline;
+}
+.tableScroll {
+  overflow-x: auto;
+}
+.tableScroll table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+.tableScroll th {
+  white-space: nowrap;
+  background: #fafaf9;
+  border-right: 1px solid #dddbda;
+  border-bottom: 1px solid #c9c9c9;
+  padding: 8px 14px;
+  font-weight: 700;
+  color: #444;
+}
+.tableScroll th:last-child {
+  border-right: 0;
+}
+.tableScroll th button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  width: 100%;
+  background: transparent;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.tableScroll th:first-child,
+.tableScroll td:first-child {
+  min-width: 225px;
+}
+.tableScroll th button span {
+  color: #706e6b;
+}
+.tableScroll td {
+  padding: 8px 14px;
+  white-space: nowrap;
+  border-bottom: 1px solid #dddbda;
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tableScroll tbody tr:last-child td {
+  border-bottom: 0;
+}
+.tableScroll tbody tr:hover {
+  background: #f3f8fc;
+}
+.pagination {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #dddbda;
+}
+.pagination > div {
+  display: flex;
+  gap: 8px;
+}
+.empty,
+.hint {
+  padding: 32px;
+  background: white;
+  border: 1px solid #dddbda;
+  border-radius: 4px;
+}
+.empty h2,
+.hint h2 {
+  font-size: 19px;
+  margin: 12px 0 8px;
+  font-weight: 600;
+}
+.empty p,
+.hint p {
+  color: #444;
+  margin-bottom: 12px;
+}
+.hint {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  padding: 20px 26px;
+}
+.hint h2 {
+  margin-top: 0;
+}
+.hint p {
+  margin-bottom: 0;
+}
+.searchIcon {
+  width: 35px;
+  height: 35px;
+  fill: #90a5c0;
+  flex-shrink: 0;
+}
+.skeleton {
+  display: grid;
+  gap: 12px;
+}
+.skeleton > div {
+  background: white;
+  padding: 20px;
+  border: 1px solid #dddbda;
+  border-radius: 4px;
+}
+.skeleton span,
+.skeleton p {
+  display: block;
+  height: 14px;
+  background: #eef0f3;
+  border-radius: 3px;
+  margin-bottom: 15px;
+}
+.skeleton span {
+  width: 150px;
+  height: 22px;
+}
+.layout :is(a, button, select, [tabindex]):focus-visible {
+  outline: 2px solid #0176d3;
+  outline-offset: -2px;
+}
+@media (max-width: 850px) {
+  .layout {
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .toolbar {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 600px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sidebar {
+    position: static;
+    min-height: auto;
+  }
+  .sidebar h1 {
+    padding: 14px 16px 6px;
+  }
+  .query {
+    padding: 0 16px 12px;
+  }
+  .sidebar nav {
+    display: flex;
+    overflow-x: auto;
+  }
+  .sidebar nav a {
+    flex: 0 0 auto;
+    border-left: 0;
+    border-bottom: 3px solid transparent;
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+  .sidebar nav a.active {
+    border-bottom-color: #0176d3;
+  }
+  .hint,
+  .empty {
+    padding: 20px;
+  }
+}

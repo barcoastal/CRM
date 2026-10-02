@@ -1,0 +1,11 @@
+# Global search results
+
+Typing in the CRM header and pressing Enter opens `/search?q=...` instead of opening the first suggestion. Clicking a suggestion still opens its record. The dropdown also offers **Show all results**. Arrow keys move between the input and suggestions; Escape dismisses them, and Cmd/Ctrl+K focuses search.
+
+The full screen follows the Salesforce search layout: categories and exact counts on the left, grouped record tables on the right. Supported categories are Leads, Opportunities, Contacts, Accounts, People, Cases, and Tasks. Top Results previews five rows per category; View All or a category opens all matches in pages of 25. Name ascending/descending and newest sorting, refresh, and browser Back preserve the query through URL parameters.
+
+Search requires a session and the category's view permission. Leads, opportunities, contacts, and accounts also use the existing record access scope for both counts and rows. Cases and tasks retain their existing list API visibility rules. User search selects only display fields. Salesforce lead snapshots are read only to extract the display lead ID and sub-disposition; raw snapshots and sensitive fields are never returned.
+
+The same search service serves suggestions and full results. Suggestions skip counts. Database sorting includes an ID tie-breaker so page boundaries are stable. Empty terms do not query records; SQL LIKE wildcard characters are treated literally. Requests are cancelled when the query changes, and error responses have a retry control.
+
+Validation: production build; 11 automated tests covering permissions, identical count/row scopes, pagination, sorting, escaping, input bounds, and response compatibility. Browser verification uses isolated PostgreSQL fixtures, including 63 matching leads, records in seven categories, and a restricted user. Browser checks passed for Enter before/after suggestions, all seven categories, all 63 paginated leads without duplicates, sorting, reload/Back, record navigation, literal underscores, keyboard selection, mobile width, retry after an API error, and restricted-user results. The mobile header gives search its own full-width row. No migration is required.
