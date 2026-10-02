@@ -94,7 +94,7 @@ export function LivePaymentGrid({ programPlanId, drafts, canEdit = true }: { pro
     const half = Math.round((d.amount / 2) * 100) / 100;
     const d1 = d.scheduledDate.slice(0, 10);
     const next = new Date(d.scheduledDate);
-    next.setDate(next.getDate() + 7);
+    next.setUTCDate(next.getUTCDate() + 7);
     setSplitParts([
       { date: d1, amount: half.toFixed(2) },
       { date: next.toISOString().slice(0, 10), amount: (d.amount - half).toFixed(2) },
@@ -199,7 +199,7 @@ export function LivePaymentGrid({ programPlanId, drafts, canEdit = true }: { pro
                       </span>
                     ) : (
                       <>
-                        {new Date(d.scheduledDate).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}
+                        {new Date(d.scheduledDate).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", timeZone: "UTC" })}
                         {d.splitGroupId && (
                           <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: "#8a4b00", background: "#ffe8c2", borderRadius: 8, padding: "1px 6px" }}>
                             split {Number(d.splitIndex ?? 0) + 1}
@@ -303,7 +303,7 @@ export function LivePaymentGrid({ programPlanId, drafts, canEdit = true }: { pro
           <div style={{ background: "#fff", borderRadius: 8, padding: 20, width: 420, maxHeight: "80vh", overflowY: "auto" }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#181818", marginBottom: 4 }}>Split Payment</div>
             <div style={{ fontSize: 12, color: "#444444", marginBottom: 12 }}>
-              {new Date(splitFor.scheduledDate).toLocaleDateString()} · {money(splitFor.amount)} - parts must add up exactly. Weekly fees stay on part 1.
+              {new Date(splitFor.scheduledDate).toLocaleDateString("en-US", { timeZone: "UTC" })} · {money(splitFor.amount)} - parts must add up exactly. Weekly fees stay on part 1.
             </div>
             {splitParts.map((p, i) => (
               <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
@@ -336,7 +336,7 @@ export function LivePaymentGrid({ programPlanId, drafts, canEdit = true }: { pro
               onClick={() => {
                 const last = splitParts[splitParts.length - 1];
                 const d = new Date(last?.date || splitFor.scheduledDate);
-                d.setDate(d.getDate() + 7);
+                d.setUTCDate(d.getUTCDate() + 7);
                 setSplitParts((ps) => [...ps, { date: d.toISOString().slice(0, 10), amount: "0" }]);
               }}
               style={{ ...btn, height: 28, fontSize: 12, marginBottom: 12 }}

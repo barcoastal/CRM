@@ -71,6 +71,7 @@
 
 .sf-search-wrap {
   flex: 1;
+  min-width: 0;
   display: flex;
   justify-content: center;
 }
@@ -92,6 +93,7 @@
 
 .sf-search-input {
   flex: 1;
+  min-width: 0;
   border: 0;
   outline: 0;
   background: transparent;
@@ -413,6 +415,16 @@ img, video, canvas { max-width: 100%; height: auto; }
   html, body { font-size: 12px; }
   main { padding: 6px !important; }
   .sf-app-name { display: none; }
-  .sf-search-wrap { max-width: 120px; }
+  .sf-global-bar {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    height: auto;
+    gap: 8px;
+    padding: 8px;
+  }
+  .sf-global-utilities { justify-self: end; }
+  .sf-global-utilities > a:is([title="Favorites"], [title="Favorites list"], [title="Help"]) { display: none; }
+  .sf-search-wrap { grid-column: 1 / -1; grid-row: 2; max-width: none; width: 100%; }
+  .sf-search-wrap .sf-search { width: 100%; max-width: none; }
   .sf-global-utilities { gap: 2px; }
 }
