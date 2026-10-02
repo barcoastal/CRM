@@ -6,7 +6,9 @@
                 <componentInstanceProperties>
                     <name>actionNames</name>
                     <valueList>
-                        <valueListItems><value>Opportunity.Coastal_ESign_Pilot</value></valueListItems>
+                        <valueListItems>
+                            <value>Opportunity.Coastal_ESign_Pilot</value>
+                        </valueListItems>
                         <valueListItems>
                             <value>Opportunity.Disposition_Aura</value>
                         </valueListItems>
@@ -1501,6 +1503,12 @@
             <componentInstance>
                 <componentName>dfsle:Status</componentName>
                 <identifier>dfsle_Status</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>coastalEsignStatus</componentName>
+                <identifier>coastalEsignStatus</identifier>
             </componentInstance>
         </itemInstances>
         <itemInstances>

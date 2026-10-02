@@ -1,0 +1,23 @@
+<template>
+    <lightning-card title="Coastal Sign Envelope Status" icon-name="standard:contract">
+        <lightning-button-icon slot="actions" icon-name="utility:refresh" alternative-text="Refresh Coastal Sign status" title="Refresh Coastal Sign status" onclick={refresh} disabled={busy}></lightning-button-icon>
+        <div class="content" aria-live="polite">
+            <template lwc:if={busy}><lightning-spinner alternative-text="Loading signing status" size="small"></lightning-spinner></template>
+            <template lwc:if={error}><div class="error" role="alert">{error}</div></template>
+            <template lwc:elseif={hasPacket}>
+                <span class={statusClass}>{status}</span>
+                <p class="description">{description}</p>
+                <div class="recipient"><span>Recipient</span><strong>{recipient}</strong></div>
+                <div class="actions">
+                    <lightning-button label="View packet" variant="brand" onclick={openPacket} disabled={busy}></lightning-button>
+                    <template lwc:if={hasFile}><lightning-button label="Signed document" onclick={openFile}></lightning-button></template>
+                </div>
+                <template lwc:if={refreshedAt}><p class="updated">Status checked at {refreshedAt}</p></template>
+                <template lwc:else><p class="updated">Saved status · Refresh to check the latest signing progress.</p></template>
+            </template>
+            <template lwc:else>
+                <div class="empty"><lightning-icon icon-name="utility:signature" size="large"></lightning-icon><p>Send a packet with Coastal Sign to view its status here.</p></div>
+            </template>
+        </div>
+    </lightning-card>
+</template>
