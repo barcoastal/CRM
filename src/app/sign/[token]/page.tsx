@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { SignClient } from "./sign-client";
+import styles from "@/components/esign/signing.module.css";
 
 type Box = {
   page: number;
@@ -144,76 +145,41 @@ function TerminalView({
   downloadHref?: string;
 }) {
   return (
-    <div
-      style={{
-        background: "#f4f6f9",
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-      }}
-    >
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 8,
-          maxWidth: 480,
-          padding: 32,
-          textAlign: "center",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: 22,
-            fontWeight: 700,
-            color: "#131b2e",
-            marginBottom: 12,
-          }}
-        >
-          {title}
-        </h1>
-        <p
-          style={{
-            fontSize: 14,
-            color: "#444656",
-            lineHeight: 1.5,
-            marginBottom: 24,
-          }}
-        >
-          {body}
-        </p>
+    <div className={styles.welcome}>
+      <div className={`${styles.welcomeCard} ${styles.success}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/email/coastal-logo.png"
+          alt="Coastal Debt Resolve"
+          width={220}
+          style={{ maxWidth: "100%", height: "auto", margin: "0 auto" }}
+        />
         {downloadHref && (
-          <a
-            href={downloadHref}
-            target="_blank"
-            rel="noopener"
-            style={{
-              display: "inline-block",
-              padding: "10px 24px",
-              background: "#3052ff",
-              color: "#fff",
-              textDecoration: "none",
-              borderRadius: 4,
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
-            Download signed copy
-          </a>
+          <div className={styles.successIcon} aria-hidden="true">
+            ✓
+          </div>
         )}
+        <div className={styles.completionEyebrow}>Coastal Sign</div>
+        <h1>{title}</h1>
+        <p>{body}</p>
         {downloadHref && (
-          <p>
-            <a href={downloadHref.replace("/signed-pdf", "/evidence")}>
-              Download signing audit record
+          <div className={styles.successActions}>
+            <a
+              className={styles.primary}
+              href={downloadHref}
+              target="_blank"
+              rel="noopener"
+            >
+              Download signed copy
             </a>
-          </p>
+            <a
+              className={styles.successRecord}
+              href={downloadHref.replace("/signed-pdf", "/evidence")}
+            >
+              Download signing record
+            </a>
+          </div>
         )}
-        <p style={{ marginTop: 28, fontSize: 11, color: "#747474" }}>
-          Coastal CRM e-Signature. Keep a copy of your completed document for
-          your records.
-        </p>
       </div>
     </div>
   );

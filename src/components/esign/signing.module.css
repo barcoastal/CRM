@@ -1002,3 +1002,77 @@
     font-size: 14px;
   }
 }
+
+.success.welcomeCard {
+  max-width: 640px;
+  padding: 32px;
+  border-top: 5px solid #2850a0;
+}
+.success .successIcon {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin: 32px auto 20px;
+  border-radius: 50%;
+  background: #e5f5ed;
+  color: #247a51;
+  font-size: 40px;
+}
+.completionEyebrow {
+  color: #637089;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.success h1 {
+  margin: 12px 0 16px;
+  font-size: 30px;
+  line-height: 1.25;
+}
+.success p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.completedDocument {
+  margin-top: 24px;
+  padding: 20px;
+  text-align: left;
+  border: 1px solid #e4e9f2;
+  border-radius: 8px;
+  background: #f5f7fb;
+  overflow-wrap: anywhere;
+}
+.completedDocument span {
+  display: block;
+  margin-bottom: 8px;
+  color: #637089;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.completedDocument strong {
+  font-size: 17px;
+  line-height: 1.5;
+}
+.successActions > a {
+  width: 100%;
+  box-sizing: border-box;
+}
+.successRecord {
+  border: 1px solid #b8c8e2;
+  border-radius: 6px;
+  padding: 14px;
+  text-decoration: none;
+  font-weight: 600;
+}
+@media (max-width: 700px) {
+  .success.welcomeCard {
+    padding: 24px 20px;
+  }
+  .success h1 {
+    font-size: 26px;
+  }
+}
