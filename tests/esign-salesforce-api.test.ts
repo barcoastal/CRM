@@ -1,3 +1,4 @@
+import { contractFixture } from "./fixtures/salesforce-contract";
 import { beforeEach, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 const m = vi.hoisted(() => ({
@@ -62,6 +63,7 @@ const snapshot = {
   signerName: "Test Signer",
   signerEmail: pilot.recipientEmail,
   totalDebt: 150000,
+  processor: "SAS", includeAddendum:false, contract: contractFixture,
 };
 const post = (body: unknown) =>
   POST(

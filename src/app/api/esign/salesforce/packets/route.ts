@@ -7,12 +7,28 @@ export async function POST(req: NextRequest) {
   const pilot = await authenticateSalesforcePilot(req.headers);
   if (!pilot)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (Number(req.headers.get("content-length") ?? 0) > 20000)
+  if (Number(req.headers.get("content-length") ?? 0) > 1000000)
     return NextResponse.json({ error: "Request too large" }, { status: 413 });
-  const parsed = snapshotSchema.safeParse(await req.json().catch(() => null));
+  const raw = await req.text();
+  if (Buffer.byteLength(raw, "utf8") > 1000000)
+    return NextResponse.json({ error: "Request too large" }, { status: 413 });
+  let body;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    body = null;
+  }
+  const parsed = snapshotSchema.safeParse(body);
   if (!parsed.success)
     return NextResponse.json(
-      { error: "Review the required Salesforce details." },
+      {
+        error:
+          "Review the Salesforce contract data: " +
+          parsed.error.issues
+            .slice(0, 4)
+            .map((i) => `${i.path.join(".")}: ${i.message}`)
+            .join("; "),
+      },
       { status: 400 },
     );
   if (!snapshotAllowed(parsed.data, pilot))

@@ -15,16 +15,26 @@ import { convertWordToPdf } from "@/lib/esign/docx-to-pdf";
 export type MergeData = Record<string, unknown>;
 
 /** Fill a .docx template buffer with data; returns the filled .docx buffer. */
-export function fillDocxTemplate(docxBuffer: Buffer, data: MergeData): Buffer {
+export function fillDocxTemplate(
+  docxBuffer: Buffer,
+  data: MergeData,
+  requireAllTokens = false,
+): Buffer {
   const zip = new PizZip(docxBuffer);
   const doc = new Docxtemplater(zip, {
     delimiters: { start: "{{", end: "}}" },
     paragraphLoop: true,
     linebreaks: true,
-    nullGetter: () => "", // unresolved tokens render empty, not "undefined"
+    nullGetter: () => {
+      if (requireAllTokens)
+        throw new Error("A contract template contains an unmapped field.");
+      return "";
+    },
   });
   doc.render(data);
-  return doc.getZip().generate({ type: "nodebuffer", compression: "DEFLATE" }) as Buffer;
+  return doc
+    .getZip()
+    .generate({ type: "nodebuffer", compression: "DEFLATE" }) as Buffer;
 }
 
 /** Fill a .docx template and convert to PDF. */
@@ -32,8 +42,9 @@ export async function fillDocxToPdf(
   docxBuffer: Buffer,
   data: MergeData,
   name = "contract.docx",
+  requireAllTokens = false,
 ): Promise<Buffer> {
-  const filled = fillDocxTemplate(docxBuffer, data);
+  const filled = fillDocxTemplate(docxBuffer, data, requireAllTokens);
   return convertWordToPdf(filled, name);
 }
 

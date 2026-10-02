@@ -3,7 +3,7 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
 import { loadPacketTemplates } from "@/lib/contracts/routing";
 import { CATEGORIES } from "@/lib/contracts/templates";
-import { buildContractDataFromSnapshot } from "@/lib/contracts/merge-data";
+import { salesforceMergeData, salesforcePacketPlan } from "./contract-data";
 import { fillDocxToPdf } from "@/lib/contracts/docx-merge";
 import { prepareAnchoredPacket } from "@/lib/contracts/anchors";
 import { orderedFields } from "../fields";
@@ -24,47 +24,19 @@ export async function prepareSalesforcePilot(
     .digest("hex");
   const existing = await prisma.signingPacket.findUnique({ where: { id } });
   if (existing) return existing;
-  const { templates, missing } = await loadPacketTemplates({
-    processor: s.processor,
-    legal: "Citadel",
-    categories: [
-      "COASTAL",
-      ...(s.includeAddendum ? ["ADDENDUM" as const] : []),
-      s.processor === "RAM" ? "PROCESSOR_RAM" : "PROCESSOR_SAS",
-      "LEGAL_CITADEL",
-    ],
-  });
+  const data = salesforceMergeData(s);
+  const { templates, missing } = await loadPacketTemplates(
+    salesforcePacketPlan(s),
+  );
   if (missing.length)
     throw new Error(`Missing templates: ${missing.join(", ")}`);
-  // The pilot uses the established CRM sample schedule defaults; it is deliberately
-  // marked non-contractual. Live Salesforce quote parity is a separate release gate.
-  const data = buildContractDataFromSnapshot({
-    totalDebt: s.totalDebt,
-    account: {
-      name: s.accountName,
-      billingStreet: s.street,
-      billingCity: s.city,
-      billingState: s.state,
-      billingZip: s.postalCode,
-      paymentProcessor: s.processor,
-      email: s.signerEmail,
-    },
-    primaryContact: {
-      fullName: s.signerName,
-      firstName: s.signerName.split(" ")[0],
-      lastName: s.signerName.split(" ").slice(1).join(" "),
-      email: s.signerEmail,
-    },
-    debts: [],
-    paymentCalculations: [],
-  });
   const pdf = await PDFDocument.create();
   const font = await pdf.embedFont(StandardFonts.HelveticaBold);
   const documents = [];
   const fields: PacketField[] = [];
   for (const t of templates) {
     const anchored = await prepareAnchoredPacket(
-      await fillDocxToPdf(t.buffer, data, t.name),
+      await fillDocxToPdf(t.buffer, data, t.name, true),
     );
     const part = await PDFDocument.load(anchored.pdf);
     const startPage = pdf.getPageCount() + 1;
@@ -118,6 +90,8 @@ export async function prepareSalesforcePilot(
       sandbox: true,
       returnUrl: `${c.instanceUrl}/lightning/r/Opportunity/${s.opportunityId}/view`,
       snapshotHash,
+      snapshotVersion: 2,
+      programPlanId: s.contract.plan.id,
     },
     config: {
       documents,
