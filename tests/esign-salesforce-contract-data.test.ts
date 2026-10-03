@@ -28,6 +28,8 @@ describe("Salesforce saved contract data", () => {
     expect(data.EstimatedSavings).toBe("$44,040.00");
     expect(data.FirstPaymentAmount).toBe("$53,405.00");
     expect(data.SettlementPercent).toBe("40");
+    expect(data.TotalProgramPercentDisplay).toBe("70%");
+    expect(data.ProgramFeePercentDisplay).toBe("20%");
     expect(data.ProcessorName).toBe("RAM");
     expect(data.ContactDOB).toBe("1/1/1990");
     expect(data.Creditors).toEqual([
