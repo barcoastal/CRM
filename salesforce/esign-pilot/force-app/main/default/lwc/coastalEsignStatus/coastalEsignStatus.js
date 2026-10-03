@@ -8,8 +8,8 @@ export default class CoastalEsignStatus extends NavigationMixin(LightningElement
     timer;
     connectedCallback() {
         this.timer = setInterval(() => {
-            if (!document.hidden && this.recordId) this.load(false);
-        }, 30000);
+            if (!document.hidden && this.recordId) this.load(true);
+        }, 20000);
     }
     disconnectedCallback() { clearInterval(this.timer); }
 
