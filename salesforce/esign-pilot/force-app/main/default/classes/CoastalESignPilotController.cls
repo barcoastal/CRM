@@ -87,21 +87,25 @@ public with sharing class CoastalESignPilotController {
         Map<String,Object> state=request('GET','/'+packetId,null);
         if((String)state.get('id')!=packetId || (String)state.get('opportunityId')!=String.valueOf(recordId)) throw new AuraHandledException('Packet does not match this Opportunity.');
         String status=(String)state.get('status');
+        if(!new Set<String>{'DRAFT','SENT','VIEWED','SIGNED','COMPLETED','DECLINED','VOIDED','EXPIRED'}.contains(status)) throw new AuraHandledException('Invalid signing status returned by CRM.');
         Blob signedPdf;
         if(status=='COMPLETED' && String.isBlank(o.Coastal_Esign_File_Id__c)) {
             Map<String,Object> file=request('GET','/'+packetId+'?download=true',null);
+            if((String)file.get('id')!=packetId || String.isBlank((String)file.get('pdfBase64'))) throw new AuraHandledException('Signed file does not match this packet.');
             signedPdf=EncodingUtil.base64Decode((String)file.get('pdfBase64'));
         }
-        Opportunity locked=[SELECT Id,Coastal_Esign_Packet_Id__c,Coastal_Esign_File_Id__c FROM Opportunity WHERE Id=:recordId FOR UPDATE];
+        Opportunity locked=[SELECT Id,Coastal_Esign_Packet_Id__c,Coastal_Esign_File_Id__c,Coastal_Esign_Status__c FROM Opportunity WHERE Id=:recordId FOR UPDATE];
         if(locked.Coastal_Esign_Packet_Id__c!=packetId) throw new AuraHandledException('Packet changed. Refresh again.');
+        Boolean changed=locked.Coastal_Esign_Status__c!=status;
         locked.Coastal_Esign_Status__c=status;
         if(signedPdf!=null && String.isBlank(locked.Coastal_Esign_File_Id__c)) {
             ContentVersion v=new ContentVersion(Title='TEST - Coastal E-Sign - signed packet',PathOnClient='Coastal-ESign-TEST-signed.pdf',VersionData=signedPdf,FirstPublishLocationId=recordId);
             insert as user v;
+            changed=true;
             locked.Coastal_Esign_File_Id__c=[SELECT ContentDocumentId FROM ContentVersion WHERE Id=:v.Id].ContentDocumentId;
         }
         // Pilot status is separate from StageName so it cannot trigger copied payment or welcome automations.
-        update as user locked;
+        if(changed) update as user locked;
         return details(recordId);
     }
 }

@@ -80,4 +80,44 @@
         try{CoastalESignPilotController.openSender(o.Id);}catch(AuraHandledException e){denied=true;}
         System.assert(denied);Test.stopTest();
     }}
+    @IsTest static void backgroundCompletionSavesFile() {
+        Opportunity o=sample();System.runAs(pilot()) {
+            o.Coastal_Esign_Packet_Id__c=PACKET;update o;
+            Test.setMock(HttpCalloutMock.class,new Mock(o.Id,false));Test.startTest();
+            System.enqueueJob(new CoastalESignSyncWorker(o.Id));Test.stopTest();
+            Opportunity saved=[SELECT StageName,Coastal_Esign_Status__c,Coastal_Esign_File_Id__c FROM Opportunity WHERE Id=:o.Id];
+            System.assertEquals('COMPLETED',saved.Coastal_Esign_Status__c);
+            System.assertEquals('Working Opportunity',saved.StageName);
+            System.assertNotEquals(null,saved.Coastal_Esign_File_Id__c);
+            System.assertEquals(1,[SELECT count() FROM ContentDocumentLink WHERE LinkedEntityId=:o.Id]);
+        }
+    }
+    @IsTest static void schedulerEnqueuesWorker() {
+        Opportunity o=sample();System.runAs(pilot()) {
+            Test.startTest();new CoastalESignAutoSync(o.Id).execute(null);
+            System.assertEquals(1,Limits.getQueueableJobs());Test.stopTest();
+        }
+    }
+    @IsTest static void unchangedStatusDoesNotWrite() {
+        Opportunity o=sample();System.runAs(pilot()) {
+            o.Coastal_Esign_Packet_Id__c=PACKET;o.Coastal_Esign_Status__c='COMPLETED';o.Coastal_Esign_File_Id__c='069000000000001';update o;
+            Test.setMock(HttpCalloutMock.class,new Mock(o.Id,false));Test.startTest();
+            CoastalESignPilotController.refreshStatus(o.Id);
+            System.assertEquals(0,Limits.getDmlStatements());Test.stopTest();
+        }
+    }
+    @IsTest static void failedSyncCanRetryWithoutPartialWrite() {
+        Opportunity o=sample();System.runAs(pilot()) {
+            o.Coastal_Esign_Packet_Id__c=PACKET;o.Coastal_Esign_Status__c='SENT';update o;
+            Test.startTest();Test.setMock(HttpCalloutMock.class,new Mock(o.Id,true));
+            Boolean failed=false;
+            try { new CoastalESignSyncWorker(o.Id).execute(null); } catch(Exception e) { failed=true; }
+            System.assert(failed);System.assertEquals(0,Limits.getDmlStatements());
+            System.assertEquals('SENT',[SELECT Coastal_Esign_Status__c FROM Opportunity WHERE Id=:o.Id].Coastal_Esign_Status__c);
+            Test.setMock(HttpCalloutMock.class,new Mock(o.Id,false));
+            new CoastalESignSyncWorker(o.Id).execute(null);Test.stopTest();
+            System.assertEquals('COMPLETED',[SELECT Coastal_Esign_Status__c FROM Opportunity WHERE Id=:o.Id].Coastal_Esign_Status__c);
+            System.assertEquals(1,[SELECT count() FROM ContentDocumentLink WHERE LinkedEntityId=:o.Id]);
+        }
+    }
 }

@@ -5,6 +5,14 @@ import refreshStatus from '@salesforce/apex/CoastalESignPilotController.refreshS
 import { notifyRecordUpdateAvailable } from 'lightning/uiRecordApi';
 export default class CoastalEsignStatus extends NavigationMixin(LightningElement) {
     _recordId;
+    timer;
+    connectedCallback() {
+        this.timer = setInterval(() => {
+            if (!document.hidden && this.recordId) this.load(false);
+        }, 30000);
+    }
+    disconnectedCallback() { clearInterval(this.timer); }
+
     data;
     busy = false;
     error;
