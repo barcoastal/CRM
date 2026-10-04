@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ViewPicker, type ListViewOption } from "./view-picker";
 import { ListSelectionProvider } from "@/components/lists/list-table-wrapper";
 import { ListRowCheckbox, ListSelectAllCheckbox } from "@/components/lists/list-checkbox-cell";
+import { RecordLinkCell } from "@/components/lists/record-link-cell";
 
 export interface ListViewColumn<T> {
   key: string;
@@ -127,12 +128,9 @@ export function ListView<T extends { id: string }>({
                     <td key={c.key} role="gridcell">
                       <div className="slds-truncate" title={typeof c.render === "function" ? "" : ""}>
                         {ci === 0 && href ? (
-                          <Link
-                            href={href}
-                            style={{ color: "#0176d3", textDecoration: "none", fontWeight: 400 }}
-                          >
+                          <RecordLinkCell href={href}>
                             {c.render(row)}
-                          </Link>
+                          </RecordLinkCell>
                         ) : (
                           c.render(row)
                         )}

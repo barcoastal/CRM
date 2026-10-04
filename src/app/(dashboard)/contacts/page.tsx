@@ -8,8 +8,8 @@ import {
   SfListPage,
   type SfColumn,
   type SfRow,
-  ownerAlias,
 } from "@/components/slds/sf-list-page";
+import { ownerAlias } from "@/lib/lists/owner-alias";
 
 interface ContactsPageProps {
   searchParams: Promise<{

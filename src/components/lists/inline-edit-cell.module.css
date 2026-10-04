@@ -1,0 +1,24 @@
+.editButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: #747474;
+  cursor: pointer;
+}
+
+.editButton:hover {
+  background: #eef4ff;
+  color: #0176d3;
+}
+
+.editButton:focus-visible {
+  outline: 2px solid #0176d3;
+  outline-offset: 1px;
+}

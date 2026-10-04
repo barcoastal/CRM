@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import type { InlineFieldConfig } from "@/lib/lists/inline-editable-fields";
+import { ALLOWED_BULK_FIELDS, isBulkEntity } from "@/lib/lists/allowed-bulk-fields";
+import styles from "./inline-edit-cell.module.css";
 
 interface UserOption {
   id: string;
@@ -39,19 +43,21 @@ export interface InlineEditCellProps {
   value: unknown;
   /** what to render as the static read-only label (e.g. a status pill) */
   display?: ReactNode;
+  /** Link for the read-only label; editing controls remain outside the link. */
+  recordHref?: string;
   /** plain alignment for the cell content */
   align?: "left" | "right";
-  /** when true (default), clicking enters edit mode */
+  /** when true (default), show a pencil button to enter edit mode */
   editable?: boolean;
 }
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 /**
- * Inline editable cell. Click to edit, Enter / blur to save, Esc to cancel.
+ * Inline editable cell. Pencil to edit, Enter / blur to save, Esc to cancel.
  *
  * Visual states:
- *   - hover    : faint blue ring on the cell
+ *   - hover    : highlighted pencil button
  *   - editing  : light blue background (#f2f3ff) + visible input
  *   - saving   : grey dot
  *   - saved    : green check (#1a7d37) for 800ms
@@ -65,6 +71,7 @@ export function InlineEditCell({
   config,
   value,
   display,
+  recordHref,
   align,
   editable = true,
 }: InlineEditCellProps) {
@@ -74,11 +81,8 @@ export function InlineEditCell({
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [userOpts, setUserOpts] = useState<UserOption[]>(() => userOptionsCache ?? []);
   const inputRef = useRef<HTMLInputElement | HTMLSelectElement | null>(null);
-
-  // Reset local value when the row's prop value changes (e.g. after refresh)
-  useEffect(() => {
-    if (!editing) setLocalValue(toFormString(value, config));
-  }, [value, editing, config]);
+  const fieldLabel = config.field.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
+  const canEdit = editable && isBulkEntity(entity) && ALLOWED_BULK_FIELDS[entity].includes(config.field);
 
   // Auto-fade the green tick
   useEffect(() => {
@@ -154,17 +158,10 @@ export function InlineEditCell({
   if (!editing) {
     return (
       <span
-        onClick={(e) => {
-          if (!editable) return;
-          e.stopPropagation();
-          setEditing(true);
-        }}
-        title={editable ? "Click to edit" : undefined}
         style={{
           display: "inline-flex",
           alignItems: "center",
           gap: 6,
-          cursor: editable ? "text" : undefined,
           width: "100%",
           justifyContent: align === "right" ? "flex-end" : "flex-start",
           padding: "2px 4px",
@@ -176,8 +173,28 @@ export function InlineEditCell({
         className="sf-inline-cell"
       >
         <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {display ?? renderDisplay(value, config, userOpts)}
+          {recordHref ? (
+            <Link href={recordHref} className="sf-row-link" style={{ color: "#0176d3", textDecoration: "none" }}>
+              {display ?? renderDisplay(value, config, userOpts)}
+            </Link>
+          ) : (display ?? renderDisplay(value, config, userOpts))}
         </span>
+        {canEdit && (
+          <button
+            type="button"
+            aria-label={`Edit ${fieldLabel}`}
+            title={`Edit ${fieldLabel}`}
+            className={styles.editButton}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setLocalValue(toFormString(value, config));
+              setEditing(true);
+            }}
+          >
+            <Pencil size={12} aria-hidden="true" />
+          </button>
+        )}
         {save === "saving" && <Dot color="#747474" />}
         {save === "saved" && <Check />}
         {save === "error" && (
@@ -222,6 +239,7 @@ export function InlineEditCell({
     return (
       <span onClick={(e) => e.stopPropagation()} style={{ display: "block", width: "100%" }}>
         <select
+          aria-label={fieldLabel}
           ref={(el) => { inputRef.current = el; }}
           value={localValue}
           onChange={(e) => setLocalValue(e.target.value)}
@@ -242,6 +260,7 @@ export function InlineEditCell({
     return (
       <span onClick={(e) => e.stopPropagation()} style={{ display: "block", width: "100%" }}>
         <input
+          aria-label={fieldLabel}
           type="checkbox"
           checked={localValue === "true"}
           onChange={(e) => {
@@ -259,6 +278,7 @@ export function InlineEditCell({
   return (
     <span onClick={(e) => e.stopPropagation()} style={{ display: "block", width: "100%" }}>
       <input
+        aria-label={fieldLabel}
         ref={(el) => { inputRef.current = el; }}
         type={inputType}
         value={localValue}

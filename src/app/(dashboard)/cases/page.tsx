@@ -4,8 +4,8 @@ import {
   SfListPage,
   type SfColumn,
   type SfRow,
-  ownerAlias,
 } from "@/components/slds/sf-list-page";
+import { ownerAlias } from "@/lib/lists/owner-alias";
 import { StatusPill } from "@/components/slds/record-page";
 import { caseStatusTone } from "@/lib/slds/status-tones";
 import { InlineEditCell } from "@/components/lists/inline-edit-cell";

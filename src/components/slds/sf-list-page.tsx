@@ -1,5 +1,6 @@
 "use client";
 import { useState, useSyncExternalStore } from "react";
+import { RecordLinkCell } from "@/components/lists/record-link-cell";
 import { ListControls } from "./list-controls";
 import { SfHeaderAction } from "./sf-list-client";
 import Link from "next/link";
@@ -396,6 +397,7 @@ export function SfListPage(props: SfListPageProps) {
                   </td>
                   {columns.map((c, ci) => {
                     const isPrimary = ci === 0;
+                    const cell = row.cells[ci];
                     return (
                       <td
                         key={c.key}
@@ -419,18 +421,11 @@ export function SfListPage(props: SfListPageProps) {
                           }}
                         >
                           {isPrimary && row.href ? (
-                            <Link
-                              href={row.href}
-                              style={{
-                                color: "#0176d3",
-                                textDecoration: "none",
-                              }}
-                              className="sf-row-link"
-                            >
-                              {row.cells[ci]}
-                            </Link>
+                            <RecordLinkCell href={row.href}>
+                              {cell}
+                            </RecordLinkCell>
                           ) : (
-                            row.cells[ci]
+                            cell
                           )}
                         </div>
                       </td>
@@ -734,23 +729,6 @@ function buildHref(
   }
   const qs = sp.toString();
   return qs ? `${pathname}?${qs}` : pathname;
-}
-
-/* ------------------------------------------------------------------ */
-/* Util: derive an "alias" from an email or name (8 chars, lowercase) */
-/* ------------------------------------------------------------------ */
-
-export function ownerAlias(
-  user: { name?: string | null; email?: string | null } | null,
-): string {
-  if (!user) return "";
-  if (user.email) {
-    return user.email.split("@")[0].toLowerCase().slice(0, 8);
-  }
-  if (user.name) {
-    return user.name.replace(/\s+/g, "").toLowerCase().slice(0, 8);
-  }
-  return "";
 }
 
 function subscribeColumns(notify:()=>void){window.addEventListener('storage',notify);window.addEventListener('crm-columns',notify);return()=>{window.removeEventListener('storage',notify);window.removeEventListener('crm-columns',notify);};}
