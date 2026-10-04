@@ -1,0 +1,14 @@
+import { beforeEach, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
+const m = vi.hoisted(() => ({ auth:vi.fn(), packet:vi.fn(), envelope:vi.fn(), recent:vi.fn(), event:vi.fn(), deliver:vi.fn() }));
+vi.mock("@/lib/esign/salesforce/embed",()=>({requirePacketAuth:m.auth}));
+vi.mock("@/lib/esign/packet-routing",()=>({deliverPacketInvitation:m.deliver}));
+vi.mock("@/lib/prisma",()=>({prisma:{$transaction:async(fn:Function)=>fn({$executeRaw:vi.fn(),signingPacket:{findFirst:m.packet},envelope:{findFirst:m.envelope},envelopeEvent:{findFirst:m.recent,create:m.event}})}}));
+import { POST } from "@/app/api/esign/packets/[id]/resend/route";
+const run=()=>POST(new NextRequest("https://example.test/api",{method:"POST"}),{params:Promise.resolve({id:"p1"})});
+beforeEach(()=>{vi.clearAllMocks();m.auth.mockResolvedValue({session:{userId:"u1"}});m.packet.mockResolvedValue({id:"p1"});m.envelope.mockResolvedValue({id:"e1"});m.recent.mockResolvedValue(null);m.deliver.mockResolvedValue({ok:true});});
+it("resends with a fresh delivery key and records the actor",async()=>{expect((await run()).status).toBe(200);expect(m.deliver).toHaveBeenCalledWith("e1",expect.stringMatching(/^resend-e1-/),true);expect(m.event.mock.calls[0][0].data.eventType).toBe("RESEND_REQUESTED");expect(JSON.parse(m.event.mock.calls[0][0].data.details).userId).toBe("u1");});
+it("throttles duplicate requests without emailing",async()=>{m.recent.mockResolvedValue({id:"event"});expect((await run()).status).toBe(429);expect(m.deliver).not.toHaveBeenCalled();});
+it("refuses terminal packets and unavailable recipients",async()=>{m.packet.mockResolvedValue(null);expect((await run()).status).toBe(409);m.packet.mockResolvedValue({id:"p1"});m.envelope.mockResolvedValue(null);expect((await run()).status).toBe(409);expect(m.deliver).not.toHaveBeenCalled();});
+it("reports delivery failure instead of success",async()=>{m.deliver.mockResolvedValue({ok:false});expect((await run()).status).toBe(502);});
+it("scopes the packet to its owner and filters expired signers",async()=>{await run();expect(m.packet).toHaveBeenCalledWith({where:{id:"p1",createdById:"u1",status:"SENT"}});expect(m.envelope.mock.calls[0][0].where.OR[1].expiresAt.gt).toBeInstanceOf(Date);});

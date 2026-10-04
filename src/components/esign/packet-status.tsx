@@ -62,6 +62,23 @@ export function PacketStatus({ id, token }: { id: string; token?: string }) {
       clearInterval(timer);
     };
   }, [id, token]);
+  const [notice, setNotice] = useState("");
+  const [resendAfter, setResendAfter] = useState(0);
+  const canResend = packet?.status === "SENT" && packet.envelopes.some(e =>
+    ["SENT", "VIEWED"].includes(e.status) && (!e.expiresAt || new Date(e.expiresAt) > new Date()));
+  async function resendInvitation() {
+    setBusy(true); setError(""); setNotice("");
+    try {
+      const response = await fetch(`/api/esign/packets/${id}/resend`, {
+        method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not resend invitation.");
+      setResendAfter(Date.now() + 60000);
+      setNotice("Invitation resent to the current signer.");
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not resend invitation."); }
+    finally { setBusy(false); }
+  }
   async function voidPacket() {
     setBusy(true);
     setError("");
@@ -109,6 +126,8 @@ export function PacketStatus({ id, token }: { id: string; token?: string }) {
         </button>
       </div>
       {error && <p role="alert">{error}</p>}
+      {notice && <p role="status">{notice}</p>}
+      {canResend && <div style={{ padding: 20 }}><button disabled={busy || Date.now() < resendAfter} onClick={resendInvitation}>Resend invitation</button></div>}
       {packet?.envelopes
         .sort((a, b) => a.routingOrder - b.routingOrder)
         .map((e) => (
