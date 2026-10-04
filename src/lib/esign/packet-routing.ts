@@ -12,6 +12,7 @@ import { advanceOppStage } from "@/lib/opportunity-stage";
 export async function deliverPacketInvitation(
   envelopeId: string,
   reminderKey?: string,
+  resend = false,
 ) {
   const e = await prisma.envelope.findUnique({
     where: { id: envelopeId },
@@ -31,7 +32,7 @@ export async function deliverPacketInvitation(
     email: e.signerEmail,
     senderName: e.createdBy?.name ?? "Coastal Debt Resolve",
     senderEmail: e.createdBy?.email ?? "",
-    subject: reminderKey ? `Reminder: ${config.subject}` : config.subject,
+    subject: reminderKey && !resend ? `Reminder: ${config.subject}` : config.subject,
     message: config.message,
     token: e.signingToken,
     idempotencyKey: reminderKey ?? `packet-invite-${e.id}`,
@@ -40,7 +41,7 @@ export async function deliverPacketInvitation(
     data: {
       envelopeId: e.id,
       eventType: r.ok
-        ? reminderKey
+        ? resend ? "INVITATION_RESENT" : reminderKey
           ? "REMINDER_SENT"
           : "EMAIL_SENT"
         : "EMAIL_FAILED",
@@ -55,7 +56,7 @@ export async function deliverPacketInvitation(
   await prisma.envelope.updateMany({
     where: { id: e.id, status: { in: ["SENT", "VIEWED"] } },
     data: {
-      lastError: r.ok
+      lastError: resend && !r.ok ? e.lastError : r.ok
         ? null
         : reminderKey
           ? "Reminder delivery failed."
