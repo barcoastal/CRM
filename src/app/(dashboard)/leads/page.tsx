@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { cloneElement, isValidElement, type ReactNode } from "react";
 import { LEAD_COLUMNS, leadColumnsForView } from "@/lib/lead-list-columns";
 import { notFound } from "next/navigation";
 import type { ListFilter } from "@/lib/list-views";
@@ -150,6 +150,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     );
     return (
       <SfListPage
+        salesforceLayout
       preferenceUserId={myId}
         entity="lead"
         title="Leads"
@@ -228,11 +229,11 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     // Name: prefer the SF Lead_Name__c style (contact + business). Falls back to
     // contactName which is the canonical name column on our Lead model.
     const nameDisplay = lead.contactName || lead.businessName || "(no name)";
+    const ownerAlias = String((sfData.Owner as {NameOrAlias?:string}|undefined)?.NameOrAlias || (sfData.Owner as {Alias?:string}|undefined)?.Alias || sfData.Owner_Alias__c || lead.assignedTo?.email?.split('@')[0] || ownerFullName);
 
     const nameCfg = getInlineConfig("lead", "contactName");
     const statusCfg = getInlineConfig("lead", "status");
     const sourceCfg = getInlineConfig("lead", "source");
-    const phoneCfg = getInlineConfig("lead", "phone");
     const value = (key: string): string => {
       const v = sfData[key];
       return v === null || v === undefined || v === "" ? "—" : typeof v === "boolean" ? (v ? "True" : "False") : String(v);
@@ -243,17 +244,17 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       estimatedTotalDebt: estimatedDebt || "—",
       lastModified: fmtDateShort(lead.updatedAt) || "—",
       lastContacted: lastContacted || "—",
-      phone: phoneCfg ? <InlineEditCell entity="lead" recordId={lead.id} config={phoneCfg} value={lead.phone} /> : lead.phone || "—",
+      phone: lead.phone ? <Link href={`/leads/${lead.id}`} className="sf-row-link">{lead.phone}</Link> : "",
       state: stateVal || "—", timezone: timezone || "—",
       status: statusCfg ? <InlineEditCell entity="lead" recordId={lead.id} config={statusCfg} value={lead.status} /> : lead.status,
-      subDisposition: subDisposition || "—", leadVendor: leadVendor || "—",
+      subDisposition: subDisposition || "", leadVendor: leadVendor || "—",
       leadVendorText: String(sfData.Lead_Vendor_Id_Text__c ?? sfData.Lead_Vendor_ID_Text__c ?? lead.leadVendorId ?? "—"),
       source: sourceCfg ? <InlineEditCell entity="lead" recordId={lead.id} config={sourceCfg} value={lead.source} /> : lead.source,
       fronter: fronter || "—", ownerFullName: ownerFullName || "—",
       createdDate: fmtDateShort(lead.createdAt) || "—", firstEmail: fmtDateShort((sfData.ActivityMetric as {FirstEmailDateTime?:string}|undefined)?.FirstEmailDateTime ?? sfData.FirstEmailDateTime) || "—",
-      leadId: String(sfData.Lead_Id__c || lead.sfId || lead.id), company: lead.businessName || "—",
-      totalDebt: fmtMoney(sfData.Total_Debt_Amount__c ?? lead.totalDebtEst) || "—",
-      ownerAlias: String((sfData.Owner as {NameOrAlias?:string}|undefined)?.NameOrAlias || (sfData.Owner as {Alias?:string}|undefined)?.Alias || sfData.Owner_Alias__c || "—"),
+      leadId: String(sfData.Lead_Id__c || lead.sfId || lead.id), company: lead.businessName ? <Link href={`/leads/${lead.id}`} className="sf-row-link">{lead.businessName}</Link> : "",
+      totalDebt: fmtMoney(sfData.Total_Debt_Amount__c ?? lead.totalDebtEst) || "",
+      ownerAlias: ownerAlias ? <Link href={`/leads/${lead.id}`} className="sf-row-link">{ownerAlias}</Link> : "",
       email: lead.email || "—", unread: value('IsUnreadByOwner'), calendly: value('Has_Calendly_Event__c'),
       five9Disposition: value('five9_Disposition__c'), adClickId: lead.adClickId || value('Ad_Click_Id__c'),
       trackitClickId: value('Eli_Ad_click__c'), lastDisposition: value('Last_Disposition__c'),
@@ -265,7 +266,10 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       converted: value('IsConverted'), language: value('Preferred_Language__c'),
       formattedPhone: value('Formated_Phone__c'), utmTerm: lead.utmTerm || value('UTM_Term__c'), dialerGroup: value('Dialer_Group__c'),
     };
-    return { id: lead.id, href: `/leads/${lead.id}`, cells: LEAD_COLUMNS.map(column => cells[column.key] ?? "—") };
+    return { id: lead.id, href: `/leads/${lead.id}`, cells: LEAD_COLUMNS.map(column => {
+      const cell = cells[column.key] ?? "—";
+      return isValidElement(cell) ? cloneElement(cell, { key: column.key }) : cell;
+    }) };
   });
 
   const preservedParams: Record<string, string> = {};
@@ -279,6 +283,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
 
   return (
     <SfListPage
+      salesforceLayout
       preferenceUserId={myId}
       entity="lead"
       title="Leads"
@@ -292,8 +297,8 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
         { label: "New", href: "/leads/new" },
         { label: "Import", href: "/leads/import" },
         { label: "Add to Campaign" },
-        { label: "Change Owner" },
         { label: "Change Status" },
+        { label: "Change Owner" },
         { label: "Send List Email" },
       ]}
       columns={LEAD_COLUMNS}

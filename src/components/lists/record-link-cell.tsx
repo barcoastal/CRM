@@ -6,6 +6,9 @@ import type { InlineEditCellProps } from "./inline-edit-cell";
 
 /** Keep edit controls outside record links in both list implementations. */
 export function RecordLinkCell({ children, href }: { children?: ReactNode; href: string }) {
+  if (isValidElement<{ href?: string }>(children) && typeof children.props.href === "string") {
+    return children;
+  }
   // RSC can deliver the client component with a lazy type. Its serialized
   // inline-edit props are stable, unlike comparing the component's type.
   if (

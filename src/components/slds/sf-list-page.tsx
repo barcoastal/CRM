@@ -1,6 +1,8 @@
 "use client";
 import { useState, useSyncExternalStore } from "react";
 import { RecordLinkCell } from "@/components/lists/record-link-cell";
+import { LightningListHeader } from "./lightning-list-header";
+import lightningStyles from "./lightning-list.module.css";
 import { ListControls } from "./list-controls";
 import { SfHeaderAction } from "./sf-list-client";
 import Link from "next/link";
@@ -53,6 +55,8 @@ export interface SfListAction {
 }
 
 export interface SfListPageProps {
+  /** Full-height Lightning list presentation, used by Leads. */
+  salesforceLayout?: boolean;
   /** entity slug (e.g. "lead", "opportunity", "account", "contact") */
   entity: string;
   /** plural title, e.g. "Leads" */
@@ -127,6 +131,7 @@ export function SfListPage(props: SfListPageProps) {
     currentView,
     page,
     pageSize,
+    salesforceLayout = false,
   } = props;
 
   const [columnPreference,setColumnPreference] = useState<{view:string|undefined;keys:string[]} | null>(null);
@@ -137,7 +142,7 @@ export function SfListPage(props: SfListPageProps) {
   const chosen = preference?.filter(k=>allColumns.some(c=>c.key===k));
   const columns = chosen?.length ? chosen.map(k=>allColumns.find(c=>c.key===k)!) : allColumns;
   const rows = allRows.map(row=>({...row,cells:columns.map(c=>row.cells[allColumns.findIndex(a=>a.key===c.key)])}));
-  const controls = <ListControls pathname={pathname} subtitle={subtitle} columns={allColumns} selectedColumns={columns.map(c=>c.key)} defaultColumns={props.selectedColumns} onColumns={keys=>{setColumnPreference({view:currentView,keys});try{if(preferenceKey){localStorage.setItem(preferenceKey,JSON.stringify(keys));window.dispatchEvent(new Event("crm-columns"));}}catch{}}} config={massConfig} currentView={currentView} allowKanban={!!displayMode} />;
+  const controls = <ListControls salesforceLayout={salesforceLayout} pathname={pathname} subtitle={subtitle} columns={allColumns} selectedColumns={columns.map(c=>c.key)} defaultColumns={props.selectedColumns} onColumns={keys=>{setColumnPreference({view:currentView,keys});try{if(preferenceKey){localStorage.setItem(preferenceKey,JSON.stringify(keys));window.dispatchEvent(new Event("crm-columns"));}}catch{}}} config={massConfig} currentView={currentView} allowKanban={!!displayMode} />;
   const ids = rows.map((r) => r.id);
   const countLabel = count.toLocaleString("en-US") + (countCapped ? "+" : "");
 
@@ -155,12 +160,27 @@ export function SfListPage(props: SfListPageProps) {
       dir: sortKey ? sortDir : undefined,
       page: p > 1 ? String(p) : undefined,
     });
+  const pager = showPager ? (
+    <div className={salesforceLayout ? lightningStyles.pager : undefined} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 16px", background: "#fff", border: "1px solid #c9c9c9", borderTop: "none", fontSize: 13, color: "#444444" }}>
+      <span>{startIdx}–{endIdx} of {countLabel} · Page {pageNum} of {totalPages}</span>
+      <div style={{ display: "flex", gap: 8 }}>
+        <PagerLink href={pageHref(pageNum - 1)} disabled={pageNum <= 1} label="‹ Previous" />
+        <PagerLink href={pageHref(pageNum + 1)} disabled={pageNum >= totalPages} label="Next ›" />
+      </div>
+    </div>
+  ) : null;
 
   return (
     <SfSelectionProvider ids={ids}>
-      <div style={{ padding: 0 }}>
+      <div className={salesforceLayout ? lightningStyles.list : undefined} data-salesforce-list={salesforceLayout || undefined} style={{ padding: 0 }}>
         <SfMassActionsToolbar config={massConfig} />
-        <Header
+        {salesforceLayout ? (
+          <LightningListHeader
+            title={title} subtitle={subtitle} iconSlug={iconSlug} count={count} countLabel={countLabel}
+            actions={actions} controls={controls} viewPicker={viewPicker} pathname={pathname}
+            preservedParams={preservedParams ?? {}} searchQuery={searchQuery ?? ""}
+          />
+        ) : <Header
           controls={controls}
           iconSlug={iconSlug}
           iconColor={iconColor}
@@ -175,11 +195,11 @@ export function SfListPage(props: SfListPageProps) {
           viewPicker={viewPicker}
           views={views}
           currentView={currentView}
-        />
+        />}
 
         {props.summary}
 
-        {displayMode && (
+        {displayMode && !salesforceLayout && (
           <div
             style={{
               display: "flex",
@@ -218,10 +238,11 @@ export function SfListPage(props: SfListPageProps) {
           </div>
         )}
         {bodyOverride ? (
-          bodyOverride
+          salesforceLayout ? <div className={lightningStyles.viewport}>{bodyOverride}</div> : bodyOverride
         ) : (
         <>
         <div
+          className={salesforceLayout ? lightningStyles.viewport : undefined}
           style={{
             background: "#fff",
             border: "1px solid #c9c9c9",
@@ -235,6 +256,7 @@ export function SfListPage(props: SfListPageProps) {
             style={{
               tableLayout: "fixed",
               width: "100%",
+              minWidth: salesforceLayout ? columns.reduce((width, column) => width + (column.width ?? 150), 100) : undefined,
               fontSize: 12,
               borderCollapse: "collapse",
               fontFamily:
@@ -242,12 +264,12 @@ export function SfListPage(props: SfListPageProps) {
             }}
           >
             <colgroup>
-              <col style={{ width: 36 }} />
+              <col style={{ width: salesforceLayout ? 56 : 36 }} />
               <col style={{ width: 44 }} />
               {columns.map((c) => (
                 <col key={c.key} style={{ width: c.width }} />
               ))}
-              <col style={{ width: 32 }} />
+              {!salesforceLayout && <col style={{ width: 32 }} />}
             </colgroup>
             <thead>
               <tr className="slds-line-height_reset">
@@ -261,7 +283,7 @@ export function SfListPage(props: SfListPageProps) {
                     textAlign: "center",
                   }}
                 >
-                  <SfSelectAllCheckbox />
+                  {!salesforceLayout && <SfSelectAllCheckbox />}
                 </th>
                 <th
                   scope="col"
@@ -275,7 +297,7 @@ export function SfListPage(props: SfListPageProps) {
                     fontSize: 11,
                     fontWeight: 700,
                   }}
-                />
+                >{salesforceLayout && <SfSelectAllCheckbox />}</th>
                 {columns.map((c) => {
                   const isSorted = sortKey === c.key;
                   const dir = isSorted ? sortDir ?? "asc" : null;
@@ -310,8 +332,8 @@ export function SfListPage(props: SfListPageProps) {
                       >
                         {c.label}
                       </span>
-                      {c.sortable && <SortIcon dir={dir} />}
-                      <DownChev />
+                      {c.sortable && (!salesforceLayout || dir) && <SortIcon dir={dir} />}
+                      <DownChev outline={salesforceLayout} />
                     </span>
                   );
                   return (
@@ -345,20 +367,20 @@ export function SfListPage(props: SfListPageProps) {
                     </th>
                   );
                 })}
-                <th
+                {!salesforceLayout && <th
                   scope="col"
                   style={{
                     background: "#fafaf9",
                     borderBottom: "1px solid #c9c9c9",
                   }}
-                />
+                />}
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
                 <tr>
                   <td
-                    colSpan={columns.length + 3}
+                    colSpan={columns.length + (salesforceLayout ? 2 : 3)}
                     style={{
                       textAlign: "center",
                       padding: 48,
@@ -381,7 +403,7 @@ export function SfListPage(props: SfListPageProps) {
                       textAlign: "center",
                     }}
                   >
-                    <SfRowCheckbox id={row.id} rowIndex={idx + 1} />
+                    {salesforceLayout ? (pageNum - 1) * size + idx + 1 : <SfRowCheckbox id={row.id} rowIndex={idx + 1} />}
                   </td>
                   <td
                     role="gridcell"
@@ -393,7 +415,7 @@ export function SfListPage(props: SfListPageProps) {
                       borderRight: "1px solid #f3f2f2",
                     }}
                   >
-                    {idx + 1}
+                    {salesforceLayout ? <SfRowCheckbox id={row.id} rowIndex={idx + 1} /> : idx + 1}
                   </td>
                   {columns.map((c, ci) => {
                     const isPrimary = ci === 0;
@@ -431,7 +453,7 @@ export function SfListPage(props: SfListPageProps) {
                       </td>
                     );
                   })}
-                  <td
+                  {!salesforceLayout && <td
                     role="gridcell"
                     style={{
                       padding: "0 4px",
@@ -440,37 +462,14 @@ export function SfListPage(props: SfListPageProps) {
                     }}
                   >
                     <DownChev />
-                  </td>
+                  </td>}
                 </SfRowTr>
               ))}
             </tbody>
           </table>
+          {salesforceLayout && pager}
         </div>
-
-        {showPager && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-              padding: "10px 16px",
-              background: "#fff",
-              border: "1px solid #c9c9c9",
-              borderTop: "none",
-              fontSize: 13,
-              color: "#444444",
-            }}
-          >
-            <span>
-              {startIdx}–{endIdx} of {countLabel} · Page {pageNum} of {totalPages}
-            </span>
-            <div style={{ display: "flex", gap: 8 }}>
-              <PagerLink href={pageHref(pageNum - 1)} disabled={pageNum <= 1} label="‹ Previous" />
-              <PagerLink href={pageHref(pageNum + 1)} disabled={pageNum >= totalPages} label="Next ›" />
-            </div>
-          </div>
-        )}
+        {!salesforceLayout && pager}
         </>
         )}
 
@@ -670,16 +669,16 @@ function SortIcon({ dir }: { dir: "asc" | "desc" | null }) {
   );
 }
 
-function DownChev() {
+function DownChev({ outline = false }: { outline?: boolean }) {
   return (
     <svg
-      width="10"
-      height="10"
+      width={outline ? 16 : 10}
+      height={outline ? 16 : 10}
       viewBox="0 0 12 12"
       style={{ fill: "#747474", flexShrink: 0 }}
       aria-hidden="true"
     >
-      <path d="M2 4l4 4 4-4z" />
+      <path d={outline ? "M2 4l4 4 4-4" : "M2 4l4 4 4-4z"} fill={outline ? "none" : undefined} stroke={outline ? "#747474" : undefined} strokeWidth={outline ? 1.5 : undefined} />
     </svg>
   );
 }

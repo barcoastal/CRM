@@ -2,13 +2,14 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Settings, List, RefreshCw, ArrowDownUp, Pencil, Filter } from "lucide-react";
+import { UtilityIcon } from "./icon";
 import { toast } from "sonner";
 import { Modal, ModalButton } from "./modal";
 import type { SfColumn } from "./sf-list-page";
 import type { SfMassToolbarConfig } from "./sf-list-client";
 
 type SavedView = {id:string;name:string;baseView?:string|null;isSystem:boolean;isShared:boolean;filters:{field:string;op:string;value?:unknown}[];columns?:string[];sortField?:string;sortDir?:string};
-export function ListControls({pathname,subtitle,columns,selectedColumns,defaultColumns,onColumns,config,currentView,allowKanban}:{pathname:string;subtitle:string;columns:SfColumn[];selectedColumns:string[];defaultColumns?:string[];onColumns:(v:string[])=>void;config:SfMassToolbarConfig;currentView?:string;allowKanban?:boolean}) {
+export function ListControls({pathname,subtitle,columns,selectedColumns,defaultColumns,onColumns,config,currentView,allowKanban,salesforceLayout=false}:{pathname:string;subtitle:string;columns:SfColumn[];selectedColumns:string[];defaultColumns?:string[];onColumns:(v:string[])=>void;config:SfMassToolbarConfig;currentView?:string;allowKanban?:boolean;salesforceLayout?:boolean}) {
   const router=useRouter();const sp=useSearchParams();
   const [panel,setPanel]=useState<string|null>(null);const [name,setName]=useState("");const [shared,setShared]=useState(false);
   const [saved,setSaved]=useState<SavedView|null>(null);const [busy,setBusy]=useState(false);
@@ -42,12 +43,13 @@ export function ListControls({pathname,subtitle,columns,selectedColumns,defaultC
   }
   const buttonClass='flex h-8 w-8 items-center justify-center rounded border border-[#c9c9c9] bg-white text-[#747474] hover:bg-slate-50';
   return <>
-    {['lead','account','opportunity'].includes(config.entity)&&<button className={buttonClass} aria-label="List controls" disabled={busy} onClick={()=>manage()}><Settings size={15}/></button>}
-    {allowKanban&&<button className={buttonClass} aria-label="Choose view" onClick={()=>setPanel('display')}><List size={15}/></button>}
-    <button className={buttonClass} aria-label="Refresh" onClick={()=>{router.refresh();toast.success('List refreshed');}}><RefreshCw size={15}/></button>
-    <button className={buttonClass} aria-label="Sort" onClick={()=>{setSort(sp.get('sort')||columns.find(c=>c.sortable)?.key||'');setDir(sp.get('dir')||'asc');setPanel('sort');}}><ArrowDownUp size={15}/></button>
-    <button className={buttonClass} aria-label="Select fields to display" onClick={()=>{setDraftColumns(selectedColumns);setPanel('columns');}}><Pencil size={15}/></button>
-    {filterFields.length>0&&<button className={buttonClass} aria-label="Filters" onClick={()=>manage('filters')}><Filter size={15}/></button>}
+    {['lead','account','opportunity'].includes(config.entity)&&<button className={buttonClass} data-dropdown={salesforceLayout || undefined} aria-label="List controls" disabled={busy} onClick={()=>manage()}>{salesforceLayout?<><UtilityIcon name="settings"/><UtilityIcon name="down"/></>:<Settings size={15}/>}</button>}
+    {allowKanban&&<button className={buttonClass} data-dropdown={salesforceLayout || undefined} aria-label="Choose view" onClick={()=>setPanel('display')}>{salesforceLayout?<><UtilityIcon name="table"/><UtilityIcon name="down"/></>:<List size={15}/>}</button>}
+    <button className={buttonClass} aria-label="Refresh" onClick={()=>{router.refresh();toast.success('List refreshed');}}>{salesforceLayout?<UtilityIcon name="refresh"/>:<RefreshCw size={15}/>}</button>
+    <button className={buttonClass} aria-label="Sort" onClick={()=>{setSort(sp.get('sort')||columns.find(c=>c.sortable)?.key||'');setDir(sp.get('dir')||'asc');setPanel('sort');}}>{salesforceLayout?<UtilityIcon name="sort"/>:<ArrowDownUp size={15}/>}</button>
+    <button className={buttonClass} aria-label="Select fields to display" onClick={()=>{setDraftColumns(selectedColumns);setPanel('columns');}}>{salesforceLayout?<UtilityIcon name="edit"/>:<Pencil size={15}/>}</button>
+    {salesforceLayout&&<button className={buttonClass} aria-label="Charts" title="Charts" disabled><UtilityIcon name="chart"/></button>}
+    {filterFields.length>0&&<button className={buttonClass} aria-label="Filters" onClick={()=>manage('filters')}>{salesforceLayout?<UtilityIcon name="filterList"/>:<Filter size={15}/>}</button>}
     {panel==='manage'&&<Modal open title="List View Controls" onClose={()=>setPanel(null)} footer={<><ModalButton onClick={()=>setPanel(null)}>Cancel</ModalButton><ModalButton onClick={()=>save('create')} disabled={busy}>Save as New List</ModalButton>{saved&&!saved.isSystem&&<><ModalButton onClick={()=>setPanel('delete')} disabled={busy}>Delete</ModalButton><ModalButton variant="brand" onClick={()=>save('update')} disabled={busy}>Save Changes</ModalButton></>}</>}>
       <label className="block text-sm">List name<input className="mt-1 w-full rounded border p-2" value={name} onChange={e=>setName(e.target.value)}/></label>
       <label className="mt-4 flex gap-2 text-sm"><input type="checkbox" checked={shared} onChange={e=>setShared(e.target.checked)}/>Share with all CRM users</label>

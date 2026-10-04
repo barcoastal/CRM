@@ -1,0 +1,11 @@
+.bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 800; display: flex; align-items: stretch; height: 46px; border-top: 1px solid #c9c9c9; background: #fff; box-shadow: 0 -1px 3px #0001; }
+.bar a, .bar button { display: inline-flex; align-items: center; gap: 10px; padding: 0 14px; border: 0; border-right: 1px solid #c9c9c9; background: #fff; color: #181818; font-size: 16px; white-space: nowrap; text-decoration: none; }
+.bar a:hover, .bar button:hover, .bar button[aria-expanded="true"] { background: #747474; color: #fff; text-decoration: none; }
+.bar .phone { margin-left: auto; border-right: 0; border-left: 1px solid #c9c9c9; cursor: pointer; }
+.connected, .offline { width: 7px; height: 7px; border-radius: 50%; background: #939393; }
+.connected { background: #2e844a; }
+@media (max-width: 640px) {
+  .bar { height: 46px; overflow-x: auto; }
+  .bar a, .bar button { font-size: 12px; padding: 0 8px; gap: 5px; }
+  .bar svg { width: 14px; flex-shrink: 0; }
+}

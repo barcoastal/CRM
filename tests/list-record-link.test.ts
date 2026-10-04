@@ -65,4 +65,12 @@ describe("record links in editable lists", () => {
     expect(html).toContain(">Case 001</a>");
     expect(html).not.toContain("<button");
   });
+
+  it("preserves an existing field link when columns are reordered", () => {
+    const html = renderToStaticMarkup(createElement(RecordLinkCell, { href: "/leads/lead" },
+      createElement("a", { href: "/leads?assignedToId=owner" }, "Owner"),
+    ));
+    expect(html.match(/<a\b/g)).toHaveLength(1);
+    expect(html).toContain('href="/leads?assignedToId=owner"');
+  });
 });
