@@ -43,7 +43,8 @@ export function salesforceRamTemplate(buffer: Buffer): Buffer {
     const fields = ["{{BankIsChecking}}", "{{BankIsSavings}}"];
     if (index >= fields.length) throw new Error("Unexpected RAM account-type template markup.");
     return fields[index++];
-  }).replace(/w:hRule="exact"/g, 'w:hRule="atLeast"');
+   }).replace(/w:hRule="exact"/g, 'w:hRule="atLeast"')
+    .replace(/<w:trPr>/g, '<w:trPr><w:cantSplit/>');
   if (index !== 0 && index !== 2) throw new Error("Incomplete RAM account-type template markup.");
   zip.file("word/document.xml", xml);
   return zip.generate({ type: "nodebuffer", compression: "DEFLATE" });
