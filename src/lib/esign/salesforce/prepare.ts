@@ -1,4 +1,4 @@
-import { salesforceMasterTemplate } from "./template";
+import { salesforceMasterTemplate, salesforceRamTemplate } from "./template";
 import { createHash, randomUUID } from "node:crypto";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
@@ -37,7 +37,7 @@ export async function prepareSalesforcePilot(
   const fields: PacketField[] = [];
   for (const t of templates) {
     const anchored = await prepareAnchoredPacket(
-      await fillDocxToPdf(t.category === "COASTAL" || t.category === "ADDENDUM" ? salesforceMasterTemplate(t.buffer) : t.buffer, data, t.name, true),
+      await fillDocxToPdf(t.category === "COASTAL" || t.category === "ADDENDUM" ? salesforceMasterTemplate(t.buffer) : t.category === "PROCESSOR_RAM" ? salesforceRamTemplate(t.buffer) : t.buffer, data, t.name, true),
     );
     const part = await PDFDocument.load(anchored.pdf);
     const startPage = pdf.getPageCount() + 1;

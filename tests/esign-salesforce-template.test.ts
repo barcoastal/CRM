@@ -23,3 +23,15 @@ it("repairs only legacy conversion residue and the weekly summary binding", () =
   const stable=salesforceMasterTemplate(source);
   expect(salesforceMasterTemplate(stable)).toBe(stable);
 });
+
+import { salesforceRamTemplate } from "@/lib/esign/salesforce/template";
+import { readFileSync } from "node:fs";
+it("replaces both RAM hard-coded marks and releases clipped table rows", () => {
+  const result = salesforceRamTemplate(readFileSync("docs/contract-templates/PROCESSOR_RAM.docx"));
+  const xml = new PizZip(result).file("word/document.xml")!.asText();
+  expect(xml).toContain("{{BankIsChecking}}");
+  expect(xml).toContain("{{BankIsSavings}}");
+  expect(xml).not.toContain("EndConditional");
+  expect(xml).not.toContain('w:hRule="exact"');
+  expect(xml).toContain("{{FirstPaymentDate}}");
+});
