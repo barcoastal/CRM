@@ -32,3 +32,19 @@ export function salesforceMasterTemplate(buffer: Buffer): Buffer {
   zip.file("word/document.xml", final);
   return zip.generate({ type: "nodebuffer", compression: "DEFLATE" });
 }
+
+/** Normalize the legacy RAM form before merging, preserving the original upload. */
+export function salesforceRamTemplate(buffer: Buffer): Buffer {
+  const zip = new PizZip(buffer);
+  const file = zip.file("word/document.xml");
+  if (!file) throw new Error("Invalid RAM template.");
+  let index = 0;
+  const xml = file.asText().replace(/X&lt;#&lt;EndConditional\/&gt;#&gt;/g, () => {
+    const fields = ["{{BankIsChecking}}", "{{BankIsSavings}}"];
+    if (index >= fields.length) throw new Error("Unexpected RAM account-type template markup.");
+    return fields[index++];
+  }).replace(/w:hRule="exact"/g, 'w:hRule="atLeast"');
+  if (index !== 0 && index !== 2) throw new Error("Incomplete RAM account-type template markup.");
+  zip.file("word/document.xml", xml);
+  return zip.generate({ type: "nodebuffer", compression: "DEFLATE" });
+}
