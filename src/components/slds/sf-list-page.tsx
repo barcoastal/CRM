@@ -256,7 +256,7 @@ export function SfListPage(props: SfListPageProps) {
             style={{
               tableLayout: "fixed",
               width: "100%",
-              minWidth: salesforceLayout ? columns.reduce((width, column) => width + (column.width ?? 150), 100) : undefined,
+              minWidth: salesforceLayout ? columns.reduce((width, column) => width + (column.width ?? 150), 82) : undefined,
               fontSize: 12,
               borderCollapse: "collapse",
               fontFamily:
@@ -264,8 +264,8 @@ export function SfListPage(props: SfListPageProps) {
             }}
           >
             <colgroup>
-              <col style={{ width: salesforceLayout ? 56 : 36 }} />
-              <col style={{ width: 44 }} />
+              <col style={{ width: salesforceLayout ? 46 : 36 }} />
+              <col style={{ width: salesforceLayout ? 36 : 44 }} />
               {columns.map((c) => (
                 <col key={c.key} style={{ width: c.width }} />
               ))}

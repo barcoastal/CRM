@@ -27,7 +27,7 @@ export function SldsShell({
       <main
         className="sf-shell-main"
         style={{
-          padding: isLeadList ? "6px 6px 46px" : 12,
+          padding: isLeadList ? "6px 6px 38px" : 12,
           maxWidth: "100%",
           minHeight: isLeadList ? 0 : "calc(100vh - 94px)",
           flex: isLeadList ? 1 : undefined,

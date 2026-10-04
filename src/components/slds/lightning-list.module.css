@@ -13,34 +13,34 @@
 
 .header {
   display: grid;
-  grid-template-columns: minmax(250px, 1fr) auto;
+  grid-template-columns: minmax(210px, 1fr) auto;
   grid-template-areas: "identity actions" "count tools";
   align-items: center;
-  gap: 8px 24px;
+  gap: 6px 20px;
   flex-shrink: 0;
-  min-height: 119px;
-  padding: 10px 14px 13px;
+  min-height: 100px;
+  padding: 8px 12px 10px;
   background: #f3f3f3;
   border-bottom: 1px solid #c9c9c9;
 }
 
-.identity { grid-area: identity; display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
-.objectIcon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; margin-top: 1px; flex-shrink: 0; background: #00a6a0; border-radius: 4px; }
-.objectIcon svg { width: 32px; height: 32px; fill: #fff; }
-.objectName { font-size: 16px; line-height: 22px; }
-.viewName { margin: 0; font-size: 22px; font-weight: 700; line-height: 28px; }
-.identity :global(.lead-list-picker-trigger) { font-size: 22px; font-weight: 700; line-height: 28px; }
-.identity :global(.lead-list-picker-trigger) svg { width: 16px; height: 16px; fill: currentColor; stroke-width: 0; }
-.identity :global(.lead-list-picker-pin) { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-left: 8px; padding: 0; border: 1px solid #929292; border-radius: 4px; background: #fff !important; }
+.identity { grid-area: identity; display: flex; gap: 10px; align-items: flex-start; min-width: 0; }
+.objectIcon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin-top: 1px; flex-shrink: 0; background: #00a6a0; border-radius: 4px; }
+.objectIcon svg { width: 26px; height: 26px; fill: #fff; }
+.objectName { font-size: 13px; line-height: 18px; }
+.viewName { margin: 0; font-size: 18px; font-weight: 700; line-height: 23px; }
+.identity :global(.lead-list-picker-trigger) { font-size: 18px; font-weight: 700; line-height: 23px; }
+.identity :global(.lead-list-picker-trigger) svg { width: 13px; height: 13px; fill: currentColor; stroke-width: 0; }
+.identity :global(.lead-list-picker-pin) { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-left: 6px; padding: 0; border: 1px solid #929292; border-radius: 4px; background: #fff !important; }
 .identity :global(.lead-list-picker-pin[aria-pressed="true"]) { color: #345d96 !important; }
-.count { grid-area: count; align-self: end; font-size: 14px; line-height: 20px; white-space: nowrap; }
+.count { grid-area: count; align-self: end; font-size: 12px; line-height: 17px; white-space: nowrap; }
 .tools { grid-area: tools; display: flex; justify-content: flex-end; align-items: center; gap: 4px; }
-.tools > div:first-child { width: 286px !important; margin-right: 6px; }
-.tools input[type="search"] { height: 34px; padding-left: 32px !important; font-size: 16px !important; border-color: #929292 !important; }
-.tools > div:first-child > svg { left: 12px !important; width: 16px; height: 16px; }
-.tools > button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; width: 38px; height: 38px; padding: 0; border: 1px solid #929292; border-radius: 4px; color: #747474; background: #fff; }
-.tools > button[data-dropdown="true"] { width: 52px; }
-.tools > button > svg:first-child { width: 19px; height: 19px; }
+.tools > div:first-child { width: 238px !important; margin-right: 4px; }
+.tools input[type="search"] { height: 29px; padding-left: 27px !important; font-size: 13px !important; border-color: #929292 !important; }
+.tools > div:first-child > svg { left: 10px !important; width: 13px; height: 13px; }
+.tools > button { display: inline-flex; align-items: center; justify-content: center; gap: 3px; width: 32px; height: 32px; padding: 0; border: 1px solid #929292; border-radius: 4px; color: #747474; background: #fff; }
+.tools > button[data-dropdown="true"] { width: 44px; }
+.tools > button > svg:first-child { width: 16px; height: 16px; }
 .tools > button svg { fill: currentColor; }
 .tools > button > svg + svg { width: 8px; height: 8px; }
 .tools > button:disabled { color: #c9c9c9; border-color: #c9c9c9; cursor: default; }
@@ -48,44 +48,43 @@
 .actions { grid-area: actions; display: flex; justify-self: end; border: 1px solid #929292; border-radius: 4px; background: #fff; }
 .actions > a, .actions > button { border-right: 1px solid #929292 !important; }
 .actions > :last-child { border-right: 0 !important; }
-.action { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 20px; font-size: 16px; font-weight: 400; color: #0176d3; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.action { display: inline-flex; align-items: center; justify-content: center; height: 30px; padding: 0 16px; font-size: 13px; font-weight: 400; color: #0176d3; text-decoration: none; white-space: nowrap; cursor: pointer; }
 .action:hover { background: #f3f3f3; text-decoration: none; }
 .moreActions { position: relative; }
-.moreActions summary { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; color: #0176d3; cursor: pointer; list-style: none; }
+.moreActions summary { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; color: #0176d3; cursor: pointer; list-style: none; }
 .moreActions summary::-webkit-details-marker { display: none; }
-.moreActions summary svg { width: 14px; height: 14px; fill: currentColor; }
+.moreActions summary svg { width: 12px; height: 12px; fill: currentColor; }
 .actionMenu { position: absolute; top: calc(100% + 5px); right: 0; min-width: 190px; padding: 4px 0; z-index: 30; border: 1px solid #c9c9c9; border-radius: 4px; background: #fff; box-shadow: 0 2px 6px #0002; }
 .actionMenu > button, .actionMenu > a, .actionMenu .action { width: 100%; justify-content: flex-start; text-align: left; }
 
 .viewport { flex: 1; min-height: 0; overflow: auto !important; border: 0 !important; }
-.list table { font-size: 16px !important; font-family: inherit !important; }
+.list table { font-size: 13px !important; font-family: inherit !important; }
 .list thead { position: sticky; top: 0; z-index: 2; }
-.list th { height: 40px; background: #f3f3f3 !important; border-bottom: 1px solid #c9c9c9 !important; }
+.list th { height: 33px; background: #f3f3f3 !important; border-bottom: 1px solid #c9c9c9 !important; }
 .list th:first-child, .list th:nth-child(2) { border-right: 0 !important; padding: 0 !important; text-align: center !important; }
-.list th > a > span, .list th > span:not(:global(.slds-checkbox)) { height: 39px; padding: 0 10px !important; font-size: 16px !important; color: #444 !important; }
-.list td { height: 35px; padding: 4px 10px !important; border-bottom: 1px solid #c9c9c9 !important; border-right: 0 !important; font-size: 16px !important; line-height: 24px; }
-.list td:first-child { padding-right: 8px !important; text-align: right; font-size: 14px !important; color: #444 !important; }
+.list th > a > span, .list th > span:not(:global(.slds-checkbox)) { height: 32px; padding: 0 8px !important; font-size: 13px !important; color: #444 !important; }
+.list td { height: 29px; padding: 3px 8px !important; border-bottom: 1px solid #c9c9c9 !important; border-right: 0 !important; font-size: 13px !important; line-height: 20px; }
+.list td:first-child { padding-right: 6px !important; text-align: right; font-size: 12px !important; color: #444 !important; }
 .list td:nth-child(2) { padding: 0 !important; text-align: center; }
-.list :global(.slds-checkbox_faux) { width: 18px !important; height: 18px !important; border-color: #929292 !important; border-radius: 2px !important; }
-.list :global(.sf-inline-cell) { padding: 0 !important; margin-left: 0 !important; gap: 4px !important; vertical-align: top; line-height: 24px; }
-.list :global(.sf-inline-cell) > button { opacity: 0; }
+.list :global(.slds-checkbox_faux) { width: 16px !important; height: 16px !important; border-color: #929292 !important; border-radius: 2px !important; }
+.list :global(.sf-inline-cell) { padding: 0 !important; margin-left: 0 !important; gap: 3px !important; vertical-align: top; line-height: 20px; }
+.list :global(.sf-inline-cell) > button { width: 18px; height: 18px; opacity: 0; }
 .list :global(.sf-inline-cell):hover > button, .list :global(.sf-inline-cell):focus-within > button { opacity: 1; }
-.list td input:not([type="checkbox"]), .list td select { font-size: 15px !important; }
+.list td input:not([type="checkbox"]), .list td select { font-size: 13px !important; }
 .list td a, .recordValue { color: #0176d3; text-decoration: none; }
 .list td a:hover { text-decoration: underline; }
-.pager { flex-shrink: 0; min-height: 38px; padding: 4px 14px !important; border: 0 !important; border-top: 1px solid #c9c9c9 !important; }
+.pager { flex-shrink: 0; min-height: 32px; padding: 3px 12px !important; border: 0 !important; border-top: 1px solid #c9c9c9 !important; }
 
 @media (hover: none) { .list :global(.sf-inline-cell) > button { opacity: 1; } }
-@media (max-width: 1200px) {
+@media (max-width: 1000px) {
   .header { grid-template-columns: minmax(0, 1fr); grid-template-areas: "identity" "actions" "tools" "count"; gap: 10px; }
   .actions { justify-self: start; max-width: 100%; }
-  .action { padding: 0 12px; font-size: 14px; }
+  .action { padding: 0 10px; }
   .tools { justify-content: flex-start; flex-wrap: wrap; }
   .tools > div:first-child { flex: 1; min-width: 180px; }
 }
 @media (max-width: 640px) {
   .header { padding: 10px; }
-  .identity :global(.lead-list-picker-trigger) { font-size: 20px; }
   .action { font-size: 12px; padding: 0 8px; }
   .actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); justify-self: stretch; }
   .actions > a, .actions > button { border-bottom: 1px solid #c9c9c9 !important; }

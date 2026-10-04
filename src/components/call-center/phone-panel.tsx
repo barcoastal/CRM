@@ -84,7 +84,7 @@ export function PhonePanel({ inline = false }: { inline?: boolean }) {
     <aside
       className={`cc-phone ${inline ? "cc-phone-inline" : "cc-phone-floating"}`}
       aria-label="CRM phone"
-      style={!inline && pathname === "/leads" ? { bottom: 54 } : undefined}
+      style={!inline && pathname === "/leads" ? { bottom: 46 } : undefined}
     >
       <header className="cc-phone-head">
         <span>

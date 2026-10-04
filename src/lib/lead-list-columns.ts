@@ -6,11 +6,11 @@ const definitions: Array<[string,string]> = [
 ];
 const sortable = new Set(['name','phone','status','source','ownerFullName','createdDate','company','leadId']);
 const widths: Record<string, number> = {
-  name: 290, leadId: 166, company: 382, phone: 266, status: 278,
-  source: 166, totalDebt: 96, ownerAlias: 154, subDisposition: 190,
-  estimatedTotalDebt: 210, lastModified: 190, lastContacted: 210, createdDate: 180,
+  name: 240, leadId: 140, company: 320, phone: 220, status: 230,
+  source: 140, totalDebt: 80, ownerAlias: 130, subDisposition: 160,
+  estimatedTotalDebt: 175, lastModified: 160, lastContacted: 175, createdDate: 150,
 };
-export const LEAD_COLUMNS: SfColumn[] = definitions.map(([key,label])=>({key,label,width:widths[key]??170,sortable:sortable.has(key)}));
+export const LEAD_COLUMNS: SfColumn[] = definitions.map(([key,label])=>({key,label,width:widths[key]??140,sortable:sortable.has(key)}));
 export const LEAD_COLUMN_LAYOUTS: Record<string,string> = {
   "Albert Beutel Leads": "name estimatedTotalDebt lastModified lastContacted phone state status subDisposition leadVendor source fronter createdDate ownerFullName",
   "All Leads": "name email company state status unread createdDate ownerAlias",
