@@ -47,7 +47,7 @@ export function SplitViewPanel({ entity }: { entity: string }) {
   const [view, setView] = useState("recent");
 
   useEffect(() => {
-    const consoleMode = window.localStorage.getItem("sf:navMode.v1") !== "standard";
+    const consoleMode = window.localStorage.getItem("sf:navMode.v1") === "console";
     if (!consoleMode || !param) return;
     setReady(true);
     setOpen(window.localStorage.getItem(COLLAPSE_KEY) !== "closed");

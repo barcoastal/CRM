@@ -41,8 +41,9 @@ const RECORD_ROUTE = /^\/(opportunities|accounts|leads|contacts|cases)\/[^/]+$/;
 let openerHref: string | null = null;
 
 export function readNavMode(): "console" | "standard" {
-  if (typeof window === "undefined") return "console";
-  return window.localStorage.getItem(MODE_KEY) === "standard" ? "standard" : "console";
+  if (typeof window === "undefined") return "standard";
+  try { return window.localStorage.getItem(MODE_KEY) === "console" ? "console" : "standard"; }
+  catch { return "standard"; }
 }
 
 export function setNavMode(mode: "console" | "standard") {

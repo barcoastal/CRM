@@ -1,4 +1,4 @@
-// Generates all Coastal CRM brand assets from a single wave-mark source.
+// Generates Coastal CRM assets from the company's original two-tone chevron.
 // Run: node scripts/gen-brand-assets.mjs
 import sharp from "sharp";
 import fs from "fs";
@@ -8,48 +8,34 @@ const ROOT = path.resolve(".");
 const BRAND = path.join(ROOT, "public/brand");
 const APP = path.join(ROOT, "src/app");
 
-const BLUE = "#1B96FF";
-const DEEP = "#0B5CAB";
-const SKY = "#4FC3F7";
+const BLUE = "#3052FF";
+const SKY = "#7FB2FF";
 const INK = "#0D121C";
 
-// Azure Sky cloud (option B, picked 2026-08-14): puffy cloud built from
-// circle lobes + rounded base, airy azure gradient with a sunlit highlight.
-const GRAD = `<linearGradient id="az" x1="0" y1="0" x2="0.2" y2="1"><stop offset="0" stop-color="${SKY}"/><stop offset="0.6" stop-color="${BLUE}"/><stop offset="1" stop-color="${DEEP}"/></linearGradient>`;
-const BADGE_GRAD = `<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${BLUE}"/><stop offset="1" stop-color="${DEEP}"/></linearGradient>`;
-
-function cloud(fill) {
-  return (
-    `<g fill="${fill}">` +
-    `<circle cx="172" cy="300" r="74"/>` +
-    `<circle cx="256" cy="248" r="96"/>` +
-    `<circle cx="348" cy="296" r="76"/>` +
-    `<rect x="130" y="296" width="270" height="80" rx="40"/>` +
-    `</g>`
-  );
-}
-
-const HIGHLIGHT = `<g fill="#B3E5FC" opacity="0.7"><circle cx="234" cy="220" r="56"/><circle cx="170" cy="280" r="34"/></g>`;
+const original = fs.readFileSync(path.join(BRAND, "chevron.svg"), "utf8");
+const paths = original.match(/<path\b[^>]*\/>/g)?.join("");
+if (!paths) throw new Error("Coastal chevron paths are missing");
+const whitePaths = paths.replaceAll(BLUE, "#ffffff").replaceAll(SKY, "#c8dcff");
+const centeredMark = inner => `<g transform="translate(134 106) scale(1.45)">${inner}</g>`;
 
 const box = (inner, bg = "none") =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">${bg !== "none" ? `<rect width="512" height="512" fill="${bg}"/>` : ""}${inner}</svg>`;
 
 const roundedIcon = (inner) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs>${BADGE_GRAD}</defs><rect width="512" height="512" rx="112" fill="url(#bg)"/>${inner}</svg>`;
+  `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="${BLUE}"/>${inner}</svg>`;
 
 // --- SVG sources ---
-const markSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs>${GRAD}</defs>${cloud("url(#az)")}${HIGHLIGHT}</svg>`;
-const markWhiteSvg = box(cloud("#ffffff"));
-const icon3Svg = roundedIcon(cloud("#ffffff"));
-const icon2Svg = roundedIcon(cloud("#ffffff"));
+const markSvg = box(centeredMark(paths));
+const markWhiteSvg = box(centeredMark(whitePaths));
+const iconSvg = roundedIcon(centeredMark(whitePaths));
 
 function wordmarkSvg(textA, textB, bg) {
-  const markBand = `<defs>${GRAD}</defs><g transform="translate(14,2) scale(0.195)">${cloud(bg === null && textA === "#ffffff" ? "#ffffff" : "url(#az)")}</g>`;
+  const markBand = `<g transform="translate(12 10) scale(0.4)">${textA === "#ffffff" ? whitePaths : paths}</g>`;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="104" viewBox="0 0 512 104">` +
     (bg ? `<rect width="512" height="104" fill="${bg}"/>` : "") +
     markBand +
-    `<text x="150" y="68" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="50" font-weight="800" letter-spacing="-1.5">` +
+    `<text x="102" y="68" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="50" font-weight="700" letter-spacing="-1.5">` +
     `<tspan fill="${textA}">Coastal</tspan><tspan dx="10" fill="${textB}">CRM</tspan></text></svg>`
   );
 }
@@ -92,18 +78,18 @@ async function main() {
   fs.writeFileSync(path.join(BRAND, "wordmark-white.svg"), wordmarkSvg("#ffffff", SKY, null));
 
   // PWA icons
-  fs.writeFileSync(path.join(BRAND, "icon-192.png"), await png(icon3Svg, 192));
-  fs.writeFileSync(path.join(BRAND, "icon-512.png"), await png(icon3Svg, 512));
+  fs.writeFileSync(path.join(BRAND, "icon-192.png"), await png(iconSvg, 192));
+  fs.writeFileSync(path.join(BRAND, "icon-512.png"), await png(iconSvg, 512));
 
   // App Router icons
-  fs.writeFileSync(path.join(APP, "icon.png"), await png(icon3Svg, 512));
-  fs.writeFileSync(path.join(APP, "apple-icon.png"), await png(icon3Svg, 180));
+  fs.writeFileSync(path.join(APP, "icon.png"), await png(iconSvg, 512));
+  fs.writeFileSync(path.join(APP, "apple-icon.png"), await png(iconSvg, 180));
 
-  // favicon.ico: 48 + 32 = 3-line, 16 = 2-line bold
+  // Multi-size favicon, using the same recognizable Coastal mark.
   const ico = buildIco([
-    { size: 48, png: await png(icon3Svg, 48) },
-    { size: 32, png: await png(icon3Svg, 32) },
-    { size: 16, png: await png(icon2Svg, 16) },
+    { size: 48, png: await png(iconSvg, 48) },
+    { size: 32, png: await png(iconSvg, 32) },
+    { size: 16, png: await png(iconSvg, 16) },
   ]);
   fs.writeFileSync(path.join(APP, "favicon.ico"), ico);
 

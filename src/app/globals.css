@@ -35,29 +35,27 @@
 
 /* ============ Salesforce Lightning Chrome ============
    Real SF Lightning has TWO white horizontal bars + a thin diagonal banner.
-   Row 1 (36px): app badge, search, utility icons
-   Row 2 (40px): app launcher waffle, app name in bold, tab strip
-   Row 3 (30px): decorative diagonal blue band
+   Row 1 (50px): Coastal logo, centered search, utility icons
+   Row 2 (38px): app launcher, app name, navigation tabs
+   Row 3 (3px): blue accent
 */
 
+.sf-header { position: sticky; top: 0; z-index: 9000; flex-shrink: 0; min-width: 0; }
 .sf-global-bar {
   height: 50px;
   background: #fff;
-  border-bottom: 1px solid #c9c9c9;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 400px) minmax(0, 1fr);
   align-items: center;
-  padding: 0 16px 0 0;
+  padding: 0 16px;
   gap: 12px;
-  position: sticky;
-  top: 0;
-  z-index: 9000;
+  position: relative;
 }
 
 .sf-app-badge {
-  background: linear-gradient(135deg, #1b96ff, #0b5cab);
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 176px;
+  height: 40px;
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -65,23 +63,24 @@
 }
 
 .sf-app-badge-icon {
-  width: 26px;
-  height: 26px;
+  width: 176px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .sf-search-wrap {
-  flex: 1;
+  width: 100%;
   min-width: 0;
   display: flex;
   justify-content: center;
 }
+.sf-search-wrap > div { width: 100%; max-width: 400px !important; }
 
 .sf-search {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 400px;
-  max-width: 40vw;
+  width: 100%;
   height: 32px;
   padding: 0 12px;
   border: 1px solid #747474;
@@ -109,6 +108,7 @@
   align-items: center;
   gap: 0;
   position: relative;
+  justify-self: end;
 }
 
 .sf-util-btn {
@@ -281,43 +281,40 @@
 }
 
 .sf-nav-bar {
-  height: 44px;
+  height: 38px;
   background: #fff;
-  border-bottom: 1px solid #c9c9c9;
   display: flex;
   align-items: stretch;
   padding-left: 0;
-  position: sticky;
-  top: 50px;
-  z-index: 8500;
+  position: relative;
 }
 
 .sf-app-launcher {
   background: transparent;
   border: 0;
   width: 48px;
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border-right: 1px solid #c9c9c9;
 }
 
 .sf-app-launcher:hover { background: #f3f2f2; }
 
 .sf-waffle {
   display: grid;
-  grid-template-columns: repeat(3, 4px);
-  gap: 2px;
+  grid-template-columns: repeat(3, 5px);
+  gap: 3px;
 }
-.sf-waffle span { width: 4px; height: 4px; background: #54698d; border-radius: 1px; }
+.sf-waffle span { width: 5px; height: 5px; background: #747474; border-radius: 50%; }
 
 .sf-app-name {
   display: inline-flex;
   align-items: center;
-  padding: 0 16px;
-  font-size: 16px;
-  font-weight: 700;
+  padding: 0 20px 0 12px;
+  font-size: 18px;
+  font-weight: 400;
   color: #181818;
   text-decoration: none;
   white-space: nowrap;
@@ -326,38 +323,45 @@
 .sf-tab-nav {
   display: flex;
   flex: 1;
+  min-width: 0;
   align-items: stretch;
   overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .sf-tab {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 16px;
   padding: 0 12px;
   color: #181818;
   text-decoration: none;
   font-size: 13px;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -1px;
+  border: 0;
+  border-top: 3px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
   white-space: nowrap;
 }
 
 .sf-tab:hover { background: #f3f2f2; }
 .sf-tab-active {
-  color: #014486;
-  font-weight: 600;
-  border-bottom-color: #0176d3;
-  background: #d8edff;
-  border-radius: 4px 4px 0 0;
+  color: #181818;
+  font-weight: 400;
+  border-top-color: #0176d3;
+  background: #e8f0fb;
 }
-.sf-tab-chev { width: 8px; height: 8px; fill: #747474; }
+.sf-tab-chev { width: 10px; height: 10px; fill: #747474; }
+.sf-nav-overflow { position: relative; display: inline-flex; align-items: stretch; flex-shrink: 0; }
+.sf-nav-mode-switch { width: 100%; background: #fff; border: 0; border-top: 1px solid #e5e5e5; text-align: left; cursor: pointer; }
+.sf-header :is(a, button):focus-visible { outline: 2px solid #0176d3; outline-offset: -3px; }
 
 .sf-tab-edit {
   background: transparent;
   border: 0;
-  border-left: 1px solid #c9c9c9;
-  width: 48px;
+  width: 40px;
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -367,7 +371,7 @@
 .sf-tab-edit:hover { background: #f3f2f2; }
 
 .sf-decor-band {
-  height: 30px;
+  height: 3px;
   background-color: #2e5b8b;
   background-image: repeating-linear-gradient(
     -45deg,
@@ -400,14 +404,19 @@ img, video, canvas { max-width: 100%; height: auto; }
   .sf-dialer-grid { grid-template-columns: minmax(0, 1fr) !important; }
   .sf-split-hide { display: none !important; }
   .sf-app-name { font-size: 14px; padding: 0 10px; }
-  .sf-search-wrap { max-width: 240px; }
+  .sf-global-bar { grid-template-columns: minmax(0, 1fr) minmax(240px, 340px) minmax(0, 1fr); }
+  .sf-app-badge, .sf-app-badge-icon { width: 150px; }
+  .sf-global-utilities > a:is([title="Favorites"], [title="Favorites list"]) { display: none; }
 }
 
-/* Small tablet / large phone. */
+/* Give search its own row before it meets the utility buttons. */
+@media (max-width: 900px) {
+  .sf-global-bar { grid-template-columns: 150px minmax(0, 1fr); height: auto; padding: 8px 12px; gap: 8px; }
+  .sf-search-wrap { grid-column: 1 / -1; grid-row: 2; }
+  .sf-search-wrap > div { max-width: none !important; }
+}
 @media (max-width: 768px) {
-  .sf-nav-bar { height: 40px; }
-  .sf-tab { padding: 0 9px; font-size: 12px; }
-  .sf-search-wrap { max-width: 160px; }
+  .sf-tab { padding: 0 10px; gap: 8px; }
 }
 
 /* Phones. */
@@ -417,7 +426,7 @@ img, video, canvas { max-width: 100%; height: auto; }
   .sf-app-name { display: none; }
   .sf-global-bar {
     display: grid;
-    grid-template-columns: 36px minmax(0, 1fr);
+    grid-template-columns: 140px minmax(0, 1fr);
     height: auto;
     gap: 8px;
     padding: 8px;
@@ -427,4 +436,6 @@ img, video, canvas { max-width: 100%; height: auto; }
   .sf-search-wrap { grid-column: 1 / -1; grid-row: 2; max-width: none; width: 100%; }
   .sf-search-wrap .sf-search { width: 100%; max-width: none; }
   .sf-global-utilities { gap: 2px; }
+  .sf-global-utilities button[title="Give feedback"] > span { display: none; }
+  .sf-app-badge, .sf-app-badge-icon { width: 140px; }
 }

@@ -45,14 +45,15 @@ const TABS: TabItem[] = [
   { label: "Tasks", href: "/tasks", entity: "Task" },
   { label: "Leads", href: "/leads", entity: "Lead" },
   { label: "Accounts", href: "/accounts", entity: "Account" },
+  { label: "Contacts", href: "/contacts", entity: "Contact" },
   { label: "Opportunities", href: "/opportunities", entity: "Opportunity" },
-  { label: "Negotiations", href: "/negotiations", entity: "Debt" },
+  { label: "Payment Processors", href: "/integrations/processor-log", entity: "Settings" },
   { label: "Cases", href: "/cases", entity: "Case" },
+  { label: "Application Logs", href: "/settings/app-log", entity: "Settings" },
+  { label: "Reports", href: "/reports" },
+  { label: "Negotiations", href: "/negotiations", entity: "Debt" },
   { label: "Floor Manager Hub", href: "/floor-manager" },
   { label: "War Room", href: "/war-room" },
-  { label: "Reports", href: "/reports" },
-  { label: "Payment Processors", href: "/integrations/processor-log", entity: "Settings" },
-  { label: "Application Logs", href: "/settings/app-log", entity: "Settings" },
   { label: "Lenders", href: "/lenders" },
   { label: "Dashboards", href: "/dashboards", entity: "Dashboard" },
   { label: "Forecasting", href: "/forecasting", entity: "Opportunity" },
@@ -102,11 +103,13 @@ export function SldsHeader({
   const [moreOpen, setMoreOpen] = useState(false);
   const [morePos, setMorePos] = useState<{ top: number; right: number } | null>(null);
   const moreBtnRef = useRef<HTMLButtonElement>(null);
+  const moreContainerRef = useRef<HTMLSpanElement>(null);
+  const navRef = useRef<HTMLElement>(null);
   const [quickOpen, setQuickOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [editNavOpen, setEditNavOpen] = useState(false);
   const [visibleTabs, setVisibleTabs] = useState<NavItem[]>(TABS);
-  const [navMode, setNavModeState] = useState<"console" | "standard">("console");
+  const [navMode, setNavModeState] = useState<"console" | "standard">("standard");
   const pathname = usePathname();
   const phone = useOptionalPhone();
   const allowedTabs = visibleTabs.filter(t => !phone || t.href !== "/floor-manager" || phone.data?.sales?.access.floor).map(t => t.href === "/call-center" && phone?.data?.sales?.access ? { ...t, href: phone.data.sales.access.home, label: phone.data.sales.access.floor ? "Live Floor" : phone.data.sales.access.closer ? "Closer Desk" : "Opener Desk" } : t);
@@ -119,15 +122,52 @@ export function SldsHeader({
     return () => cancelAnimationFrame(frame);
   }, []);
 
+  useEffect(() => {
+    if (!moreOpen) return;
+    const outside = (event: MouseEvent) => {
+      if (!moreContainerRef.current?.contains(event.target as Node)) setMoreOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setMoreOpen(false); moreBtnRef.current?.focus(); }
+    };
+    const resize = () => setMoreOpen(false);
+    document.addEventListener("mousedown", outside);
+    document.addEventListener("keydown", escape);
+    window.addEventListener("resize", resize);
+    return () => {
+      document.removeEventListener("mousedown", outside);
+      document.removeEventListener("keydown", escape);
+      window.removeEventListener("resize", resize);
+    };
+  }, [moreOpen]);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const revealActive = () => {
+      const active = nav.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!active) return;
+      const bounds = nav.getBoundingClientRect(), tab = active.getBoundingClientRect();
+      if (tab.left < bounds.left) nav.scrollLeft -= bounds.left - tab.left;
+      else if (tab.right > bounds.right) nav.scrollLeft += tab.right - bounds.right;
+    };
+    revealActive();
+    const observer = new ResizeObserver(revealActive);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [pathname, navMode, visibleTabs]);
+
   return (
-    <>
+    <header className="sf-header" aria-label="Coastal CRM">
       {/* Row 1 — minimal: small left app badge, centered search, right utility icons */}
       <div className="sf-global-bar">
-        <Link href="/dashboard" className="sf-app-badge" title={appName}>
+        <Link href="/dashboard" className="sf-app-badge" title="Coastal CRM home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/brand/mark-white.svg"
-            alt="Coastal CRM"
+            src="/brand/coastal-debt-logo.svg"
+            alt="Coastal Debt Resolve"
+            width={220}
+            height={40}
             className="sf-app-badge-icon"
           />
         </Link>
@@ -204,6 +244,7 @@ export function SldsHeader({
               userName={userName}
               userInitials={userInitials}
               onClose={() => setProfileOpen(false)}
+              navMode={navMode}
             />
           )}
         </div>
@@ -228,7 +269,7 @@ export function SldsHeader({
           </span>
         </button>
         <Link href="/dashboard" className="sf-app-name">{appName}</Link>
-        <nav className="sf-tab-nav">
+        <nav ref={navRef} className="sf-tab-nav" aria-label="Main navigation">
           {allowedTabs.slice(0, 11).map((t) => {
             const active =
               centerNavHref(pathname) === t.href || (t.href !== "/dashboard" && centerNavHref(pathname).startsWith(t.href));
@@ -237,20 +278,24 @@ export function SldsHeader({
                 key={t.href}
                 href={t.href}
                 className={`sf-tab ${active ? "sf-tab-active" : ""}`}
+                aria-current={active ? "page" : undefined}
               >
                 {t.label}
-                <svg className="sf-tab-chev" aria-hidden="true">
+                {t.href !== "/dashboard" && t.href !== "/calculator" && <svg className="sf-tab-chev" aria-hidden="true">
                   <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#down" />
-                </svg>
+                </svg>}
               </Link>
             );
           })}
+        </nav>
           {allowedTabs.length > 11 && (
-            <span style={{ position: "relative", display: "inline-flex", alignItems: "stretch" }}>
+            <span ref={moreContainerRef} className="sf-nav-overflow">
               <button
                 ref={moreBtnRef}
+                aria-expanded={moreOpen}
+                aria-controls="crm-more-navigation"
                 className={`sf-tab ${allowedTabs.slice(11).some((t) => centerNavHref(pathname).startsWith(t.href)) ? "sf-tab-active" : ""}`}
-                style={{ background: moreOpen ? "#f3f2f2" : undefined, border: 0, cursor: "pointer", height: "100%", display: "inline-flex", alignItems: "center" }}
+                style={{ background: moreOpen ? "#f3f2f2" : undefined }}
                 onClick={() => {
                   setMoreOpen((v) => {
                     if (!v && moreBtnRef.current) {
@@ -268,10 +313,12 @@ export function SldsHeader({
               </button>
               {moreOpen && morePos && (
                 <span
+                  id="crm-more-navigation"
+                  role="navigation"
+                  aria-label="More navigation"
                   // Fixed position (not absolute) so the nav's overflow-x:auto
                   // scroll container doesn't clip the dropdown below the bar.
                   style={{ position: "fixed", top: morePos.top, right: morePos.right, zIndex: 9100, background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, boxShadow: "0 2px 6px rgba(0,0,0,0.15)", minWidth: 200, maxHeight: "70vh", overflowY: "auto", display: "block", padding: "4px 0" }}
-                  onMouseLeave={() => setMoreOpen(false)}
                 >
                   {allowedTabs.slice(11).map((t) => (
                     <Link
@@ -287,7 +334,6 @@ export function SldsHeader({
               )}
             </span>
           )}
-        </nav>
         <button
           className="sf-tab-edit"
           title="Edit tabs"
@@ -297,15 +343,9 @@ export function SldsHeader({
             <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#edit" />
           </svg>
         </button>
-        <button
-          title="Switch to Console view"
-          onClick={() => { setNavMode("console"); setNavModeState("console"); }}
-          style={{ marginLeft: "auto", border: "1px solid #c9c9c9", background: "#fff", color: "#0176d3", borderRadius: 4, padding: "0 12px", height: 28, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
-        >
-          Console view
-        </button>
       </div>
       )}
+      <div className="sf-decor-band" aria-hidden="true" />
 
       <EditNavModal
         open={editNavOpen}
@@ -313,7 +353,7 @@ export function SldsHeader({
         allTabs={TABS}
         onSaved={() => setVisibleTabs(applyNavPrefs(TABS))}
       />
-    </>
+    </header>
   );
 }
 
@@ -321,10 +361,12 @@ function SldsProfileMenu({
   userName,
   userInitials,
   onClose,
+  navMode,
 }: {
   userName?: string;
   userInitials: string;
   onClose: () => void;
+  navMode: "console" | "standard";
 }) {
   return (
     <div
@@ -351,6 +393,9 @@ function SldsProfileMenu({
           </div>
         </div>
       </div>
+      <button type="button" className="sf-profile-item sf-nav-mode-switch" onClick={() => setNavMode(navMode === "console" ? "standard" : "console")}>
+        Switch to {navMode === "console" ? "Standard" : "Console"} view
+      </button>
     </div>
   );
 }
