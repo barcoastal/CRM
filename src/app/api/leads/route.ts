@@ -1,4 +1,5 @@
 import { withAutomationErrors } from "@/lib/automation/errors";
+import { SKIP_WEB_LEAD_ROUTING } from "@/lib/automation/lead-routing";
 import { triggerCreateArgs, makeCtx } from "@/lib/triggers/runner";
 import type { Lead } from "@/generated/prisma/client";
 import { recordScope } from "@/lib/record-access";
@@ -98,7 +99,8 @@ async function handlePOST(request: NextRequest) {
       numberOfLenders: typeof data.numberOfLenders === "number" ? data.numberOfLenders : null,
       source: data.source,
       notes: data.notes || null,
-      assignedToId: data.assignedToId || null,
+      assignedToId: data.assignedToId || session.user.id,
+      leadAssignmentDate: new Date(),
       utmSource: data.utmSource || null,
       utmMedium: data.utmMedium || null,
       utmCampaign: data.utmCampaign || null,
@@ -114,7 +116,7 @@ async function handlePOST(request: NextRequest) {
         select: { id: true, name: true, email: true },
       },
     },
-  }, makeCtx(session.user.id));
+  }, makeCtx(session.user.id, [SKIP_WEB_LEAD_ROUTING]));
 
   return ssnSafeJson(lead, { status: 201 });
 }

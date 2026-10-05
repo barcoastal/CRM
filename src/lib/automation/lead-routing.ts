@@ -1,6 +1,9 @@
 import type { Lead } from "@/generated/prisma/client";
 import type { TriggerCtx } from "@/lib/triggers/types";
 
+/** Manual CRM creation keeps its selected owner instead of inbound routing. */
+export const SKIP_WEB_LEAD_ROUTING = "lead:skip-web-routing";
+
 // Assign_Web_Leads_to_Seth: source values from the audited active flow.
 export const WEB_LEAD_SOURCES = [
   "Web", "Phone Inquiry", "Partner Referral", "Other", "Social", "Google", "Webform",
@@ -22,7 +25,7 @@ export async function applyLeadRouting(
   const leadSource = next.source === "WEBSITE" ? "Web" : next.source === "MAILER" ? "Direct Mail" : next.source;
   const before = snapshot(prev?.sfDataJson);
   const sf = { ...before, ...snapshot(next.sfDataJson) };
-  if (!prev && process.env.DISABLE_WEB_LEAD_ROUTING !== "true" &&
+  if (!prev && !ctx.skip.has(SKIP_WEB_LEAD_ROUTING) && process.env.DISABLE_WEB_LEAD_ROUTING !== "true" &&
       WEB_LEAD_SOURCES.some(source => source.toLowerCase() === String(leadSource ?? "").toLowerCase())) {
     const owner = await ctx.prisma.user.findFirst({
       where: { email: { equals: process.env.WEB_LEAD_OWNER_EMAIL || "ssweet@coastaldebt.com", mode: "insensitive" }, isActive: true },
