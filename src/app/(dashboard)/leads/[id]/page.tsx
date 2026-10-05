@@ -26,7 +26,6 @@ import { CreditorTable } from "@/components/leads/creditor-table";
 import { LeadRelated } from "@/components/leads/lead-related";
 import { SfDataSection } from "@/components/slds/sf-data-section";
 import { RecordNotes } from "@/components/shared/record-notes";
-import { resolveSfUserNames, isSfUserId } from "@/lib/sf-users";
 import { NotesRailCard } from "@/components/shared/notes-rail-card";
 import { fetchChainNotes } from "@/lib/notes";
 import { CallButton } from "@/components/dialer/call-button";
@@ -194,18 +193,26 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     if (v == null || v === "") return null;
     return String(v);
   };
-  // Fronter/Closer/Call lookups hold raw SF user ids; show real user names.
-  const sfUserMap = await resolveSfUserNames([
-    sf("FronterLookup__c"),
-    sf("CloserLookup__c"),
-    sf("Call_Transferred_By_Lookup__c"),
-    sf("Call_Received_By_Lookup__c"),
-  ]);
+  // Include current inactive assignees so editing does not lose imported values.
+  const callUserIds = ["FronterLookup__c", "CloserLookup__c", "Call_Transferred_By_Lookup__c", "Call_Received_By_Lookup__c"]
+    .map(sf).filter((value): value is string => !!value);
+  const callUsers = await prisma.user.findMany({
+    where: { OR: [{ isActive: true }, { id: { in: callUserIds } }, { sfId: { in: callUserIds } }] },
+    select: { id: true, name: true, sfId: true },
+    orderBy: { name: "asc" },
+  });
+  const callUserOptions = callUsers.map(user => ({ label: user.name, value: user.sfId ?? user.id }));
+  // A previously stored CRM id can coexist with a Salesforce id on the user.
+  for (const id of callUserIds) {
+    if (!callUserOptions.some(option => option.value === id)) {
+      const user = callUsers.find(user => user.id === id || user.sfId === id);
+      callUserOptions.push({ label: user?.name ?? id, value: id });
+    }
+  }
   const sfUser = (k: string): React.ReactNode => {
     const v = sf(k);
     if (!v) return null;
-    if (!isSfUserId(v)) return v;
-    const u = sfUserMap.get(v.trim());
+    const u = callUsers.find(user => user.id === v.trim() || user.sfId === v.trim());
     return u ? (
       <Link key={k} href={`/settings/users/${u.id}`} style={{ color: "#0176d3" }}>
         {u.name}
@@ -446,24 +453,26 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const callDisposition = (
     <Section title="Call Disposition" defaultOpen={false}>
       <FieldGrid
+        entityType="lead"
+        entityId={lead.id}
         fields={[
           // Row 1: Fronter | Closer
-          ["Fronter", sfUser("FronterLookup__c")],
-          ["Closer", sfUser("CloserLookup__c")],
+          E("Fronter", sfUser("FronterLookup__c"), "FronterLookup__c", "select", { rawValue: sf("FronterLookup__c"), options: callUserOptions }),
+          E("Closer", sfUser("CloserLookup__c"), "CloserLookup__c", "select", { rawValue: sf("CloserLookup__c"), options: callUserOptions }),
           // Row 2: Call Transferred By | Call Received By
-          ["Call Transferred By", sfUser("Call_Transferred_By_Lookup__c")],
-          ["Call Received By", sfUser("Call_Received_By_Lookup__c")],
+          E("Call Transferred By", sfUser("Call_Transferred_By_Lookup__c"), "Call_Transferred_By_Lookup__c", "select", { rawValue: sf("Call_Transferred_By_Lookup__c"), options: callUserOptions }),
+          E("Call Received By", sfUser("Call_Received_By_Lookup__c"), "Call_Received_By_Lookup__c", "select", { rawValue: sf("Call_Received_By_Lookup__c"), options: callUserOptions }),
           // Row 3: Call Tranferred DateTime | Call Received Date
-          ["Call Tranferred DateTime", sfDate("Call_Tranferred_DateTime__c")],
-          ["Call Received Date", sfDate("Call_Received_Date__c")],
+          E("Call Transferred DateTime", sfDate("Call_Tranferred_DateTime__c"), "Call_Tranferred_DateTime__c", "datetime", { rawValue: sf("Call_Tranferred_DateTime__c") }),
+          E("Call Received Date", sfDate("Call_Received_Date__c"), "Call_Received_Date__c", "datetime", { rawValue: sf("Call_Received_Date__c") }),
           // Row 4: Call Transfer Status | Transfer Qualification
-          ["Call Transfer Status", sf("Call_Transfer_Status__c")],
-          ["Transfer Qualification", sf("Transfer_Qualification__c")],
+          E("Call Transfer Status", sf("Call_Transfer_Status__c"), "Call_Transfer_Status__c"),
+          E("Transfer Qualification", sf("Transfer_Qualification__c"), "Transfer_Qualification__c"),
           // Row 5: Outbound Call Priority | Reason for Disqualification
-          ["Outbound Call Priority", sf("Outbound_Call_Priority__c")],
-          ["Reason for Disqualification", sf("Reason_for_Disqualification__c")],
+          E("Outbound Call Priority", sf("Outbound_Call_Priority__c"), "Outbound_Call_Priority__c"),
+          E("Reason for Disqualification", sf("Reason_for_Disqualification__c"), "Reason_for_Disqualification__c"),
           // Row 6: Agent Location | (empty)
-          ["Agent Location", sf("Agent_Location__c")],
+          E("Agent Location", sf("Agent_Location__c"), "Agent_Location__c"),
           ["", null],
         ]}
       />
