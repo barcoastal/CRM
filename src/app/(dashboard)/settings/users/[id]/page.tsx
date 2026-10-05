@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { StatusPill } from "@/components/slds/record-page";
+import { UserProfileLayout } from "@/components/users/user-profile-layout";
+import { FollowButton } from "@/components/chatter/follow-button";
 import { RelatedList } from "@/components/slds/related-list";
 import { auth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
@@ -57,6 +58,21 @@ export default async function UserRecordPage({ params, searchParams }: {
     userOwnedRecords(id, recordsType, page),
   ]);
 
+  const [files, memberships, followers, follows, posts] = await Promise.all([
+    prisma.contentRecordLink.findMany({ where: { entityType: "User", entityId: id }, include: { document: { select: { id: true, title: true } } } }),
+    prisma.chatterMember.findMany({ where: { userId: id, group: { OR: [{ visibility: "public" }, { members: { some: { userId: session.user.id } } }] } }, include: { group: { select: { id: true, name: true } } } }),
+    prisma.chatterFollow.findMany({ where: { entityType: "User", entityId: id }, include: { user: { select: { id: true, name: true, avatar: true } } } }),
+    prisma.chatterFollow.findMany({ where: { userId: id, entityType: "User", entityId: { not: null } }, select: { entityId: true } }),
+    prisma.chatterPost.findMany({ where: { entityType: "User", entityId: id, parentId: null }, orderBy: { createdAt: "desc" }, take: 30, select: { id: true, body: true, createdAt: true, author: { select: { name: true } } } }),
+  ]);
+  const followingUsers = await prisma.user.findMany({ where: { id: { in: follows.flatMap(f => f.entityId ? [f.entityId] : []) } }, select: { id: true, name: true, avatar: true } });
+  const personLink = (person: { id: string; name: string; avatar: string | null }) => ({ ...person, href: `/settings/users/${person.id}` });
+  const related = {
+    files: files.map(f => ({ id: f.document.id, name: f.document.title, href: `/files/${f.document.id}` })),
+    groups: memberships.map(m => ({ id: m.group.id, name: m.group.name, href: `/chatter/groups/${m.group.id}` })),
+    followers: followers.map(f => personLink(f.user)), following: followingUsers.map(personLink),
+  };
+
   const owned: Array<{ label: string; count: number; href: string }> = [
     { label: "Leads", count: leads, href: profileHref({ records: "leads", page: 1 }) },
     { label: "Opportunities", count: opps, href: profileHref({ records: "opportunities", page: 1 }) },
@@ -79,24 +95,12 @@ export default async function UserRecordPage({ params, searchParams }: {
   const cell: React.CSSProperties = { fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
 
   return (
-    <div style={{ padding: 16 }}>
-      {/* Header */}
-      <div style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 8, padding: "14px 18px", marginBottom: 12, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <div>
-          <div style={{ fontSize: 12, color: "#444444" }}>User</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#181818" }}>{user.name}</div>
-          <div style={{ fontSize: 13, color: "#444444" }}>
-            {user.email} · {user.profile?.label ?? user.role}
-            {user.manager && <> · Manager: <Link href={`/settings/users/${user.manager.id}`} style={{ color: "#0176d3" }}>{user.manager.name}</Link></>}
-          </div>
-        </div>
-        <StatusPill label={user.isActive ? "Active" : "Inactive"} tone={user.isActive ? "success" : "neutral"} />
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-          {session.user.role === "ADMIN" && !session.impersonation && !session.user.mustResetPassword && user.isActive && user.id !== session.user.id && <ViewAsUserButton userId={user.id} userName={user.name} />}
-          {hasPermission(session.user.permissions, "User.Edit") && <Link href={`/settings/users/${user.id}/edit`} className="slds-button slds-button_neutral">Edit</Link>}
-        </div>
-      </div>
-
+    <UserProfileLayout user={user} related={related} posts={posts} actions={<>
+      {!session.impersonation && user.id !== session.user.id && <FollowButton entityType="User" entityId={id} initialFollowing={followers.some(f => f.user.id === session.user.id)} />}
+      {hasPermission(session.user.permissions, "User.Edit") && <Link href={`/settings/users/${user.id}/edit`}>Edit</Link>}
+      <a href="#user-detail">User Detail</a>
+      {!session.impersonation && !session.user.mustResetPassword && user.isActive && user.id !== session.user.id && <ViewAsUserButton userId={user.id} userName={user.name} />}
+    </>}>
       {/* Owned records */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 14 }}>
         {owned.map((o) => (
@@ -199,6 +203,11 @@ export default async function UserRecordPage({ params, searchParams }: {
       <div style={{ fontSize: 12, marginTop: 4 }}>
         <Link href="/settings/audit-log" style={{ color: "#0176d3" }}>Open full audit log</Link>
       </div>
-    </div>
+      <section id="user-detail" style={{ marginTop: 20, scrollMarginTop: 100, borderTop: "1px solid #d8d8d8", paddingTop: 16 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700 }}>User Detail</h2>
+        <p>{user.profile?.label ?? user.role} · {user.isActive ? "Active" : "Inactive"}</p>
+        <p>Last login: {user.lastLoginAt?.toLocaleString() ?? "Never"}</p>
+      </section>
+    </UserProfileLayout>
   );
 }

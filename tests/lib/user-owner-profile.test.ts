@@ -4,7 +4,7 @@ import { createElement } from "react";
 
 const mocks = vi.hoisted(() => {
   const model = () => ({ count: vi.fn().mockResolvedValue(0), findMany: vi.fn().mockResolvedValue([]) });
-  return { auth: vi.fn(), db: { user: { findUnique: vi.fn() }, lead: model(), opportunity: model(), account: model(), contact: model(), task: model(), case: model(), auditLog: model(), accountHistory: model() } };
+  return { auth: vi.fn(), db: { user: { findUnique: vi.fn(), findMany: vi.fn().mockResolvedValue([]) }, lead: model(), opportunity: model(), account: model(), contact: model(), task: model(), case: model(), auditLog: model(), accountHistory: model(), contentRecordLink: model(), chatterMember: model(), chatterFollow: model(), chatterPost: model() } };
 });
 vi.mock("@/lib/auth", () => ({ auth: mocks.auth }));
 vi.mock("@/lib/prisma", () => ({ prisma: mocks.db }));
@@ -20,7 +20,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.db.user.findUnique.mockResolvedValue({ id: "owner-123", name: "Owner Example", email: "owner@example.test", role: "SALES_REP", isActive: true });
   mocks.auth.mockResolvedValue({ user: { id: "admin", role: "ADMIN", permissions: [] } });
-  for (const key of ["lead", "opportunity", "account", "contact", "task", "case", "auditLog", "accountHistory"] as const) {
+  for (const key of ["lead", "opportunity", "account", "contact", "task", "case", "auditLog", "accountHistory", "contentRecordLink", "chatterMember", "chatterFollow", "chatterPost"] as const) {
     mocks.db[key].findMany.mockResolvedValue([]);
     mocks.db[key].count.mockResolvedValue(0);
   }
@@ -81,4 +81,25 @@ it("owner links keep the profile destination even in the first table column", ()
   expect(html).not.toContain('href="/leads/lead-123"');
   expect(html.match(/<a /g)).toHaveLength(1);
   expect(ownerProfileLink(null, "Queue")).toBe("Queue");
+});
+
+it("renders the Salesforce-style profile sections and real related records", async () => {
+  mocks.db.user.findUnique.mockResolvedValue({ id: "owner-123", name: "Example Owner", email: "owner@example.test", role: "SALES_REP", isActive: true, title: "Account Executive", mobile: "+1 555 010 0123", country: "United States", userCountry: "United States" });
+  mocks.db.chatterMember.findMany.mockResolvedValue([{ group: { id: "group-1", name: "Sales Team" } }]);
+  mocks.db.chatterFollow.findMany.mockResolvedValue([]);
+  mocks.db.contentRecordLink.findMany.mockResolvedValue([{ document: { id: "file-1", title: "Training Guide" } }]);
+  const html = renderToStaticMarkup(await UserRecordPage(props()));
+  for (const label of ["Details", "About", "Contact", "Background", "Related", "Chatter", "Work &amp; Activity", "User Detail"]) expect(html).toContain(label);
+  expect(html).toContain('href="/files/file-1"');
+  expect(html).toContain('href="/chatter/groups/group-1"');
+  expect(html).toContain("Mountain landscape and hot-air balloon");
+  if (process.env.PROFILE_PREVIEW_HTML) {
+    const { writeFileSync, readFileSync } = await import("node:fs");
+    const styles = (await import("@/components/users/user-profile-layout.module.css")).default;
+    let css = readFileSync("src/components/users/user-profile-layout.module.css", "utf8");
+    css = css.replace(/\.([a-zA-Z][\w-]*)(?=[\s:{>,])/g, (match, key) => styles[key] ? `.${styles[key]}` : match);
+    const publicUrl = `file://${process.cwd()}/public`;
+    css = css.replaceAll("url('/slds/", `url('${publicUrl}/slds/`);
+    writeFileSync(process.env.PROFILE_PREVIEW_HTML, `<!doctype html><html><meta charset="utf-8"><title>CRM profile preview</title><style>*{box-sizing:border-box}body{margin:6px;font-family:Arial,sans-serif;font-size:14px}a{text-decoration:none}p{margin:0}h2{margin:0}ul{list-style:none;padding:0}.slds-card{background:white;border:1px solid #ddd}.slds-card__header{padding:12px}.slds-icon{width:24px;height:24px}.slds-p-around_small{padding:8px}${css}</style>${html.replaceAll('src="/slds/', `src="${publicUrl}/slds/`).replaceAll('href="/slds/', `href="${publicUrl}/slds/`)}</html>`);
+  }
 });
