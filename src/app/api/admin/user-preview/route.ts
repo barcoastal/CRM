@@ -6,7 +6,7 @@ import { hasPermission } from "@/lib/permissions";
 export async function POST(request: NextRequest) {
   // updateSession skips Auth.js CSRF validation; require same-origin JSON.
   const origin = request.headers.get("origin");
-  const appOrigin = new URL(process.env.NEXTAUTH_URL || request.url).origin;
+  const appOrigin = new URL(request.url).origin;
   if (origin !== appOrigin || !request.headers.get("content-type")?.startsWith("application/json")) {
     return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
   }
