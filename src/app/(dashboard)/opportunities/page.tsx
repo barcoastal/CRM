@@ -113,6 +113,8 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
 
   const session = await auth();
   const myId = session?.user?.id ?? "";
+  const canArchived = await canViewArchivedOpportunities(myId);
+  const visibleViews = canArchived ? VIEWS : VIEWS.filter((item) => item.value !== "archived");
 
   const listViews=await prisma.listView.findMany({where:{entity:'Opportunity',isSystem:false,OR:[{isShared:true},{ownerId:myId}]},orderBy:{name:'asc'}});
   const selectedView=listViews.find(v=>`custom:${v.id}`===view);
@@ -185,10 +187,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     where.updatedAt = { gte: todayStart, lt: tomorrow };
   }
 
-  // Intersect the visibility restriction with every selected view/filter.
-  if (!(await canViewArchivedOpportunities(myId))) {
-    (where.AND as Prisma.OpportunityWhereInput[]).push({ stage: { notIn: ["ARCHIVED", "Archived", "Archive Disposition"] } });
-  }
+  // recordScope intersects the archive restriction with every view and filter.
 
   if(selectedView)where.AND=[...(Array.isArray(where.AND)?where.AND:[where.AND??{}]),buildWhere((selectedView.filters??[]) as unknown as ListFilter[])];
   let orderBy: Prisma.OpportunityOrderByWithRelationInput = { updatedAt: "desc" };
@@ -238,7 +237,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
       preferenceUserId={myId}
         entity="opportunity"
         title="Opportunities"
-        subtitle={VIEWS.find((v) => v.value === view)?.label ?? "Recently Viewed"}
+        subtitle={visibleViews.find((v) => v.value === view)?.label ?? "Recently Viewed"}
         count={columns.reduce((s2, c) => s2 + c.count, 0)}
         iconColor="#fcb95b"
         iconSlug="opportunity"
@@ -249,7 +248,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         pathname="/opportunities"
         searchQuery={search}
         preservedParams={{ ...(params.view ? { view: params.view } : {}), ...(params.label ? {label:params.label} : {}), ...(params.stage ? {stage:params.stage} : {}), ...(params.recordType ? {recordType:params.recordType} : {}) }}
-        views={[...VIEWS, ...listViews.map(v => ({value:`custom:${v.id}`,label:v.name}))]}
+        views={[...visibleViews, ...listViews.map(v => ({value:`custom:${v.id}`,label:v.name}))]}
         currentView={requestedView}
         displayMode="kanban"
         bodyOverride={<KanbanBoard columns={columns} entity="opportunities" fieldKey="stage" />}
@@ -273,7 +272,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     select: { id: true, name: true },
   });
   const ownerViews = ownerUsers.map((u) => ({ value: `owner:${u.id}`, label: u.name }));
-  const allViews = [...VIEWS, ...ownerViews,...listViews.map(v=>({value:`custom:${v.id}`,label:v.name}))];
+  const allViews = [...visibleViews, ...ownerViews,...listViews.map(v=>({value:`custom:${v.id}`,label:v.name}))];
 
   const [items, total] = await Promise.all([
     prisma.opportunity.findMany({
@@ -414,7 +413,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
 
   const subtitle = selectedView?.name ?? (params.stage
     ? params.stage
-    : VIEWS.find((v) => v.value === view)?.label ?? "Recently Viewed");
+    : visibleViews.find((v) => v.value === view)?.label ?? "Recently Viewed");
 
   return (
     <SfListPage

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { OpportunityEditForm } from "@/components/opportunities/opportunity-edit-form";
+import { recordScope } from "@/lib/record-access";
 
 interface OpportunityEditPageProps {
   params: Promise<{ id: string }>;
@@ -11,7 +12,7 @@ export default async function OpportunityEditPage({ params }: OpportunityEditPag
 
   const [opportunity, users] = await Promise.all([
     prisma.opportunity.findUnique({
-      where: { id },
+      where: { id, AND: [await recordScope("opportunity")] },
       include: {
         lead: {
           select: { businessName: true },

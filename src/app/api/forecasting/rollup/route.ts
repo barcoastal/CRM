@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { buildForecastRollup, summarizeRollup } from "@/lib/forecasting/rollup";
 import { currentMonthPeriod } from "@/lib/forecasting/period";
+import { recordScope } from "@/lib/record-access";
 
 export async function GET(req: Request) {
   const r = await requireAuthOrRespond();
@@ -17,7 +18,7 @@ export async function GET(req: Request) {
   const forUserId = forUserIdRaw === "ALL" ? null : forUserIdRaw || r.session.userId;
 
   try {
-    const rows = await buildForecastRollup({ period, forUserId, includeTeam });
+    const rows = await buildForecastRollup({ period, forUserId, includeTeam, opportunityScope: await recordScope("opportunity") });
     const summary = summarizeRollup(rows);
     return NextResponse.json({ period, rows, summary });
   } catch (err) {

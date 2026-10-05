@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { recordScope } from "@/lib/record-access";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
   if (q.length < 2) return NextResponse.json({ options: [] });
 
   const accounts = await prisma.account.findMany({
-    where: { name: { contains: q, mode: "insensitive" } },
+    where: { name: { contains: q, mode: "insensitive" }, AND: [await recordScope("account")] },
     select: { id: true, name: true, recordType: true, billingCity: true, billingState: true },
     orderBy: { name: "asc" },
     take: 8,

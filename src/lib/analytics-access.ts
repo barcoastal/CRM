@@ -5,12 +5,15 @@ import { prisma } from "@/lib/prisma";
 import { loadEffectivePermissions, hasPermission } from "@/lib/permissions";
 import { teamOwnerIds } from "@/lib/record-access";
 import { hasAllRecordAccess, hasBroadRecordGrant } from "@/lib/record-permissions";
+import { isCloserUser } from "@/lib/closer-contact-access";
+import { activeAccountFilter, activeOpportunityFilter } from "@/lib/opportunity-access";
 
 export type AnalyticsAccess = {
   userId: string;
   isAdmin: boolean;
   ownerIds: string[];
   permissions: string[];
+  isCloser?: boolean;
 };
 
 export class AnalyticsAccessError extends Error {
@@ -22,7 +25,11 @@ export async function analyticsAccess(required: string): Promise<AnalyticsAccess
   const session = await auth();
   if (!session?.user?.id) throw new AnalyticsAccessError(401, "Unauthorized");
   const current = await prisma.user.findUnique({
-    where: { id: session.user.id }, select: { id: true, role: true, isActive: true },
+    where: { id: session.user.id }, select: {
+      id: true, role: true, isActive: true, isCloser: true, closerTier: true,
+      profile: { select: { name: true } },
+      hierarchyRole: { select: { name: true, developerName: true } },
+    },
   });
   if (!current?.isActive) throw new AnalyticsAccessError(401, "Unauthorized");
   const isAdmin = current.role === "ADMIN" || current.role === "SUPER_ADMIN";
@@ -32,18 +39,22 @@ export async function analyticsAccess(required: string): Promise<AnalyticsAccess
     ? Array.from(await loadEffectivePermissions(current.id)) : sessionPermissions;
   if (!isAdmin && !hasPermission(permissions, required)) throw new AnalyticsAccessError(403, "Forbidden");
   const users = isAdmin ? [] : await prisma.user.findMany({ select: { id: true, managerId: true } });
-  return { userId: current.id, isAdmin, permissions, ownerIds: isAdmin ? [] : teamOwnerIds(current.id, users) };
+  return { userId: current.id, isAdmin, isCloser: isCloserUser(current), permissions, ownerIds: isAdmin ? [] : teamOwnerIds(current.id, users) };
 }
 
 /** Background report execution uses the same fresh permissions and team scope as interactive reports. */
 export async function analyticsAccessForUser(userId: string): Promise<AnalyticsAccess> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, role: true, isActive: true } });
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: {
+    id: true, role: true, isActive: true, isCloser: true, closerTier: true,
+    profile: { select: { name: true } },
+    hierarchyRole: { select: { name: true, developerName: true } },
+  } });
   if (!user?.isActive) throw new AnalyticsAccessError(401, "Inactive report recipient");
   const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
   const permissions = Array.from(await loadEffectivePermissions(user.id));
   if (!isAdmin && !hasPermission(permissions, "Reports.View")) throw new AnalyticsAccessError(403, "Report access removed");
   const users = isAdmin ? [] : await prisma.user.findMany({ select: { id: true, managerId: true } });
-  return { userId, isAdmin, permissions, ownerIds: isAdmin ? [] : teamOwnerIds(userId, users) };
+  return { userId, isAdmin, isCloser: isCloserUser(user), permissions, ownerIds: isAdmin ? [] : teamOwnerIds(userId, users) };
 }
 
 export async function analyticsApiAccess(required: string): Promise<{ access: AnalyticsAccess } | { response: Response }> {
@@ -71,12 +82,15 @@ const OWNED: Record<string, { field: string; permission: string }> = {
 
 /** Unsupported objects fail closed until their ownership/sharing policy is defined. */
 export function analyticsScope(access: AnalyticsAccess, model: string): Record<string, unknown> {
-  if (access.isAdmin) return {};
+  const archiveScope = access.isCloser && model === "opportunity" ? activeOpportunityFilter
+    : access.isCloser && model === "account" ? activeAccountFilter : null;
+  const withArchiveScope = (scope: Record<string, unknown>) => archiveScope ? { AND: [scope, archiveScope] } : scope;
+  if (access.isAdmin) return archiveScope ?? {};
   const rule = OWNED[model];
-  if (rule && hasAllRecordAccess(access.permissions, model)) return {};
-  if(model==='account'&&hasPermission(access.permissions,'Account.View'))return {OR:[ownedRecordScope(model,access.ownerIds),{teamMembers:{some:{userId:access.userId}}}]};
+  if (rule && hasAllRecordAccess(access.permissions, model)) return archiveScope ?? {};
+  if(model==='account'&&hasPermission(access.permissions,'Account.View'))return withArchiveScope({OR:[ownedRecordScope(model,access.ownerIds),{teamMembers:{some:{userId:access.userId}}}]});
   if (rule) return hasPermission(access.permissions, rule.permission)
-    ? ownedRecordScope(model, access.ownerIds) : { id: { in: [] } };
+    ? withArchiveScope(ownedRecordScope(model, access.ownerIds)) : { id: { in: [] } };
   if (model === "opportunitySnapshot" || model === "opportunityHistory") return { opportunity: { is: analyticsScope(access, "opportunity") } };
   if (model === "client") return { AND: [
     { lead: { is: analyticsScope(access, "lead") } },

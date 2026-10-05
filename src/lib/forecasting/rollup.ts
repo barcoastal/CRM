@@ -32,6 +32,7 @@ export interface BuildForecastRollupArgs {
   period: string;
   forUserId?: string | null;
   includeTeam?: boolean;
+  opportunityScope?: Record<string, unknown>;
 }
 
 const ZERO_AMOUNTS = (): Record<ForecastCategory, number> => ({
@@ -68,7 +69,7 @@ async function collectTeamUserIds(rootUserId: string): Promise<Set<string>> {
 }
 
 export async function buildForecastRollup(opts: BuildForecastRollupArgs): Promise<RollupRow[]> {
-  const { period, forUserId, includeTeam } = opts;
+  const { period, forUserId, includeTeam, opportunityScope } = opts;
   const { start, endExclusive } = parsePeriod(period);
 
   // 1. Resolve target user set.
@@ -97,6 +98,7 @@ export async function buildForecastRollup(opts: BuildForecastRollupArgs): Promis
     where: {
       assignedToId: { in: targetIds },
       closeDate: { gte: start, lt: endExclusive },
+      ...(opportunityScope ? { AND: [opportunityScope] } : {}),
     },
     select: {
       id: true,

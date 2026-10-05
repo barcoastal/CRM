@@ -10,6 +10,7 @@ import {
 import { currentMonthPeriod, parsePeriod } from "@/lib/forecasting/period";
 import { buildForecastRollup, summarizeRollup } from "@/lib/forecasting/rollup";
 import { ForecastingClient } from "@/components/forecasting/forecasting-client";
+import { recordScope } from "@/lib/record-access";
 
 void CATEGORY_LABEL; // re-exported for callers; reference here so TS doesn't warn.
 
@@ -41,7 +42,8 @@ export default async function ForecastingPage({
   // includeTeam default true unless explicitly "0"
   const includeTeam = sp.team === undefined ? true : sp.team === "1" || sp.team === "true";
 
-  const rows = await buildForecastRollup({ period, forUserId, includeTeam });
+  const opportunityScope = await recordScope("opportunity");
+  const rows = await buildForecastRollup({ period, forUserId, includeTeam, opportunityScope });
   const summary = summarizeRollup(rows);
 
   // Top pipeline movers: largest Commit + Best Case opps in the period.
@@ -51,6 +53,7 @@ export default async function ForecastingPage({
     where: {
       assignedToId: userIdSet.size > 0 ? { in: Array.from(userIdSet) } : undefined,
       closeDate: { gte: start, lt: endExclusive },
+      AND: [opportunityScope],
     },
     select: {
       id: true,

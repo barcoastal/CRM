@@ -1,17 +1,24 @@
 // src/lib/opportunity-access.ts
 /**
- * Archived-opportunity visibility. Closers are not supposed to see archived
- * opportunities (they work active deals only), so they are blocked by default.
- * Everyone else is unaffected. Grant the "Opportunity.ViewArchived" permission
- * (or Modify.AllData) to re-enable archived visibility for a specific closer.
+ * Archived opportunities are never visible to closers. Other users retain
+ * their existing access, including explicit archived-view grants.
  */
 import { prisma } from "@/lib/prisma";
-import { loadEffectivePermissions, hasPermission } from "@/lib/permissions";
+import { isCloserUser } from "@/lib/closer-contact-access";
 
 export const ARCHIVED_STAGE = "ARCHIVED";
 
 export const activeOpportunityFilter = {
   NOT: { stage: { startsWith: "archive", mode: "insensitive" as const } },
+};
+
+/** An account is archived for a closer when all its linked deals are archived. */
+export const activeAccountFilter = {
+  isActive: true,
+  OR: [
+    { opportunities: { none: {} } },
+    { opportunities: { some: activeOpportunityFilter } },
+  ],
 };
 
 export function isArchivedOpportunity(stage: string): boolean {
@@ -20,8 +27,13 @@ export function isArchivedOpportunity(stage: string): boolean {
 
 export async function canViewArchivedOpportunities(userId: string | null | undefined): Promise<boolean> {
   if (!userId) return false;
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { isCloser: true } });
-  if (!user?.isCloser) return true; // only closers are restricted
-  const perms = await loadEffectivePermissions(userId);
-  return hasPermission(perms, "Opportunity.ViewArchived") || hasPermission(perms, "Modify.AllData");
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      role: true, isCloser: true, closerTier: true,
+      profile: { select: { name: true } },
+      hierarchyRole: { select: { name: true, developerName: true } },
+    },
+  });
+  return !!user && !isCloserUser(user);
 }

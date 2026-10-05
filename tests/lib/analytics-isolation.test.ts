@@ -26,9 +26,11 @@ function matches(row: Record<string, any>, where: Record<string, any> = {}): boo
   return Object.entries(where).every(([key, value]) => {
     if (key === "AND") return (Array.isArray(value) ? value : [value]).every(v => matches(row, v));
     if (key === "OR") return value.some((v: any) => matches(row, v));
+    if (key === "NOT") return !matches(row, value as Record<string, any>);
     if (value === null || typeof value !== "object") return row[key] === value;
     return Object.entries(value).every(([op, val]: [string, any]) => {
       if (op === "some") return (row[key]??[]).some((item:any)=>matches(item,val));
+      if (op === "none") return !(row[key]??[]).some((item:any)=>matches(item,val));
       if (op === "equals") return row[key] === val;
       if (op === "in") return val.includes(row[key]);
       if (op === "notIn") return !val.includes(row[key]);
@@ -37,6 +39,7 @@ function matches(row: Record<string, any>, where: Record<string, any> = {}): boo
       if (op === "gte") return row[key] >= val;
       if (op === "lt") return row[key] < val;
       if (op === "contains") return String(row[key] ?? "").includes(val);
+      if (op === "startsWith") return String(row[key] ?? "").toLowerCase().startsWith(String(val).toLowerCase());
       if (op === "mode") return true;
       if (row[key] && typeof row[key] === "object") return matches(row[key], { [op]: val });
       throw new Error(`Unimplemented fixture operator ${op}`);
@@ -156,6 +159,22 @@ describe("analytics authorization and isolation", () => {
     expect(analyticsScope(access, "opportunity")).toEqual({});
     expect(analyticsScope(access, "lead")).toEqual({ assignedToId: { in: ["junior"] } });
     expect(definitionScope(access, true)).toEqual({ createdById: "junior" });
+  });
+  it("excludes archived opportunities and accounts with only archived deals from closer reports", async () => {
+    const permissions = ["Reports.View", "Opportunity.View", "Account.View", "Modify.AllData"];
+    login("agent", "CLOSER", permissions);
+    db.user.mockResolvedValue({
+      id: "agent", role: "CLOSER", isActive: true,
+      profile: { name: "Closer", permissions: [{ permissionSet: { permissions: permissions.map(key => ({ key })), groupItems: [] } }] },
+      permissionSets: [],
+    });
+    const access = await analyticsAccess("Reports.View");
+    expect(matches({ assignedToId: "agent", stage: "Archived - Finalized" }, analyticsScope(access, "opportunity"))).toBe(false);
+    expect(matches({ assignedToId: "agent", stage: "Working" }, analyticsScope(access, "opportunity"))).toBe(true);
+    expect(matches({ ownerId: "agent", isActive: false }, analyticsScope(access, "account"))).toBe(false);
+    expect(matches({ ownerId: "agent", isActive: true }, analyticsScope(access, "account"))).toBe(true);
+    expect(matches({ ownerId: "agent", isActive: true, opportunities: [{ stage: "Archived - Finalized" }] }, analyticsScope(access, "account"))).toBe(false);
+    expect(matches({ ownerId: "agent", isActive: true, opportunities: [{ stage: "Archived" }, { stage: "Working" }] }, analyticsScope(access, "account"))).toBe(true);
   });
   it("blocks a private report by guessed ID before executing it", async () => {
     db.report.findFirst.mockImplementation(async ({ where }) => matches({ id: "private", createdById: "outsider", isShared: false }, where) ? { id: "private", ...config } : null);

@@ -3,6 +3,7 @@ import { requireAuthOrRespond } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { auditWrite } from "@/lib/audit";
 import { isForecastCategory } from "@/lib/forecasting/categories";
+import { canAccessRecord } from "@/lib/record-access";
 
 export async function POST(req: Request) {
   const r = await requireAuthOrRespond();
@@ -21,6 +22,9 @@ export async function POST(req: Request) {
   }
   if (!category || !isForecastCategory(category)) {
     return NextResponse.json({ error: "Invalid category" }, { status: 400 });
+  }
+  if (!await canAccessRecord("opportunity", opportunityId)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const existing = await prisma.opportunity.findUnique({

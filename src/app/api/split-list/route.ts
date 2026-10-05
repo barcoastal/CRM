@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     }));
   } else if (entity === "opportunities") {
     const opps = await prisma.opportunity.findMany({
-      where: ownerFilter("assignedToId"),
+      where: { AND: [ownerFilter("assignedToId"), await recordScope("opportunity")] },
       orderBy: { updatedAt: "desc" },
       take,
       select: { id: true, name: true, stage: true, currentTotalDebt: true, account: { select: { name: true } } },
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
     }));
   } else if (entity === "accounts") {
     const accounts = await prisma.account.findMany({
-      where: ownerFilter("ownerId"),
+      where: { AND: [ownerFilter("ownerId"), await recordScope("account")] },
       orderBy: { updatedAt: "desc" },
       take,
       select: { id: true, name: true, phone: true, recordType: true },

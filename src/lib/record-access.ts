@@ -3,7 +3,8 @@ import { hasPermission, loadEffectivePermissions } from "@/lib/permissions";
 import { hasAllRecordAccess } from "@/lib/record-permissions";
 import { ownedRecordScope } from "@/lib/owned-record-scope";
 import { prisma } from "@/lib/prisma";
-import { activeOpportunityFilter, canViewArchivedOpportunities } from "@/lib/opportunity-access";
+import { activeAccountFilter, activeOpportunityFilter, canViewArchivedOpportunities } from "@/lib/opportunity-access";
+import { isCloserUser } from "@/lib/closer-contact-access";
 
 export type OwnedEntity = "lead" | "opportunity" | "account" | "contact";
 export const OWNER_FIELD = { lead: "assignedToId", opportunity: "assignedToId", account: "ownerId", contact: "ownerId" } as const;
@@ -25,23 +26,30 @@ export async function recordScope(entity: OwnedEntity, includeNegotiator = true)
   if (!session?.user?.id) return { id: { in: [] } };
   // Use current database state, including when called outside the normal layout.
   const current = await prisma.user.findUnique({
-    where: { id: session.user.id }, select: { id: true, role: true, isActive: true },
+    where: { id: session.user.id }, select: {
+      id: true, role: true, isActive: true, isCloser: true, closerTier: true,
+      profile: { select: { name: true } },
+      hierarchyRole: { select: { name: true, developerName: true } },
+    },
   });
   if (!current?.isActive) return { id: { in: [] } };
   if (entity === "contact" && !hasPermission(session.user.permissions ?? [], "Contact.View"))
     return { id: { in: [] } };
   const archiveScope = entity === "opportunity" && !(await canViewArchivedOpportunities(current.id))
     ? activeOpportunityFilter : null;
-  if (current.role === "ADMIN" || current.role === "SUPER_ADMIN") return archiveScope ?? {};
+  const accountArchiveScope = entity === "account" && isCloserUser(current) ? activeAccountFilter : null;
+  const visibility = archiveScope ?? accountArchiveScope;
+  const withVisibility = (scope: Record<string, unknown>) => visibility ? { AND: [scope, visibility] } : scope;
+  if (current.role === "ADMIN" || current.role === "SUPER_ADMIN") return visibility ?? {};
   // Recheck broad grants in the database so a stale session cannot widen access.
   if (hasAllRecordAccess(session.user.permissions ?? [], entity) &&
-      hasAllRecordAccess(await loadEffectivePermissions(current.id), entity)) return archiveScope ?? {};
+      hasAllRecordAccess(await loadEffectivePermissions(current.id), entity)) return visibility ?? {};
   const users = await prisma.user.findMany({ select: { id: true, managerId: true } });
   // Having actual reports, rather than a loosely named profile, defines a manager.
   // Include indirect reports; cycles terminate through the visited set.
   const scope=ownedRecordScope(entity, teamOwnerIds(current.id, users), includeNegotiator && hasPermission(session.user.permissions ?? [], entity === "account" ? "Account.View" : "Opportunity.View"));
-  if(entity==='account'&&includeNegotiator&&hasPermission(session.user.permissions??[], 'Account.View'))return {OR:[scope,{teamMembers:{some:{userId:current.id}}}]};
-  return archiveScope ? { AND: [scope, archiveScope] } : scope;
+  if(entity==='account'&&includeNegotiator&&hasPermission(session.user.permissions??[], 'Account.View'))return withVisibility({OR:[scope,{teamMembers:{some:{userId:current.id}}}]});
+  return withVisibility(scope);
 }
 
 /** Guard parent-record subroutes before reading documents or running actions. */

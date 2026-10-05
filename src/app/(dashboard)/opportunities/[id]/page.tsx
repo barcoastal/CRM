@@ -8,7 +8,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { canViewArchivedOpportunities, ARCHIVED_STAGE } from "@/lib/opportunity-access";
+import { canViewArchivedOpportunities, isArchivedOpportunity } from "@/lib/opportunity-access";
 import { RecordPage, StatusPill } from "@/components/slds/record-page";
 import { PathSidePanelServer } from "@/components/path/path-side-panel-server";
 import { Section, FieldGrid } from "@/components/slds/section";
@@ -209,8 +209,8 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   if (!rawRecord) notFound();
   const opp = redactSsn(rawRecord);
 
-  // Closers may not open archived opportunities directly (unless granted Opportunity.ViewArchived).
-  if (opp.stage === ARCHIVED_STAGE) {
+  // Keep direct record navigation aligned with the scoped list and API.
+  if (isArchivedOpportunity(opp.stage)) {
     const session = await auth();
     if (!(await canViewArchivedOpportunities(session?.user?.id ?? ""))) notFound();
   }
