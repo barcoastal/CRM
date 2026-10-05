@@ -6,10 +6,12 @@ import { hasPermission } from "@/lib/permissions";
 export async function POST(request: NextRequest) {
   // updateSession skips Auth.js CSRF validation; require same-origin JSON.
   const origin = request.headers.get("origin");
-  // Railway forwards the public custom domain to an internal app URL. The
-  // browser's Origin is the public CRM domain even when request.url is not.
+  // Railway may rewrite the public host before Next.js receives request.url.
+  // Browsers set this Fetch Metadata header for same-origin requests; a page
+  // on another site cannot forge it. Keep explicit origins for other clients.
   const allowedOrigins = new Set([new URL(request.url).origin, "https://crm.coastaldebt-tools.com"]);
-  if (!origin || !allowedOrigins.has(origin) || !request.headers.get("content-type")?.startsWith("application/json")) {
+  const sameOriginBrowserRequest = request.headers.get("sec-fetch-site") === "same-origin";
+  if (!origin || (!sameOriginBrowserRequest && !allowedOrigins.has(origin)) || !request.headers.get("content-type")?.startsWith("application/json")) {
     return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
   }
   const session = await auth();
