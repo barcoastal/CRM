@@ -46,6 +46,8 @@ interface Hit {
   y: number;
   tokenWidth: number;
   fontHeight: number;
+  boxX?: number;
+  boxY?: number;
 }
 
 /** Extract anchor hits from a PDF using pdfjs text positions. */
@@ -89,7 +91,15 @@ async function findAnchorHits(pdfBuffer: Buffer): Promise<Hit[]> {
       }
       if (!span) continue;
       const t = span.item.transform; // [a,b,c,d,e,f]
+      // Legacy master places the anchor on the line below "by Client:".
+      // Place the interactive field to the right of that label, leaving the
+      // original anchor coordinates intact for token removal.
+      const label = kind === "signature" ? spans.find(({item}) =>
+        /^by\s+Client:\s*$/i.test(item.str.trim()) &&
+        item.transform[5] >= t[5] && item.transform[5] - t[5] < 40 &&
+        Math.abs(item.transform[4] - t[4]) < 20) : undefined;
       hits.push({
+        ...(label ? { boxX: label.item.transform[4] + label.item.width + 12, boxY: label.item.transform[5] } : {}),
         kind,
         page: p,
         x: t[4],
@@ -105,7 +115,7 @@ async function findAnchorHits(pdfBuffer: Buffer): Promise<Hit[]> {
 
 /** Turn a hit into a signing box sized/placed for its kind. */
 function boxFor(hit: Hit): AnchorBox {
-  const { page, x, y } = hit;
+  const page = hit.page, x = hit.boxX ?? hit.x, y = hit.boxY ?? hit.y;
   switch (hit.kind) {
     case "signature":
       return { page, x, y: y - 6, width: 200, height: 40, label: `Sign (page ${page})` };

@@ -24,6 +24,11 @@ export function salesforceMasterTemplate(buffer: Buffer): Buffer {
   // The old summary footnote hard-coded the standard administrative fee.
   const final = clean.replace(/<w:p(?:\s[^>]*)?>[\s\S]*?<\/w:p>/g, (paragraph) => {
     const text = paragraph.replace(/<[^>]*>/g, "").replace(/\s+/g, " ");
+    if (text.trim() === "LIMITED POWER OF ATTORNEY") {
+      return paragraph.replace(/<w:ind\b[^>]*\/>/g, '<w:ind w:left="0" w:right="0"/>')
+        .replace(/<w:jc\b[^>]*\/>/g, '')
+        .replace('</w:pPr>', '<w:jc w:val="center"/></w:pPr>');
+    }
     return text.includes("Administrative processing fee")
       ? paragraph.replaceAll("$55.00", "{{ServiceFee}}")
       : paragraph;
