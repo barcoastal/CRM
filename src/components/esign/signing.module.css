@@ -1113,3 +1113,13 @@
  .viewerTools .zoom button:last-child { display:none; }
  .viewerTools > button[aria-label="Print document"] { display:none; }
 }
+
+.viewerTools .search { width:280px; max-width:calc(100vw - 32px); max-height:55dvh; overflow:auto; text-align:left; border-radius:6px; padding:16px; }
+.viewerTools .search label { display:block; font-size:14px; font-weight:700; margin-bottom:10px; }
+.viewerTools .search input { display:block; box-sizing:border-box; width:100%; height:42px; padding:9px 10px; border:1px solid #81798e; border-radius:4px; background:white; color:#29252f; font-size:16px; }
+.viewerTools .search input:focus { outline:2px solid #274f9e; outline-offset:1px; }
+.viewerTools .search input::placeholder { color:#716979; }
+.viewerTools .search .searchSubmit { display:block; width:100%; background:#274f9e; color:white; padding:10px 14px; border-radius:4px; font-size:14px; margin:12px 0; }
+.viewerTools .search .searchSubmit:disabled { opacity:.55; cursor:not-allowed; }
+.viewerTools .search p { font-size:13px; line-height:1.5; }
+.viewerTools .search button:not(.searchSubmit) { font-size:14px; color:#274f9e; text-decoration:underline; padding:8px 0; }

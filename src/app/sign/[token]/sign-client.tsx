@@ -50,6 +50,7 @@ export function SignClient(props: Props) {
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState("");
   const [showConsent, setShowConsent] = useState(false);
+  const [finishingConsent, setFinishingConsent] = useState(false);
   const shellRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (step !== "review") return;
@@ -154,6 +155,11 @@ export function SignClient(props: Props) {
       return;
     }
     setApplied((v) => ({ ...v, [f.id]: true }));
+  }
+  function requestFinish() {
+    if (remaining.length) { next(); return; }
+    if (!consent) { setFinishingConsent(true); setShowConsent(true); return; }
+    void finish();
   }
   async function finish() {
     if (remaining.length || !loaded || !consent || !signature) {
@@ -540,7 +546,7 @@ export function SignClient(props: Props) {
     <div className={styles.shell} ref={shellRef}>
       <header className={`${styles.header} ${styles.reviewHeader}`}>
         <div className={styles.heading}>Review and complete</div>
-        <button className={styles.headerFinish} disabled={!loaded || busy} onClick={()=>remaining.length ? next() : !consent ? setShowConsent(true) : void finish()}>Finish</button>
+        <button className={styles.headerFinish} disabled={!loaded || busy} onClick={requestFinish}>Finish</button>
         <div className={styles.menu}>
           <button className={styles.button} onClick={() => setMenu((v) => !v)}>
             Other options ▾
@@ -549,6 +555,7 @@ export function SignClient(props: Props) {
             <div className={styles.menuList}>
               <button
                 onClick={() => {
+                  setFinishingConsent(false);
                   setShowConsent(true);
                   setMenu(false);
                 }}
@@ -639,13 +646,6 @@ export function SignClient(props: Props) {
             value={required.length - remaining.length}
           />
         </div>
-        <button
-          className={styles.button}
-          disabled={!loaded}
-          onClick={() => setShowConsent(true)}
-        >
-          {consent ? "✓ Consent accepted" : "Review consent"}
-        </button>
         {remaining.length ? (
           <button className={styles.primary} disabled={!loaded} onClick={next}>
             {active ? "Next" : "Start"}
@@ -653,8 +653,8 @@ export function SignClient(props: Props) {
         ) : (
           <button
             className={styles.primary}
-            disabled={!loaded || !consent || busy}
-            onClick={finish}
+            disabled={!loaded || busy}
+            onClick={requestFinish}
           >
             {busy ? "Finishing…" : "Finish & Sign"}
           </button>
@@ -709,9 +709,10 @@ export function SignClient(props: Props) {
               </button>
               <button
                 className={styles.primary}
-                onClick={() => setShowConsent(false)}
+                disabled={finishingConsent && (!consent || busy)}
+                onClick={() => { setShowConsent(false); if(finishingConsent) void finish(); }}
               >
-                Continue
+                {finishingConsent ? "Agree & Finish Signing" : "Continue"}
               </button>
             </div>
           </section>
