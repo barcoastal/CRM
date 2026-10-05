@@ -474,12 +474,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const five9Fields = (
     <Section title="Five9 Fields" defaultOpen={false}>
       <FieldGrid
+        entityType="lead"
+        entityId={lead.id}
         fields={[
           // Row 1: Dialer Group | Add to f9list Id
           ["Dialer Group", sf("Dialer_Group__c")],
           ["Add to f9list Id", sf("Add_to_f9list_Id__c")],
           // Row 2: five9 Disposition | Delete from f9list id
-          ["five9 Disposition", sf("five9_Disposition__c")],
+          E("Five9 Disposition", sf("five9_Disposition__c"), "five9_Disposition__c"),
           ["Delete from f9list id", sf("Delete_from_f9list_id__c")],
           // Row 3: five9 Last Disposition | Five9 List Id
           ["five9 Last Disposition", sf("five9_Last_Disposition__c")],
