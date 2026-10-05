@@ -1,0 +1,17 @@
+.dock { position: fixed; right: 16px; bottom: 58px; z-index: 4900; }
+.dock[hidden], .panel[hidden] { display: none; }
+.launcher { display: flex; align-items: center; gap: 8px; padding: 11px 16px; border: 1px solid #c9c9c9; border-radius: 8px; background: #fff; color: #032d60; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 3px 14px #0002; }
+.launcher[aria-expanded=true] { background: #eef4ff; border-color: #0176d3; }
+.panel { position: absolute; right: 0; bottom: 50px; width: min(400px, calc(100vw - 24px)); height: min(590px, calc(100dvh - 128px)); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #c9c9c9; border-radius: 10px; background: white; box-shadow: 0 8px 36px #0003; }
+.expanded { position: fixed; top: 84px; right: 16px; bottom: 108px; left: 16px; width: auto; height: auto; }
+.titlebar { display: flex; align-items: center; gap: 10px; flex-shrink: 0; padding: 10px 12px; background: #032d60; color: white; }
+.titlebar strong { flex: 1; font-size: 14px; }
+.titlebar button { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 4px; background: transparent; color: white; cursor: pointer; }
+.titlebar button:hover { background: #ffffff26; }
+.titlebar button:focus-visible, .launcher:focus-visible { outline: 2px solid #1b96ff; outline-offset: 2px; }
+.content { position: relative; flex: 1; min-height: 0; }
+.loading { padding: 24px; color: #5c6675; font-size: 13px; }
+@media (max-width: 520px) {
+  .dock { right: 12px; }
+  .expanded { top: 12px; right: 12px; left: 12px; }
+}

@@ -12,7 +12,7 @@ async function api<T>(query: string, body?: unknown): Promise<T> {
 }
 function merge<T extends { name: string }>(old: T[], fresh: T[]) { return [...new Map([...old, ...fresh].map(item => [item.name, item])).values()]; }
 const errorText = (error: unknown) => error instanceof Error ? error.message : "Please try again.";
-export function ChatInbox({ account }: { account: Person }) {
+export function ChatInbox({ account, compact = false, embedded = false, active = true }: { account: Person; compact?: boolean; embedded?: boolean; active?: boolean }) {
   const [spaces, setSpaces] = useState<ChatSpace[]>([]), [spacesToken, setSpacesToken] = useState<string>();
   const [selected, setSelected] = useState<ChatSpace | null>(null), [messages, setMessages] = useState<ChatMessage[]>([]), [olderToken, setOlderToken] = useState<string>();
   const [error, setError] = useState(""), [loading, setLoading] = useState(true), [messageLoading, setMessageLoading] = useState(false), [sending, setSending] = useState(false), [loadingOlder, setLoadingOlder] = useState(false);
@@ -34,7 +34,7 @@ export function ChatInbox({ account }: { account: Person }) {
     if (initial || token) setOlderToken(data.nextPageToken);
   }, []);
   useEffect(() => {
-    if (!selected) return;
+    if (!selected || !active) return;
     let stopped = false, busy = false;
     const tick = async () => {
       if (stopped || busy || document.hidden) return;
@@ -45,7 +45,7 @@ export function ChatInbox({ account }: { account: Person }) {
     };
     const timer = setInterval(tick, 15000);
     return () => { stopped = true; clearInterval(timer); };
-  }, [selected, loadMessages]);
+  }, [selected, loadMessages, active]);
   async function choose(space: ChatSpace) {
     currentSpace.current = space.name; setSelected(space); setMessages([]); setOlderToken(undefined); setMessageLoading(true); setError("");
     try { await loadMessages(space.name, undefined, true); }
@@ -80,7 +80,7 @@ export function ChatInbox({ account }: { account: Person }) {
     } catch (e) { setStartError(errorText(e)); } finally { setStarting(false); }
   }
   const googleHref = selected?.spaceUri?.startsWith("https://chat.google.com/") ? selected.spaceUri : "https://chat.google.com/";
-  return <section className={styles.inbox} aria-label="Google Chat inbox">
+  return <section className={[styles.inbox, embedded ? styles.embedded : "", compact ? styles.compact : "", selected ? styles.hasSelection : ""].join(" ")} aria-label="Google Chat inbox">
     <header className={styles.top}><div><h1>Google Chat</h1><div className={styles.sub}>{account.email} · Your conversations</div></div><div style={{ display: "flex", gap: 8 }}><button className={styles.secondary} onClick={() => { void loadSpaces(); if (selected) void loadMessages(selected.name).catch(e => setError(errorText(e))); }} disabled={loading}>Refresh</button><button className={styles.primary} onClick={openNew}>New chat</button></div></header>
     {error && <div role="alert" className={styles.error}>{error}</div>}
     <div className={styles.body}>
@@ -91,7 +91,7 @@ export function ChatInbox({ account }: { account: Person }) {
         {spacesToken && <button className={styles.secondary} disabled={loading} onClick={() => loadSpaces(spacesToken)}>Load more conversations</button>}
       </div></aside>
       <div className={styles.conversation}>{!selected ? <div className={styles.center}><h2>Your team, one conversation away</h2><p>Choose a conversation or start a new chat.</p></div> : <>
-        <header className={styles.heading}><div><h2>{selected.displayName || "Conversation"}</h2><div className={styles.sub}>Updates every 15 seconds while this tab is active</div></div><a href={googleHref} target="_blank" rel="noreferrer">Open in Google Chat ↗</a></header>
+        <header className={styles.heading}>{(compact || embedded) && <button type="button" className={`${styles.secondary} ${styles.back}`} aria-label="Back to conversations" onClick={() => { currentSpace.current = null; setSelected(null); }}>←</button>}<div><h2>{selected.displayName || "Conversation"}</h2><div className={styles.sub}>Updates every 15 seconds while this tab is active</div></div><a href={googleHref} target="_blank" rel="noreferrer">Open in Google Chat ↗</a></header>
         <div className={styles.messages} aria-label="Messages" aria-busy={messageLoading}>
           {olderToken && <button className={styles.secondary} disabled={loadingOlder} onClick={async () => { setLoadingOlder(true); try { await loadMessages(selected.name, olderToken); } catch (e) { setError(errorText(e)); } finally { setLoadingOlder(false); } }}>Load older messages</button>}
           {messageLoading ? <p className={styles.empty}>Loading messages…</p> : !messages.length && !error ? <p className={styles.empty}>Send the first message.</p> : null}
