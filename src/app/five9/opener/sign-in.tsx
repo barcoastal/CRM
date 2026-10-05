@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { SessionProvider, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export function OpenerFrameLogin() {
+  return <SessionProvider basePath="/api/five9/auth"><OpenerFrameLoginForm /></SessionProvider>;
+}
+
+function OpenerFrameLoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

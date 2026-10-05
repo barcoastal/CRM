@@ -1,30 +1,12 @@
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { loadEffectivePermissions } from "@/lib/permissions";
 import { auditWrite } from "@/lib/audit";
 
-export const { handlers, signIn, signOut, auth, unstable_update: updateSession } = NextAuth({
-  // Agent Desktop Plus loads /five9/opener as a cross-site frame. A partitioned
-  // session keeps each agent's CRM identity available in that frame without a
-  // shared URL token or reliance on unpartitioned third-party cookies.
-  ...(process.env.NODE_ENV === "production" ? {
-    cookies: {
-      sessionToken: {
-        name: "__Secure-crm.session-token",
-        options: { httpOnly: true, sameSite: "none" as const, secure: true, partitioned: true, path: "/" },
-      },
-      csrfToken: {
-        name: "__Host-crm.csrf-token",
-        options: { httpOnly: true, sameSite: "none" as const, secure: true, partitioned: true, path: "/" },
-      },
-      callbackUrl: {
-        name: "__Secure-crm.callback-url",
-        options: { httpOnly: true, sameSite: "none" as const, secure: true, partitioned: true, path: "/" },
-      },
-    },
-  } : {}),
+const authConfig: NextAuthConfig = {
   providers: [
     Credentials({
       name: "credentials",
@@ -153,4 +135,38 @@ export const { handlers, signIn, signOut, auth, unstable_update: updateSession }
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
+};
+
+const standardAuth = NextAuth(authConfig);
+export const { handlers, signIn, signOut, unstable_update: updateSession } = standardAuth;
+
+// Five9 runs the CRM in a cross-site frame. Give that frame its own partitioned
+// cookie so the existing CRM session cookie and every other agent stay intact.
+export const FIVE9_FRAME_SESSION_COOKIE = process.env.NODE_ENV === "production"
+  ? "__Secure-crm.five9-session"
+  : "crm.five9-session";
+const frameCookieOptions = process.env.NODE_ENV === "production"
+  ? { httpOnly: true, sameSite: "none" as const, secure: true, partitioned: true, path: "/" }
+  : { httpOnly: true, sameSite: "lax" as const, secure: false, path: "/" };
+const frameAuth = NextAuth({
+  ...authConfig,
+  basePath: "/api/five9/auth",
+  cookies: {
+    sessionToken: { name: FIVE9_FRAME_SESSION_COOKIE, options: frameCookieOptions },
+    csrfToken: {
+      name: process.env.NODE_ENV === "production" ? "__Host-crm.five9-csrf" : "crm.five9-csrf",
+      options: frameCookieOptions,
+    },
+    callbackUrl: {
+      name: process.env.NODE_ENV === "production" ? "__Secure-crm.five9-callback" : "crm.five9-callback",
+      options: frameCookieOptions,
+    },
+  },
 });
+export const frameHandlers = frameAuth.handlers;
+
+export async function auth() {
+  const cookieStore = await cookies();
+  if (cookieStore.has(FIVE9_FRAME_SESSION_COOKIE)) return frameAuth.auth();
+  return standardAuth.auth();
+}

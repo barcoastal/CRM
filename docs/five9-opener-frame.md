@@ -8,7 +8,7 @@ In the Five9 Administrator Console, create or edit an HTTPS Web Connector for th
 
 Five9's [Administrator Console guide](https://documentation-be.five9.com/bundle/administrator-console/raw/resource/enus/administrator-console.pdf) says web agents need HTTPS, and the Embedded tab requires the embedded URL call. The CRM route responds with `Content-Security-Policy: frame-ancestors https://*.five9.com` and has no `X-Frame-Options` header.
 
-Each opener signs in to their own CRM account inside the frame on first use. Production CRM authentication uses a secure, partitioned session cookie, so the embedded sign-in is separate from any CRM tab opened directly. The CRM account needs `Lead.View` and `Lead.Edit`. Set `User.five9Username` to the opener's Five9 login when the login differs from their CRM email or displayed name. The call lookup also requires the CRM lead to be assigned within the opener's normal record access scope.
+Each opener signs in to their own CRM account inside the frame on first use. The frame has a separate secure, partitioned session cookie; normal CRM sessions do not change. Set `FIVE9_FRAME_PILOT_EMAILS` to the comma-separated CRM emails allowed to load the pilot frame. The CRM account needs `Lead.View` and `Lead.Edit`. Set `User.five9Username` to the opener's Five9 login when the login differs from their CRM email or displayed name. The call lookup also requires the CRM lead to be assigned within the opener's normal record access scope.
 
 ## Verification
 

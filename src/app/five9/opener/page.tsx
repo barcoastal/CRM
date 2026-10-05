@@ -9,6 +9,13 @@ export const dynamic = "force-dynamic";
 export default async function Five9OpenerPage() {
   const session = await auth();
   if (!session?.user?.id) return <OpenerFrameLogin />;
+  if (process.env.NODE_ENV === "production") {
+    const allowedEmails = (process.env.FIVE9_FRAME_PILOT_EMAILS ?? "")
+      .split(",").map(email => email.trim().toLowerCase()).filter(Boolean);
+    if (!session.user.email || !allowedEmails.includes(session.user.email.toLowerCase())) {
+      return <FrameMessage message="This Five9 CRM pilot is not enabled for your account." />;
+    }
+  }
   if (session.user.mustResetPassword) {
     return <FrameMessage message="Set your CRM password in a separate tab, then reload this frame." href="/reset-password" link="Set password ↗" />;
   }
