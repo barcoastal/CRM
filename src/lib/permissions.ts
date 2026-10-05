@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { CONTACT_ACCESS_DENIED, deniesContactAccess, isCloserUser } from "@/lib/closer-contact-access";
 
 /**
  * Permission keys follow the pattern `Entity.Action`.
@@ -57,6 +58,7 @@ export function isPermissionKey(key: string): key is PermissionKey {
  */
 export function hasPermission(grantedKeys: Iterable<string>, required: string): boolean {
   const set = new Set(grantedKeys);
+  if (deniesContactAccess(set, required)) return false;
   if (set.has("Modify.AllData")) return true;
   if (set.has(required)) return true;
 
@@ -80,9 +82,14 @@ export async function loadEffectivePermissions(userId: string): Promise<Set<stri
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
+      role: true,
+      isCloser: true,
+      closerTier: true,
+      hierarchyRole: { select: { name: true, developerName: true } },
       profileId: true,
       profile: {
         select: {
+          name: true,
           permissions: {
             select: {
               permissionSet: {
@@ -150,6 +157,11 @@ export async function loadEffectivePermissions(userId: string): Promise<Set<stri
 
   for (const link of user.profile?.permissions || []) collectFromPermSet(link.permissionSet);
   for (const link of user.permissionSets || []) collectFromPermSet(link.permissionSet);
+
+  if (isCloserUser(user)) {
+    for (const key of keys) if (key.startsWith("Contact.")) keys.delete(key);
+    keys.add(CONTACT_ACCESS_DENIED);
+  }
 
   return keys;
 }

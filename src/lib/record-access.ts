@@ -27,6 +27,8 @@ export async function recordScope(entity: OwnedEntity, includeNegotiator = true)
     where: { id: session.user.id }, select: { id: true, role: true, isActive: true },
   });
   if (!current?.isActive) return { id: { in: [] } };
+  if (entity === "contact" && !hasPermission(session.user.permissions ?? [], "Contact.View"))
+    return { id: { in: [] } };
   const archiveScope = entity === "opportunity" && !(await canViewArchivedOpportunities(current.id))
     ? activeOpportunityFilter : null;
   if (current.role === "ADMIN" || current.role === "SUPER_ADMIN") return archiveScope ?? {};

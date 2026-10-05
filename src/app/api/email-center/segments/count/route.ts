@@ -4,12 +4,16 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { buildWhere, type ListFilter } from "@/lib/list-views";
 import { validateSegmentFilters } from "@/lib/email/segment-fields";
+import { hasPermission } from "@/lib/permissions";
 
 export async function POST(req: NextRequest) {
   const r = await requireAuthOrRespond("Email.Send");
   if ("response" in r) return r.response;
   const body = (await req.json().catch(() => ({}))) as { entity?: string; filters?: unknown };
   const entity = body.entity === "Contact" ? "Contact" : "Lead";
+  if (entity === "Contact" && !hasPermission(r.session.permissions, "Contact.View")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   const filters = (Array.isArray(body.filters) ? body.filters : []) as ListFilter[];
   const fieldErr = validateSegmentFilters(filters, entity);
   if (fieldErr) return NextResponse.json({ error: fieldErr }, { status: 400 });

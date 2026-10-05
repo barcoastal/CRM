@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { hasPermission } from "@/lib/permissions";
 
 const bodySchema = z.object({
   ids: z.array(z.string().min(1)).min(1).max(500),
@@ -15,6 +16,9 @@ const bodySchema = z.object({
 export async function POST(req: NextRequest) {
   const r = await requireAuthOrRespond("Email.Send");
   if ("response" in r) return r.response;
+  if (!hasPermission(r.session.permissions, "Contact.View")) {
+    return ssnSafeJson({ error: "Forbidden" }, { status: 403 });
+  }
 
   const body = await req.json().catch(() => ({}));
   const parsed = bodySchema.safeParse(body);

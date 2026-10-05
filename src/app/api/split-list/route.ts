@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { hasPermission } from "@/lib/permissions";
+import { recordScope } from "@/lib/record-access";
 
 /**
  * Console split-view list: the most recent records of an object, rendered in
@@ -10,6 +12,9 @@ export async function GET(request: NextRequest) {
   const r = await requireAuthOrRespond();
   if ("response" in r) return r.response;
   const entity = request.nextUrl.searchParams.get("entity") ?? "";
+  if (entity === "contacts" && !hasPermission(r.session.permissions, "Contact.View")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   const view = request.nextUrl.searchParams.get("view") ?? "recent";
   const take = 30;
 
@@ -97,7 +102,7 @@ export async function GET(request: NextRequest) {
     }));
   } else if (entity === "contacts") {
     const contacts = await prisma.contact.findMany({
-      where: ownerFilter("ownerId"),
+      where: { AND: [ownerFilter("ownerId"), await recordScope("contact")] },
       orderBy: { updatedAt: "desc" },
       take,
       select: { id: true, fullName: true, email: true, phone: true },

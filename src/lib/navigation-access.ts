@@ -1,4 +1,5 @@
 /** Keep both CRM navigation surfaces aligned with the current user's grants. */
+import { deniesContactAccess } from "@/lib/closer-contact-access";
 const requirements: Record<string, string[]> = {
   "/dashboard": ["Dashboards.View"],
   "/calculator": ["ProgramPlan.View"],
@@ -50,6 +51,7 @@ const requirements: Record<string, string[]> = {
 
 export function canUsePermission(permissions: readonly string[], required: string): boolean {
   const grants = new Set(permissions);
+  if (deniesContactAccess(grants, required)) return false;
   if (grants.has("Modify.AllData") || grants.has(required)) return true;
   const [entity, action] = required.split(".");
   return action === "View" && (grants.has(`${entity}.ViewAll`) || grants.has(`${entity}.ModifyAll`));
