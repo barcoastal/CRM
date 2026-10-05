@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { loadEffectivePermissions, hasPermission } from "@/lib/permissions";
 import { teamOwnerIds } from "@/lib/record-access";
+import { hasAllRecordAccess, hasBroadRecordGrant } from "@/lib/record-permissions";
 
 export type AnalyticsAccess = {
   userId: string;
@@ -26,7 +27,9 @@ export async function analyticsAccess(required: string): Promise<AnalyticsAccess
   if (!current?.isActive) throw new AnalyticsAccessError(401, "Unauthorized");
   const isAdmin = current.role === "ADMIN" || current.role === "SUPER_ADMIN";
   // auth() refreshes effective permissions on every session read.
-  const permissions = session.user.permissions ?? [];
+  const sessionPermissions = session.user.permissions ?? [];
+  const permissions = hasBroadRecordGrant(sessionPermissions)
+    ? Array.from(await loadEffectivePermissions(current.id)) : sessionPermissions;
   if (!isAdmin && !hasPermission(permissions, required)) throw new AnalyticsAccessError(403, "Forbidden");
   const users = isAdmin ? [] : await prisma.user.findMany({ select: { id: true, managerId: true } });
   return { userId: current.id, isAdmin, permissions, ownerIds: isAdmin ? [] : teamOwnerIds(current.id, users) };
@@ -70,6 +73,7 @@ const OWNED: Record<string, { field: string; permission: string }> = {
 export function analyticsScope(access: AnalyticsAccess, model: string): Record<string, unknown> {
   if (access.isAdmin) return {};
   const rule = OWNED[model];
+  if (rule && hasAllRecordAccess(access.permissions, model)) return {};
   if(model==='account'&&hasPermission(access.permissions,'Account.View'))return {OR:[ownedRecordScope(model,access.ownerIds),{teamMembers:{some:{userId:access.userId}}}]};
   if (rule) return hasPermission(access.permissions, rule.permission)
     ? ownedRecordScope(model, access.ownerIds) : { id: { in: [] } };

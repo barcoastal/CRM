@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, loadEffectivePermissions } from "@/lib/permissions";
+import { hasAllRecordAccess } from "@/lib/record-permissions";
 import { ownedRecordScope } from "@/lib/owned-record-scope";
 import { prisma } from "@/lib/prisma";
 import { activeOpportunityFilter, canViewArchivedOpportunities } from "@/lib/opportunity-access";
@@ -32,6 +33,9 @@ export async function recordScope(entity: OwnedEntity, includeNegotiator = true)
   const archiveScope = entity === "opportunity" && !(await canViewArchivedOpportunities(current.id))
     ? activeOpportunityFilter : null;
   if (current.role === "ADMIN" || current.role === "SUPER_ADMIN") return archiveScope ?? {};
+  // Recheck broad grants in the database so a stale session cannot widen access.
+  if (hasAllRecordAccess(session.user.permissions ?? [], entity) &&
+      hasAllRecordAccess(await loadEffectivePermissions(current.id), entity)) return archiveScope ?? {};
   const users = await prisma.user.findMany({ select: { id: true, managerId: true } });
   // Having actual reports, rather than a loosely named profile, defines a manager.
   // Include indirect reports; cycles terminate through the visited set.

@@ -144,7 +144,18 @@ describe("analytics authorization and isolation", () => {
   });
   it("does not let stale Modify.AllData expand a non-admin's record scope", async () => {
     login("junior", "SALES_REP", ["Modify.AllData"]);
-    expect(analyticsScope(await analyticsAccess("Reports.View"), "opportunity")).toEqual({ OR: [{ assignedToId: { in: ["junior"] } }, { account: { is: { assignedNegotiatorId: { in: ["junior"] } } } }] });
+    await expect(analyticsAccess("Reports.View")).rejects.toMatchObject({ status: 403 });
+  });
+  it("honors current Customer Services account and opportunity grants in reports without widening leads", async () => {
+    const permissions = ["Reports.View", "Account.ViewAll", "Opportunity.ViewAll", "Lead.View"];
+    login("junior", "CS_REP", permissions);
+    db.user.mockResolvedValue({ id: "junior", role: "CS_REP", isActive: true, profile: { name: "Customer Services", permissions: [{ permissionSet: { permissions: permissions.map(key => ({ key })), groupItems: [] } }] } });
+    const access = await analyticsAccess("Reports.View");
+    expect(access.isAdmin).toBe(false);
+    expect(analyticsScope(access, "account")).toEqual({});
+    expect(analyticsScope(access, "opportunity")).toEqual({});
+    expect(analyticsScope(access, "lead")).toEqual({ assignedToId: { in: ["junior"] } });
+    expect(definitionScope(access, true)).toEqual({ createdById: "junior" });
   });
   it("blocks a private report by guessed ID before executing it", async () => {
     db.report.findFirst.mockImplementation(async ({ where }) => matches({ id: "private", createdById: "outsider", isShared: false }, where) ? { id: "private", ...config } : null);

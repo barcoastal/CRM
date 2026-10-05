@@ -7,13 +7,23 @@ const users = [{ id: "manager", managerId: null }, { id: "agent", managerId: "ma
 describe("assigned records and manager teams", () => {
   beforeEach(() => { vi.clearAllMocks(); mocks.auth.mockResolvedValue({ user: { id: "agent" } }); mocks.user.mockResolvedValue({ id: "agent", role: "SALES_REP", isActive: true }); mocks.users.mockResolvedValue([]); });
   it("limits an agent to their own assignments", async () => { expect(await recordScope("opportunity")).toEqual({ assignedToId: { in: ["agent"] } }); });
-  it("uses ownerId for contacts", async () => { expect(await recordScope("contact")).toEqual({ ownerId: { in: ["agent"] } }); });
+  it("uses ownerId for permitted contacts", async () => { mocks.auth.mockResolvedValue({ user: { id: "agent", permissions: ["Contact.View"] } }); expect(await recordScope("contact")).toEqual({ ownerId: { in: ["agent"] } }); });
   it("includes descendants but not peers or other teams", () => { expect(teamOwnerIds("manager", users)).toEqual(["manager", "agent", "junior"]); expect(teamOwnerIds("junior", users)).toEqual(["junior"]); });
   it("terminates on cycles without duplicating users", () => { expect(teamOwnerIds("a", [{ id: "a", managerId: "b" }, { id: "b", managerId: "a" }])).toEqual(["a", "b"]); });
   it.each(["ADMIN", "SUPER_ADMIN"])("gives active %s full scope", async role => { mocks.user.mockResolvedValue({ id: "agent", role, isActive: true }); expect(await recordScope("account")).toEqual({}); expect(mocks.users).not.toHaveBeenCalled(); });
   it("denies disabled admins", async () => { mocks.user.mockResolvedValue({ id: "agent", role: "ADMIN", isActive: false }); expect(await recordScope("lead")).toEqual({ id: { in: [] } }); });
   it("denies unauthenticated requests", async () => { mocks.auth.mockResolvedValue(null); expect(await recordScope("lead")).toEqual({ id: { in: [] } }); });
   it("does not let stale global permissions override assignment scope", async () => { mocks.auth.mockResolvedValue({ user: { id: "agent", permissions: ["Modify.AllData"] } }); expect(await recordScope("lead")).toEqual({ assignedToId: { in: ["agent"] } }); });
+  it.each(["Account.ViewAll", "Account.ModifyAll", "Modify.AllData"])("honors current database grant %s even with a legacy Sales Rep role", async key => {
+    mocks.auth.mockResolvedValue({ user: { id: "agent", permissions: [key] } });
+    mocks.user.mockResolvedValue({ id: "agent", role: "SALES_REP", isActive: true, profile: { name: "Customer Services", permissions: [{ permissionSet: { permissions: [{ key }], groupItems: [] } }] } });
+    expect(await recordScope("account")).toEqual({});
+    expect(mocks.users).not.toHaveBeenCalled();
+  });
+  it("keeps entity-wide access limited to its granted entity", async () => {
+    mocks.auth.mockResolvedValue({ user: { id: "agent", permissions: ["Account.ViewAll"] } });
+    expect(await recordScope("lead")).toEqual({ assignedToId: { in: ["agent"] } });
+  });
 });
 
 it("grants a permitted negotiator account and opportunity sharing without assignment management", async () => {
