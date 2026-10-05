@@ -43,3 +43,39 @@
 .dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 @media(max-width: 760px) { .body { grid-template-columns: 190px minmax(0, 1fr); } .top { padding: 12px; } .heading,.composer,.messages { padding: 12px; } }
 @media(max-width: 520px) { .body { grid-template-columns: 1fr; } .sidebar { max-height: 200px; border-bottom: 1px solid #ccc; } .inbox { height: calc(100dvh - 120px); min-height: 620px; } .conversation { min-height: 350px; } .heading { flex-wrap: wrap; } }
+
+.embedded.inbox { height: 100%; min-height: 0; border: 0; border-radius: 0; }
+.compact .top { padding: 10px 12px; gap: 8px; }
+.compact .top h1 { display: none; }
+.compact .top .sub { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.compact .top button { padding: 6px 8px; font-size: 12px; }
+.compact .body { grid-template-columns: minmax(0, 1fr); }
+.compact .sidebar { max-height: none; border: 0; }
+.compact .conversation { display: none; min-height: 0; }
+.compact.hasSelection .sidebar { display: none; }
+.compact.hasSelection .conversation { display: flex; }
+.compact .heading { padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
+.compact .heading > div { flex: 1; min-width: 0; }
+.compact .heading .sub { display: none; }
+.compact .heading a { font-size: 11px; }
+.compact .messages { padding: 12px; }
+.compact .message header { flex-wrap: wrap; gap: 4px 8px; }
+.compact .composer { padding: 10px 12px; }
+.compact .composer textarea { min-height: 60px; max-height: 100px; }
+.compact .composer footer { gap: 8px; }
+.compact .composer footer .sub { font-size: 10px; }
+.embedded .overlay { position: absolute; padding: 12px; }
+.embedded .dialog { max-height: 100%; overflow: auto; padding: 16px; }
+.embedded .people { max-height: 220px; }
+
+.back { display: none; }
+.compact .back { display: block; }
+@media (max-width: 520px) {
+  .embedded .body { grid-template-columns: minmax(0, 1fr); }
+  .embedded .sidebar { max-height: none; }
+  .embedded .conversation { display: none; min-height: 0; }
+  .embedded.hasSelection .sidebar { display: none; }
+  .embedded.hasSelection .conversation { display: flex; }
+  .embedded .back { display: block; }
+  .embedded .top { flex-wrap: wrap; gap: 6px; }
+}
