@@ -9,6 +9,7 @@ import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
+import { recordScope } from "@/lib/record-access";
 
 function last10(raw: string): string {
   const d = raw.replace(/[^0-9]/g, "");
@@ -33,12 +34,12 @@ export async function GET(request: NextRequest) {
     SELECT id FROM "Lead"
     WHERE regexp_replace(phone, '[^0-9]', '', 'g') LIKE ${"%" + key}
     ORDER BY "updatedAt" DESC
-    LIMIT 1
+    LIMIT 50
   `;
-  const match = rows[0];
-  const lead = match
-    ? await prisma.lead.findUnique({
-        where: { id: match.id },
+  const lead = rows.length
+    ? await prisma.lead.findFirst({
+        where: { id: { in: rows.map(row => row.id) }, AND: [await recordScope("lead")] },
+        orderBy: { updatedAt: "desc" },
         include: {
           calls: {
             orderBy: { startedAt: "desc" },

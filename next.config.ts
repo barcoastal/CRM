@@ -29,6 +29,14 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: "/five9/opener",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors https://*.five9.com" },
+          { key: "Cache-Control", value: "no-store" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
     ];
   },
 };
