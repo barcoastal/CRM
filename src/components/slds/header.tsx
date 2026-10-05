@@ -113,6 +113,10 @@ export function SldsHeader({
   const pathname = usePathname();
   const phone = useOptionalPhone();
   const allowedTabs = visibleTabs.filter(t => !phone || t.href !== "/floor-manager" || phone.data?.sales?.access.floor).map(t => t.href === "/call-center" && phone?.data?.sales?.access ? { ...t, href: phone.data.sales.access.home, label: phone.data.sales.access.floor ? "Live Floor" : phone.data.sales.access.closer ? "Closer Desk" : "Opener Desk" } : t);
+  const currentHref = centerNavHref(pathname);
+  const activeHref = allowedTabs
+    .filter(t => currentHref === t.href || (t.href !== "/dashboard" && currentHref.startsWith(`${t.href}/`)))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -271,8 +275,7 @@ export function SldsHeader({
         <Link href="/dashboard" className="sf-app-name">{appName}</Link>
         <nav ref={navRef} className="sf-tab-nav" aria-label="Main navigation">
           {allowedTabs.slice(0, 11).map((t) => {
-            const active =
-              centerNavHref(pathname) === t.href || (t.href !== "/dashboard" && centerNavHref(pathname).startsWith(t.href));
+            const active = activeHref === t.href;
             return (
               <Link
                 key={t.href}
@@ -294,7 +297,7 @@ export function SldsHeader({
                 ref={moreBtnRef}
                 aria-expanded={moreOpen}
                 aria-controls="crm-more-navigation"
-                className={`sf-tab ${allowedTabs.slice(11).some((t) => centerNavHref(pathname).startsWith(t.href)) ? "sf-tab-active" : ""}`}
+                className={`sf-tab ${allowedTabs.slice(11).some((t) => t.href === activeHref) ? "sf-tab-active" : ""}`}
                 style={{ background: moreOpen ? "#f3f2f2" : undefined }}
                 onClick={() => {
                   setMoreOpen((v) => {
