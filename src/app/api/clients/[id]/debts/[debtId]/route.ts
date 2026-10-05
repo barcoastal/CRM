@@ -1,3 +1,4 @@
+import { refreshAddendum, snapshot } from "@/lib/contracts/addendum";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -99,7 +100,12 @@ export async function PATCH(
     }
   }
 
-  const debt = await prisma.debt.update({
+  if (data.creditorName !== undefined && data.creditorName !== existing.creditorName) {
+    updateData.creditorId=null;
+    updateData.sfDataJson=JSON.stringify({...snapshot(existing.sfDataJson),Current_Creditor__c:null});
+  }
+  const debt = await prisma.$transaction(async tx => {
+    const debt = await tx.debt.update({
     where: { id: debtId },
     data: updateData,
     include: {
@@ -112,6 +118,10 @@ export async function PATCH(
         orderBy: { date: "desc" },
       },
     },
+  });
+
+    if(debt.opportunityId) await refreshAddendum(tx,debt.opportunityId);
+    return debt;
   });
 
   // If settled, update client.totalSettled (sum of all settled debts for this client)
@@ -153,7 +163,10 @@ export async function DELETE(
     return ssnSafeJson({ error: "Debt not found" }, { status: 404 });
   }
 
-  await prisma.debt.delete({ where: { id: debtId } });
+  await prisma.$transaction(async tx => {
+    await tx.debt.delete({where:{id:debtId}});
+    if(existing.opportunityId) await refreshAddendum(tx,existing.opportunityId);
+  });
 
   return ssnSafeJson({ success: true });
 }

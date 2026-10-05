@@ -1,3 +1,4 @@
+import { refreshAddendum } from "@/lib/contracts/addendum";
 import { canAccessRecord } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
@@ -109,6 +110,7 @@ export async function POST(
             },
           },
         });
+        await refreshAddendum(tx, id);
         return row;
       },
       { isolationLevel: "Serializable" },

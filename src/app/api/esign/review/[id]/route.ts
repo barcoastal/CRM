@@ -53,7 +53,7 @@ export async function GET(_r: NextRequest, c: C) {
   const b = o.account;
   const contact = o.primaryContact;
   return NextResponse.json({
-    includeAddendum: !!o.addendumRequired,
+    includeAddendum: plan.categories.includes("ADDENDUM"),
     documents: plan.categories.map((category) => {
       const template = templates.find((item) => item.category === category)!;
       return { name: template.originalName ?? template.label, available: !!template.originalName };

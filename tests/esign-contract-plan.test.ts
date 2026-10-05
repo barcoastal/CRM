@@ -1,4 +1,5 @@
 import { expect, it, vi } from "vitest";
+vi.mock("@/lib/contracts/addendum",()=>({reevaluateAddendum:vi.fn()}));
 const find=vi.hoisted(()=>vi.fn());
 vi.mock("@/lib/prisma",()=>({prisma:{opportunity:{findUnique:find}}}));
 vi.mock("@/lib/creditor-agreements",()=>({resolveAgreement:()=>"Citadel"}));

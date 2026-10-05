@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/lib/contracts/addendum", async importOriginal => ({...await importOriginal<typeof import("@/lib/contracts/addendum")>(),refreshAddendum:vi.fn()}));
 import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({ findUnique: vi.fn(), update: vi.fn(), access: vi.fn() }));
-vi.mock("@/lib/prisma", () => ({ prisma: { debt: mocks } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { debt: mocks, $transaction: (fn: (tx: unknown) => unknown) => fn({debt:mocks}) } }));
 vi.mock("@/lib/api-auth", () => ({ requireAuthOrRespond: vi.fn(async () => ({ user: { id: "test" } })) }));
 vi.mock("@/lib/record-access", () => ({ canAccessRecord: mocks.access }));
 import { PATCH } from "@/app/api/debts/[id]/route";

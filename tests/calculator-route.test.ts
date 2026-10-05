@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
+vi.mock("@/lib/contracts/addendum", async importOriginal => ({...await importOriginal<typeof import("@/lib/contracts/addendum")>(),refreshAddendum:vi.fn()}));
 import { NextRequest } from "next/server";
 const m = vi.hoisted(() => ({ auth: vi.fn(), access: vi.fn(), opp: vi.fn(), transaction: vi.fn(), latest: vi.fn(), create: vi.fn(), audit: vi.fn() }));
 vi.mock("@/lib/api-auth", () => ({ requireAuthOrRespond: m.auth }));
