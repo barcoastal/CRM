@@ -15,7 +15,19 @@ async function request(path: string, method: string, preview = true, secure = fa
   const cookie = chunked ? `${name}.0=${token.slice(0, half)}; ${name}.1=${token.slice(half)}` : `${name}=${token}`;
   return new NextRequest(`https://crm.example.invalid${path}`, { method, headers: { cookie } });
 }
+async function productionFrameRequest(path: string, method: string) {
+  vi.stubEnv("NODE_ENV", "production");
+  vi.stubEnv("NEXTAUTH_SECRET", secret);
+  const name = "__Secure-crm.session-token";
+  const token = await encode({ secret, salt: name, token: {
+    id: "admin", viewAs: { userId: "reader", name: "Reader", email: "reader@example.invalid", startedAt: new Date().toISOString() },
+  } });
+  return new NextRequest(`https://crm.example.invalid${path}`, { method, headers: { cookie: `${name}=${token}` } });
+}
 describe("encrypted preview session enforcement", () => {
+  it("blocks preview writes with the partitioned Five9 session cookie", async () => {
+    expect((await middleware(await productionFrameRequest("/api/leads/lead-1", "PATCH"))).status).toBe(403);
+  });
   it.each([[false, false], [true, false], [true, true], [false, true]])("blocks mutation with secure=%s and chunked=%s cookies", async (secure, chunked) => {
     const response = await middleware(await request("/api/accounts", "POST", true, secure, chunked));
     expect(response.status).toBe(403);

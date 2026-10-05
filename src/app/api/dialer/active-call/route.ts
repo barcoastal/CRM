@@ -15,6 +15,7 @@ import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { supervisorFeed } from "@/lib/five9/supervisor-feed";
+import { recordScope } from "@/lib/record-access";
 
 /** Last 10 digits of a phone string, for loose matching. */
 function digits10(s: string): string {
@@ -30,6 +31,7 @@ function digits10(s: string): string {
 async function matchLead(customer: string | null): Promise<{ id: string; phone: string | null } | null> {
   if (!customer) return null;
   const trimmed = customer.trim();
+  const scope = await recordScope("lead");
 
   // Phone match: if the customer is mostly digits, match a lead by last-10-digits.
   // Normalize the STORED phone too (strip formatting) so "1(800)-864-8331" matches.
@@ -40,9 +42,11 @@ async function matchLead(customer: string | null): Promise<{ id: string; phone: 
       SELECT id, phone FROM "Lead"
       WHERE regexp_replace(phone, '[^0-9]', '', 'g') LIKE ${"%" + last10}
       ORDER BY "updatedAt" DESC
-      LIMIT 1
+      LIMIT 50
     `;
-    return rows[0] ?? null; // numeric customer that matches no lead — don't fall through to name terms
+    return rows.length
+      ? prisma.lead.findFirst({ where: { id: { in: rows.map(row => row.id) }, AND: [scope] }, orderBy: { updatedAt: "desc" }, select: { id: true, phone: true } })
+      : null; // numeric customer that matches no lead — don't fall through to name terms
   }
 
   // Name match: split "Last, First" (or whitespace) and require all terms in contactName.
@@ -52,7 +56,7 @@ async function matchLead(customer: string | null): Promise<{ id: string; phone: 
     .slice(0, 3);
   if (!terms.length) return null;
   return prisma.lead.findFirst({
-    where: { AND: terms.map((t) => ({ contactName: { contains: t, mode: "insensitive" as const } })) },
+    where: { AND: [scope, ...terms.map((t) => ({ contactName: { contains: t, mode: "insensitive" as const } }))] },
     orderBy: { updatedAt: "desc" },
     select: { id: true, phone: true },
   });

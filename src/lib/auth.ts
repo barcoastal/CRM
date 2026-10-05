@@ -6,6 +6,25 @@ import { loadEffectivePermissions } from "@/lib/permissions";
 import { auditWrite } from "@/lib/audit";
 
 export const { handlers, signIn, signOut, auth, unstable_update: updateSession } = NextAuth({
+  // Agent Desktop Plus loads /five9/opener as a cross-site frame. A partitioned
+  // session keeps each agent's CRM identity available in that frame without a
+  // shared URL token or reliance on unpartitioned third-party cookies.
+  ...(process.env.NODE_ENV === "production" ? {
+    cookies: {
+      sessionToken: {
+        name: "__Secure-crm.session-token",
+        options: { httpOnly: true, sameSite: "none" as const, secure: true, partitioned: true, path: "/" },
+      },
+      csrfToken: {
+        name: "__Host-crm.csrf-token",
+        options: { httpOnly: true, sameSite: "none" as const, secure: true, partitioned: true, path: "/" },
+      },
+      callbackUrl: {
+        name: "__Secure-crm.callback-url",
+        options: { httpOnly: true, sameSite: "none" as const, secure: true, partitioned: true, path: "/" },
+      },
+    },
+  } : {}),
   providers: [
     Credentials({
       name: "credentials",

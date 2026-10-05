@@ -17,7 +17,7 @@ interface DialerPageProps {
  * (used for dev / when Five9 isn't configured yet).
  */
 export default async function DialerPage({ searchParams }: DialerPageProps) {
-  await auth();
+  const session = await auth();
   const params = await searchParams;
   if (process.env.CRM_DIALER_MODE === "twilio") redirect("/call-center");
 
@@ -25,7 +25,7 @@ export default async function DialerPage({ searchParams }: DialerPageProps) {
   const five9Station = process.env.NEXT_PUBLIC_FIVE9_DEFAULT_STATION ?? null;
 
   if (five9Domain) {
-    return <Five9Client five9Domain={five9Domain} defaultStation={five9Station} />;
+    return <Five9Client five9Domain={five9Domain} defaultStation={five9Station} userId={session?.user?.id} />;
   }
 
   // Fallback: mock dialer (existing functionality)

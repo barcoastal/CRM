@@ -7,7 +7,8 @@ export async function middleware(request: NextRequest) {
   if (previewBlocksRequest(request.method, request.nextUrl.pathname)) {
     const session = await getToken({
       req: request, secret: process.env.NEXTAUTH_SECRET,
-      secureCookie: request.cookies.has("__Secure-authjs.session-token") || request.cookies.has("__Secure-authjs.session-token.0"),
+      ...(process.env.NODE_ENV === "production" ? { cookieName: "__Secure-crm.session-token" } : {}),
+      secureCookie: request.cookies.has("__Secure-crm.session-token") || request.cookies.has("__Secure-crm.session-token.0") || request.cookies.has("__Secure-authjs.session-token") || request.cookies.has("__Secure-authjs.session-token.0"),
     });
     if (session?.viewAs) {
       return NextResponse.json({ error: "View as user is read-only. Return to admin to make changes." }, { status: 403 });
@@ -15,6 +16,8 @@ export async function middleware(request: NextRequest) {
   }
   if (request.nextUrl.pathname.startsWith("/api/")) return NextResponse.next();
   const token =
+    request.cookies.get("__Secure-crm.session-token") ??
+    request.cookies.get("__Secure-crm.session-token.0") ??
     request.cookies.get("authjs.session-token") ??
     request.cookies.get("__Secure-authjs.session-token") ??
     request.cookies.get("authjs.session-token.0") ??

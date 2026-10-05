@@ -26,6 +26,8 @@ interface LeadContext {
 interface Props {
   five9Domain: string | null;
   defaultStation: string | null;
+  frameOnly?: boolean;
+  userId?: string;
 }
 
 /**
@@ -38,10 +40,12 @@ interface Props {
  */
 const last10 = (p: string | null | undefined) => (p ?? "").replace(/[^0-9]/g, "").slice(-10);
 
-export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Props) {
+export function Five9Client({ five9Domain, defaultStation: _defaultStation, frameOnly = false, userId }: Props) {
   const [lead, setLead] = useState<LeadContext | null>(null);
   const [loadingLead, setLoadingLead] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
   const [currentPhone, setCurrentPhone] = useState<string | null>(null);
+  const [activeUnmatched, setActiveUnmatched] = useState(false);
   const [wrapped, setWrapped] = useState(false); // disposition saved → waiting for next call
   // Run Five9 in its own window instead of the embedded iframe. The iframe loses
   // its Five9 session on call-connect (browser blocks the cookie in a cross-site
@@ -73,9 +77,19 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
     setCurrentPhone(phone);
     setWrapped(false);
     setLoadingLead(true);
+    setLead(null);
+    setLookupError(null);
     try {
       const res = await fetch(`/api/leads/by-phone?phone=${encodeURIComponent(last10(phone))}`);
-      if (res.ok) setLead((await res.json()) ?? null);
+      if (!res.ok) {
+        setLookupError("Could not load this lead. Check your CRM access and try again.");
+        return;
+      }
+      if (currentPhoneRef.current === phone && callSinceRef.current === since) {
+        setLead((await res.json()) ?? null);
+      }
+    } catch {
+      setLookupError("Could not reach the CRM. Please try again.");
     } finally {
       setLoadingLead(false);
     }
@@ -86,6 +100,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
     callSinceRef.current = null;
     setCurrentPhone(null);
     setLead(null);
+    setLookupError(null);
     if (opts?.wrapped) setWrapped(true);
   }
 
@@ -127,9 +142,11 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
         if (!data.active || !data.phone) {
           // Call ended → reset to the waiting state; a new call may pop again.
           if (currentPhoneRef.current) clearPane();
-          dispositionedSinceRef.current = null;
+          setActiveUnmatched(!!data.active);
+          if (!data.active) dispositionedSinceRef.current = null;
           return;
         }
+        setActiveUnmatched(false);
         const since = typeof data.onCallSince === "number" ? data.onCallSince : null;
         // Suppress the call we already dispositioned (it stays "active" until hangup).
         if (since !== null && since === dispositionedSinceRef.current) return;
@@ -144,6 +161,37 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (frameOnly) {
+    return (
+      <main style={{ minHeight: "100vh", background: "#f3f5f8", padding: 12, color: "#181818" }}>
+        <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+          <div>
+            <strong style={{ fontSize: 15 }}>Coastal CRM</strong>
+            <div style={{ color: "#64748b", fontSize: 12 }}>Opener lead workspace</div>
+          </div>
+          <Link href="/leads" target="_blank" style={{ color: "#0176d3", fontSize: 12, fontWeight: 600 }}>
+            All leads ↗
+          </Link>
+        </header>
+        <section style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 8, padding: 14 }}>
+          {loadingLead && <p style={{ color: "#64748b" }}>Loading current lead…</p>}
+          {!loadingLead && !lead && !currentPhone && (
+            <p style={{ color: "#64748b", fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+              {activeUnmatched ? "A Five9 call is active, but no accessible CRM lead matched its contact. Check the lead assignment and phone number." : wrapped ? "Disposition saved. Waiting for the next call…" : "Waiting for a Five9 call. The matching CRM lead will open here automatically."}
+            </p>
+          )}
+          {lookupError && <p role="alert" style={{ color: "#ba1a1a", fontSize: 12 }}>{lookupError}</p>}
+          {!loadingLead && !lookupError && !lead && currentPhone && (
+            <QuickCreateLead phone={currentPhone} assignedToId={userId} onCreated={() => void popLead(currentPhone, callSinceRef.current)} />
+          )}
+          {lead && (
+            <LeadCard key={lead.id} lead={lead} onSaved={setLead} onDispositioned={handleDispositioned} />
+          )}
+        </section>
+      </main>
+    );
+  }
 
   return (
     <div className="sf-dialer-grid" style={{ display: "grid", gridTemplateColumns: "320px minmax(0, 1fr) 320px", gap: 12, padding: 12 }}>
@@ -168,8 +216,9 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
               No active call. When Five9 connects a call, the matching lead loads here automatically.
             </div>
           )}
-          {!loadingLead && !lead && currentPhone && (
-            <QuickCreateLead phone={currentPhone} onCreated={() => void popLead(currentPhone, callSinceRef.current)} />
+          {lookupError && <p role="alert" style={{ color: "#ba1a1a", fontSize: 12 }}>{lookupError}</p>}
+          {!loadingLead && !lookupError && !lead && currentPhone && (
+            <QuickCreateLead phone={currentPhone} assignedToId={userId} onCreated={() => void popLead(currentPhone, callSinceRef.current)} />
           )}
           {lead && (
             <LeadCard
@@ -247,7 +296,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation }: Pr
  * lead, so capture a new one (phone pre-filled) without leaving the call. On
  * save it reloads via by-phone so the LeadCard pops immediately.
  */
-function QuickCreateLead({ phone, onCreated }: { phone: string; onCreated: () => void }) {
+function QuickCreateLead({ phone, assignedToId, onCreated }: { phone: string; assignedToId?: string; onCreated: () => void }) {
   const [contactName, setContactName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [phoneVal, setPhoneVal] = useState(phone);
@@ -284,6 +333,7 @@ function QuickCreateLead({ phone, onCreated }: { phone: string; onCreated: () =>
           numberOfLenders: numberOfLenders.trim() === "" || Number.isNaN(lendersNum) ? "" : lendersNum,
           notes: notes.trim(),
           source: "COLD_CALL",
+          assignedToId,
         }),
       });
       if (!res.ok) {
@@ -478,7 +528,7 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
           </label>
         </div>
         {error && <div style={{ color: "#c23934", fontSize: 12 }}>{error}</div>}
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: 2 }}>
           <button
             type="button"
             onClick={save}
