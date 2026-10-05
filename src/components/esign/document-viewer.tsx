@@ -41,6 +41,8 @@ export function DocumentViewer({
   const [showSummary, setShowSummary] = useState(false);
   const [summary, setSummary] = useState<{page:number;text:string}[] | null>(null);
   const [summarizing, setSummarizing] = useState(false);
+  const [searching,setSearching] = useState(false);
+  const [searchError,setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
   const [toolError, setToolError] = useState("");
   const [matches, setMatches] = useState<number[]>([]);
@@ -167,24 +169,20 @@ export function DocumentViewer({
   }, [activeId, pages]);
   async function find() {
     const doc = pdf.current;
-    if (!doc || !search.trim()) {
-      setMatches([]);
-      return;
-    }
-    const found: number[] = [];
-    for (let i = 1; i <= doc.numPages; i++) {
-      const text = await (await doc.getPage(i)).getTextContent();
-      if (
-        text.items
-          .map((t) => ("str" in t ? t.str : ""))
-          .join(" ")
-          .toLowerCase()
-          .includes(search.toLowerCase())
-      )
-        found.push(i);
-    }
-    setMatches(found);
-    setSearched(true);
+    const query = search.trim().replace(/\s+/g, " ").toLowerCase();
+    if (!doc || !query) { setMatches([]); setSearched(false); return; }
+    setSearching(true); setSearchError(""); setSearched(false);
+    try {
+      const found: number[] = [];
+      for (let i=1; i<=doc.numPages; i++) {
+        const text = await (await doc.getPage(i)).getTextContent();
+        const content = text.items.map(item=>"str" in item ? item.str : "").join(" ").replace(/\s+/g," ").toLowerCase();
+        if (content.includes(query)) found.push(i);
+      }
+      setMatches(found); setSearched(true);
+      if(found.length) go(found[0]);
+    } catch { setSearchError("Search could not read the document. Please try again."); }
+    finally { setSearching(false); }
   }
   async function summarize() {
     if (!pdf.current) return;
@@ -402,20 +400,26 @@ export function DocumentViewer({
           >
             <FileText size={24}/><span>View pages</span>
           </button>
-          <details>
+          <details onToggle={e=>{if(e.currentTarget.open){setShowSummary(false);e.currentTarget.querySelector('input')?.focus();}}}>
             <summary aria-label="Search document">
               <Search size={24}/><span>Search</span>
             </summary>
             <div className={styles.search}>
+              <label htmlFor="document-search">Find in document</label>
               <input
+                id="document-search"
+                placeholder="Enter a word or phrase"
+                disabled={searching}
                 aria-label="Search document"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {setSearch(e.target.value);setSearched(false);setMatches([]);}}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") void find();
                 }}
               />
-              <button onClick={find}>Find</button>
+              <button className={styles.searchSubmit} disabled={searching || !search.trim() || !pages.length} onClick={find}>{searching ? "Searching…" : "Find"}</button>
+              {searchError && <p role="alert">{searchError}</p>}
+              {searched && matches.length > 0 && <p role="status">Found on {matches.length} {matches.length === 1 ? "page" : "pages"}</p>}
               {searched && !matches.length && <p>No matching pages.</p>}
               {matches.map((p) => (
                 <button key={p} onClick={() => go(p)}>
