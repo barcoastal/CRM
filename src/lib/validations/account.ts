@@ -25,7 +25,10 @@ export const createAccountSchema = z.object({
   parentAccountId: z.string().cuid().optional().nullable(),
 });
 
-export const updateAccountSchema = createAccountSchema.partial();
+export const updateAccountSchema = createAccountSchema.partial().extend({
+  // A partial edit must not replace an existing country with the create default.
+  billingCountry: z.string().optional(),
+});
 
 export type CreateAccountInput = z.infer<typeof createAccountSchema>;
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;

@@ -1,7 +1,7 @@
 import { taskActivity } from "@/lib/activity-presentation";
 import { RecordViewTracker } from "@/components/lists/record-view-tracker";
 import { usesCloserOpportunityView, closerOpportunityFields, closerOpportunitySnapshot } from "@/lib/opportunity-closer-view";
-import { recordScope } from "@/lib/record-access";
+import { recordScope, canAccessRecord } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { SsnField } from "@/components/shared/ssn-field";
 import Link from "next/link";
@@ -169,6 +169,13 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           name: true,
           recordType: true,
           primaryContactId: true,
+          ein: true,
+          billingStreet: true,
+          billingCity: true,
+          billingState: true,
+          billingZip: true,
+          billingCountry: true,
+          sfDataJson: true,
           contacts: { include: { contact: { select: { id: true, fullName: true, title: true, email: true, phone: true } } } },
         },
       },
@@ -481,6 +488,18 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   const phoneDisplay = opp.oppPhone ?? oppSf("Phone_Formula__c") ?? oppSf("Formatted_Phone__c") ?? oppSf("Phone__c") ?? oppSf("Phone");
   const emailDisplay = opp.oppEmail ?? oppSf("Email_Formula__c") ?? oppSf("Email__c") ?? oppSf("Email");
 
+  // Read and edit the linked Account itself, so both pages share one value.
+  const canViewBillingAccount = !!opp.account && hasPermission(viewerSession?.user?.permissions ?? [], "Account.View")
+    && await canAccessRecord("account", opp.account.id);
+  const canEditBillingAccount = canViewBillingAccount && hasPermission(viewerSession?.user?.permissions ?? [], "Account.Edit");
+  let accountSnapshot: Record<string, unknown> = {};
+  try {
+    const parsed: unknown = JSON.parse(opp.account?.sfDataJson ?? "{}");
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) accountSnapshot = parsed as Record<string, unknown>;
+  } catch { /* Use the account's typed fields if imported data is invalid. */ }
+  const accountBillingValue = (value: string | null, sfKey: string) =>
+    value ?? (typeof accountSnapshot[sfKey] === "string" ? accountSnapshot[sfKey] as string : null);
+
   const detailsPanel = (
     <>
       {/* SF "Opportunity Information" section, extracted live from the org via
@@ -612,6 +631,23 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             ["", null],
           ], closerView)}
         />
+
+      {opp.account && canViewBillingAccount && (
+        <Section title="Account Billing Address & EIN">
+          <FieldGrid
+            entityType="account"
+            entityId={opp.account.id}
+            fields={[
+              E("EIN / Tax ID", accountBillingValue(opp.account.ein, "EIN_Number_Tax_Id__c"), "ein", "text", { editable: canEditBillingAccount }),
+              E("Billing Street", accountBillingValue(opp.account.billingStreet, "BillingStreet"), "billingStreet", "textarea", { editable: canEditBillingAccount }),
+              E("Billing City", accountBillingValue(opp.account.billingCity, "BillingCity"), "billingCity", "text", { editable: canEditBillingAccount }),
+              E("Billing State / Province", accountBillingValue(opp.account.billingState, "BillingState"), "billingState", "text", { editable: canEditBillingAccount }),
+              E("Billing ZIP / Postal Code", accountBillingValue(opp.account.billingZip, "BillingPostalCode"), "billingZip", "text", { editable: canEditBillingAccount }),
+              E("Billing Country", accountBillingValue(opp.account.billingCountry, "BillingCountry"), "billingCountry", "text", { editable: canEditBillingAccount }),
+            ]}
+          />
+        </Section>
+      )}
 
       <Section title="Buyout Program">
         {/* SF Buyout Program section (all formula fields, read-only). */}

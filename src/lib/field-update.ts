@@ -130,7 +130,7 @@ export const ACCOUNT_COLUMNS: Record<string, ColumnSpec> = {
   recordType: { kind: "string" },
   type: { kind: "string" },
   brand: { kind: "string", mirrorSfKey: "Brand__c" },
-  ein: { kind: "string" },
+  ein: { kind: "string", mirrorSfKey: "EIN_Number_Tax_Id__c" },
   ssnLast4: { kind: "string" },
   phone: { kind: "string", mirrorSfKey: "Phone" },
   alternatePhone: { kind: "string" },

@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { updateAccountSchema } from "@/lib/validations/account";
+import { ACCOUNT_COLUMNS, mergeSfData } from "@/lib/field-update";
 import { auditWrite } from "@/lib/audit";
 import { validateAccountPatch } from "@/lib/validation/account-validation";
 
@@ -64,7 +65,17 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     return ssnSafeJson({ error: vErrors[0], errors: vErrors }, { status: 400 });
   }
 
-  const account = await prisma.account.update({ where: { id, AND: [await recordScope("account", !Object.hasOwn(d, "ownerId"))] }, data: parsed.data });
+  // Keep imported fallbacks current when the shared billing fields are edited
+  // through the full account form, including explicitly cleared values.
+  const sfPatch: Record<string, unknown> = {};
+  for (const key of ["ein", "billingStreet", "billingCity", "billingState", "billingZip", "billingCountry"]) {
+    const mirror = ACCOUNT_COLUMNS[key].mirrorSfKey;
+    if (mirror && Object.hasOwn(d, key)) sfPatch[mirror] = d[key];
+  }
+  const account = await prisma.account.update({ where: { id, AND: [await recordScope("account", !Object.hasOwn(d, "ownerId"))] }, data: {
+    ...parsed.data,
+    ...(Object.keys(sfPatch).length ? { sfDataJson: mergeSfData(before.sfDataJson, sfPatch) } : {}),
+  } });
   await auditWrite({
     userId: r.session.userId,
     entity: "Account",

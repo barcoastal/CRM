@@ -2,6 +2,10 @@ import { LightningElement, api } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import details from '@salesforce/apex/CoastalESignPilotController.details';
 import refreshStatus from '@salesforce/apex/CoastalESignPilotController.refreshStatus';
+import applyAction from '@salesforce/apex/CoastalESignActions.applyAction';
+import LightningPrompt from 'lightning/prompt';
+import LightningConfirm from 'lightning/confirm';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { notifyRecordUpdateAvailable } from 'lightning/uiRecordApi';
 export default class CoastalEsignStatus extends NavigationMixin(LightningElement) {
     _recordId;
@@ -43,6 +47,23 @@ export default class CoastalEsignStatus extends NavigationMixin(LightningElement
     refresh() { this.load(true); }
     openPacket() {
         this[NavigationMixin.Navigate]({ type: 'standard__component', attributes: { componentName: 'c__coastalEsignPilot' }, state: { c__recordId: this.recordId } });
+    }
+    get canAct() { return ['SENT','VIEWED'].includes(this.data?.status); }
+    async menuAction(event) {
+        const action=event.detail.value;
+        if(action==='view') { this.openPacket(); return; }
+        let reason;
+        if(action==='void') {
+            reason=await LightningPrompt.open({label:'Void envelope',message:'This stops remaining recipients from signing. Enter the reason to confirm.',theme:'warning'});
+            if(!reason?.trim()) return;
+        } else if(!await LightningConfirm.open({label:'Resend invitation',message:'Send a new email invitation to the current signer?',theme:'info'})) return;
+        this.busy=true; this.error=undefined;
+        try {
+            await applyAction({recordId:this.recordId,action,reason});
+            this.dispatchEvent(new ShowToastEvent({title:action==='void'?'Envelope voided':'Invitation resent',variant:'success'}));
+        } catch(e) { this.error=e.body?.message||e.message||'Unable to update the envelope.'; }
+        finally { this.busy=false; }
+        if(!this.error) await this.load(true);
     }
     openFile() {
         this[NavigationMixin.Navigate]({ type: 'standard__recordPage', attributes: { recordId: this.data.fileId, objectApiName: 'ContentDocument', actionName: 'view' } });
