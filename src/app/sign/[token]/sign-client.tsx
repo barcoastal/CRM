@@ -662,6 +662,7 @@ export function SignClient(props: Props) {
       </footer>
       {adopt && (
         <AdoptModal
+          envelopeId={props.envelopeId}
           kind={adopt.kind === "initial" ? "initial" : "signature"}
           fullName={fullName}
           setFullName={changeName}

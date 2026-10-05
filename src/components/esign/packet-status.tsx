@@ -62,6 +62,8 @@ export function PacketStatus({ id, token }: { id: string; token?: string }) {
       clearInterval(timer);
     };
   }, [id, token]);
+  const [actionsOpen,setActionsOpen]=useState(false);
+  const [voidOpen,setVoidOpen]=useState(false);
   const [notice, setNotice] = useState("");
   const [resendAfter, setResendAfter] = useState(0);
   const canResend = packet?.status === "SENT" && packet.envelopes.some(e =>
@@ -119,6 +121,12 @@ export function PacketStatus({ id, token }: { id: string; token?: string }) {
     >
       <div className={styles.cardHeader}>
         <h2>Packet status: {packet?.status ?? "Loading…"}</h2>
+        <div style={{position:'relative'}}><button aria-expanded={actionsOpen} onClick={()=>setActionsOpen(v=>!v)}>Envelope actions ▾</button>
+        {actionsOpen && <div style={{position:'absolute',right:0,top:'100%',zIndex:10,background:'white',border:'1px solid #ccc',boxShadow:'0 4px 12px #0002',padding:12,minWidth:190,display:'grid',gap:12}}>
+        <button onClick={()=>{void download();setActionsOpen(false);}}>View envelope</button>
+        {canResend&&<button disabled={busy||Date.now()<resendAfter} onClick={()=>{void resendInvitation();setActionsOpen(false);}}>Resend invitation</button>}
+        {packet&&['SENT','SENDING'].includes(packet.status)&&<button disabled={busy} onClick={()=>{setVoidOpen(true);setActionsOpen(false);}}>Void envelope</button>}
+        </div>}</div>
         <button onClick={download}>
           {packet?.status === "COMPLETED"
             ? "Download signed packet"
@@ -127,7 +135,7 @@ export function PacketStatus({ id, token }: { id: string; token?: string }) {
       </div>
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
-      {canResend && <div style={{ padding: 20 }}><button disabled={busy || Date.now() < resendAfter} onClick={resendInvitation}>Resend invitation</button></div>}
+
       {packet?.envelopes
         .sort((a, b) => a.routingOrder - b.routingOrder)
         .map((e) => (
@@ -154,7 +162,7 @@ export function PacketStatus({ id, token }: { id: string; token?: string }) {
           </div>
         ))}
       {packet && ["SENT", "SENDING"].includes(packet.status) && (
-        <details style={{ padding: 20 }}>
+        <details open={voidOpen} onToggle={e=>setVoidOpen(e.currentTarget.open)} style={{ padding: 20 }}>
           <summary>Void this packet</summary>
           <p>
             Voiding stops remaining recipients from signing. Completed
