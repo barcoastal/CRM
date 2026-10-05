@@ -35,3 +35,8 @@ it("replaces both RAM hard-coded marks and releases clipped table rows", () => {
   expect(xml).not.toContain('w:hRule="exact"');
   expect(xml).toContain("{{FirstPaymentDate}}");
 });
+it('centers the Power of Attorney heading across the available width',()=>{
+ const zip=new PizZip();zip.file('word/document.xml','<w:document><w:p><w:pPr><w:ind w:left="3998" w:right="4254"/></w:pPr><w:r><w:t>LIMITED POWER OF </w:t></w:r><w:r><w:t>ATTORNEY</w:t></w:r></w:p></w:document>');
+ const result=new PizZip(salesforceMasterTemplate(zip.generate({type:'nodebuffer'}))).file('word/document.xml')!.asText();
+ expect(result).toContain('w:left="0" w:right="0"');expect(result).toContain('<w:jc w:val="center"/>');
+});
