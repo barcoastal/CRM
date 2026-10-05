@@ -4,9 +4,9 @@ The CRM exposes `https://crm.coastaldebt-tools.com/five9/opener` for an embedded
 
 ## Five9 setup
 
-In the Five9 Administrator Console, create an HTTPS Web Connector with the URL above, an `On Call Accepted` trigger, browser execution, and the Agent Desktop Plus embedded tab. Do not add a shared CRM token to the URL.
+In the Five9 Administrator Console, create a Classic Connector with the HTTPS URL above, `GET`, `In Browser` execution, and `Use embedded tab for Web Agent`. Use `On Preview` for a preview campaign so the tab opens when the agent accepts a preview record; use `On Call Accepted` when enabling a call-driven campaign later. Do not add a shared CRM token to the URL.
 
-Five9 attaches standard Web Connectors to campaigns. Before enabling the Bar1 pilot, confirm that the selected campaign is used only by Bar1 or that Five9 offers a separate per-agent configuration in this domain. Adding the connector to a campaign shared by other agents would show them the tab too, even though the CRM pilot allowlist would deny them access. Do not change routing or attach the connector to a shared campaign for the pilot.
+Five9 attaches Classic Connectors to campaigns. The Bar1 pilot uses a separate `Bar1 CRM Frame Pilot` outbound Preview campaign with the `Bar1 CRM Frame Pilot` skill assigned only to `bar1@coastaldebt.com`. Use unlimited preview time and a list containing only a controlled test number. Keep the campaign stopped until the list, connector, and skill are verified. Do not attach the connector to a shared campaign for the pilot: that would show other agents the tab even though the CRM allowlist would deny them access.
 
 Five9's [Administrator Console guide](https://documentation-be.five9.com/bundle/administrator-console/raw/resource/enus/administrator-console.pdf) says web agents need HTTPS, and the Embedded tab requires the embedded URL call. The CRM route responds with `Content-Security-Policy: frame-ancestors https://*.five9.com` and has no `X-Frame-Options` header.
 
