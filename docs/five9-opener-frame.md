@@ -4,7 +4,7 @@ The CRM exposes `https://crm.coastaldebt-tools.com/five9/opener` for an embedded
 
 ## Five9 setup
 
-In the Five9 Administrator Console, create a Classic Connector with the HTTPS URL above, `GET`, `In Browser` execution, and `Use embedded tab for Web Agent`. Use `On Preview` for a preview campaign so the tab opens when the agent accepts a preview record; use `On Call Accepted` when enabling a call-driven campaign later. Do not add a shared CRM token to the URL.
+In the Five9 Administrator Console, create a Classic Connector with the HTTPS URL above, `GET`, `In Browser` execution, and `Use embedded tab for Web Agent`. Use `Add Field` to pass the contact's `number1` as a GET parameter (either `number1` or rename it to `phone`). The frame reads this number and opens the matching CRM lead without a supervisor session. It also offers a manual phone search. Use `On Preview` for a preview campaign so the tab opens when the agent accepts a preview record; use `On Call Accepted` when enabling a call-driven campaign later. A manual outbound call does not fire the `On Preview` trigger. Do not add a shared CRM token to the URL.
 
 Five9 attaches Classic Connectors to campaigns. The Bar1 pilot uses a separate `Bar1 CRM Frame Pilot` outbound Preview campaign with the `Bar1 CRM Frame Pilot` skill assigned only to `bar1@coastaldebt.com`. Use unlimited preview time and a list containing only a controlled test number. Keep the campaign stopped until the list, connector, and skill are verified. Do not attach the connector to a shared campaign for the pilot: that would show other agents the tab even though the CRM allowlist would deny them access.
 
@@ -20,4 +20,4 @@ Each opener signs in to their own CRM account inside the frame on first use. The
 4. Connect a call with no matching lead. Confirm the quick-create form assigns the new lead to the opener.
 5. Check a second opener's frame to confirm the first opener's lead and session are not visible.
 
-The supervisor feed drives the screen pop. If it cannot match the call, confirm the agent's Five9 username and the lead's phone number or contact name in CRM. The frame does not place or control calls; Five9 remains the call interface.
+The Five9 connector's contact number drives the frame's screen pop. If it cannot match, confirm that the connector sends `number1` or `phone` and that the CRM lead's phone is accessible to the signed-in agent. The standard CRM dialer still uses the supervisor feed when a dedicated supervisor account is configured. The frame does not place or control calls; Five9 remains the call interface.

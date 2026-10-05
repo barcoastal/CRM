@@ -27,6 +27,7 @@ interface Props {
   five9Domain: string | null;
   defaultStation: string | null;
   frameOnly?: boolean;
+  initialPhone?: string | null;
   userId?: string;
 }
 
@@ -40,13 +41,14 @@ interface Props {
  */
 const last10 = (p: string | null | undefined) => (p ?? "").replace(/[^0-9]/g, "").slice(-10);
 
-export function Five9Client({ five9Domain, defaultStation: _defaultStation, frameOnly = false, userId }: Props) {
+export function Five9Client({ five9Domain, defaultStation: _defaultStation, frameOnly = false, initialPhone = null, userId }: Props) {
   const [lead, setLead] = useState<LeadContext | null>(null);
   const [loadingLead, setLoadingLead] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [currentPhone, setCurrentPhone] = useState<string | null>(null);
   const [activeUnmatched, setActiveUnmatched] = useState(false);
   const [wrapped, setWrapped] = useState(false); // disposition saved → waiting for next call
+  const [phoneQuery, setPhoneQuery] = useState("");
   // Run Five9 in its own window instead of the embedded iframe. The iframe loses
   // its Five9 session on call-connect (browser blocks the cookie in a cross-site
   // frame); a real window keeps it logged in. Screen-pop here is unaffected (it
@@ -112,6 +114,10 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
   }
 
   useEffect(() => {
+    if (frameOnly && initialPhone) void popLead(initialPhone, null);
+  }, [frameOnly, initialPhone]);
+
+  useEffect(() => {
     function onMessage(event: MessageEvent) {
       if (!five9Domain) return;
       if (!event.origin.includes(five9Domain) && !event.origin.includes("five9.com")) return;
@@ -134,6 +140,9 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
 
   // Screen-pop: poll the agent's current active call from the supervisor feed.
   useEffect(() => {
+    // Five9's connector supplies the contact number directly in frame mode.
+    // Polling the supervisor feed would clear it when that feed is unavailable.
+    if (frameOnly) return;
     const id = setInterval(async () => {
       try {
         const res = await fetch("/api/dialer/active-call");
@@ -160,7 +169,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
     }, 4000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [frameOnly, initialPhone]);
 
   if (frameOnly) {
     return (
@@ -175,6 +184,10 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
           </Link>
         </header>
         <section style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 8, padding: 14 }}>
+          <form onSubmit={event => { event.preventDefault(); if (last10(phoneQuery).length >= 7) void popLead(phoneQuery, null); }} style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+            <input aria-label="Find lead by phone" type="tel" placeholder="Find lead by phone" value={phoneQuery} onChange={event => setPhoneQuery(event.target.value)} style={{ flex: 1, minWidth: 0, border: "1px solid #c9c9c9", borderRadius: 4, padding: "7px 9px" }} />
+            <button type="submit" style={{ border: 0, borderRadius: 4, background: "#0176d3", color: "#fff", padding: "7px 10px", fontWeight: 600 }}>Find</button>
+          </form>
           {loadingLead && <p style={{ color: "#64748b" }}>Loading current lead…</p>}
           {!loadingLead && !lead && !currentPhone && (
             <p style={{ color: "#64748b", fontSize: 13, lineHeight: 1.5, margin: 0 }}>
