@@ -77,7 +77,7 @@ export function Section({
         background: "#fff",
         border: "1px solid #c9c9c9",
         borderRadius: 4,
-        marginBottom: 10,
+        marginBottom: 8,
         overflow: "hidden",
       }}
     >
@@ -89,13 +89,13 @@ export function Section({
           textAlign: "left",
           background: "#fafaf9",
           border: 0,
-          padding: "8px 16px",
+          padding: "6px 12px",
           display: "flex",
           alignItems: "center",
           gap: 8,
           cursor: "pointer",
           borderBottom: open ? "1px solid #c9c9c9" : "none",
-          minHeight: 36,
+          minHeight: 30,
         }}
       >
         <svg
@@ -111,10 +111,10 @@ export function Section({
         >
           <path d="M2 0l6 5-6 5z" />
         </svg>
-        <span style={{ fontSize: 14, fontWeight: 700, color: "#181818", letterSpacing: 0 }}>{title}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#181818", letterSpacing: 0 }}>{title}</span>
       </button>
       )}
-      {open && <div style={{ padding: "6px 16px" }}>{children}</div>}
+      {open && <div style={{ padding: "6px 12px" }}>{children}</div>}
     </div>
   );
 }
@@ -146,7 +146,7 @@ export function FieldGrid({
         gridTemplateColumns: columns === 1 ? "1fr" : "1fr 1fr",
         // SF Lightning separates the two columns with a plain gutter - no
         // vertical divider line.
-        columnGap: 32,
+        columnGap: 24,
       }}
     >
       {fields.map((row, i) => {

@@ -40,8 +40,8 @@ export function ContactTabs({
               style={{
                 background: "transparent",
                 border: 0,
-                padding: "8px 16px",
-                fontSize: 16,
+                padding: "7px 12px",
+                fontSize: 13,
                 fontWeight: active ? 700 : 400,
                 color: active ? "#181818" : "#444444",
                 borderBottom: active ? "3px solid #0176d3" : "3px solid transparent",
@@ -55,7 +55,7 @@ export function ContactTabs({
           );
         })}
       </div>
-      <div style={{ padding: 12 }}>
+      <div style={{ padding: 10 }}>
         {panels[tab]}
         {tab === "Details" && detailsFooter && (
           <div style={{ marginTop: 4, padding: "8px 4px 0", fontSize: 12, textAlign: "right" }}>{detailsFooter}</div>

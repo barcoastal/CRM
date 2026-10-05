@@ -1,5 +1,6 @@
 import { normalizeAccountColumns, resolveAccountView } from "@/lib/account-list-layout";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { prisma } from "@/lib/prisma";
@@ -86,6 +87,7 @@ const TYPE_LABEL: Record<string, string> = {
 // stored filters (they depend on the current user / current date).
 const COMPUTED_VIEWS = [
   {value:"recent",label:"Recently Viewed"},
+  {value:"all",label:"All Accounts"},
   {value:"my-account-teams",label:"My Account Teams"},
   { value: "business", label: "Business Accounts" },
   { value: "my-open", label: "My Accounts" },
@@ -372,8 +374,8 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
         firstContractSigned || "—",
         primaryContactName || "—",
         nameCfg ? (
-          <InlineEditCell key="name" entity="account" recordId={a.id} config={nameCfg} value={a.name} />
-        ) : (a.name || "—"),
+          <InlineEditCell key="name" entity="account" recordId={a.id} config={nameCfg} value={a.name} recordHref={`/accounts/${a.id}`} />
+        ) : (<Link href={`/accounts/${a.id}`}>{a.name || "—"}</Link>),
         fmtDateShort(a.updatedAt) || "—",
         lastContacted || "—",
         subDisp || "—",

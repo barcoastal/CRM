@@ -2,14 +2,6 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback, useRef } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,7 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, MoreHorizontal } from "@/components/icons/lucide";
+import { Search, ChevronLeft, ChevronRight } from "@/components/icons/lucide";
+import { ListView } from "@/components/slds/list-view";
+import styles from "@/components/slds/lightning-list.module.css";
 import { CLIENT_STATUSES } from "@/lib/validations/client";
 
 interface ClientLead {
@@ -118,7 +112,8 @@ function StatusBadge({ status }: { status: string }) {
   const config = STATUS_CONFIG[status] ?? { label: status.replace(/_/g, " "), className: "bg-muted text-muted-foreground" };
   return (
     <span
-      className={`inline-block text-[0.68rem] font-semibold px-[0.55rem] py-[0.18rem] rounded-sm ${config.className}`}
+      className={`inline-block font-semibold rounded-sm ${config.className}`}
+      style={{ fontSize: 11, lineHeight: "18px", padding: "0 6px" }}
     >
       {config.label}
     </span>
@@ -168,190 +163,47 @@ export function ClientTable({ clients, total, page, totalPages }: ClientTablePro
   const endItem = Math.min(page * 20, total);
 
   return (
-    <div className="space-y-4">
-      {/* Filter Bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2 flex-1 flex-wrap">
-          {/* Status filter */}
-          <Select value={currentStatus} onValueChange={handleStatusFilter}>
-            <SelectTrigger className="w-[150px] h-8 text-xs bg-white shadow-coastal border-0 rounded-sm">
-              <SelectValue placeholder="All Statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Statuses</SelectItem>
-              {CLIENT_STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {STATUS_CONFIG[s]?.label ?? s.replace(/_/g, " ")}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <ListView
+      entity="Client" entityLabel="Clients" viewName="All Clients" totalCount={total}
+      rows={clients} rowHref={client => `/clients/${client.id}`} rowOffset={(page - 1) * 20}
+      toolbar={<div className={styles.searchForm}>
+        <Select value={currentStatus} onValueChange={handleStatusFilter}>
+          <SelectTrigger className="w-[150px] h-8 bg-white"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Statuses</SelectItem>
+            {CLIENT_STATUSES.map(s => <SelectItem key={s} value={s}>{STATUS_CONFIG[s]?.label ?? s.replace(/_/g, " ")}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+          <Input type="search" aria-label="Search clients" placeholder="Search this list..." defaultValue={currentSearch}
+            onChange={e => {
+              const value = e.target.value;
+              if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+              searchTimerRef.current = setTimeout(() => handleSearch(value), 400);
+            }} className="pl-7 bg-white" />
         </div>
-
+      </div>}
+      columns={[
+        { key: "name", label: "Client", width: 240, render: c => c.lead.businessName },
+        { key: "contact", label: "Contact", width: 180, render: c => c.lead.contactName },
+        { key: "phone", label: "Phone", width: 160, render: c => formatPhone(c.lead.phone) },
+        { key: "debt", label: "Total Debt", width: 140, render: c => formatCurrency(c.totalEnrolledDebt) },
+        { key: "settled", label: "Settled", width: 130, render: c => formatCurrency(c.totalSettled) },
+        { key: "savings", label: "Savings", width: 100, render: c => computeSavings(c.totalEnrolledDebt, c.totalSettled) },
+        { key: "start", label: "Program Start", width: 150, render: c => formatDate(c.programStartDate) },
+        { key: "status", label: "Status", width: 140, render: c => <StatusBadge status={c.status} /> },
+        { key: "owner", label: "Negotiator", width: 180, render: c => c.assignedNegotiator?.name ?? "—" },
+      ]}
+      footer={<div className="flex items-center justify-between gap-3">
+        <span>{clients.length > 0 ? `${startItem}–${endItem} of ${total} clients` : "No clients"}</span>
         <div className="flex items-center gap-2">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Search clients..."
-              defaultValue={currentSearch}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-                searchTimerRef.current = setTimeout(() => handleSearch(value), 400);
-              }}
-              className="pl-8 h-8 text-xs w-52 bg-surface-container-low border-0 rounded-sm"
-            />
-          </div>
-
-          {/* Filter icon button */}
-          <button className="h-8 px-3 flex items-center gap-1.5 bg-surface-container border-0 rounded-sm text-xs font-medium text-muted-foreground hover:bg-surface-container-high transition-colors">
-            <SlidersHorizontal className="size-3.5" />
-            Filters
-          </button>
+          <Button variant="outline" size="sm" aria-label="Previous page" onClick={() => handlePageChange(page - 1)} disabled={page <= 1}><ChevronLeft className="size-4" /></Button>
+          <span>Page {page} of {Math.max(1, totalPages)}</span>
+          <Button variant="outline" size="sm" aria-label="Next page" onClick={() => handlePageChange(page + 1)} disabled={page >= totalPages}><ChevronRight className="size-4" /></Button>
         </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-coastal overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-0 hover:bg-transparent">
-              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
-                Client
-              </TableHead>
-              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
-                Phone
-              </TableHead>
-              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
-                Total Debt
-              </TableHead>
-              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
-                Settled
-              </TableHead>
-              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
-                Savings
-              </TableHead>
-              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
-                Program Start
-              </TableHead>
-              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
-                Status
-              </TableHead>
-              <TableHead className="text-[0.7rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground bg-surface-container-low py-[0.85rem] px-4">
-                Negotiator
-              </TableHead>
-              <TableHead className="bg-surface-container-low py-[0.85rem] px-4 w-10" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {clients.length === 0 ? (
-              <TableRow className="border-0">
-                <TableCell
-                  colSpan={9}
-                  className="h-28 text-center text-sm text-muted-foreground"
-                >
-                  No clients found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              clients.map((client, idx) => (
-                <TableRow
-                  key={client.id}
-                  className={`border-0 cursor-pointer transition-colors hover:bg-surface-container ${
-                    idx % 2 === 1 ? "bg-surface-container-low" : "bg-white"
-                  }`}
-                  onClick={() => router.push(`/clients/${client.id}`)}
-                >
-                  {/* Client Name — business + contact stacked */}
-                  <TableCell className="py-[0.7rem] px-4">
-                    <div className="flex flex-col">
-                      <span className="text-[0.82rem] font-semibold leading-tight">
-                        {client.lead.businessName}
-                      </span>
-                      <span className="text-[0.7rem] text-muted-foreground leading-tight mt-0.5">
-                        {client.lead.contactName}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-[0.7rem] px-4 text-[0.8rem]">
-                    {formatPhone(client.lead.phone)}
-                  </TableCell>
-                  <TableCell className="py-[0.7rem] px-4 text-[0.8rem] font-semibold">
-                    {formatCurrency(client.totalEnrolledDebt)}
-                  </TableCell>
-                  <TableCell className="py-[0.7rem] px-4 text-[0.8rem]">
-                    {formatCurrency(client.totalSettled)}
-                  </TableCell>
-                  <TableCell className="py-[0.7rem] px-4 text-[0.8rem] font-semibold text-emerald-600">
-                    {computeSavings(client.totalEnrolledDebt, client.totalSettled)}
-                  </TableCell>
-                  <TableCell className="py-[0.7rem] px-4 text-[0.8rem] text-muted-foreground">
-                    {formatDate(client.programStartDate)}
-                  </TableCell>
-                  <TableCell className="py-[0.7rem] px-4">
-                    <StatusBadge status={client.status} />
-                  </TableCell>
-                  <TableCell className="py-[0.7rem] px-4 text-[0.8rem] text-muted-foreground">
-                    {client.assignedNegotiator?.name ?? "--"}
-                  </TableCell>
-                  <TableCell className="py-[0.7rem] px-4" onClick={(e) => e.stopPropagation()}>
-                    <button className="p-1 rounded-sm text-muted-foreground hover:bg-surface-container transition-colors">
-                      <MoreHorizontal className="size-4" />
-                    </button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-
-        {/* Pagination inside table card */}
-        <div className="flex items-center justify-between px-5 py-4 border-t border-surface-container-low">
-          <span className="text-[0.8rem] text-muted-foreground">
-            {clients.length > 0
-              ? `Showing ${startItem}–${endItem} of ${total} clients`
-              : "No clients"}
-          </span>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 rounded-sm text-muted-foreground hover:bg-surface-container-low"
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page <= 1}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              const p = i + 1;
-              return (
-                <button
-                  key={p}
-                  onClick={() => handlePageChange(p)}
-                  className={`size-8 flex items-center justify-center rounded-sm text-[0.8rem] font-medium transition-colors ${
-                    p === page
-                      ? "gradient-primary text-white"
-                      : "bg-surface-container-low text-muted-foreground hover:bg-surface-container"
-                  }`}
-                >
-                  {p}
-                </button>
-              );
-            })}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 rounded-sm text-muted-foreground hover:bg-surface-container-low"
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page >= totalPages}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
+      </div>}
+    />
   );
 }
 

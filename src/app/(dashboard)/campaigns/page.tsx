@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Plus, Eye, Pencil, MoreHorizontal } from "@/components/icons/lucide";
+import { ListView } from "@/components/slds/list-view";
+import styles from "@/components/slds/lightning-list.module.css";
 
 const STATUS_STYLES: Record<
   string,
@@ -31,10 +32,14 @@ function getConnectionRateColor(rate: number) {
   return "text-[#942b00]";
 }
 
-export default async function CampaignsPage() {
+export default async function CampaignsPage({ searchParams }: { searchParams: Promise<{ status?: string; mode?: string }> }) {
+  const params = await searchParams;
+  const status = Object.hasOwn(STATUS_STYLES, params.status ?? "") ? params.status : undefined;
+  const mode = ["POWER", "PREVIEW", "PREDICTIVE", "MANUAL", "AI"].includes(params.mode ?? "") ? params.mode : undefined;
   await auth();
 
   const campaigns = await prisma.campaign.findMany({
+    where: { ...(status ? { status } : {}), ...(mode ? { dialerMode: mode } : {}) },
     orderBy: { createdAt: "desc" },
     include: {
       _count: {
@@ -78,213 +83,32 @@ export default async function CampaignsPage() {
   });
 
   return (
-    <div className="space-y-5">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <h1
-          className="text-[24px] font-bold tracking-tight text-[#131b2e]"
-          style={{ fontFamily: "Manrope, sans-serif" }}
-        >
-          Campaigns
-        </h1>
-        <Link
-          href="/campaigns/new"
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded text-white text-[13px] font-semibold shadow-[0_8px_24px_rgba(48,82,255,0.25)]"
-          style={{
-            background: "linear-gradient(135deg, #0034e4, #3052ff)",
-          }}
-        >
-          <Plus className="size-4" />
-          New Campaign
-        </Link>
-      </div>
-
-      {/* Filter Bar */}
-      <div className="flex gap-2.5">
-        <select
-          className="px-3.5 py-2 rounded bg-white text-[13px] text-[#444656] font-medium cursor-pointer pr-8 shadow-[0_12px_40px_rgba(19,27,46,0.06)] border-none outline-none appearance-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23444656' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 12px center",
-          }}
-        >
-          <option>All Statuses</option>
-          <option>Active</option>
-          <option>Draft</option>
-          <option>Paused</option>
-          <option>Completed</option>
+    <ListView entity="Campaign" entityLabel="Campaigns" viewName="All Campaigns"
+      totalCount={campaignsWithStats.length} rows={campaignsWithStats}
+      rowHref={c => `/campaigns/${c.id}`} newHref="/campaigns/new"
+      toolbar={<form action="/campaigns" className={styles.searchForm}>
+        <select name="status" aria-label="Campaign status" defaultValue={status ?? ""}>
+          <option value="">All Statuses</option>
+          {Object.entries(STATUS_STYLES).map(([value, config]) => <option key={value} value={value}>{config.label}</option>)}
         </select>
-        <select
-          className="px-3.5 py-2 rounded bg-white text-[13px] text-[#444656] font-medium cursor-pointer pr-8 shadow-[0_12px_40px_rgba(19,27,46,0.06)] border-none outline-none appearance-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23444656' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 12px center",
-          }}
-        >
-          <option>All Dialer Modes</option>
-          <option>Power</option>
-          <option>Preview</option>
-          <option>Predictive</option>
+        <select name="mode" aria-label="Dialer mode" defaultValue={mode ?? ""}>
+          <option value="">All Dialer Modes</option>
+          {["POWER", "PREVIEW", "PREDICTIVE", "MANUAL", "AI"].map(value => <option key={value} value={value}>{value}</option>)}
         </select>
-      </div>
-
-      {/* Table Card */}
-      <div
-        className="bg-white rounded-xl overflow-hidden"
-        style={{ boxShadow: "0 12px 40px rgba(19,27,46,0.06)" }}
-      >
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              {[
-                "Campaign Name",
-                "Status",
-                "Dialer Mode",
-                "Total Contacts",
-                "Dialed",
-                "Connected",
-                "Conn. Rate",
-                "Enrolled",
-                "Start Date",
-                "Actions",
-              ].map((h) => (
-                <th
-                  key={h}
-                  className="text-left text-[11px] font-semibold text-[#444656] uppercase tracking-[0.5px] px-4 py-3.5 bg-[#f2f3ff]"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {campaignsWithStats.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={10}
-                  className="h-24 text-center text-[13px] text-[#444656] py-8 bg-white"
-                >
-                  No campaigns yet. Create your first campaign to get started.
-                </td>
-              </tr>
-            ) : (
-              campaignsWithStats.map((campaign, idx) => {
-                const statusStyle =
-                  STATUS_STYLES[campaign.status] || STATUS_STYLES.DRAFT;
-                const rateColor = getConnectionRateColor(
-                  campaign.connectedPercent
-                );
-                const rowBg = idx % 2 === 0 ? "bg-white" : "bg-[#faf8ff]";
-                const startDate = campaign.createdAt
-                  ? new Date(campaign.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })
-                  : "--";
-
-                return (
-                  <tr key={campaign.id}>
-                    <td className={`px-4 py-3.5 text-[13px] ${rowBg}`}>
-                      <Link
-                        href={`/campaigns/${campaign.id}`}
-                        className="font-semibold text-[#131b2e] hover:text-[#3052ff] transition-colors"
-                      >
-                        {campaign.name}
-                      </Link>
-                    </td>
-                    <td className={`px-4 py-3.5 text-[13px] ${rowBg}`}>
-                      <span
-                        className={`inline-block px-3 py-1 rounded text-[11px] font-semibold uppercase tracking-[0.3px] ${statusStyle.bg} ${statusStyle.text}`}
-                      >
-                        {statusStyle.label}
-                      </span>
-                    </td>
-                    <td
-                      className={`px-4 py-3.5 text-[13px] text-[#131b2e] ${rowBg}`}
-                    >
-                      {campaign.dialerMode.charAt(0) +
-                        campaign.dialerMode.slice(1).toLowerCase()}
-                    </td>
-                    <td
-                      className={`px-4 py-3.5 text-[13px] text-[#131b2e] ${rowBg}`}
-                    >
-                      {campaign._count.contacts}
-                    </td>
-                    <td className={`px-4 py-3.5 text-[13px] ${rowBg}`}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-[60px] h-[6px] bg-[#eaedff] rounded-full overflow-hidden flex-shrink-0">
-                          <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: `${campaign.dialedPercent}%`,
-                              background:
-                                "linear-gradient(135deg, #0034e4, #3052ff)",
-                            }}
-                          />
-                        </div>
-                        <span className="text-[12px] text-[#444656] font-medium">
-                          {campaign.dialed}
-                        </span>
-                      </div>
-                    </td>
-                    <td
-                      className={`px-4 py-3.5 text-[13px] text-[#131b2e] ${rowBg}`}
-                    >
-                      {campaign.connected}
-                    </td>
-                    <td className={`px-4 py-3.5 text-[13px] ${rowBg}`}>
-                      {campaign.dialed > 0 ? (
-                        <span className={`font-semibold ${rateColor}`}>
-                          {campaign.connectedPercent}%
-                        </span>
-                      ) : (
-                        <span className="text-[#444656]">--</span>
-                      )}
-                    </td>
-                    <td
-                      className={`px-4 py-3.5 text-[13px] text-[#131b2e] ${rowBg}`}
-                    >
-                      {campaign.enrolled}
-                    </td>
-                    <td
-                      className={`px-4 py-3.5 text-[13px] text-[#444656] ${rowBg}`}
-                    >
-                      {startDate}
-                    </td>
-                    <td className={`px-4 py-3.5 ${rowBg}`}>
-                      <div className="flex gap-1">
-                        <Link
-                          href={`/campaigns/${campaign.id}`}
-                          title="View"
-                          className="w-[30px] h-[30px] rounded flex items-center justify-center bg-[#f2f3ff] text-[#444656] hover:bg-[#3052ff] hover:text-white transition-colors"
-                        >
-                          <Eye className="size-[14px]" />
-                        </Link>
-                        <Link
-                          href={`/campaigns/${campaign.id}?tab=settings`}
-                          title="Edit"
-                          className="w-[30px] h-[30px] rounded flex items-center justify-center bg-[#f2f3ff] text-[#444656] hover:bg-[#3052ff] hover:text-white transition-colors"
-                        >
-                          <Pencil className="size-[14px]" />
-                        </Link>
-                        <button
-                          title="More"
-                          className="w-[30px] h-[30px] rounded flex items-center justify-center bg-[#f2f3ff] text-[#444656] hover:bg-[#3052ff] hover:text-white transition-colors"
-                        >
-                          <MoreHorizontal className="size-[14px]" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+        <button type="submit">Apply</button>
+      </form>}
+      columns={[
+        {key: "name", label: "Campaign Name", width: 240, render: c => c.name},
+        {key: "status", label: "Status", width: 110, render: c => STATUS_STYLES[c.status]?.label ?? c.status},
+        {key: "mode", label: "Dialer Mode", width: 130, render: c => c.dialerMode},
+        {key: "contacts", label: "Total Contacts", width: 130, render: c => c._count.contacts},
+        {key: "dialed", label: "Dialed", width: 90, render: c => c.dialed},
+        {key: "connected", label: "Connected", width: 100, render: c => c.connected},
+        {key: "rate", label: "Connection Rate", width: 140, render: c => c.dialed > 0 ? <span className={getConnectionRateColor(c.connectedPercent)}>{c.connectedPercent}%</span> : "—"},
+        {key: "enrolled", label: "Enrolled", width: 90, render: c => c.enrolled},
+        {key: "start", label: "Start Date", width: 140, render: c => c.createdAt.toLocaleDateString("en-US")},
+        {key: "actions", label: "Actions", width: 130, render: c => <span className="inline-flex gap-3"><Link href={`/campaigns/${c.id}`}>View</Link><Link href={`/campaigns/${c.id}?tab=settings`}>Edit</Link></span>},
+      ]}
+    />
   );
 }

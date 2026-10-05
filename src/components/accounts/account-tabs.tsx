@@ -71,8 +71,8 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
               style={{
                 background: "transparent",
                 border: 0,
-                padding: "8px 16px",
-                fontSize: 16,
+                padding: "7px 12px",
+                fontSize: 13,
                 fontWeight: active ? 700 : 400,
                 color: active ? "#181818" : "#444444",
                 borderBottom: active ? "3px solid #0176d3" : "3px solid transparent",
@@ -86,7 +86,7 @@ export function AccountTabs({ panels }: { panels: Record<AccountTabKey, ReactNod
           );
         })}
       </div>
-      <div style={{ padding: "12px 16px 16px" }}>
+      <div style={{ padding: 10 }}>
         {panels[tab]}
         {tab === "Details" && (
           <div

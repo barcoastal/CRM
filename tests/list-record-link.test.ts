@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { InlineEditCell } from "@/components/lists/inline-edit-cell";
@@ -13,6 +13,19 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("record links in editable lists", () => {
+  it("keeps pencils outside record links when RSC delivers a deferred child", () => {
+    const deferred = {
+      $$typeof: Symbol.for("react.lazy"),
+      _payload: {},
+      _init: () => createElement(InlineEditCell, {
+        entity: "lead", recordId: "lead", config: { field: "status", type: "enum" }, value: "New",
+      }),
+    } as unknown as ReactNode;
+    const html = renderToStaticMarkup(createElement(RecordLinkCell, { href: "/leads/lead" }, deferred));
+    expect(html.match(/<a\b[^>]*href="\/leads\/lead"[^>]*>([\s\S]*?)<\/a>/)?.[1]).toBe("New");
+    expect(html).toContain('aria-label="Edit status"');
+  });
+
   it("keeps the record link separate from its edit button", () => {
     const html = renderToStaticMarkup(createElement(SfListPage, {
       entity: "lead", title: "Leads", subtitle: "All Leads", count: 1,

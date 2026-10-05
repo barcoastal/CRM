@@ -789,7 +789,7 @@ export function SfViewPicker({
     sp.delete("sort");
     sp.delete("dir");
     for (const key of ["page", "status", "source", "recordType", "assignedToId", "listView"]) sp.delete(key);
-    if (value && value !== "recent") sp.set("view", value);
+    if (value) sp.set("view", value);
     else sp.delete("view");
     const qs = sp.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);

@@ -520,7 +520,7 @@ function entityColor(e: SearchResult["entity"]) {
 const dockedShell: React.CSSProperties = {
   position: "fixed",
   right: 24,
-  bottom: 0,
+  bottom: 38,
   width: 480,
   height: 520,
   background: "#fff",
@@ -539,7 +539,7 @@ const dockedShell: React.CSSProperties = {
 const dockedMinimized: React.CSSProperties = {
   position: "fixed",
   right: 24,
-  bottom: 0,
+  bottom: 38,
   width: 320,
   background: "#fff",
   border: "1px solid #c9c9c9",
@@ -555,9 +555,9 @@ const dockedMinimized: React.CSSProperties = {
 const expandedShell: React.CSSProperties = {
   position: "fixed",
   right: 24,
-  bottom: 0,
+  bottom: 38,
   width: "min(960px, calc(100vw - 48px))",
-  height: "calc(100vh - 56px)",
+  height: "calc(100dvh - 94px)",
   background: "#fff",
   border: "1px solid #c9c9c9",
   borderBottom: "none",

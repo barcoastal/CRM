@@ -47,7 +47,7 @@ export function OppTabs({ panels }: { panels: Record<OppTabKey, ReactNode> }) {
               style={{
                 background: "transparent",
                 border: 0,
-                padding: "12px 14px 10px",
+                padding: "7px 12px",
                 fontSize: 13,
                 fontWeight: active ? 700 : 400,
                 color: active ? "#181818" : "#444444",
@@ -62,7 +62,7 @@ export function OppTabs({ panels }: { panels: Record<OppTabKey, ReactNode> }) {
           );
         })}
       </div>
-      <div style={{ padding: 12 }}>
+      <div style={{ padding: 10 }}>
         {panels[tab]}
         {tab === "Details" && (
           <div

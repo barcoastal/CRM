@@ -1,6 +1,7 @@
 import { negotiationEligibilityWhere } from "@/lib/negotiation-eligibility";
 import "./negotiations.css";
-import { ObjectHeader } from "@/components/slds/object-header";
+import { ListView } from "@/components/slds/list-view";
+import styles from "@/components/slds/lightning-list.module.css";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { recordScope } from "@/lib/record-access";
@@ -33,37 +34,31 @@ export default async function NegotiationsPage({ searchParams }: { searchParams:
   });
   function href(page: number) { return `/negotiations?${new URLSearchParams({ q, page: String(page) })}`; }
   return (
-    <div className="ng-page ng-list-page">
-      <ObjectHeader entity="Opportunity" entityLabel="Negotiations" recordTitle="Opportunity negotiations" recordSubtitle="Closed Won opportunities with an Active account." />
-      <header className="ng-list-tools">
-        <form className="ng-list-search" action="/negotiations">
-          <label className="flex min-w-64 flex-1 flex-col gap-1 text-sm">Search opportunities
-            <input name="q" defaultValue={q} placeholder="Opportunity, account, or creditor" className="rounded border p-2" />
-          </label>
-          <button className="rounded bg-[#0176d3] px-4 py-2 text-sm text-white" type="submit">Search</button>
-          <Link href="/negotiations" className="px-2 py-2 text-sm text-[#0176d3]">Clear</Link>
-        </form>
-      </header>
-      <div className="ng-list-table">
-        <p className="border-b p-3 text-sm">{total.toLocaleString()} opportunities · Page {page} of {pageCount}</p>
-        <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50"><tr>{["Opportunity", "Account", "Owner", "Opportunity stage", "Debts", "Balance", ""].map((label) => <th key={label} className="px-4 py-3 font-medium">{label}</th>)}</tr></thead>
-          <tbody>{opportunities.map((opp) => <tr key={opp.id} className="border-t">
-            <td className="px-4 py-3 font-medium"><Link className="text-[#0176d3]" href={`/negotiations/${opp.id}`}>{opp.name || "Unnamed opportunity"}</Link></td>
-            <td className="px-4 py-3">{opp.account?.name ?? "—"}</td>
-            <td className="px-4 py-3">{opp.assignedTo?.name ?? "Unassigned"}</td>
-            <td className="px-4 py-3">{opp.stage}</td>
-            <td className="px-4 py-3">{opp.debts.length}</td>
-            <td className="whitespace-nowrap px-4 py-3">{money(opp.debts.reduce((sum, debt) => sum + debt.currentBalance, 0))}</td>
-            <td className="px-4 py-3"><Link className="font-medium text-[#0176d3]" href={`/negotiations/${opp.id}`}>Open negotiations</Link></td>
-          </tr>)}</tbody>
-        </table>
-        {!opportunities.length && <p className="p-8 text-center text-sm text-muted-foreground">No eligible Closed Won opportunities with an Active account and debts match your search.</p>}
-        <div className="flex justify-between border-t p-3 text-sm">
-          {page > 1 ? <Link href={href(page - 1)}>Previous</Link> : <span />}
+    <ListView
+      entity="Opportunity" entityLabel="Negotiations" viewName="Closed Won · Active Accounts"
+      totalCount={total} rows={opportunities} rowOffset={(page - 1) * 30}
+      rowHref={opp => `/negotiations/${opp.id}`}
+      toolbar={<form className={styles.searchForm} action="/negotiations">
+        <input type="search" name="q" defaultValue={q} aria-label="Search negotiations" placeholder="Opportunity, account, or creditor" className="slds-input" />
+        <button type="submit">Search</button>
+        <Link href="/negotiations">Clear</Link>
+      </form>}
+      columns={[
+        {key: "name", label: "Opportunity", width: 240, render: opp => opp.name || "Unnamed opportunity"},
+        {key: "account", label: "Account", width: 240, render: opp => opp.account?.name ?? "—"},
+        {key: "owner", label: "Owner", width: 160, render: opp => opp.assignedTo?.name ?? "Unassigned"},
+        {key: "stage", label: "Opportunity Stage", width: 220, render: opp => opp.stage},
+        {key: "debts", label: "Debts", width: 80, render: opp => opp.debts.length},
+        {key: "balance", label: "Balance", width: 150, render: opp => money(opp.debts.reduce((sum, debt) => sum + debt.currentBalance, 0))},
+        {key: "open", label: "Actions", width: 160, render: opp => <Link href={`/negotiations/${opp.id}`}>Open negotiations</Link>},
+      ]}
+      footer={<div className="flex items-center justify-between gap-3">
+        <span>Page {page} of {pageCount}</span>
+        <div className="flex gap-4">
+          {page > 1 && <Link href={href(page - 1)}>Previous</Link>}
           {page < pageCount && <Link href={href(page + 1)}>Next</Link>}
         </div>
-      </div>
-    </div>
+      </div>}
+    />
   );
 }

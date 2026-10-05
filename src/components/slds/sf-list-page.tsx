@@ -55,7 +55,7 @@ export interface SfListAction {
 }
 
 export interface SfListPageProps {
-  /** Full-height Lightning list presentation, used by Leads. */
+  /** Compact Lightning presentation shared by CRM record lists. */
   salesforceLayout?: boolean;
   /** entity slug (e.g. "lead", "opportunity", "account", "contact") */
   entity: string;
@@ -131,7 +131,7 @@ export function SfListPage(props: SfListPageProps) {
     currentView,
     page,
     pageSize,
-    salesforceLayout = false,
+    salesforceLayout = true,
   } = props;
 
   const [columnPreference,setColumnPreference] = useState<{view:string|undefined;keys:string[]} | null>(null);
@@ -172,12 +172,12 @@ export function SfListPage(props: SfListPageProps) {
 
   return (
     <SfSelectionProvider ids={ids}>
-      <div className={salesforceLayout ? lightningStyles.list : undefined} data-salesforce-list={salesforceLayout || undefined} style={{ padding: 0 }}>
+      <div className={salesforceLayout ? lightningStyles.list : undefined} data-crm-list={salesforceLayout || undefined} data-salesforce-list={salesforceLayout || undefined} style={{ padding: 0 }}>
         <SfMassActionsToolbar config={massConfig} />
         {salesforceLayout ? (
           <LightningListHeader
-            title={title} subtitle={subtitle} iconSlug={iconSlug} count={count} countLabel={countLabel}
-            actions={actions} controls={controls} viewPicker={viewPicker} pathname={pathname}
+            title={title} subtitle={subtitle} iconSlug={iconSlug} iconColor={iconColor} count={count} countLabel={countLabel}
+            actions={actions} controls={controls} viewPicker={viewPicker ?? (views?.length ? <SfViewPicker views={views} current={currentView ?? "recent"} /> : undefined)} pathname={pathname}
             preservedParams={preservedParams ?? {}} searchQuery={searchQuery ?? ""}
           />
         ) : <Header
@@ -197,7 +197,7 @@ export function SfListPage(props: SfListPageProps) {
           currentView={currentView}
         />}
 
-        {props.summary}
+        {props.summary && <div className={lightningStyles.summary}>{props.summary}</div>}
 
         {displayMode && !salesforceLayout && (
           <div
@@ -251,7 +251,7 @@ export function SfListPage(props: SfListPageProps) {
           }}
         >
           <table
-            className="slds-table slds-table_cell-buffer slds-table_bordered slds-no-row-hover"
+            className={`slds-table slds-table_cell-buffer slds-table_bordered slds-no-row-hover ${salesforceLayout ? lightningStyles.grid : ""}`}
             role="grid"
             style={{
               tableLayout: "fixed",
@@ -381,6 +381,7 @@ export function SfListPage(props: SfListPageProps) {
                 <tr>
                   <td
                     colSpan={columns.length + (salesforceLayout ? 2 : 3)}
+                    className={salesforceLayout ? lightningStyles.empty : undefined}
                     style={{
                       textAlign: "center",
                       padding: 48,

@@ -16,6 +16,7 @@ import { OPP_STAGES as OPPORTUNITY_STAGES } from "@/lib/sf-canonical";
 import { InlineEditCell } from "@/components/lists/inline-edit-cell";
 import { KanbanBoard } from "@/components/lists/kanban-board";
 import { getInlineConfig } from "@/lib/lists/inline-editable-fields";
+import listStyles from "@/components/slds/lightning-list.module.css";
 
 // Display labels for opportunity stages — match SF screenshots which show
 // title-case ("Working Opportunity") rather than DB enum upper-snake.
@@ -394,12 +395,12 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     prisma.opportunity.count({ where: { AND: [where, { updatedAt: { lt: stalledBefore } }] } }),
   ]) : [0, 0];
   const money = (value: number | null) => (value ?? 0).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-  const inspectionSummary = <section className="border border-slate-300 bg-white p-4">
-    <form action="/opportunities" className="flex gap-2 items-end mb-3">
+  const inspectionSummary = <section className={listStyles.summaryPanel}>
+    <form action="/opportunities" className={listStyles.filterBar}>
       {Object.entries(preservedParams).filter(([key]) => key !== "label").map(([key,value]) => <input key={key} type="hidden" name={key} value={value} />)}
       {search && <input type="hidden" name="search" value={search} />}
-      <label className="text-sm">Filter by label<input name="label" defaultValue={params.label ?? ""} maxLength={60} className="block border rounded p-2" /></label>
-      <button className="border rounded px-3 py-2 text-blue-700" type="submit">Apply</button>
+      <label>Filter by label<input name="label" defaultValue={params.label ?? ""} maxLength={60} /></label>
+      <button type="submit">Apply</button>
     </form>
     {params.inspection && <>
       <h2 className="font-semibold">Pipeline Inspection · {total.toLocaleString()} opportunities</h2>

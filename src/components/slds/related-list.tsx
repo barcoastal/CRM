@@ -96,7 +96,7 @@ function slugEntity(entity: string): string {
     Creditor: "partners",
     Case: "case",
     ProgramPlan: "service_contract",
-    Draft: "invoice",
+    Draft: "record",
     Offer: "quotes",
     Settlement: "agent_session",
     Fee: "currency",

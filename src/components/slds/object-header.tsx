@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import styles from "./record-layout.module.css";
+import { LIGHTNING_COLORS } from "@/lib/slds/lightning-colors";
 
 export interface ObjectHeaderField {
   label: string;
@@ -27,23 +29,24 @@ export function ObjectHeader({
   const slug = slugEntity(entity);
   return (
     <div
+      className={styles.header}
       style={{
         background: "#f3f3f3",
         border: "1px solid #c9c9c9",
         borderRadius: 4,
         // Measured from the live org: .slds-page-header padding is 8px 12px.
-        padding: "8px 12px 0",
+        padding: highlights.length ? "8px 12px 0" : "8px 12px",
         boxShadow: "0 2px 2px 0 rgba(0,0,0,0.1)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+      <div className={styles.heading} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
             <div style={{ flexShrink: 0 }}>
               <span
                 title={entityLabel ?? entity}
                 style={{
-                  background: ENTITY_COLOR[slug] ?? "#fcb95b",
+                  background: LIGHTNING_COLORS[slug] ?? LIGHTNING_COLORS.default,
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -101,7 +104,7 @@ export function ObjectHeader({
           </div>
         </div>
         {actions && (
-          <div style={{ flexShrink: 0 }}>
+          <div className={styles.actions} style={{ flexShrink: 0 }}>
             <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
               {actions}
             </div>
@@ -119,6 +122,7 @@ export function ObjectHeader({
           }}
         >
           <ul
+            className={styles.highlights}
             style={{
               // SF packs highlight fields to the LEFT at content width with a
               // fixed gutter; they do not spread across the full header width.
@@ -224,21 +228,6 @@ export function DetailTabs({
   );
 }
 
-// SF Lightning standard-icon brand colors per object.
-const ENTITY_COLOR: Record<string, string> = {
-  account: "#7f8de1",
-  contact: "#a094ed",
-  lead: "#f88962",
-  opportunity: "#ff9a3c",
-  case: "#f2cf5b",
-  household: "#26c8b3",
-  partners: "#56aadc",
-  task: "#4bc076",
-  event: "#bfb6e8",
-  email: "#95aec5",
-  sms: "#56aadc",
-};
-
 function slugEntity(entity: string): string {
   const map: Record<string, string> = {
     Account: "account",
@@ -249,7 +238,7 @@ function slugEntity(entity: string): string {
     Creditor: "partners",
     Case: "case",
     ProgramPlan: "service_contract",
-    Draft: "invoice",
+    Draft: "record",
     Offer: "quotes",
     Settlement: "agent_session",
     Fee: "currency",

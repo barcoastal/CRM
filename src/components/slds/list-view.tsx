@@ -1,13 +1,15 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { ViewPicker, type ListViewOption } from "./view-picker";
 import { ListSelectionProvider } from "@/components/lists/list-table-wrapper";
 import { ListRowCheckbox, ListSelectAllCheckbox } from "@/components/lists/list-checkbox-cell";
 import { RecordLinkCell } from "@/components/lists/record-link-cell";
+import { LightningListHeader } from "./lightning-list-header";
+import styles from "./lightning-list.module.css";
 
 export interface ListViewColumn<T> {
   key: string;
   label: string;
+  width?: number;
   render: (row: T) => ReactNode;
 }
 
@@ -29,6 +31,9 @@ export function ListView<T extends { id: string }>({
   views,
   selectable,
   bulkBar,
+  toolbar,
+  footer,
+  rowOffset = 0,
 }: {
   entity: string;
   entityLabel?: string;
@@ -44,65 +49,46 @@ export function ListView<T extends { id: string }>({
   selectable?: boolean;
   /** rendered above the table when selectable + the BulkActionBar is needed */
   bulkBar?: ReactNode;
+  toolbar?: ReactNode;
+  footer?: ReactNode;
+  rowOffset?: number;
 }) {
   const ids = rows.map((r) => r.id);
   const inner = (
-    <article className="slds-card">
-      {/* Card header — matches SF list-view header */}
-      <div className="slds-card__header slds-grid slds-grid_vertical-align-center">
-        <header className="slds-media slds-media_center slds-has-flexi-truncate">
-          <div className="slds-media__figure">
-            <span className={`slds-icon_container slds-icon-standard-${slugEntity(entity)}`} title={entityLabel ?? entity}>
-              <svg className="slds-icon slds-icon_small" aria-hidden="true">
-                <use xlinkHref={iconHref ?? `/slds/icons/standard-sprite/svg/symbols.svg#${slugEntity(entity)}`} />
-              </svg>
-              <span className="slds-assistive-text">{entityLabel ?? entity}</span>
-            </span>
-          </div>
-          <div className="slds-media__body">
-            <div className="slds-text-color_weak slds-text-body_small">{entityLabel ?? entity}s</div>
-            <h2 className="slds-card__header-title">
-              {views ? (
-                <ViewPicker views={views} currentName={viewName} entity={entity} />
-              ) : (
-                <span className="slds-text-heading_medium" style={{ fontWeight: 700, color: "#181818" }}>
-                  {viewName}
-                </span>
-              )}
-            </h2>
-            <div className="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
-              {totalCount} item{totalCount === 1 ? "" : "s"} · Updated a few seconds ago
-            </div>
-          </div>
-        </header>
-        <div className="slds-no-flex">
-          {newHref && (
-            <Link href={newHref} className="slds-button slds-button_neutral">
-              New
-            </Link>
-          )}
-        </div>
-      </div>
+    <article className={styles.list} data-crm-list data-salesforce-list>
+      <LightningListHeader
+        title={entityLabel ?? `${entity}s`}
+        subtitle={viewName}
+        iconSlug={slugEntity(entity)}
+        iconHref={iconHref}
+        count={totalCount}
+        countLabel={totalCount.toLocaleString("en-US")}
+        actions={newHref ? [{ label: "New", href: newHref }] : []}
+        viewPicker={views ? <ViewPicker views={views} currentName={viewName} entity={entity} /> : undefined}
+        searchControl={toolbar}
+      />
 
       {/* Table */}
-      <div className="slds-card__body slds-card__body_inner" style={{ padding: 0 }}>
-        {selectable && bulkBar}
+      {selectable && bulkBar}
+      <div className={styles.viewport}>
         <table
-          className="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped"
+          className={`slds-table slds-table_cell-buffer slds-table_bordered ${styles.grid}`}
           role="grid"
+          style={{ tableLayout: "fixed", width: "100%", minWidth: columns.reduce((width, c, i) => width + (c.width ?? (i === 0 ? 240 : 160)), 82), borderCollapse: "collapse" }}
         >
+          <colgroup>
+            <col style={{ width: 46 }} /><col style={{ width: 36 }} />
+            {columns.map((c, i) => <col key={c.key} style={{ width: c.width ?? (i === 0 ? 240 : 160) }} />)}
+          </colgroup>
           <thead>
             <tr className="slds-line-height_reset">
-              {selectable && (
-                <th scope="col" style={{ width: 36, textAlign: "center" }}>
-                  <ListSelectAllCheckbox />
-                </th>
-              )}
+              <th scope="col"><span className="slds-assistive-text">Row</span></th>
+              <th scope="col">{selectable && <ListSelectAllCheckbox />}</th>
               {columns.map((c) => (
-                <th key={c.key} scope="col">
-                  <div className="slds-truncate slds-text-title_caps" title={c.label}>
+                <th key={c.key} scope="col" style={{ padding: 0, borderRight: "1px solid #c9c9c9" }}>
+                  <span className={styles.columnTitle} title={c.label}>
                     {c.label}
-                  </div>
+                  </span>
                 </th>
               ))}
             </tr>
@@ -110,20 +96,17 @@ export function ListView<T extends { id: string }>({
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={columns.length + (selectable ? 1 : 0)} style={{ textAlign: "center", padding: 40, color: "#747474" }}>
+                <td colSpan={columns.length + 2} className={styles.empty}>
                   No records match.
                 </td>
               </tr>
             )}
-            {rows.map((row) => {
+            {rows.map((row, index) => {
               const href = rowHref?.(row);
               return (
                 <tr key={row.id} className="slds-hint-parent">
-                  {selectable && (
-                    <td role="gridcell" style={{ width: 36, textAlign: "center" }}>
-                      <ListRowCheckbox id={row.id} />
-                    </td>
-                  )}
+                  <td role="gridcell">{rowOffset + index + 1}</td>
+                  <td role="gridcell">{selectable && <ListRowCheckbox id={row.id} />}</td>
                   {columns.map((c, ci) => (
                     <td key={c.key} role="gridcell">
                       <div className="slds-truncate" title={typeof c.render === "function" ? "" : ""}>
@@ -142,6 +125,7 @@ export function ListView<T extends { id: string }>({
             })}
           </tbody>
         </table>
+        {footer && <div className={styles.pager}>{footer}</div>}
       </div>
     </article>
   );
@@ -160,7 +144,7 @@ function slugEntity(entity: string): string {
     Creditor: "partners",
     Case: "case",
     ProgramPlan: "service_contract",
-    Draft: "invoice",
+    Draft: "record",
     Offer: "quotes",
     Settlement: "agent_session",
     Fee: "currency",

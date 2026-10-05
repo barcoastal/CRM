@@ -15,11 +15,9 @@ import {
   Delete,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { usePhone } from "./provider";
 import { DISPOSITIONS, isTerminal } from "@/lib/call-center/model";
 export function PhonePanel({ inline = false }: { inline?: boolean }) {
-  const pathname = usePathname();
   const p = usePhone(),
     call = p.active;
   const [number, setNumber] = useState(""),
@@ -69,22 +67,12 @@ export function PhonePanel({ inline = false }: { inline?: boolean }) {
       setSaving(false);
     }
   }
-  if (!inline && !p.open && pathname === "/leads") return null;
-  if (!inline && !p.open)
-    return (
-      <button className="cc-phone-launch" onClick={() => p.setOpen(true)}>
-        <Phone size={18} />
-        {call
-          ? `${p.incoming ? "Incoming call" : done ? "Wrap up" : "On call"} · ${duration}`
-          : "CRM Phone"}
-        <span className={`cc-dot ${p.connected ? "green" : ""}`} />
-      </button>
-    );
+  if (!inline && !p.open) return null;
   return (
     <aside
       className={`cc-phone ${inline ? "cc-phone-inline" : "cc-phone-floating"}`}
       aria-label="CRM phone"
-      style={!inline && pathname === "/leads" ? { bottom: 46 } : undefined}
+      style={!inline ? { bottom: 46 } : undefined}
     >
       <header className="cc-phone-head">
         <span>

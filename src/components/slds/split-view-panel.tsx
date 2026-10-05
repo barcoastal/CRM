@@ -117,7 +117,7 @@ export function SplitViewPanel({ entity }: { entity: string }) {
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "stretch", flexShrink: 0 }}>
+    <div className="sf-split-hide" style={{ display: "flex", alignItems: "stretch", flexShrink: 0 }}>
       {open && (
         <aside
           style={{

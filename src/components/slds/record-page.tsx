@@ -3,6 +3,7 @@ import { ObjectHeader, type ObjectHeaderField } from "./object-header";
 import { Path, type PathStage, type PathAdvance } from "./path";
 import { RegisterConsoleTab } from "@/components/slds/console-nav";
 import { SplitViewPanel } from "@/components/slds/split-view-panel";
+import styles from "./record-layout.module.css";
 
 /**
  * Canonical SF Lightning record-page layout:
@@ -43,7 +44,7 @@ export function RecordPage({
   rail?: ReactNode;
 }) {
   return (
-    <div style={{ display: "flex", alignItems: "flex-start" }}>
+    <div className={styles.record} data-crm-record style={{ display: "flex", alignItems: "flex-start" }}>
       <SplitViewPanel entity={entity} />
       <div style={{ flex: 1, minWidth: 0 }}>
       {/* SF record pages sit the header + path on a light-blue textured
