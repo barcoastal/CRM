@@ -538,9 +538,9 @@ export function SignClient(props: Props) {
   }
   return (
     <div className={styles.shell} ref={shellRef}>
-      <header className={styles.header}>
-        {logo}
-        <div className={styles.heading}>{documentName}</div>
+      <header className={`${styles.header} ${styles.reviewHeader}`}>
+        <div className={styles.heading}>Review and complete</div>
+        <button className={styles.headerFinish} disabled={!loaded || busy} onClick={()=>remaining.length ? next() : !consent ? setShowConsent(true) : void finish()}>Finish</button>
         <div className={styles.menu}>
           <button className={styles.button} onClick={() => setMenu((v) => !v)}>
             Other options ▾
@@ -576,6 +576,8 @@ export function SignClient(props: Props) {
       </header>
       <DocumentViewer
         url={previewUrl ?? `${base}/pdf`}
+        envelopeId={props.envelopeId}
+        onStart={loaded ? next : undefined}
         fields={fields}
         activeId={active}
         renderField={documentField}

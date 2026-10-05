@@ -1076,3 +1076,40 @@
     font-size: 26px;
   }
 }
+
+/* Recipient review surface; editor controls keep their existing layout. */
+.reviewHeader { background:#274f9e; color:white; height:64px; padding:10px 20px; gap:12px; }
+.reviewHeader .heading { font-size:20px; }
+.reviewHeader .button,.headerFinish { background:transparent; border:1px solid #ffffff70; border-radius:4px; color:white; padding:10px 20px; cursor:pointer; }
+.headerFinish:disabled { opacity:.5; cursor:wait; }
+.reviewHeader .menuList { color:var(--ink); }
+.viewerShell:not(.editorViewer) .documentArea { padding-top:40px; }
+.viewerTools svg { margin:auto; }
+.viewerTools button:focus-visible,.viewerTools a:focus-visible { outline:2px solid #274f9e; outline-offset:4px; }
+.envelopeStamp { position:absolute; top:-22px; left:0; max-width:100%; font-size:10px; line-height:16px; color:#383838; overflow-wrap:anywhere; }
+.startFlag { position:absolute; left:-96px; top:18px; width:96px; padding:14px 10px; border:0; border-radius:4px 0 0 4px; background:#ffcb22; color:#29252f; font-weight:700; cursor:pointer; z-index:2; }
+.summaryPanel { width:320px; flex-shrink:0; align-self:flex-start; max-height:calc(100% - 40px); overflow:auto; position:relative; margin:20px 10px; padding:24px; background:white; border-radius:10px; box-shadow:0 3px 10px #33284d22; line-height:1.5; }
+.summaryPanel h2 { font-size:21px; margin:20px 0 12px; }
+.summaryPanel p { font-size:14px; margin:12px 0; }
+.summaryPanel ul { list-style:none; padding:0; }
+.summaryPanel li { border-top:1px solid var(--line); padding:12px 0; }
+.summaryPanel li button { color:#274f9e; background:none; border:0; text-decoration:underline; cursor:pointer; }
+.summaryBadge { display:inline-block; font-size:12px; padding:4px 8px; background:#f4efff; border-radius:20px; }
+.closePanel { position:absolute; right:12px; top:14px; border:0; background:none; cursor:pointer; }
+.toolError { position:absolute; z-index:30; top:4px; left:12px; right:100px; background:#fff0ed; padding:12px; }
+.toolError button { float:right; }
+@media(min-width:1100px) { .viewerShell:not(.editorViewer) .documentArea { padding-left:110px; } }
+@media(max-width:700px) {
+ .reviewHeader { height:56px; padding:8px 12px; gap:8px; }
+ .reviewHeader .heading { font-size:16px; }
+ .reviewHeader .button,.headerFinish { padding:8px 10px; font-size:12px; }
+ .summaryPanel { position:absolute; top:48px; right:8px; left:8px; width:auto; max-height:calc(100% - 64px); margin:0; z-index:21; padding:20px; }
+ .startFlag { display:none; }
+ .envelopeStamp { font-size:8px; top:-24px; line-height:11px; }
+ .viewerShell:not(.editorViewer) .documentArea { padding-top:32px; }
+ .viewerTools { overflow:visible; }
+ .viewerTools > button { min-width:32px; }
+ .viewerTools .zoom button { min-width:28px; }
+ .viewerTools .zoom button:last-child { display:none; }
+ .viewerTools > button[aria-label="Print document"] { display:none; }
+}
