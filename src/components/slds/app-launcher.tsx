@@ -41,6 +41,7 @@ const APPS: AppTile[] = [
   { label: "AI Dialer", href: "/ai-dialer", description: "AI qualification + meeting booking" },
   { label: "Approvals", href: "/approvals", description: "Review and submit approval requests" },
   { label: "Admin", href: "/integrations", description: "Integrations + users" },
+  { label: "Google Chat", href: "/google-chat", description: "Message coworkers through Google Workspace" },
   { label: "Chatter", href: "/chatter", description: "Team feeds + groups + mentions" },
   { label: "Files", href: "/files", description: "Central content library" },
 ];
@@ -82,6 +83,7 @@ const ITEMS: ItemTile[] = [
   { label: "War Room", href: "/war-room", entity: "Campaign" },
   { label: "Reports", href: "/reports", entity: "Report" },
   { label: "Notifications", href: "/notifications", entity: "Settings" },
+  { label: "Google Chat", href: "/google-chat", entity: "Chatter" },
   { label: "Chatter", href: "/chatter", entity: "Lead" },
   { label: "Groups", href: "/chatter/groups", entity: "Lead" },
 ];
