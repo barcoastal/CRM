@@ -1,4 +1,7 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
+import { ViewAsUserButton } from "@/components/admin/user-preview";
 import { prisma } from "@/lib/prisma";
 import { ListView, type ListViewColumn } from "@/components/slds/list-view";
 import { StatusPill } from "@/components/slds/record-page";
@@ -16,6 +19,10 @@ type UserRow = {
 };
 
 export default async function UsersPage() {
+  const session = await auth();
+  if (!session) redirect("/login");
+  if (!hasPermission(session.user.permissions, "User.View")) return <p>Access denied. You do not have permission to view users.</p>;
+  const canPreview = session.user.role === "ADMIN" && !session.impersonation && !session.user.mustResetPassword;
   const users = await prisma.user.findMany({
     include: {
       profile: { select: { name: true, label: true } },
@@ -43,6 +50,11 @@ export default async function UsersPage() {
       render: (u) => u.lastLoginAt?.toLocaleString() ?? "—",
     },
   ];
+  if (canPreview) columns.push({
+    key: "preview", label: "Preview", width: 150,
+    render: u => u.isActive && u.id !== session.user.id
+      ? <ViewAsUserButton userId={u.id} userName={u.name} /> : <span>—</span>,
+  });
 
   return (
     <ListView
@@ -53,7 +65,7 @@ export default async function UsersPage() {
       rows={users as UserRow[]}
       columns={columns}
       rowHref={(u) => `/settings/users/${u.id}`}
-      newHref="/settings/users/new"
+      newHref={hasPermission(session.user.permissions, "User.Create") ? "/settings/users/new" : undefined}
     />
   );
 }

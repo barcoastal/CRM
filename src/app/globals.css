@@ -439,3 +439,16 @@ img, video, canvas { max-width: 100%; height: auto; }
   .sf-global-utilities button[title="Give feedback"] > span { display: none; }
   .sf-app-badge, .sf-app-badge-icon { width: 140px; }
 }
+
+/* Persistent identity indicator when an administrator previews another user. */
+.crm-user-preview { position: fixed; inset: 0 0 auto; z-index: 11000; min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 14px; color: #fff; background: #16325c; font-size: 13px; }
+.crm-user-preview button { flex-shrink: 0; border: 1px solid #c3d5ed; border-radius: 4px; padding: 3px 10px; background: #fff; color: #16325c; font-size: 12px; cursor: pointer; }
+.crm-user-preview button:disabled { opacity: .65; cursor: wait; }
+body:has(.crm-user-preview) { padding-top: 40px; }
+body:has(.crm-user-preview) .sf-header { top: 40px; }
+body:has(.crm-user-preview) .sf-shell-main { min-height: 0; }
+@media (max-width: 640px) {
+  .crm-user-preview { font-size: 11px; height: 64px; padding-inline: 8px; }
+  body:has(.crm-user-preview) { padding-top: 64px; }
+  body:has(.crm-user-preview) .sf-header { top: 64px; }
+}

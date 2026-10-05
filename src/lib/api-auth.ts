@@ -21,6 +21,9 @@ export interface AuthedSession {
  */
 export async function requireAuthOrRespond(required?: string): Promise<{ session: AuthedSession } | { response: NextResponse }> {
   const s = await auth();
+  if (s?.impersonation?.unavailable) {
+    return { response: NextResponse.json({ error: "User preview is no longer available" }, { status: 403 }) };
+  }
   if (!s?.user?.id) {
     return { response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
@@ -42,6 +45,7 @@ export async function requireAuthOrRespond(required?: string): Promise<{ session
  */
 export async function requireAuth(required?: string): Promise<AuthedSession> {
   const s = await auth();
+  if (s?.impersonation?.unavailable) throw new Error("User preview is no longer available");
   if (!s?.user?.id) throw new Error("Unauthorized");
   const session: AuthedSession = {
     userId: s.user.id,

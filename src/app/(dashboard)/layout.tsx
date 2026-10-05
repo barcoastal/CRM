@@ -13,7 +13,9 @@ export default async function DashboardLayout({
 }) {
   const session = await auth();
   if (!session) redirect("/login");
-  if (session.user?.mustResetPassword) redirect("/reset-password");
+  if (session.user?.mustResetPassword && !session.impersonation) redirect("/reset-password");
+  if (session.impersonation?.unavailable) return <p style={{ padding: 24 }}>This user preview is no longer available. Use “Return to admin” above.</p>;
+  if (session.impersonation && session.user.mustResetPassword) return <p style={{ padding: 24 }}>This user must set their password before accessing the CRM. Use “Return to admin” above.</p>;
 
   // Only closers get the Five9 popup dialer (toggled per user in Settings → Users).
   const me = session.user?.id
@@ -25,7 +27,7 @@ export default async function DashboardLayout({
       canCall={hasPermission(session.user?.permissions ?? [], "Call.Log")}
       enabled={process.env.CRM_DIALER_MODE === "twilio"}
     >
-      <SldsShell userName={session.user?.name ?? undefined}>
+      <SldsShell userName={session.user?.name ?? undefined} preview={!!session.impersonation} permissions={session.user.permissions}>
         {children}
         {process.env.CRM_DIALER_MODE !== "twilio" && me?.isCloser && <PhoneDock />}
       </SldsShell>

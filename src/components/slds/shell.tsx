@@ -8,9 +8,13 @@ import styles from "./shell.module.css";
 export function SldsShell({
   children,
   userName,
+  preview = false,
+  permissions = [],
 }: {
   children: React.ReactNode;
   userName?: string;
+  preview?: boolean;
+  permissions?: string[];
 }) {
   const initials = (userName ?? "U")
     .split(" ")
@@ -22,7 +26,7 @@ export function SldsShell({
 
   return (
     <div className={styles.shell}>
-      <SldsHeader userInitials={initials} userName={userName} />
+      <SldsHeader userInitials={initials} userName={userName} preview={preview} permissions={permissions} />
       <main className={`sf-shell-main ${styles.main}`}>{children}</main>
       <UtilityBar />
       <DockedComposer />

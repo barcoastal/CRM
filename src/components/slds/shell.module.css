@@ -10,6 +10,10 @@
 .shell:has(> .main > div > [data-crm-list]) { height: 100dvh; min-height: 0; overflow: hidden; }
 .main:has(> div > [data-crm-list]), .main > div:has(> [data-crm-list]) { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 .main:has(> div > [data-crm-list]) { padding-bottom: 38px; }
+:global(body:has(.crm-user-preview)) .shell { min-height: calc(100dvh - 40px); }
+:global(body:has(.crm-user-preview)) .shell:has([data-crm-list]) { height: calc(100dvh - 40px); }
+/* List shells own their scroll container; their header is already below the banner. */
+:global(body:has(.crm-user-preview)) .shell:has([data-crm-list]) > :global(.sf-header) { top: 0; }
 /* Forms and dashboard panels use the same compact card treatment. */
 .main [data-slot="card"] { border: 1px solid #c9c9c9; border-radius: 4px; box-shadow: none; gap: 12px; padding-block: 12px; font-size: 13px; }
 .main [data-slot="card-header"], .main [data-slot="card-content"], .main [data-slot="card-footer"] { padding-inline: 12px; }
@@ -17,4 +21,8 @@
 @media (max-width: 1024px) {
   .main { padding-bottom: 46px !important; }
   .main:has(> [data-crm-list]), .main:has(> div > [data-crm-list]) { padding-bottom: 38px !important; }
+}
+@media (max-width: 640px) {
+  :global(body:has(.crm-user-preview)) .shell { min-height: calc(100dvh - 64px); }
+  :global(body:has(.crm-user-preview)) .shell:has([data-crm-list]) { height: calc(100dvh - 64px); }
 }

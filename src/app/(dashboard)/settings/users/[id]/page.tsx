@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { StatusPill } from "@/components/slds/record-page";
 import { RelatedList } from "@/components/slds/related-list";
+import { auth } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
+import { ViewAsUserButton } from "@/components/admin/user-preview";
 
 /**
  * User record page (admin view) - SF-style: what a user owns across every
@@ -10,6 +13,8 @@ import { RelatedList } from "@/components/slds/related-list";
  * recent tasks/calls). The edit form lives at ./edit.
  */
 export default async function UserRecordPage({ params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session || !hasPermission(session.user.permissions, "User.View")) return <p>Access denied. You do not have permission to view users.</p>;
   const { id } = await params;
   const user = await prisma.user.findUnique({
     where: { id },
@@ -58,8 +63,9 @@ export default async function UserRecordPage({ params }: { params: Promise<{ id:
           </div>
         </div>
         <StatusPill label={user.isActive ? "Active" : "Inactive"} tone={user.isActive ? "success" : "neutral"} />
-        <div style={{ marginLeft: "auto" }}>
-          <Link href={`/settings/users/${user.id}/edit`} className="slds-button slds-button_neutral">Edit</Link>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          {session.user.role === "ADMIN" && !session.impersonation && !session.user.mustResetPassword && user.isActive && user.id !== session.user.id && <ViewAsUserButton userId={user.id} userName={user.name} />}
+          {hasPermission(session.user.permissions, "User.Edit") && <Link href={`/settings/users/${user.id}/edit`} className="slds-button slds-button_neutral">Edit</Link>}
         </div>
       </div>
 

@@ -13,6 +13,7 @@ import { ConsoleNav, readNavMode, setNavMode } from "@/components/slds/console-n
 import { EditNavModal, applyNavPrefs, type NavItem } from "./edit-nav-modal";
 import { avatarFor } from "@/lib/avatars";
 import { NotificationsPanel, useNotificationsCount } from "@/components/notifications/notifications-panel";
+import { canUsePermission, canViewNavigation } from "@/lib/navigation-access";
 
 /** Circular user avatar — playful illustrated portrait, initials behind it. */
 function SfAvatar({ seed, initials, className }: { seed?: string; initials: string; className?: string }) {
@@ -81,6 +82,16 @@ const TABS: TabItem[] = [
   { label: "Campaigns", href: "/campaigns", entity: "Campaign" },
 ];
 
+const CREATE_LINKS = [
+  { href: "/leads/new", label: "Lead", permission: "Lead.Create" },
+  { href: "/accounts/new", label: "Account", permission: "Account.Create" },
+  { href: "/contacts/new", label: "Contact", permission: "Contact.Create" },
+  { href: "/opportunities/new", label: "Opportunity", permission: "Opportunity.Create" },
+  { href: "/cases/new", label: "Case", permission: "Case.Create" },
+  { href: "/tasks/new", label: "Task", permission: "Task.Create" },
+  { href: "/events/new", label: "Event", permission: "Event.Create" },
+];
+
 /**
  * Real Salesforce Lightning header — white single-row bar with:
  *  - tiny global search at top
@@ -93,10 +104,14 @@ export function SldsHeader({
   appName = "Debt Settlement",
   userInitials = "U",
   userName,
+  preview = false,
+  permissions = [],
 }: {
   appName?: string;
   userInitials?: string;
   userName?: string;
+  preview?: boolean;
+  permissions?: string[];
 }) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [launcherOpen, setLauncherOpen] = useState(false);
@@ -112,19 +127,20 @@ export function SldsHeader({
   const [navMode, setNavModeState] = useState<"console" | "standard">("standard");
   const pathname = usePathname();
   const phone = useOptionalPhone();
-  const allowedTabs = visibleTabs.filter(t => !phone || t.href !== "/floor-manager" || phone.data?.sales?.access.floor).map(t => t.href === "/call-center" && phone?.data?.sales?.access ? { ...t, href: phone.data.sales.access.home, label: phone.data.sales.access.floor ? "Live Floor" : phone.data.sales.access.closer ? "Closer Desk" : "Opener Desk" } : t);
+  const allowedTabs = visibleTabs.filter(t => canViewNavigation(t.href, permissions) && (!phone || t.href !== "/floor-manager" || phone.data?.sales?.access.floor)).map(t => t.href === "/call-center" && phone?.data?.sales?.access ? { ...t, href: phone.data.sales.access.home, label: phone.data.sales.access.floor ? "Live Floor" : phone.data.sales.access.closer ? "Closer Desk" : "Opener Desk" } : t);
   const currentHref = centerNavHref(pathname);
   const activeHref = allowedTabs
     .filter(t => currentHref === t.href || (t.href !== "/dashboard" && currentHref.startsWith(`${t.href}/`)))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+  const createLinks = CREATE_LINKS.filter(item => canUsePermission(permissions, item.permission));
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
-      setVisibleTabs(applyNavPrefs(TABS));
-      setNavModeState(readNavMode());
+      setVisibleTabs(preview ? TABS : applyNavPrefs(TABS));
+      setNavModeState(preview ? "standard" : readNavMode());
     });
     return () => cancelAnimationFrame(frame);
-  }, []);
+  }, [preview]);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -165,7 +181,7 @@ export function SldsHeader({
     <header className="sf-header" aria-label="Coastal CRM">
       {/* Row 1 — minimal: small left app badge, centered search, right utility icons */}
       <div className="sf-global-bar">
-        <Link href="/dashboard" className="sf-app-badge" title="Coastal CRM home">
+        <Link href={canViewNavigation("/dashboard", permissions) ? "/dashboard" : allowedTabs[0]?.href ?? "/my-settings/personal-information"} className="sf-app-badge" title="Coastal CRM home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/brand/coastal-debt-logo.svg"
@@ -181,17 +197,17 @@ export function SldsHeader({
         </div>
 
         <div className="sf-global-utilities">
-          <Link href="/leads" className="sf-util-btn" title="Favorites">
+          <Link href={canViewNavigation("/leads", permissions) ? "/leads" : allowedTabs[0]?.href ?? "/my-settings/personal-information"} className="sf-util-btn" title="Favorites">
             <svg className="sf-util-icon" aria-hidden="true">
               <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#favorite" />
             </svg>
           </Link>
-          <Link href="/leads" className="sf-util-btn sf-util-btn-chev" title="Favorites list">
+          <Link href={canViewNavigation("/leads", permissions) ? "/leads" : allowedTabs[0]?.href ?? "/my-settings/personal-information"} className="sf-util-btn sf-util-btn-chev" title="Favorites list">
             <svg className="sf-util-icon-small" aria-hidden="true">
               <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#down" />
             </svg>
           </Link>
-          <div style={{ position: "relative" }}>
+          {createLinks.length > 0 && <div style={{ position: "relative" }}>
             <button
               className="sf-util-btn"
               title="Create new..."
@@ -204,16 +220,10 @@ export function SldsHeader({
             {quickOpen && (
               <div className="sf-profile-menu" style={{ position: "absolute", top: 36, right: 0, minWidth: 200 }}>
                 <div className="sf-profile-name">Create New</div>
-                <Link href="/leads/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Lead</Link>
-                <Link href="/accounts/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Account</Link>
-                <Link href="/contacts/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Contact</Link>
-                <Link href="/opportunities/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Opportunity</Link>
-                <Link href="/cases/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Case</Link>
-                <Link href="/tasks/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Task</Link>
-                <Link href="/events/new" className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ Event</Link>
+                {createLinks.map(item => <Link key={item.href} href={item.href} className="sf-profile-item" onClick={() => setQuickOpen(false)}>+ {item.label}</Link>)}
               </div>
             )}
-          </div>
+          </div>}
           <FeedbackButton />
           <a
             href="https://www.lightningdesignsystem.com/"
@@ -226,11 +236,11 @@ export function SldsHeader({
               <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#question_mark" />
             </svg>
           </a>
-          <Link href="/settings" className="sf-util-btn" title="Setup">
+          {(canUsePermission(permissions, "User.View") || canUsePermission(permissions, "Permission.Manage") || canUsePermission(permissions, "Integration.Manage")) && <Link href="/settings" className="sf-util-btn" title="Setup">
             <svg className="sf-util-icon" aria-hidden="true">
               <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#setup" />
             </svg>
-          </Link>
+          </Link>}
           <NotificationsBell
             open={notificationsOpen}
             onToggle={() => setNotificationsOpen((o) => !o)}
@@ -249,13 +259,14 @@ export function SldsHeader({
               userInitials={userInitials}
               onClose={() => setProfileOpen(false)}
               navMode={navMode}
+              preview={preview}
             />
           )}
         </div>
       </div>
 
       {/* App Launcher modal */}
-      <AppLauncher open={launcherOpen} onClose={() => setLauncherOpen(false)} />
+      <AppLauncher open={launcherOpen} onClose={() => setLauncherOpen(false)} permissions={permissions} />
 
       {/* Row 2 — console workspace bar OR the standard horizontal tab nav */}
       {navMode === "console" ? (
@@ -272,7 +283,7 @@ export function SldsHeader({
             {Array.from({ length: 9 }).map((_, i) => <span key={i} />)}
           </span>
         </button>
-        <Link href="/dashboard" className="sf-app-name">{appName}</Link>
+        <Link href={canViewNavigation("/dashboard", permissions) ? "/dashboard" : allowedTabs[0]?.href ?? "/my-settings/personal-information"} className="sf-app-name">{appName}</Link>
         <nav ref={navRef} className="sf-tab-nav" aria-label="Main navigation">
           {allowedTabs.slice(0, 11).map((t) => {
             const active = activeHref === t.href;
@@ -337,7 +348,7 @@ export function SldsHeader({
               )}
             </span>
           )}
-        <button
+        {!preview && <button
           className="sf-tab-edit"
           title="Edit tabs"
           onClick={() => setEditNavOpen(true)}
@@ -345,7 +356,7 @@ export function SldsHeader({
           <svg className="sf-util-icon" aria-hidden="true">
             <use xlinkHref="/slds/icons/utility-sprite/svg/symbols.svg#edit" />
           </svg>
-        </button>
+        </button>}
       </div>
       )}
       <div className="sf-decor-band" aria-hidden="true" />
@@ -353,7 +364,7 @@ export function SldsHeader({
       <EditNavModal
         open={editNavOpen}
         onClose={() => setEditNavOpen(false)}
-        allTabs={TABS}
+        allTabs={TABS.filter(t => canViewNavigation(t.href, permissions))}
         onSaved={() => setVisibleTabs(applyNavPrefs(TABS))}
       />
     </header>
@@ -365,11 +376,13 @@ function SldsProfileMenu({
   userInitials,
   onClose,
   navMode,
+  preview,
 }: {
   userName?: string;
   userInitials: string;
   onClose: () => void;
   navMode: "console" | "standard";
+  preview: boolean;
 }) {
   return (
     <div
@@ -396,9 +409,9 @@ function SldsProfileMenu({
           </div>
         </div>
       </div>
-      <button type="button" className="sf-profile-item sf-nav-mode-switch" onClick={() => setNavMode(navMode === "console" ? "standard" : "console")}>
+      {!preview && <button type="button" className="sf-profile-item sf-nav-mode-switch" onClick={() => setNavMode(navMode === "console" ? "standard" : "console")}>
         Switch to {navMode === "console" ? "Standard" : "Console"} view
-      </button>
+      </button>}
     </div>
   );
 }

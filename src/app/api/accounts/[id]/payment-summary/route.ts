@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { rollupPayments } from "@/lib/payment-rollup";
+import { auth } from "@/lib/auth";
 
 /**
  * Live rollup of the Account's payment state. Recomputes from Draft + Fee +
@@ -46,7 +47,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   const rollup = rollupPayments({ drafts, fees, settlements });
 
   // Cache the result
-  await prisma.paymentSummary.upsert({
+  const session = await auth();
+  if (!session?.impersonation) await prisma.paymentSummary.upsert({
     where: { accountId: id },
     create: {
       accountId: id,

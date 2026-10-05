@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ObjectIcon } from "./icon";
+import { canViewNavigation } from "@/lib/navigation-access";
 
 /**
  * Salesforce-style App Launcher modal.
@@ -85,7 +86,7 @@ const ITEMS: ItemTile[] = [
   { label: "Groups", href: "/chatter/groups", entity: "Lead" },
 ];
 
-export function AppLauncher({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AppLauncher({ open, onClose, permissions = [] }: { open: boolean; onClose: () => void; permissions?: string[] }) {
   const [query, setQuery] = useState("");
 
   // Close on Esc while the launcher is open.
@@ -98,8 +99,8 @@ export function AppLauncher({ open, onClose }: { open: boolean; onClose: () => v
   if (!open) return null;
 
   const q = query.trim().toLowerCase();
-  const apps = q ? APPS.filter((a) => a.label.toLowerCase().includes(q)) : APPS;
-  const items = q ? ITEMS.filter((i) => i.label.toLowerCase().includes(q)) : ITEMS;
+  const apps = APPS.filter(a => canViewNavigation(a.href, permissions) && (!q || a.label.toLowerCase().includes(q)));
+  const items = ITEMS.filter(i => canViewNavigation(i.href, permissions) && (!q || i.label.toLowerCase().includes(q)));
 
   return (
     <div
