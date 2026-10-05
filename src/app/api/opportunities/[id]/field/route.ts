@@ -1,3 +1,4 @@
+import { reevaluateAddendum } from "@/lib/contracts/addendum";
 import type { Opportunity } from "@/generated/prisma/client";
 import { triggerUpdate, makeCtx } from "@/lib/triggers/runner";
 import { AutomationValidationError } from "@/lib/automation/errors";
@@ -66,8 +67,11 @@ export async function PATCH(
     if (result.typedColumn) updateData[result.typedColumn.name] = result.typedColumn.value;
     if (result.sfDataPatch) updateData.sfDataJson = mergeSfData(existing.sfDataJson, result.sfDataPatch);
 
-    const updated = await triggerUpdate<Opportunity>("opportunity", id, updateData, makeCtx(session.userId));
+    let updated = await triggerUpdate<Opportunity>("opportunity", id, updateData, makeCtx(session.userId));
 
+    if (fieldName === 'addendumRequired' || fieldName === 'Addendum_Required__c' || fieldName === 'Addendum_Required_Reason__c') {
+      updated = await reevaluateAddendum(id, fieldName === 'Addendum_Required_Reason__c' ? String(newValue ?? '').split(';').map(v=>v.trim()).includes('Manual Assignment') : newValue === true) ?? updated;
+    }
     if (result.typedColumn?.name !== "stage") await prisma.opportunityHistory.create({
       data: {
         opportunityId: id,
@@ -87,7 +91,7 @@ export async function PATCH(
       after: { [result.historyField]: result.newDisplay },
     }).catch((err) => { console.error("[opportunities/field] auditWrite failed:", err); });
 
-    return ssnSafeJson({ ok: true, value: isSsnField(fieldName) ? maskSsn(result.newDisplay) : result.newDisplay, opportunity: updated });
+    return ssnSafeJson({ ok: true, value: fieldName === "addendumRequired" ? updated.addendumRequired : isSsnField(fieldName) ? maskSsn(result.newDisplay) : result.newDisplay, opportunity: updated });
   } catch (e) {
     if (e instanceof FieldUpdateError || e instanceof AutomationValidationError) {
       return ssnSafeJson({ error: e.message }, { status: 400 });

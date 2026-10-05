@@ -1,3 +1,4 @@
+import { refreshAddendum, snapshot } from "@/lib/contracts/addendum";
 import { canAccessRecord } from "@/lib/record-access";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -47,7 +48,15 @@ export async function PATCH(
   if (typeof body.negotiationStatus === "string" || body.negotiationStatus === null) data.negotiationStatus = body.negotiationStatus || null;
   if (typeof body.notes === "string" || body.notes === null) data.notes = body.notes || null;
 
-  const updated = await prisma.debt.update({ where: { id }, data });
+  if (typeof body.creditorName === 'string' && body.creditorName !== existing.creditorName) {
+    data.creditorId=null;
+    data.sfDataJson=JSON.stringify({...snapshot(typeof data.sfDataJson==='string' ? data.sfDataJson : existing.sfDataJson),Current_Creditor__c:null});
+  }
+  const updated = await prisma.$transaction(async tx => {
+    const row=await tx.debt.update({where:{id},data});
+    if(existing.opportunityId) await refreshAddendum(tx,existing.opportunityId);
+    return row;
+  });
   return NextResponse.json(updated);
 }
 
@@ -60,6 +69,9 @@ export async function DELETE(
   const { id } = await params;
   const existing = await prisma.debt.findUnique({ where: { id } });
   if (!existing || (existing.opportunityId && !await canAccessRecord("opportunity", existing.opportunityId))) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  await prisma.debt.delete({ where: { id } });
+  await prisma.$transaction(async tx => {
+    await tx.debt.delete({where:{id}});
+    if(existing.opportunityId) await refreshAddendum(tx,existing.opportunityId);
+  });
   return NextResponse.json({ ok: true });
 }

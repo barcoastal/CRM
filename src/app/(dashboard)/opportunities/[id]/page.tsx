@@ -544,7 +544,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
             E("Addendum Required", oppSfBool("Addendum_Required__c"), "addendumRequired", "checkbox", { rawValue: opp.addendumRequired ?? null }),
             E("Call ASAP", oppSfBool("Call_ASAP__c"), "Call_ASAP__c", "checkbox"),
             // Row 11: Addendum Required Reason | Business Start Date
-            ["Addendum Required Reason", oppSf("Addendum_Required_Reason__c")],
+            E("Addendum Required Reason", oppSf("Addendum_Required_Reason__c"), "Addendum_Required_Reason__c", "text"),
             E("Business Start Date", oppSfDate("Business_Start_Date__c"), "businessStartDate", "date", { rawValue: opp.businessStartDate ?? null }),
             // Row 12: Timezone | Hopper Priority
             E("Timezone", timezoneDisplay, "timezone"),

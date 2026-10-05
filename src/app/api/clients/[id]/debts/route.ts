@@ -1,3 +1,4 @@
+import { refreshAddendum } from "@/lib/contracts/addendum";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -66,7 +67,8 @@ export async function POST(
 
   const data = parsed.data;
 
-  const debt = await prisma.debt.create({
+  const debt = await prisma.$transaction(async tx => {
+    const debt = await tx.debt.create({
     data: {
       clientId: id,
       creditorName: data.creditorName,
@@ -81,6 +83,9 @@ export async function POST(
     include: {
       negotiations: true,
     },
+  });
+    if(debt.opportunityId) await refreshAddendum(tx,debt.opportunityId);
+    return debt;
   });
 
   return ssnSafeJson(debt, { status: 201 });
