@@ -1,3 +1,4 @@
+import { ownerProfileLink } from "@/components/users/owner-profile-link";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import {
@@ -149,7 +150,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
           />
         ) : <StatusPill label={c.priority} tone={PRIORITY_TONE[c.priority] ?? "neutral"} />,
         fmtDateTime(c.createdAt) || "—",
-        ownerAlias(c.owner) || "—",
+        ownerProfileLink(c.owner?.id, ownerAlias(c.owner)),
       ],
     };
   });

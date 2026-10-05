@@ -1,3 +1,4 @@
+import { ownerProfileLink } from "@/components/users/owner-profile-link";
 import { recordScope } from "@/lib/record-access";
 import { redactSsn } from "@/lib/ssn-privacy";
 import { prisma } from "@/lib/prisma";
@@ -195,7 +196,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
           "—"
         ),
         leadIdVal ?? "—",
-        ownerAlias(c.owner) || "—",
+        ownerProfileLink(c.owner?.id, ownerAlias(c.owner)),
       ],
     };
   });

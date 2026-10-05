@@ -1,3 +1,4 @@
+import { ownerProfileLink } from "@/components/users/owner-profile-link";
 import { notFound } from "next/navigation";
 import { buildWhere, type ListFilter } from "@/lib/list-views";
 import { recordScope } from "@/lib/record-access";
@@ -372,7 +373,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         leadSource || "—",
         probability || "—",
         uccCell,
-        ownerFullName || "—",
+        ownerProfileLink(o.assignedTo?.id, ownerFullName),
         o.labels.join(", ") || "—",
       ],
     };

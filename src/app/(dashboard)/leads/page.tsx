@@ -1,3 +1,4 @@
+import { ownerProfileLink } from "@/components/users/owner-profile-link";
 import { cloneElement, isValidElement, type ReactNode } from "react";
 import { LEAD_COLUMNS, leadColumnsForView } from "@/lib/lead-list-columns";
 import { notFound } from "next/navigation";
@@ -250,11 +251,11 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       subDisposition: subDisposition || "", leadVendor: leadVendor || "—",
       leadVendorText: String(sfData.Lead_Vendor_Id_Text__c ?? sfData.Lead_Vendor_ID_Text__c ?? lead.leadVendorId ?? "—"),
       source: sourceCfg ? <InlineEditCell entity="lead" recordId={lead.id} config={sourceCfg} value={lead.source} /> : lead.source,
-      fronter: fronter || "—", ownerFullName: ownerFullName || "—",
+      fronter: fronter || "—", ownerFullName: ownerProfileLink(lead.assignedTo?.id, ownerFullName),
       createdDate: fmtDateShort(lead.createdAt) || "—", firstEmail: fmtDateShort((sfData.ActivityMetric as {FirstEmailDateTime?:string}|undefined)?.FirstEmailDateTime ?? sfData.FirstEmailDateTime) || "—",
       leadId: String(sfData.Lead_Id__c || lead.sfId || lead.id), company: lead.businessName ? <Link href={`/leads/${lead.id}`} className="sf-row-link">{lead.businessName}</Link> : "",
       totalDebt: fmtMoney(sfData.Total_Debt_Amount__c ?? lead.totalDebtEst) || "",
-      ownerAlias: ownerAlias ? <Link href={`/leads/${lead.id}`} className="sf-row-link">{ownerAlias}</Link> : "",
+      ownerAlias: ownerProfileLink(lead.assignedTo?.id, ownerAlias),
       email: lead.email || "—", unread: value('IsUnreadByOwner'), calendly: value('Has_Calendly_Event__c'),
       five9Disposition: value('five9_Disposition__c'), adClickId: lead.adClickId || value('Ad_Click_Id__c'),
       trackitClickId: value('Eli_Ad_click__c'), lastDisposition: value('Last_Disposition__c'),

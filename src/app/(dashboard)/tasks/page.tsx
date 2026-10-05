@@ -1,3 +1,4 @@
+import { ownerProfileLink } from "@/components/users/owner-profile-link";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import {
@@ -189,7 +190,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           />
         ) : <StatusPill label={t.priority} tone={PRIORITY_TONE[t.priority] ?? "neutral"} />,
         fmtDateTime(t.reminderAt) || "—",
-        assignedAlias || "—",
+        ownerProfileLink(t.owner?.id, assignedAlias),
         fmtDateTime(t.updatedAt) || "—",
         modifiedByAlias || "—",
       ],

@@ -1,3 +1,4 @@
+import { ownerProfileLink } from "@/components/users/owner-profile-link";
 import { normalizeAccountColumns, resolveAccountView } from "@/lib/account-list-layout";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -369,7 +370,7 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
       id: a.id,
       href: `/accounts/${a.id}`,
       cells: [
-        ownerFullName || "—",
+        ownerProfileLink(a.owner?.id, ownerFullName),
         clientStatusCell,
         firstContractSigned || "—",
         primaryContactName || "—",
