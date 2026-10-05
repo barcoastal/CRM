@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { LEAD_STATUSES } from "@/lib/sf-canonical";
 import { convertLead } from "@/lib/lead-conversion";
+import { assertLeadCallDisposition } from "@/lib/lead-call-disposition";
 import { makeCtx, triggerUpdate } from "@/lib/triggers/runner";
 
 const STATUS_MAP: Record<string, string> = {
@@ -37,6 +38,15 @@ export async function POST(
 
   const lead = await prisma.lead.findUnique({ where: { id } });
   if (!lead) return ssnSafeJson({ error: "Lead not found" }, { status: 404 });
+
+  // Reject before saving a task or marking the lead Converted.
+  if (stage === "Converted" && !(lead.convertedAccountId && lead.convertedContactId)) {
+    try {
+      assertLeadCallDisposition(lead.sfDataJson);
+    } catch (e) {
+      return ssnSafeJson({ error: e instanceof Error ? e.message : "Call Disposition is required" }, { status: 400 });
+    }
+  }
 
   const oldStatus = lead.status;
   const taskStatus = STATUS_MAP[status] ?? "COMPLETED";

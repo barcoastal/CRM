@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { assertLeadCallDisposition } from "@/lib/lead-call-disposition";
 import {
   defaultAccountRecordTypeForLead,
   isAccountRecordType,
@@ -24,7 +25,7 @@ export interface ConvertLeadOptions {
   doNotCreateOpportunity?: boolean;
   /** ID of the user performing the conversion (for audit log) */
   performedById?: string;
-  /** Skip the SF "Company + Debt + Fronter transfer" validation. Reserved for
+  /** Skip the company and debt validation. Reserved for
    *  test harnesses and trigger-driven conversions. */
   skipValidation?: boolean;
   /** Salutation / first / middle / last / suffix from the modal — overrides
@@ -101,10 +102,11 @@ export async function convertLead(
     };
   }
 
-  // Conversion requires Company + Debt Information. (SF also gated on the call
-  // being transferred from a fronter, but the CRM is not the dialer and never
-  // has Five9 call/transfer data, so enforcing that here blocked every
-  // conversion. The fronter-transfer gate lives in the dialer, not here.)
+  // Enforce the same call-disposition requirement shown by the health check,
+  // including internal callers and admins, before creating any records.
+  assertLeadCallDisposition(lead.sfDataJson);
+
+  // Conversion also requires Company + Debt Information.
   // - Company = Lead.businessName populated
   // - Debt Information = at least one LeadDebt row OR a total-debt value > 0
   if (!opts.skipValidation) {

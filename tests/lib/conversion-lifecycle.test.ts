@@ -25,7 +25,7 @@ describe("conversion account lifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     db.$transaction.mockImplementation(async (fn) => fn(db));
-    db.lead.findUnique.mockResolvedValue({ id: "lead", businessName: "Example", contactName: "Test Person", totalDebtEst: 10000, debts: [], calls: [] });
+    db.lead.findUnique.mockResolvedValue({ id: "lead", businessName: "Example", contactName: "Test Person", totalDebtEst: 10000, debts: [], calls: [], sfDataJson: JSON.stringify({ five9_Disposition__c: "Transferred", CloserLookup__c: "closer", Call_Transfer_Status__c: "Transferred", Call_Received_By_Lookup__c: "closer", Call_Received_Date__c: "2026-10-05" }) });
     db.account.create.mockResolvedValue({ id: "account", name: "Example" });
     db.contact.create.mockResolvedValue({ id: "contact" });
     db.opportunity.create.mockResolvedValue({ id: "opportunity" });
@@ -43,6 +43,29 @@ describe("conversion account lifecycle", () => {
     expect(db.account.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ clientStatus: "Inactive" }) }));
     expect(result.opportunityId).toBeNull();
     expect(db.opportunity.create).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, null, "{}", "null", "broken json", '{"five9_Disposition__c":"Transferred"}'])("blocks conversion without complete call disposition (%s) before any writes", async sfDataJson => {
+    db.lead.findUnique.mockResolvedValue({ id: "lead", businessName: "Example", totalDebtEst: 10000, debts: [], sfDataJson });
+    await expect(convertLead("lead", { performedById: "admin", skipValidation: true })).rejects.toThrow("Call Disposition is required");
+    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(db.account.create).not.toHaveBeenCalled();
+    expect(db.lead.update).not.toHaveBeenCalled();
+  });
+
+  it.each(["five9_Disposition__c", "CloserLookup__c", "Call_Transfer_Status__c", "Call_Received_By_Lookup__c", "Call_Received_Date__c"])("blocks conversion when %s is blank", async field => {
+    const lead = await db.lead.findUnique();
+    const sfData = JSON.parse(lead.sfDataJson);
+    sfData[field] = "   ";
+    db.lead.findUnique.mockResolvedValue({ ...lead, sfDataJson: JSON.stringify(sfData) });
+    await expect(convertLead("lead")).rejects.toThrow("Call Disposition is required");
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("keeps already converted leads idempotent even if historical call data is missing", async () => {
+    db.lead.findUnique.mockResolvedValue({ convertedAccountId: "account", convertedContactId: "contact", convertedOpportunityId: "opportunity" });
+    await expect(convertLead("lead")).resolves.toEqual({ accountId: "account", contactId: "contact", opportunityId: "opportunity", alreadyConverted: true });
+    expect(db.$transaction).not.toHaveBeenCalled();
   });
 
   it.each([

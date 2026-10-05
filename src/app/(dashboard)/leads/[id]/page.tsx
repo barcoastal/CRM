@@ -1,4 +1,5 @@
 import { taskActivity } from "@/lib/activity-presentation";
+import { missingLeadCallDispositionFields } from "@/lib/lead-call-disposition";
 import { leadPaymentPopulated } from "@/lib/lead-payment-health";
 import { splitLeadName } from "@/lib/lead-health-fields";
 import { LeadViewTracker } from "@/components/leads/lead-view-tracker";
@@ -957,12 +958,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             leadSource={lead.sfId ? sf("LeadSource") : lead.source}
             isPaymentAmountPopulated={typeof sfData.Is_Payment_Amount_Populated__c === "boolean" ? sfData.Is_Payment_Amount_Populated__c : leadPaymentPopulated(sfData)}
             firstCreditorDebt={sfNum("Creditor_1_Total_Debt__c")}
-            callDispositionPopulated={
-              !!sf("CloserLookup__c") &&
-              !!sf("Call_Transfer_Status__c") &&
-              !!sf("Call_Received_By_Lookup__c") &&
-              !!sf("Call_Received_Date__c")
-            }
+            callDispositionPopulated={missingLeadCallDispositionFields(sfData).length === 0}
           />
           <NotesRailCard
               notes={chainNotes.map((n) => ({ id: n.id, body: n.body, author: n.author, createdAt: n.createdAt.toISOString(), source: n.source }))}
