@@ -50,6 +50,7 @@ import type { Trigger } from "./types";
 import { firePostbackEvent } from "@/lib/marketing/postback";
 import { notify } from "@/lib/notifications/notify";
 import { runRulesFor } from "@/lib/validation-rules/evaluator";
+import { OPP_STAGE_FINAL_WIN } from "@/lib/sf-canonical";
 
 type OppWrite = Partial<Opportunity> & Record<string, unknown>;
 
@@ -276,6 +277,14 @@ export const opportunityTrigger: Trigger<Opportunity, OppWrite> = {
           data: { clientStatus: CLIENT_STATUS_WAITING_FIRST_PAYMENT },
         })
         .catch(() => undefined);
+    }
+
+    // Completing opportunity conversion activates the linked client account.
+    if (row.stage === OPP_STAGE_FINAL_WIN && row.accountId) {
+      await ctx.prisma.account.update({
+        where: { id: row.accountId },
+        data: { clientStatus: "Active", stage: "Active" },
+      });
     }
 
     // Contract Signed → mark first contract signed date if not already

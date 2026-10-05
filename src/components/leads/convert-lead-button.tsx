@@ -58,8 +58,7 @@ export function ConvertLeadButton({ leadId, converted }: ConvertLeadButtonProps)
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Conversion failed");
-      // Navigate to the new account
-      router.push(`/accounts/${body.accountId}`);
+      router.push(body.opportunityId ? `/opportunities/${body.opportunityId}` : `/accounts/${body.accountId}`);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");

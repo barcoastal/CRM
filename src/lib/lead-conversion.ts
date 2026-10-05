@@ -143,6 +143,7 @@ export async function convertLead(
         recordType: accountRecordType,
         name: accountName,
         type: accountType,
+        clientStatus: "Inactive",
         ein: lead.ein,
         phone: lead.phone,
         email: lead.email,

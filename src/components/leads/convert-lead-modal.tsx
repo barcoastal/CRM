@@ -158,9 +158,9 @@ export function ConvertLeadModal({
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      const d = await res.json() as { error?: string; accountId?: string };
+      const d = await res.json() as { error?: string; accountId: string; opportunityId?: string | null };
       if (!res.ok) throw new Error(d.error ?? "Conversion failed");
-      router.push(`/accounts/${d.accountId}`);
+      router.push(d.opportunityId ? `/opportunities/${d.opportunityId}` : `/accounts/${d.accountId}`);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
