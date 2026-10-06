@@ -3,8 +3,8 @@
  *
  * Returns every email tied to the record with its open/click status and source
  * (inbox, campaign name, or flow name). Used by the Email Activity panel on
- * record detail pages. Gated by Email.Send; record access is already gated by
- * the record page itself.
+ * record detail pages. A record ID alone does not grant access to another
+ * user's mailbox activity.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -18,10 +18,12 @@ export async function GET(req: NextRequest) {
   const id = url.searchParams.get("id");
   if (!id || !entity) return NextResponse.json({ error: "entity and id required" }, { status: 400 });
 
-  const where =
+  const recordWhere =
     entity === "account" ? { accountId: id } :
     entity === "contact" ? { contactId: id } :
     { leadId: id };
+  const isAdmin = ["SUPER_ADMIN", "ADMIN", "MANAGER"].includes(r.session.role);
+  const where = { ...recordWhere, ...(!isAdmin && { ownerId: r.session.userId }) };
 
   const messages = await prisma.emailMessage.findMany({
     where,
