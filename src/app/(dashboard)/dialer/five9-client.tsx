@@ -218,7 +218,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
             </Link>
           </div>
           {pilotEligible && <div style={{ marginBottom: 12, fontSize: 12 }}>
-            <Link href={toolkitMode ? "/dialer" : "/dialer?toolkit=1"} style={{ color: "#0176d3", fontWeight: 700 }}>
+            <Link href={toolkitMode ? "/dialer?toolkit=0" : "/dialer"} style={{ color: "#0176d3", fontWeight: 700 }}>
               {toolkitMode ? "Use standard Five9 view" : "Use CRM-linked Five9 view"} ↗
             </Link>
           </div>}

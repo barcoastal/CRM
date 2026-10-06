@@ -34,7 +34,7 @@ export default async function DialerPage({ searchParams }: DialerPageProps) {
     }) : null;
     return <Five9Client five9Domain={five9Domain} defaultStation={five9Station}
       userId={session?.user?.id} pilotEligible={pilotEligible}
-      toolkitMode={pilotEligible && params.toolkit === "1"}
+      toolkitMode={pilotEligible && params.toolkit !== "0"}
       expectedFive9Login={user?.five9Username ?? session?.user?.email ?? ""} />;
   }
 
