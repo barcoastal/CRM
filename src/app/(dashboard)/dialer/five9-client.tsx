@@ -216,9 +216,9 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
               Live floor ↗
             </Link>
           </div>
-          {pilotEligible && <div style={{ marginBottom: 12, fontSize: 12 }}>
-            <Link href={toolkitMode ? "/dialer?toolkit=0" : "/dialer"} style={{ color: "#0176d3", fontWeight: 700 }}>
-              {toolkitMode ? "Use standard Five9 view" : "Use CRM-linked Five9 view"} ↗
+          {pilotEligible && toolkitMode && <div style={{ marginBottom: 12, fontSize: 12 }}>
+            <Link href="/dialer" style={{ color: "#0176d3", fontWeight: 700 }}>
+              Return to Agent Desktop Plus ↗
             </Link>
           </div>}
           <form onSubmit={event => { event.preventDefault(); if (last10(phoneQuery).length >= 7) void popLead(phoneQuery, null); }} style={{ display: "flex", gap: 6, marginBottom: 12 }}>
