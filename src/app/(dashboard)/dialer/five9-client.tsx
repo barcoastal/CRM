@@ -5,7 +5,6 @@ import Link from "next/link";
 import { DispositionModal } from "@/components/leads/disposition-modal";
 import { LEAD_STATUSES, STAGE_TO_SUB_DISPOSITIONS, type LeadStatusV2 } from "@/lib/sf-canonical";
 import { CallTranscriber } from "./call-transcriber";
-import { MyAssignment } from "@/components/dialer/my-assignment";
 import { Five9ToolkitBridge } from "@/components/dialer/five9-toolkit-bridge";
 
 const FIVE9_AGENT_URL = "https://app-atl.five9.com/clients/agent/main.html?role=Agent";
@@ -207,8 +206,8 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
   }
 
   return (
-    <div className="sf-dialer-grid" style={{ display: "grid", gridTemplateColumns: "320px minmax(0, 1fr) 320px", gap: 12, padding: 12 }}>
-      {/* Lead context — slim left sidebar */}
+    <div className="sf-dialer-grid" style={{ display: "grid", gridTemplateColumns: "minmax(360px, 34%) minmax(0, 1fr)", gap: 12, padding: 12 }}>
+      {/* Lead context */}
       <div>
         <article style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, padding: 16, minHeight: 600 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -318,10 +317,6 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
         )}
       </div>
 
-      {/* Fronter sees only the manager's assignment (not the open-closer list). */}
-      <div>
-        <MyAssignment />
-      </div>
     </div>
   );
 }
