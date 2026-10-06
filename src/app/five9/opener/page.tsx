@@ -30,9 +30,13 @@ export default async function Five9OpenerPage({
     return <FrameMessage message="Your CRM account needs Lead Edit access to work leads in this frame." />;
   }
   const params = await searchParams;
-  const rawPhone = params.phone ?? params.number1 ?? params.ani;
-  const phone = (Array.isArray(rawPhone) ? rawPhone[0] : rawPhone)?.replace(/\D/g, "") ?? "";
-  return <Five9Client five9Domain={null} defaultStation={null} frameOnly initialPhone={phone.length >= 7 && phone.length <= 15 ? phone : null} userId={session.user.id} />;
+  // Manually dialed calls may have no Five9 contact record. In that case the
+  // connector's Customer.number1 can be empty while Call.number is populated.
+  const phone = [params.phone, params.call_number, params.number1, params.ani]
+    .flatMap(value => Array.isArray(value) ? value : [value])
+    .map(value => (value ?? "").replace(/\D/g, ""))
+    .find(value => value.length >= 7 && value.length <= 15) ?? null;
+  return <Five9Client five9Domain={null} defaultStation={null} frameOnly initialPhone={phone} userId={session.user.id} />;
 }
 
 function FrameMessage({ message, href, link }: { message: string; href?: string; link?: string }) {
