@@ -8,6 +8,7 @@ interface DialerPageProps {
   searchParams: Promise<{
     campaignId?: string;
     leadId?: string;
+    toolkit?: string;
   }>;
 }
 
@@ -25,7 +26,16 @@ export default async function DialerPage({ searchParams }: DialerPageProps) {
   const five9Station = process.env.NEXT_PUBLIC_FIVE9_DEFAULT_STATION ?? null;
 
   if (five9Domain) {
-    return <Five9Client five9Domain={five9Domain} defaultStation={five9Station} userId={session?.user?.id} />;
+    const pilotEmails = (process.env.FIVE9_FRAME_PILOT_EMAILS ?? "")
+      .split(",").map(email => email.trim().toLowerCase()).filter(Boolean);
+    const pilotEligible = !!session?.user?.email && pilotEmails.includes(session.user.email.toLowerCase());
+    const user = session?.user?.id ? await prisma.user.findUnique({
+      where: { id: session.user.id }, select: { five9Username: true },
+    }) : null;
+    return <Five9Client five9Domain={five9Domain} defaultStation={five9Station}
+      userId={session?.user?.id} pilotEligible={pilotEligible}
+      toolkitMode={pilotEligible && params.toolkit === "1"}
+      expectedFive9Login={user?.five9Username ?? session?.user?.email ?? ""} />;
   }
 
   // Fallback: mock dialer (existing functionality)
