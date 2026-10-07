@@ -26,16 +26,22 @@ export async function GET(request: NextRequest) {
   const key = last10(phone);
   if (!key) return ssnSafeJson(null);
 
-  // Match on DIGITS, not the raw stored string: strip all non-digits from the
-  // stored phone and test that it ends with the incoming digits. This handles
-  // any stored formatting ("1(800)-864-8331", "(800) 864 8331", etc.) and a
-  // leading country-code "1". `key` is digits-only, so it is LIKE-wildcard safe.
-  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
-    SELECT id FROM "Lead"
-    WHERE regexp_replace(phone, '[^0-9]', '', 'g') LIKE ${"%" + key}
-    ORDER BY "updatedAt" DESC
-    LIMIT 50
-  `;
+  // Full US numbers use the existing Lead_phone_last10_idx functional index.
+  // A suffix LIKE on regexp_replace scans the full leads table and can take
+  // tens of seconds. Keep partial-number lookup for the manual search box.
+  const rows = key.length === 10
+    ? await prisma.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM "Lead"
+        WHERE right(regexp_replace(phone, '[^0-9]', '', 'g'), 10) = ${key}
+        ORDER BY "updatedAt" DESC
+        LIMIT 50
+      `
+    : await prisma.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM "Lead"
+        WHERE regexp_replace(phone, '[^0-9]', '', 'g') LIKE ${"%" + key}
+        ORDER BY "updatedAt" DESC
+        LIMIT 50
+      `;
   const lead = rows.length
     ? await prisma.lead.findFirst({
         where: { id: { in: rows.map(row => row.id) }, AND: [await recordScope("lead")] },

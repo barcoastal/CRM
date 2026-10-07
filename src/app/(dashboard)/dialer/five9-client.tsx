@@ -5,7 +5,7 @@ import Link from "next/link";
 import { DispositionModal } from "@/components/leads/disposition-modal";
 import { LEAD_STATUSES, STAGE_TO_SUB_DISPOSITIONS, type LeadStatusV2 } from "@/lib/sf-canonical";
 import { CallTranscriber } from "./call-transcriber";
-import { MyAssignment } from "@/components/dialer/my-assignment";
+import { Five9ToolkitBridge } from "@/components/dialer/five9-toolkit-bridge";
 
 const FIVE9_AGENT_URL = "https://app-atl.five9.com/clients/agent/main.html?role=Agent";
 
@@ -27,30 +27,30 @@ interface Props {
   five9Domain: string | null;
   defaultStation: string | null;
   frameOnly?: boolean;
+  initialPhone?: string | null;
   userId?: string;
+  pilotEligible?: boolean;
+  toolkitMode?: boolean;
+  expectedFive9Login?: string;
 }
 
 /**
- * Five9 Agent Desktop embedded via iframe. Left pane shows the lead
- * context auto-loaded by phone when Five9 posts a callConnected event;
- * right pane hosts the full Five9 Agent Desktop the rep already uses.
- *
- * Five9 publishes a postMessage API for the iframed Agent Desktop —
- * events arrive as { type: "five9.callConnected", payload: { ani, dnis, ... } }.
+ * CRM lead context beside Five9. The opt-in Toolkit view receives supported
+ * call events from Five9's CRM SDK. The standard Agent Desktop Plus view can
+ * use a dedicated supervisor feed when one is configured.
  */
 const last10 = (p: string | null | undefined) => (p ?? "").replace(/[^0-9]/g, "").slice(-10);
 
-export function Five9Client({ five9Domain, defaultStation: _defaultStation, frameOnly = false, userId }: Props) {
+export function Five9Client({ five9Domain, defaultStation: _defaultStation, frameOnly = false, initialPhone = null, userId, pilotEligible = false, toolkitMode = false, expectedFive9Login = "" }: Props) {
   const [lead, setLead] = useState<LeadContext | null>(null);
   const [loadingLead, setLoadingLead] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [currentPhone, setCurrentPhone] = useState<string | null>(null);
   const [activeUnmatched, setActiveUnmatched] = useState(false);
   const [wrapped, setWrapped] = useState(false); // disposition saved → waiting for next call
-  // Run Five9 in its own window instead of the embedded iframe. The iframe loses
-  // its Five9 session on call-connect (browser blocks the cookie in a cross-site
-  // frame); a real window keeps it logged in. Screen-pop here is unaffected (it
-  // reads the server-side supervisor feed, not the iframe).
+  const [phoneQuery, setPhoneQuery] = useState("");
+  // The standard Agent Desktop Plus iframe can lose its session when the
+  // browser blocks cross-site cookies. The pop-out keeps Five9 top-level.
   const [poppedOut, setPoppedOut] = useState(false);
   useEffect(() => {
     try { setPoppedOut(localStorage.getItem("five9PoppedOut") === "1"); } catch {}
@@ -70,6 +70,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
   const currentPhoneRef = useRef<string | null>(null);
   const callSinceRef = useRef<number | null>(null);
   const dispositionedSinceRef = useRef<number | null>(null); // call we already closed
+  const toolkitCallIdRef = useRef<string | null>(null);
 
   async function popLead(phone: string, since: number | null) {
     currentPhoneRef.current = phone;
@@ -112,8 +113,12 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
   }
 
   useEffect(() => {
+    if (frameOnly && initialPhone) void popLead(initialPhone, null);
+  }, [frameOnly, initialPhone]);
+
+  useEffect(() => {
     function onMessage(event: MessageEvent) {
-      if (!five9Domain) return;
+      if (!five9Domain || toolkitMode) return;
       if (!event.origin.includes(five9Domain) && !event.origin.includes("five9.com")) return;
       const data = event.data as { type?: string; payload?: Record<string, unknown> } | undefined;
       if (!data || typeof data !== "object") return;
@@ -130,10 +135,13 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [five9Domain]);
+  }, [five9Domain, toolkitMode]);
 
   // Screen-pop: poll the agent's current active call from the supervisor feed.
   useEffect(() => {
+    // Five9's connector supplies the contact number directly in frame mode.
+    // Polling the supervisor feed would clear it when that feed is unavailable.
+    if (frameOnly || toolkitMode) return;
     const id = setInterval(async () => {
       try {
         const res = await fetch("/api/dialer/active-call");
@@ -160,7 +168,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
     }, 4000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [frameOnly, initialPhone, toolkitMode]);
 
   if (frameOnly) {
     return (
@@ -175,6 +183,10 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
           </Link>
         </header>
         <section style={{ background: "#fff", border: "1px solid #d8dde6", borderRadius: 8, padding: 14 }}>
+          <form onSubmit={event => { event.preventDefault(); if (last10(phoneQuery).length >= 7) void popLead(phoneQuery, null); }} style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+            <input aria-label="Find lead by phone" type="tel" placeholder="Find lead by phone" value={phoneQuery} onChange={event => setPhoneQuery(event.target.value)} style={{ flex: 1, minWidth: 0, border: "1px solid #c9c9c9", borderRadius: 4, padding: "7px 9px" }} />
+            <button type="submit" style={{ border: 0, borderRadius: 4, background: "#0176d3", color: "#fff", padding: "7px 10px", fontWeight: 600 }}>Find</button>
+          </form>
           {loadingLead && <p style={{ color: "#64748b" }}>Loading current lead…</p>}
           {!loadingLead && !lead && !currentPhone && (
             <p style={{ color: "#64748b", fontSize: 13, lineHeight: 1.5, margin: 0 }}>
@@ -194,8 +206,8 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
   }
 
   return (
-    <div className="sf-dialer-grid" style={{ display: "grid", gridTemplateColumns: "320px minmax(0, 1fr) 320px", gap: 12, padding: 12 }}>
-      {/* Lead context — slim left sidebar */}
+    <div className="sf-dialer-grid" style={{ display: "grid", gridTemplateColumns: "minmax(360px, 34%) minmax(0, 1fr)", gap: 12, padding: 12 }}>
+      {/* Lead context */}
       <div>
         <article style={{ background: "#fff", border: "1px solid #c9c9c9", borderRadius: 4, padding: 16, minHeight: 600 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -204,6 +216,15 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
               Live floor ↗
             </Link>
           </div>
+          {pilotEligible && toolkitMode && <div style={{ marginBottom: 12, fontSize: 12 }}>
+            <Link href="/dialer" style={{ color: "#0176d3", fontWeight: 700 }}>
+              Return to Agent Desktop Plus ↗
+            </Link>
+          </div>}
+          <form onSubmit={event => { event.preventDefault(); if (last10(phoneQuery).length >= 7) void popLead(phoneQuery, null); }} style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+            <input aria-label="Find lead by phone" type="tel" placeholder="Find lead by phone" value={phoneQuery} onChange={event => setPhoneQuery(event.target.value)} style={{ flex: 1, minWidth: 0, padding: "6px 8px", border: "1px solid #c9c9c9", borderRadius: 4 }} />
+            <button type="submit" style={{ border: 0, borderRadius: 4, background: "#0176d3", color: "#fff", padding: "6px 10px", fontWeight: 700 }}>Find</button>
+          </form>
           {loadingLead && <div style={{ color: "#747474" }}>Loading lead…</div>}
           {!loadingLead && !lead && !currentPhone && wrapped && (
             <div style={{ color: "#2e844a", padding: 24, textAlign: "center" }}>
@@ -213,7 +234,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
           )}
           {!loadingLead && !lead && !currentPhone && !wrapped && (
             <div style={{ color: "#747474", padding: 24, textAlign: "center" }}>
-              No active call. When Five9 connects a call, the matching lead loads here automatically.
+              {toolkitMode ? "Waiting for a Five9 call. The matching CRM lead will load here." : "No lead selected. Search by phone above, or use the CRM-linked Five9 view for automatic lookup."}
             </div>
           )}
           {lookupError && <p role="alert" style={{ color: "#ba1a1a", fontSize: 12 }}>{lookupError}</p>}
@@ -237,7 +258,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
           softphone (extension + local service). We screen-pop the lead on the
           left from its postMessage callConnected events. */}
       <div>
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8 }}>
+        {!toolkitMode && <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8 }}>
           <button
             onClick={openFive9Window}
             style={{ background: "#0176d3", color: "#fff", border: 0, padding: "6px 14px", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
@@ -252,8 +273,22 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
               Use embedded here
             </button>
           )}
-        </div>
-        {poppedOut ? (
+        </div>}
+        {toolkitMode ? <Five9ToolkitBridge
+          expectedFive9Login={expectedFive9Login}
+          onCallStarted={(id, phone) => {
+            const newCall = toolkitCallIdRef.current !== id;
+            toolkitCallIdRef.current = id;
+            if (!phone) { setActiveUnmatched(true); return; }
+            setActiveUnmatched(false);
+            if (newCall || last10(phone) !== last10(currentPhoneRef.current)) void popLead(phone, null);
+          }}
+          onCallFinished={id => {
+            if (toolkitCallIdRef.current !== id) return;
+            toolkitCallIdRef.current = null;
+            clearPane();
+          }}
+        /> : poppedOut ? (
           <div
             style={{
               border: "1px solid #c9c9c9", borderRadius: 4, background: "#fff",
@@ -263,8 +298,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
           >
             <div style={{ fontWeight: 700, fontSize: 16 }}>Five9 is running in its own window</div>
             <div style={{ fontSize: 13, color: "#747474", maxWidth: 420 }}>
-              Keeping the dialer in its own window stops Five9 from logging you out when a call connects.
-              The matching lead still loads here automatically while you talk.
+              Keeping Five9 in its own window helps preserve its login. Find the CRM lead by phone in the left panel.
             </div>
             <button
               onClick={openFive9Window}
@@ -283,10 +317,6 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
         )}
       </div>
 
-      {/* Fronter sees only the manager's assignment (not the open-closer list). */}
-      <div>
-        <MyAssignment />
-      </div>
     </div>
   );
 }

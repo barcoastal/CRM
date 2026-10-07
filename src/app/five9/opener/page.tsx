@@ -6,7 +6,11 @@ import { OpenerFrameLogin } from "./sign-in";
 export const dynamic = "force-dynamic";
 
 /** CRM lead workspace loaded in the Five9 Agent Desktop Plus embedded tab. */
-export default async function Five9OpenerPage() {
+export default async function Five9OpenerPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const session = await auth();
   if (!session?.user?.id) return <OpenerFrameLogin />;
   if (process.env.NODE_ENV === "production") {
@@ -25,7 +29,14 @@ export default async function Five9OpenerPage() {
   if (!hasPermission(session.user.permissions ?? [], "Lead.Edit")) {
     return <FrameMessage message="Your CRM account needs Lead Edit access to work leads in this frame." />;
   }
-  return <Five9Client five9Domain={null} defaultStation={null} frameOnly userId={session.user.id} />;
+  const params = await searchParams;
+  // Manually dialed calls may have no Five9 contact record. In that case the
+  // connector's Customer.number1 can be empty while Call.number is populated.
+  const phone = [params.phone, params.call_number, params.number1, params.ani]
+    .flatMap(value => Array.isArray(value) ? value : [value])
+    .map(value => (value ?? "").replace(/\D/g, ""))
+    .find(value => value.length >= 7 && value.length <= 15) ?? null;
+  return <Five9Client five9Domain={null} defaultStation={null} frameOnly initialPhone={phone} userId={session.user.id} />;
 }
 
 function FrameMessage({ message, href, link }: { message: string; href?: string; link?: string }) {
