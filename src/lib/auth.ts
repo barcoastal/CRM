@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { loadEffectivePermissions } from "@/lib/permissions";
 import { auditWrite } from "@/lib/audit";
+import { hasCrmSessionCookie } from "@/lib/session-cookie";
 
 const authConfig: NextAuthConfig = {
   providers: [
@@ -167,6 +168,11 @@ export const frameHandlers = frameAuth.handlers;
 
 export async function auth() {
   const cookieStore = await cookies();
+  // A top-level CRM tab can carry both cookies after using the Five9 frame.
+  // The regular session drives the preview banner and must also drive every
+  // server page/API. In the cross-site Five9 frame only its partitioned cookie
+  // is sent, so that session remains available as the fallback.
+  if (hasCrmSessionCookie(cookieStore.getAll().map(({ name }) => name))) return standardAuth.auth();
   if (cookieStore.has(FIVE9_FRAME_SESSION_COOKIE)) return frameAuth.auth();
   return standardAuth.auth();
 }

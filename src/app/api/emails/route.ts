@@ -15,18 +15,10 @@ export async function GET(req: NextRequest) {
     if (v) where[key] = v;
   }
 
-  // Non-admins only ever see their own messages, or messages attached to a
-  // record they are explicitly filtering by (record pages already gate access
-  // to the record itself). Direct owner/thread browsing stays self-scoped.
+  // A record ID is not proof that the caller may read another user's mailbox.
+  // Keep every non-admin query, including record-filtered ones, self-scoped.
   const isAdmin = ADMIN_ROLES.includes(r.session.role);
-  if (!isAdmin) {
-    const hasRecordFilter = Boolean(
-      where.accountId || where.contactId || where.leadId || where.opportunityId || where.caseId,
-    );
-    if (!hasRecordFilter) {
-      where.ownerId = r.session.userId;
-    }
-  }
+  if (!isAdmin) where.ownerId = r.session.userId;
 
   const limit = Math.min(Number(url.searchParams.get("limit") ?? "50"), 200);
 
