@@ -18,7 +18,6 @@ model User {
   sfId              String?   @unique // Salesforce 18-char User ID, populated by backfill-user-sfid.ts
   name              String
   email             String    @unique
-  googleSubject     String?   @unique // Verified Google Workspace identity for Five9 frame SSO
   passwordHash      String
   mustResetPassword Boolean   @default(false) // set true on bulk import; cleared after user picks a new password
   role              String    @default("SALES_REP") // LEGACY string role — replaced by profileId in Phase 2
