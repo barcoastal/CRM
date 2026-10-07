@@ -12,7 +12,7 @@ export default async function Five9OpenerPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const session = await auth();
-  if (!session?.user?.id) return <OpenerFrameLogin />;
+  if (!session?.user?.id) return <OpenerFrameLogin googleClientId={process.env.FIVE9_GOOGLE_HOSTED_DOMAIN ? process.env.FIVE9_GOOGLE_CLIENT_ID : undefined} />;
   if (process.env.NODE_ENV === "production") {
     const allowedEmails = (process.env.FIVE9_FRAME_PILOT_EMAILS ?? "")
       .split(",").map(email => email.trim().toLowerCase()).filter(Boolean);

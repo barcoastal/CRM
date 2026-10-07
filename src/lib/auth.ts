@@ -5,6 +5,64 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { loadEffectivePermissions } from "@/lib/permissions";
 import { auditWrite } from "@/lib/audit";
+import { createRemoteJWKSet, jwtVerify } from "jose";
+
+const googleKeys = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
+const googleWorkspaceProvider = Credentials({
+  id: "five9-google",
+  name: "Google Workspace",
+  credentials: { credential: { label: "Google ID token", type: "text" } },
+  async authorize(credentials) {
+    const clientId = process.env.FIVE9_GOOGLE_CLIENT_ID;
+    const hostedDomain = process.env.FIVE9_GOOGLE_HOSTED_DOMAIN?.toLowerCase();
+    const credential = credentials?.credential;
+    if (!clientId || !hostedDomain || typeof credential !== "string") return null;
+    let identity;
+    try {
+      ({ payload: identity } = await jwtVerify(credential, googleKeys, {
+        audience: clientId,
+        issuer: ["https://accounts.google.com", "accounts.google.com"],
+      }));
+    } catch {
+      return null;
+    }
+    const email = typeof identity.email === "string" ? identity.email.toLowerCase() : "";
+    const subject = identity.sub;
+    if (!subject || identity.email_verified !== true ||
+        typeof identity.hd !== "string" || identity.hd.toLowerCase() !== hostedDomain ||
+        !email.endsWith(`@${hostedDomain}`)) return null;
+    const allowedEmails = (process.env.FIVE9_FRAME_PILOT_EMAILS ?? "")
+      .split(",").map(value => value.trim().toLowerCase()).filter(Boolean);
+    if (!allowedEmails.includes(email)) return null;
+
+    const user = await prisma.user.findUnique({
+      where: { email }, include: { profile: { select: { name: true } } },
+    });
+    if (!user?.isActive || (user.googleSubject && user.googleSubject !== subject)) return null;
+    // Bind the immutable Google subject once. An email recycled within the
+    // Workspace must not inherit the prior person's CRM access.
+    if (!user.googleSubject) {
+      try {
+        await prisma.user.updateMany({
+          where: { id: user.id, googleSubject: null }, data: { googleSubject: subject },
+        });
+      } catch {
+        return null;
+      }
+      const bound = await prisma.user.findUnique({
+        where: { id: user.id }, select: { googleSubject: true },
+      });
+      if (bound?.googleSubject !== subject) return null;
+    }
+    const permissions = Array.from(await loadEffectivePermissions(user.id));
+    prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }).catch(() => {});
+    return {
+      id: user.id, name: user.name, email: user.email, role: user.role,
+      profileName: user.profile?.name ?? null, permissions,
+      mustResetPassword: user.mustResetPassword,
+    };
+  },
+});
 
 const authConfig: NextAuthConfig = {
   providers: [
@@ -150,6 +208,9 @@ const frameCookieOptions = process.env.NODE_ENV === "production"
   : { httpOnly: true, sameSite: "lax" as const, secure: false, path: "/" };
 const frameAuth = NextAuth({
   ...authConfig,
+  providers: process.env.FIVE9_GOOGLE_CLIENT_ID && process.env.FIVE9_GOOGLE_HOSTED_DOMAIN
+    ? [...authConfig.providers, googleWorkspaceProvider]
+    : authConfig.providers,
   basePath: "/api/five9/auth",
   cookies: {
     sessionToken: { name: FIVE9_FRAME_SESSION_COOKIE, options: frameCookieOptions },
