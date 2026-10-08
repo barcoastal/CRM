@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Business Debt Insider">
+  <title>Business Debt Insider</title>
+  <text x="50" y="80" text-anchor="middle" font-family="Inter Tight, Inter, system-ui, -apple-system, sans-serif" font-weight="900" font-size="34" letter-spacing="-0.5" fill="#0A0A0A">BDI</text>
+  <path d="M 10 45 L 28 32 L 46 38 L 78 14" stroke="#10B981" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

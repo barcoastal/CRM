@@ -45,6 +45,7 @@ export function ObjectHeader({
       <div className={styles.heading} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            {brand !== undefined ? <RecordBrandLogo brand={brand} /> : (
             <div style={{ flexShrink: 0 }}>
               <span
                 title={entityLabel ?? entity}
@@ -63,7 +64,7 @@ export function ObjectHeader({
                 </svg>
               </span>
             </div>
-            {brand !== undefined && <RecordBrandLogo brand={brand} />}
+            )}
             <div className="slds-media__body" style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span

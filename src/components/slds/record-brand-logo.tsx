@@ -7,8 +7,9 @@ export function RecordBrandLogo({ brand }: { brand: string | null }) {
       {normalized === "coastal debt" ? (
         <Image src="/brand/coastal-debt-logo.svg" alt="Coastal Debt" width={154} height={28} unoptimized />
       ) : normalized === "bdi" ? (
-        <span style={{ position: "relative", display: "block", width: 64, height: 44, overflow: "hidden" }}>
-          <Image src="/brand/bdi-logo.png" alt="BDI" width={132} height={132} unoptimized style={{ position: "absolute", maxWidth: "none", width: 132, height: 132, left: -35, top: -43 }} />
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Image src="/brand/bdi-icon.svg" alt="" width={32} height={32} unoptimized />
+          <Image src="/brand/bdi-wordmark.svg" alt="Business Debt Insider" width={128} height={32} unoptimized />
         </span>
       ) : <span style={{ fontSize: 12, color: "#5c6470" }}>{brand || "Brand not set"}</span>}
     </div>
