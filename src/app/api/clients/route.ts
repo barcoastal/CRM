@@ -1,3 +1,5 @@
+import { assertStageRequirements } from "@/lib/stage-requirements-server";
+import { withAutomationErrors } from "@/lib/automation/errors";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -70,7 +72,7 @@ export async function GET(request: NextRequest) {
   });
 }
 
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   const session = await auth();
   if (!session) {
     return ssnSafeJson({ error: "Unauthorized" }, { status: 401 });
@@ -112,6 +114,7 @@ export async function POST(request: NextRequest) {
 
   const programStart = new Date(data.programStartDate);
 
+  await assertStageRequirements("Lead", { ...lead, status: "ENROLLED" }, lead);
   const client = await prisma.client.create({
     data: {
       leadId: data.leadId,
@@ -145,3 +148,5 @@ export async function POST(request: NextRequest) {
 
   return ssnSafeJson(client, { status: 201 });
 }
+
+export const POST = withAutomationErrors(POSTHandler);

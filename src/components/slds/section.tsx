@@ -155,12 +155,13 @@ export function FieldGrid({
     >
       {arrangeFields(fields, row => row[0], layout).map(({ field: row, span }, i) => {
         const [label, value, edit] = row;
+        const displayLabel = layout?.fields.find(field => field.id === label)?.required ? `${label} *` : label;
         if (edit && entityType && entityId) {
           const raw = edit.rawValue instanceof Date ? edit.rawValue.toISOString() : edit.rawValue ?? null;
           return (
             <div key={row[0] + i} style={{ minWidth: 0, gridColumn: span === 2 ? "1 / -1" : undefined }}>
             <InlineEditableField
-              label={label}
+              label={displayLabel}
               value={raw}
               displayNode={value}
               fieldKey={edit.fieldKey}
@@ -174,7 +175,7 @@ export function FieldGrid({
             </div>
           );
         }
-        return <div key={label + i} style={{ minWidth: 0, gridColumn: span === 2 ? "1 / -1" : undefined }}><Field label={label} value={value} /></div>;
+        return <div key={label + i} style={{ minWidth: 0, gridColumn: span === 2 ? "1 / -1" : undefined }}><Field label={displayLabel} value={value} /></div>;
       })}
     </div>
   );

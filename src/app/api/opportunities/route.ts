@@ -1,3 +1,5 @@
+import { assertStageRequirements } from "@/lib/stage-requirements-server";
+import { withAutomationErrors } from "@/lib/automation/errors";
 import { requireAuthOrRespond } from "@/lib/api-auth";
 import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
@@ -76,7 +78,7 @@ export async function GET(request: NextRequest) {
   return ssnSafeJson({ opportunities: serialized, total, page, totalPages });
 }
 
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   const authorization = await requireAuthOrRespond("Opportunity.Create");
   if ("response" in authorization) return authorization.response;
 
@@ -109,6 +111,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  await assertStageRequirements("Opportunity", { leadId: data.leadId, name: lead.businessName, totalDebt: typeof data.totalDebt === "number" ? data.totalDebt : null, expectedCloseDate: data.expectedCloseDate ? new Date(data.expectedCloseDate) : null, assignedToId: data.assignedToId || lead.assignedToId || authorization.session.userId, notes: data.notes || null });
+  await assertStageRequirements("Lead", { ...lead, status: "OPPORTUNITY" }, lead);
   // Keep record creation and lead status atomic.
   const [opportunity] = await prisma.$transaction([
     prisma.opportunity.create({
@@ -149,3 +153,5 @@ export async function POST(request: NextRequest) {
     updatedAt: opportunity.updatedAt.toISOString(),
   }, { status: 201 });
 }
+
+export const POST = withAutomationErrors(POSTHandler);

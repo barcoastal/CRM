@@ -1,3 +1,5 @@
+import { assertStageRequirements } from "@/lib/stage-requirements-server";
+import type { LayoutEntity } from "@/lib/record-field-layout";
 import { prisma } from "@/lib/prisma";
 import type { Trigger, TriggerCtx } from "./types";
 import { getTrigger } from "./registry";
@@ -57,6 +59,7 @@ export async function triggerCreate<TRow>(
     return row;
   }
   const trigger = getTrigger(model) as Trigger<TRow, Record<string, unknown>> | undefined;
+  if (["lead", "account", "opportunity"].includes(model)) await assertStageRequirements(FLOW_ENTITY_LABEL[model] as LayoutEntity, data);
   if (trigger?.beforeInsert) {
     await trigger.beforeInsert({ next: data, ctx });
   }
@@ -87,6 +90,7 @@ export async function triggerUpdate<TRow>(
   const prev = (await delegate.findUnique({ where })) as TRow | null;
   if (!prev) throw new Error(`${model} ${id} not found`);
 
+  if (["lead", "account", "opportunity"].includes(model)) await assertStageRequirements(FLOW_ENTITY_LABEL[model] as LayoutEntity, { ...(prev as Record<string, unknown>), ...data }, prev as Record<string, unknown>);
   if (trigger?.beforeUpdate) {
     await trigger.beforeUpdate({ next: data, prev, ctx });
   }

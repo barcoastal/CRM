@@ -1,3 +1,5 @@
+import { AutomationValidationError } from "@/lib/automation/errors";
+import { assertStageRequirements } from "@/lib/stage-requirements-server";
 import { canAccessRecord, recordScope } from "@/lib/record-access";
 import { isSsnField, maskSsn } from "@/lib/ssn-privacy";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
@@ -64,6 +66,7 @@ export async function PATCH(
     if (result.typedColumn) updateData[result.typedColumn.name] = result.typedColumn.value;
     if (result.sfDataPatch) updateData.sfDataJson = mergeSfData(existing.sfDataJson, result.sfDataPatch);
 
+    await assertStageRequirements("Account", { ...existing, ...updateData }, existing);
     const updated = await prisma.account.update({ where: { id, AND: [await recordScope("account", fieldName !== "ownerId")] }, data: updateData });
 
     await prisma.accountHistory.create({
@@ -87,7 +90,7 @@ export async function PATCH(
 
     return ssnSafeJson({ ok: true, value: isSsnField(fieldName) ? maskSsn(result.newDisplay) : result.newDisplay, account: updated });
   } catch (e) {
-    if (e instanceof FieldUpdateError) {
+    if (e instanceof FieldUpdateError || e instanceof AutomationValidationError) {
       return ssnSafeJson({ error: e.message }, { status: 400 });
     }
     const msg = e instanceof Error ? e.message : "Update failed";

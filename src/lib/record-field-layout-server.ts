@@ -1,4 +1,5 @@
 import "server-only";
+import { recordStage } from "./stage-requirements";
 import { prisma } from "./prisma";
 import { layoutId, type LayoutEntity, type RecordFieldLayout, validateFieldLayout } from "./record-field-layout";
 export async function getRecordFieldLayouts(entity: LayoutEntity): Promise<Record<string, RecordFieldLayout>> {
@@ -12,5 +13,6 @@ export async function getRecordFieldLayouts(entity: LayoutEntity): Promise<Recor
 }
 export async function getRecordFieldLayout(entity: LayoutEntity, stage: string | null): Promise<RecordFieldLayout> {
   const layouts = await getRecordFieldLayouts(entity);
-  return layouts[stage ?? "*"] ?? layouts["*"] ?? {};
+  const normalized = stage ? recordStage(entity, { status: stage, stage, clientStatus: stage, negotiationStatus: stage }) : "*";
+  return layouts[normalized] ?? layouts["*"] ?? {};
 }

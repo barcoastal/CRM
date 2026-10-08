@@ -1,3 +1,5 @@
+import { withAutomationErrors } from "@/lib/automation/errors";
+import { assertStageRequirements } from "@/lib/stage-requirements-server";
 import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
@@ -44,7 +46,7 @@ export async function GET(req: NextRequest) {
   return ssnSafeJson({ items, total });
 }
 
-export async function POST(req: NextRequest) {
+async function POSTHandler(req: NextRequest) {
   const r = await requireAuthOrRespond("Account.Create");
   if ("response" in r) return r.response;
 
@@ -54,6 +56,9 @@ export async function POST(req: NextRequest) {
     return ssnSafeJson({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
   }
 
+  await assertStageRequirements("Account", { ...parsed.data, ownerId: parsed.data.ownerId || r.session.userId });
   const account = await prisma.account.create({ data: { ...parsed.data, ownerId: parsed.data.ownerId || r.session.userId } });
   return ssnSafeJson(account, { status: 201 });
 }
+
+export const POST = withAutomationErrors(POSTHandler);

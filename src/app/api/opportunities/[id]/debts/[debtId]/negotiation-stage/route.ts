@@ -1,3 +1,5 @@
+import { assertStageRequirements } from "@/lib/stage-requirements-server";
+import { AutomationValidationError } from "@/lib/automation/errors";
 import { isNegotiationEligible } from "@/lib/negotiation-access";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -21,6 +23,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (debt.negotiationStatus !== previousStatus) return NextResponse.json({ error: "This debt was updated by someone else. Refresh and try again." }, { status: 409 });
   if (negotiationStage(debt.negotiationStatus, debt.status) === stage) return NextResponse.json({ ok: true });
   try {
+    await assertStageRequirements("Negotiation", { ...debt, negotiationStatus: stage }, debt);
     await prisma.$transaction(async (tx) => {
       const updated = await tx.debt.updateMany({ where: { id: debtId, opportunityId: id, negotiationStatus: previousStatus }, data: { negotiationStatus: stage } });
       if (updated.count !== 1) throw new Error("STAGE_CONFLICT");
@@ -30,6 +33,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       } });
     });
   } catch (error) {
+    if (error instanceof AutomationValidationError) return NextResponse.json({ error: error.message }, { status: 400 });
     if (error instanceof Error && error.message === "STAGE_CONFLICT") return NextResponse.json({ error: "This debt was updated by someone else. Refresh and try again." }, { status: 409 });
     throw error;
   }

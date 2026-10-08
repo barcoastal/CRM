@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ beforeInsert: vi.fn(), afterInsert: vi.fn(), beforeUpdate: vi.fn(), afterUpdate: vi.fn(), create: vi.fn(), update: vi.fn(), findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), dispatch: vi.fn() }));
-vi.mock("@/lib/prisma", () => ({ prisma: { lead: mocks } }));
+const mocks = vi.hoisted(() => ({ layouts: vi.fn(), beforeInsert: vi.fn(), afterInsert: vi.fn(), beforeUpdate: vi.fn(), afterUpdate: vi.fn(), create: vi.fn(), update: vi.fn(), findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), dispatch: vi.fn() }));
+vi.mock("@/lib/prisma", () => ({ prisma: { lead: mocks, pageLayout: { findMany: mocks.layouts } } }));
 vi.mock("@/lib/triggers/registry", () => ({ getTrigger: () => mocks }));
 vi.mock("@/lib/flow/executor", () => ({ evaluateAndStartFlows: mocks.dispatch }));
 import { triggerCreateArgs, triggerUpdateArgs, makeCtx } from "@/lib/triggers/runner";
 
-beforeEach(() => { vi.resetAllMocks(); mocks.dispatch.mockResolvedValue(undefined); });
+beforeEach(() => { vi.resetAllMocks(); mocks.layouts.mockResolvedValue([]); mocks.dispatch.mockResolvedValue(undefined); });
 describe("record-save dispatch", () => {
   it("validates before writing and dispatches insert exactly once", async () => {
     const row = { id: "lead1", status: "New" };
@@ -33,4 +33,11 @@ describe("record-save dispatch", () => {
     await expect(triggerUpdateArgs("lead", { where: { id: "lead1" }, data: {} }, makeCtx("actor"))).rejects.toThrow();
     expect(mocks.update).not.toHaveBeenCalled();
   });
+});
+it("blocks configured stage requirements before writes and automation effects", async () => {
+  mocks.findUnique.mockResolvedValue({ id: "lead1", status: "New", email: null });
+  mocks.findUniqueOrThrow.mockResolvedValue({ id: "lead1", status: "New", email: null });
+  mocks.layouts.mockResolvedValue([{ id: "record-fields:Lead:Working Lead", layout: { "lead-1": { columns: 2, fields: [{ id: "Email", hidden: false, required: true, span: 1 }] } } }]);
+  await expect(triggerUpdateArgs("lead", { where: { id: "lead1" }, data: { status: "Working Lead" } }, makeCtx("actor"))).rejects.toThrow("Email");
+  expect(mocks.beforeUpdate).not.toHaveBeenCalled(); expect(mocks.update).not.toHaveBeenCalled(); expect(mocks.dispatch).not.toHaveBeenCalled();
 });

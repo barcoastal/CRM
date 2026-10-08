@@ -1,3 +1,4 @@
+import { assertStageRequirements } from "@/lib/stage-requirements-server";
 import { prisma } from "@/lib/prisma";
 import { assertLeadCallDisposition } from "@/lib/lead-call-disposition";
 import {
@@ -105,6 +106,7 @@ export async function convertLead(
   // Enforce the same call-disposition requirement shown by the health check,
   // including internal callers and admins, before creating any records.
   assertLeadCallDisposition(lead.sfDataJson);
+  await assertStageRequirements("Lead", { ...lead, status: "Converted" });
 
   // Conversion also requires Company + Debt Information.
   // - Company = Lead.businessName populated
@@ -155,6 +157,7 @@ export async function convertLead(
       },
     });
 
+    await assertStageRequirements("Account", account);
     const contact = await tx.contact.create({
       data: {
         firstName,
@@ -200,6 +203,7 @@ export async function convertLead(
           notes: `Converted from lead ${lead.id} (${oppName})`,
         },
       });
+      await assertStageRequirements("Opportunity", { ...opp, account });
       opportunityId = opp.id;
 
       // Copy Lead debts into the new Opportunity

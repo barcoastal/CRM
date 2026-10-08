@@ -28,8 +28,8 @@ export function RecordLayoutEditor({ entity, stage, initial, version: initialVer
   }
   return <main className="layout-editor">
     <Link href="/settings">‹ Settings</Link>
-    <h1>Record field layouts</h1>
-    <p>Choose which fields appear and where they sit within each section. Changes apply to everyone viewing this record type and stage.</p>
+    <h1>Fields & stage requirements</h1>
+    <p>Choose field positions, visibility, and the fields required to enter each stage. Changes apply to everyone viewing this record type and stage.</p>
     <div className="toolbar">
       <label>Record type<select value={entity} disabled={saving} onChange={event => choose(event.target.value, "*")}>{Object.keys(fieldCatalog).map(name => <option key={name}>{name}</option>)}</select></label>
       <label>Stage<select value={stage} disabled={saving} onChange={event => choose(entity, event.target.value)}><option value="*">All stages — default</option>{layoutStages[entity].map(name => <option key={name}>{name}</option>)}</select></label>
@@ -38,18 +38,19 @@ export function RecordLayoutEditor({ entity, stage, initial, version: initialVer
       {dirty && <span>Unsaved changes</span>}
     </div>
     {inherited && !version && <p>This stage uses the default layout. Saving creates an override for this stage.</p>}
-    <p>Layout changes do not change field permissions or required-field rules. <Link href="/settings/validation-rules">Manage validation rules</Link> · <Link href="/settings/path-guidance">Manage stage guidance</Link></p>
+    <p>Required fields are checked when a record enters this stage, including lead conversion. Existing business rules also apply. <Link href="/settings/validation-rules">Manage validation rules</Link> · <Link href="/settings/path-guidance">Manage stage guidance</Link></p>
     <p role="status" aria-live="polite">{message}</p>
     <input type="search" aria-label="Find a field or section" placeholder="Find a field or section…" value={search} onChange={event => setSearch(event.target.value)} />
     {fieldCatalog[entity].filter(group => `${group.title} ${group.fields.map(f => f.label).join(" ")}`.toLowerCase().includes(search.toLowerCase())).map(group => {
       const grid = layout[group.id];
-      const complete = [...grid.fields, ...group.fields.filter(f => !grid.fields.some(saved => saved.id === f.id)).map(f => ({ id: f.id, hidden: false, span: 1 as const }))];
+      const complete = [...grid.fields, ...group.fields.filter(f => !grid.fields.some(saved => saved.id === f.id)).map(f => ({ id: f.id, hidden: false, required: false, span: 1 as const }))];
       return <section key={group.id}><header><h2>{group.title}</h2><label>Columns <select disabled={saving} value={grid.columns} onChange={event => change(group.id, { ...grid, columns: Number(event.target.value) as 1 | 2 })}><option value={1}>One</option><option value={2}>Two</option></select></label></header>
         <div className="field-preview" style={{ gridTemplateColumns: `repeat(${grid.columns}, minmax(0, 1fr))` }}>{complete.map((field, index) => <div key={field.id} className={`field-slot ${field.hidden ? "hidden-field" : ""}`} style={{ gridColumn: field.span === 2 ? "1 / -1" : undefined }}>
           <strong>{field.id}</strong><div className="controls">
           <button disabled={saving || index === 0} aria-label={`Move ${field.id} earlier`} onClick={() => { const fields = [...complete]; [fields[index - 1], fields[index]] = [fields[index], fields[index - 1]]; change(group.id, { ...grid, fields }); }}>↑</button>
           <button disabled={saving || index === complete.length - 1} aria-label={`Move ${field.id} later`} onClick={() => { const fields = [...complete]; [fields[index + 1], fields[index]] = [fields[index], fields[index + 1]]; change(group.id, { ...grid, fields }); }}>↓</button>
-          <label><input type="checkbox" disabled={saving} checked={!field.hidden} onChange={event => change(group.id, { ...grid, fields: complete.map(f => f.id === field.id ? { ...f, hidden: !event.target.checked } : f) })} />Show</label>
+          <label><input type="checkbox" disabled={saving || field.required} checked={!field.hidden} onChange={event => change(group.id, { ...grid, fields: complete.map(f => f.id === field.id ? { ...f, hidden: !event.target.checked } : f) })} />Show</label>
+          {group.fields.find(known => known.id === field.id)?.requirementKey && <label><input type="checkbox" disabled={saving} checked={field.required ?? false} onChange={event => change(group.id, { ...grid, fields: complete.map(f => f.id === field.id ? { ...f, required: event.target.checked, hidden: event.target.checked ? false : f.hidden } : f) })} />Required to enter stage</label>}
           <label><input type="checkbox" disabled={saving || grid.columns === 1} checked={field.span === 2} onChange={event => change(group.id, { ...grid, fields: complete.map(f => f.id === field.id ? { ...f, span: event.target.checked ? 2 : 1 } : f) })} />Full width</label>
           </div></div>)}</div>
       </section>;

@@ -3,6 +3,7 @@ import type { Opportunity } from "@/generated/prisma/client";
 import type { TriggerCtx } from "@/lib/triggers/types";
 
 const db = vi.hoisted(() => ({
+  pageLayout: { findMany: vi.fn() },
   lead: { findUnique: vi.fn(), update: vi.fn() },
   account: { create: vi.fn(), update: vi.fn() },
   contact: { create: vi.fn() },
@@ -24,6 +25,7 @@ import { opportunityTrigger } from "@/lib/triggers/opportunity-trigger";
 describe("conversion account lifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    db.pageLayout.findMany.mockResolvedValue([]);
     db.$transaction.mockImplementation(async (fn) => fn(db));
     db.lead.findUnique.mockResolvedValue({ id: "lead", businessName: "Example", contactName: "Test Person", totalDebtEst: 10000, debts: [], calls: [], sfDataJson: JSON.stringify({ five9_Disposition__c: "Transferred", CloserLookup__c: "closer", Call_Transfer_Status__c: "Transferred", Call_Received_By_Lookup__c: "closer", Call_Received_Date__c: "2026-10-05" }) });
     db.account.create.mockResolvedValue({ id: "account", name: "Example" });
@@ -84,4 +86,11 @@ describe("conversion account lifecycle", () => {
       expect(db.account.update).not.toHaveBeenCalled();
     }
   });
+});
+
+it("blocks conversion before creating records when an admin-required field is missing", async () => {
+  db.lead.findUnique.mockResolvedValue({ id: "lead", status: "Working Lead", businessName: "Example", contactName: "Test", debts: [], calls: [], totalDebtEst: 10000, sfDataJson: JSON.stringify({ five9_Disposition__c: "Transferred", CloserLookup__c: "closer", Call_Transfer_Status__c: "Transferred", Call_Received_By_Lookup__c: "closer", Call_Received_Date__c: "2026-10-05" }) });
+  db.pageLayout.findMany.mockResolvedValue([{ id: "record-fields:Lead:Converted", layout: { "lead-1": { columns: 2, fields: [{ id: "Email", hidden: false, span: 1, required: true }] } } }]);
+  db.account.create.mockClear();
+  await expect(convertLead("lead", { skipValidation: true })).rejects.toThrow("Email"); expect(db.account.create).not.toHaveBeenCalled();
 });

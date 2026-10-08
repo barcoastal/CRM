@@ -6,207 +6,258 @@
       "fields": [
         {
           "id": "Name",
-          "label": "Name"
+          "label": "Name",
+          "requirementKey": "contactName"
         },
         {
           "id": "SSN",
-          "label": "SSN"
+          "label": "SSN",
+          "requirementKey": "sfDataJson.SSN__c"
         },
         {
           "id": "Email",
-          "label": "Email"
+          "label": "Email",
+          "requirementKey": "email"
         },
         {
           "id": "Date Of Birth",
-          "label": "Date Of Birth"
+          "label": "Date Of Birth",
+          "requirementKey": "sfDataJson.Date_Of_Birth__c"
         },
         {
           "id": "Alternate Email",
-          "label": "Alternate Email"
+          "label": "Alternate Email",
+          "requirementKey": "sfDataJson.Alternate_Email__c"
         },
         {
           "id": "Gender",
-          "label": "Gender"
+          "label": "Gender",
+          "requirementKey": "sfDataJson.Gender__c"
         },
         {
           "id": "Phone",
-          "label": "Phone"
+          "label": "Phone",
+          "requirementKey": "phone"
         },
         {
           "id": "Title",
-          "label": "Title"
+          "label": "Title",
+          "requirementKey": "Title"
         },
         {
           "id": "Mobile",
-          "label": "Mobile"
+          "label": "Mobile",
+          "requirementKey": "MobilePhone"
         },
         {
           "id": "Address",
-          "label": "Address"
+          "label": "Address",
+          "requirementKey": null
         },
         {
           "id": "Work Phone",
-          "label": "Work Phone"
+          "label": "Work Phone",
+          "requirementKey": "sfDataJson.Work_Phone__c"
         },
         {
           "id": "Timezone",
-          "label": "Timezone"
+          "label": "Timezone",
+          "requirementKey": null
         },
         {
           "id": "Fax",
-          "label": "Fax"
+          "label": "Fax",
+          "requirementKey": "Fax"
         },
         {
           "id": "IP Address",
-          "label": "IP Address"
+          "label": "IP Address",
+          "requirementKey": null
         },
         {
           "id": "Preferred method of Contact",
-          "label": "Preferred method of Contact"
+          "label": "Preferred method of Contact",
+          "requirementKey": "sfDataJson.Preferred_method_of_Contact__c"
         },
         {
           "id": "Keyword",
-          "label": "Keyword"
+          "label": "Keyword",
+          "requirementKey": "sfDataJson.Keyword__c"
         },
         {
           "id": "Legal Plan Required",
-          "label": "Legal Plan Required"
+          "label": "Legal Plan Required",
+          "requirementKey": "sfDataJson.Legal_Plan_Required__c"
         },
         {
           "id": "Secured Party",
-          "label": "Secured Party"
+          "label": "Secured Party",
+          "requirementKey": "sfDataJson.Secured_Party__c"
         },
         {
           "id": "External ID 15 digit",
-          "label": "External ID 15 digit"
+          "label": "External ID 15 digit",
+          "requirementKey": null
         },
         {
           "id": "Call ASAP",
-          "label": "Call ASAP"
+          "label": "Call ASAP",
+          "requirementKey": "sfDataJson.Call_ASAP__c"
         },
         {
           "id": "Outbound ANI Date",
-          "label": "Outbound ANI Date"
+          "label": "Outbound ANI Date",
+          "requirementKey": null
         },
         {
           "id": "Hopper Priority",
-          "label": "Hopper Priority"
+          "label": "Hopper Priority",
+          "requirementKey": "sfDataJson.Hopper_Priority__c"
         },
         {
           "id": "Outbound ANI Identifier",
-          "label": "Outbound ANI Identifier"
+          "label": "Outbound ANI Identifier",
+          "requirementKey": null
         },
         {
           "id": "Outbound ANI From",
-          "label": "Outbound ANI From"
+          "label": "Outbound ANI From",
+          "requirementKey": null
         },
         {
           "id": "Hubspot Id",
-          "label": "Hubspot Id"
+          "label": "Hubspot Id",
+          "requirementKey": null
         },
         {
           "id": "Preferred Language",
-          "label": "Preferred Language"
+          "label": "Preferred Language",
+          "requirementKey": "sfDataJson.Preferred_Language__c"
         },
         {
           "id": "Append Leads Counter",
-          "label": "Append Leads Counter"
+          "label": "Append Leads Counter",
+          "requirementKey": null
         },
         {
           "id": "Lead Assignment Date",
-          "label": "Lead Assignment Date"
+          "label": "Lead Assignment Date",
+          "requirementKey": null
         },
         {
           "id": "Has Calendly Event",
-          "label": "Has Calendly Event"
+          "label": "Has Calendly Event",
+          "requirementKey": null
         },
         {
           "id": "Verified Phone Number",
-          "label": "Verified Phone Number"
+          "label": "Verified Phone Number",
+          "requirementKey": null
         },
         {
           "id": "Call counter",
-          "label": "Call counter"
+          "label": "Call counter",
+          "requirementKey": null
         },
         {
           "id": "MCA Lender External Id",
-          "label": "MCA Lender External Id"
+          "label": "MCA Lender External Id",
+          "requirementKey": null
         },
         {
           "id": "Is Archived",
-          "label": "Is Archived"
+          "label": "Is Archived",
+          "requirementKey": null
         },
         {
           "id": "Five9 Final Stage",
-          "label": "Five9 Final Stage"
+          "label": "Five9 Final Stage",
+          "requirementKey": null
         },
         {
           "id": "Archived Date",
-          "label": "Archived Date"
+          "label": "Archived Date",
+          "requirementKey": null
         },
         {
           "id": "IPQS IsActive",
-          "label": "IPQS IsActive"
+          "label": "IPQS IsActive",
+          "requirementKey": null
         },
         {
           "id": "IPQS Active Status",
-          "label": "IPQS Active Status"
+          "label": "IPQS Active Status",
+          "requirementKey": null
         },
         {
           "id": "IPQS Carrier",
-          "label": "IPQS Carrier"
+          "label": "IPQS Carrier",
+          "requirementKey": null
         },
         {
           "id": "IPQS Email",
-          "label": "IPQS Email"
+          "label": "IPQS Email",
+          "requirementKey": null
         },
         {
           "id": "IPQS Fraud Score",
-          "label": "IPQS Fraud Score"
+          "label": "IPQS Fraud Score",
+          "requirementKey": null
         },
         {
           "id": "IPQS Is Prepaid",
-          "label": "IPQS Is Prepaid"
+          "label": "IPQS Is Prepaid",
+          "requirementKey": null
         },
         {
           "id": "IPQS Line Type",
-          "label": "IPQS Line Type"
+          "label": "IPQS Line Type",
+          "requirementKey": null
         },
         {
           "id": "IPQS Is Risky",
-          "label": "IPQS Is Risky"
+          "label": "IPQS Is Risky",
+          "requirementKey": null
         },
         {
           "id": "IPQS Is VOIP",
-          "label": "IPQS Is VOIP"
+          "label": "IPQS Is VOIP",
+          "requirementKey": null
         },
         {
           "id": "IPQS Is Valid",
-          "label": "IPQS Is Valid"
+          "label": "IPQS Is Valid",
+          "requirementKey": null
         },
         {
           "id": "Lead Score",
-          "label": "Lead Score"
+          "label": "Lead Score",
+          "requirementKey": null
         },
         {
           "id": "Ad Click Id",
-          "label": "Ad Click Id"
+          "label": "Ad Click Id",
+          "requirementKey": null
         },
         {
           "id": "Sync To Account Engagement",
-          "label": "Sync To Account Engagement"
+          "label": "Sync To Account Engagement",
+          "requirementKey": null
         },
         {
           "id": "Facebook Lead Id",
-          "label": "Facebook Lead Id"
+          "label": "Facebook Lead Id",
+          "requirementKey": null
         },
         {
           "id": "Total Dial Attempts",
-          "label": "Total Dial Attempts"
+          "label": "Total Dial Attempts",
+          "requirementKey": null
         },
         {
           "id": "Eli Ad click",
-          "label": "Eli Ad click"
+          "label": "Eli Ad click",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -217,31 +268,38 @@
       "fields": [
         {
           "id": "Company",
-          "label": "Company"
+          "label": "Company",
+          "requirementKey": "businessName"
         },
         {
           "id": "EIN Number / Tax Id",
-          "label": "EIN Number / Tax Id"
+          "label": "EIN Number / Tax Id",
+          "requirementKey": "ein"
         },
         {
           "id": "Annual Revenue",
-          "label": "Annual Revenue"
+          "label": "Annual Revenue",
+          "requirementKey": "annualRevenue"
         },
         {
           "id": "Monthly Revenue",
-          "label": "Monthly Revenue"
+          "label": "Monthly Revenue",
+          "requirementKey": "sfDataJson.Monthly_Revenue__c"
         },
         {
           "id": "Business Start Date",
-          "label": "Business Start Date"
+          "label": "Business Start Date",
+          "requirementKey": "sfDataJson.Business_Start_Date__c"
         },
         {
           "id": "UCC filing Date",
-          "label": "UCC filing Date"
+          "label": "UCC filing Date",
+          "requirementKey": null
         },
         {
           "id": "Industry",
-          "label": "Industry"
+          "label": "Industry",
+          "requirementKey": "industry"
         }
       ],
       "columns": 2
@@ -252,23 +310,28 @@
       "fields": [
         {
           "id": "MCA Amount",
-          "label": "MCA Amount"
+          "label": "MCA Amount",
+          "requirementKey": "sfDataJson.MCA_Amount__c"
         },
         {
           "id": "Estimated Total Debt",
-          "label": "Estimated Total Debt"
+          "label": "Estimated Total Debt",
+          "requirementKey": "totalDebtEst"
         },
         {
           "id": "Current Total Monthly Payment",
-          "label": "Current Total Monthly Payment"
+          "label": "Current Total Monthly Payment",
+          "requirementKey": null
         },
         {
           "id": "Current Total Daily Payment",
-          "label": "Current Total Daily Payment"
+          "label": "Current Total Daily Payment",
+          "requirementKey": null
         },
         {
           "id": "Current Total Weekly Payment",
-          "label": "Current Total Weekly Payment"
+          "label": "Current Total Weekly Payment",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -279,43 +342,53 @@
       "fields": [
         {
           "id": "Total Debt Amount",
-          "label": "Total Debt Amount"
+          "label": "Total Debt Amount",
+          "requirementKey": null
         },
         {
           "id": "Frequency",
-          "label": "Frequency"
+          "label": "Frequency",
+          "requirementKey": null
         },
         {
           "id": "Payment Amount",
-          "label": "Payment Amount"
+          "label": "Payment Amount",
+          "requirementKey": null
         },
         {
           "id": "Monthly Bank Fee",
-          "label": "Monthly Bank Fee"
+          "label": "Monthly Bank Fee",
+          "requirementKey": null
         },
         {
           "id": "Setup Fee",
-          "label": "Setup Fee"
+          "label": "Setup Fee",
+          "requirementKey": null
         },
         {
           "id": "Program Fee Percentage",
-          "label": "Program Fee Percentage"
+          "label": "Program Fee Percentage",
+          "requirementKey": null
         },
         {
           "id": "Retainer Percentage",
-          "label": "Retainer Percentage"
+          "label": "Retainer Percentage",
+          "requirementKey": null
         },
         {
           "id": "Settlement Percentage",
-          "label": "Settlement Percentage"
+          "label": "Settlement Percentage",
+          "requirementKey": null
         },
         {
           "id": "Payment Term",
-          "label": "Payment Term"
+          "label": "Payment Term",
+          "requirementKey": null
         },
         {
           "id": "Down Payment",
-          "label": "Down Payment"
+          "label": "Down Payment",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -326,47 +399,58 @@
       "fields": [
         {
           "id": "Fronter",
-          "label": "Fronter"
+          "label": "Fronter",
+          "requirementKey": "sfDataJson.FronterLookup__c"
         },
         {
           "id": "Closer",
-          "label": "Closer"
+          "label": "Closer",
+          "requirementKey": "sfDataJson.CloserLookup__c"
         },
         {
           "id": "Call Transferred By",
-          "label": "Call Transferred By"
+          "label": "Call Transferred By",
+          "requirementKey": "sfDataJson.Call_Transferred_By_Lookup__c"
         },
         {
           "id": "Call Received By",
-          "label": "Call Received By"
+          "label": "Call Received By",
+          "requirementKey": "sfDataJson.Call_Received_By_Lookup__c"
         },
         {
           "id": "Call Transferred DateTime",
-          "label": "Call Transferred DateTime"
+          "label": "Call Transferred DateTime",
+          "requirementKey": "sfDataJson.Call_Tranferred_DateTime__c"
         },
         {
           "id": "Call Received Date",
-          "label": "Call Received Date"
+          "label": "Call Received Date",
+          "requirementKey": "sfDataJson.Call_Received_Date__c"
         },
         {
           "id": "Call Transfer Status",
-          "label": "Call Transfer Status"
+          "label": "Call Transfer Status",
+          "requirementKey": "sfDataJson.Call_Transfer_Status__c"
         },
         {
           "id": "Transfer Qualification",
-          "label": "Transfer Qualification"
+          "label": "Transfer Qualification",
+          "requirementKey": "sfDataJson.Transfer_Qualification__c"
         },
         {
           "id": "Outbound Call Priority",
-          "label": "Outbound Call Priority"
+          "label": "Outbound Call Priority",
+          "requirementKey": "sfDataJson.Outbound_Call_Priority__c"
         },
         {
           "id": "Reason for Disqualification",
-          "label": "Reason for Disqualification"
+          "label": "Reason for Disqualification",
+          "requirementKey": "sfDataJson.Reason_for_Disqualification__c"
         },
         {
           "id": "Agent Location",
-          "label": "Agent Location"
+          "label": "Agent Location",
+          "requirementKey": "sfDataJson.Agent_Location__c"
         }
       ],
       "columns": 2
@@ -377,35 +461,43 @@
       "fields": [
         {
           "id": "Dialer Group",
-          "label": "Dialer Group"
+          "label": "Dialer Group",
+          "requirementKey": null
         },
         {
           "id": "Add to f9list Id",
-          "label": "Add to f9list Id"
+          "label": "Add to f9list Id",
+          "requirementKey": null
         },
         {
           "id": "Five9 Disposition",
-          "label": "Five9 Disposition"
+          "label": "Five9 Disposition",
+          "requirementKey": "sfDataJson.five9_Disposition__c"
         },
         {
           "id": "Delete from f9list id",
-          "label": "Delete from f9list id"
+          "label": "Delete from f9list id",
+          "requirementKey": null
         },
         {
           "id": "five9 Last Disposition",
-          "label": "five9 Last Disposition"
+          "label": "five9 Last Disposition",
+          "requirementKey": null
         },
         {
           "id": "Five9 List Id",
-          "label": "Five9 List Id"
+          "label": "Five9 List Id",
+          "requirementKey": null
         },
         {
           "id": "Five9 Time To Call",
-          "label": "Five9 Time To Call"
+          "label": "Five9 Time To Call",
+          "requirementKey": null
         },
         {
           "id": "Five9 List Updated by Convoso Batch",
-          "label": "Five9 List Updated by Convoso Batch"
+          "label": "Five9 List Updated by Convoso Batch",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -416,91 +508,113 @@
       "fields": [
         {
           "id": "Lead Vendor ID",
-          "label": "Lead Vendor ID"
+          "label": "Lead Vendor ID",
+          "requirementKey": "sfDataJson.Lead_Vendor_ID__c"
         },
         {
           "id": "Lead Vendor Id Text",
-          "label": "Lead Vendor Id Text"
+          "label": "Lead Vendor Id Text",
+          "requirementKey": "sfDataJson.Lead_Vendor_Id_Text__c"
         },
         {
           "id": "Owner",
-          "label": "Owner"
+          "label": "Owner",
+          "requirementKey": null
         },
         {
           "id": "Lead Id",
-          "label": "Lead Id"
+          "label": "Lead Id",
+          "requirementKey": null
         },
         {
           "id": "Record Type",
-          "label": "Record Type"
+          "label": "Record Type",
+          "requirementKey": null
         },
         {
           "id": "List Id",
-          "label": "List Id"
+          "label": "List Id",
+          "requirementKey": null
         },
         {
           "id": "Lead Source Category",
-          "label": "Lead Source Category"
+          "label": "Lead Source Category",
+          "requirementKey": "sfDataJson.Lead_Source_Category__c"
         },
         {
           "id": "Lead Source",
-          "label": "Lead Source"
+          "label": "Lead Source",
+          "requirementKey": "source"
         },
         {
           "id": "Brand",
-          "label": "Brand"
+          "label": "Brand",
+          "requirementKey": "brand"
         },
         {
           "id": "Status",
-          "label": "Status"
+          "label": "Status",
+          "requirementKey": "status"
         },
         {
           "id": "Last Disposition",
-          "label": "Last Disposition"
+          "label": "Last Disposition",
+          "requirementKey": "lastDisposition"
         },
         {
           "id": "Check Duplicate",
-          "label": "Check Duplicate"
+          "label": "Check Duplicate",
+          "requirementKey": null
         },
         {
           "id": "Last Disposition DateTime",
-          "label": "Last Disposition DateTime"
+          "label": "Last Disposition DateTime",
+          "requirementKey": null
         },
         {
           "id": "Check Duplicate Archive",
-          "label": "Check Duplicate Archive"
+          "label": "Check Duplicate Archive",
+          "requirementKey": null
         },
         {
           "id": "Sub Disposition",
-          "label": "Sub Disposition"
+          "label": "Sub Disposition",
+          "requirementKey": "sfDataJson.Sub_Disposition__c"
         },
         {
           "id": "Check DNC",
-          "label": "Check DNC"
+          "label": "Check DNC",
+          "requirementKey": null
         },
         {
           "id": "Last Sub Disposition",
-          "label": "Last Sub Disposition"
+          "label": "Last Sub Disposition",
+          "requirementKey": "lastSubDisposition"
         },
         {
           "id": "Check Wireless",
-          "label": "Check Wireless"
+          "label": "Check Wireless",
+          "requirementKey": null
         },
         {
           "id": "Last Contacted DateTime",
-          "label": "Last Contacted DateTime"
+          "label": "Last Contacted DateTime",
+          "requirementKey": "lastContactedAt"
         },
         {
           "id": "UTM Term",
-          "label": "UTM Term"
+          "label": "UTM Term",
+          "requirementKey": null
         },
         {
           "id": "Week Days Between Last Contacted Date",
-          "label": "Week Days Between Last Contacted Date"
+          "label": "Week Days Between Last Contacted Date",
+          "requirementKey": null
         },
         {
           "id": "Vendor Code",
-          "label": "Vendor Code"
+          "label": "Vendor Code",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -511,87 +625,108 @@
       "fields": [
         {
           "id": "Email Opt Out",
-          "label": "Email Opt Out"
+          "label": "Email Opt Out",
+          "requirementKey": null
         },
         {
           "id": "First Search Type",
-          "label": "First Search Type"
+          "label": "First Search Type",
+          "requirementKey": null
         },
         {
           "id": "Campaign",
-          "label": "Campaign"
+          "label": "Campaign",
+          "requirementKey": null
         },
         {
           "id": "Grade",
-          "label": "Grade"
+          "label": "Grade",
+          "requirementKey": null
         },
         {
           "id": "Comments",
-          "label": "Comments"
+          "label": "Comments",
+          "requirementKey": null
         },
         {
           "id": "Hard Bounced",
-          "label": "Hard Bounced"
+          "label": "Hard Bounced",
+          "requirementKey": null
         },
         {
           "id": "Conversion Date",
-          "label": "Conversion Date"
+          "label": "Conversion Date",
+          "requirementKey": null
         },
         {
           "id": "Last Activity",
-          "label": "Last Activity"
+          "label": "Last Activity",
+          "requirementKey": null
         },
         {
           "id": "Created Date",
-          "label": "Created Date"
+          "label": "Created Date",
+          "requirementKey": null
         },
         {
           "id": "Last Scored At",
-          "label": "Last Scored At"
+          "label": "Last Scored At",
+          "requirementKey": null
         },
         {
           "id": "First Activity",
-          "label": "First Activity"
+          "label": "First Activity",
+          "requirementKey": null
         },
         {
           "id": "Notes",
-          "label": "Notes"
+          "label": "Notes",
+          "requirementKey": null
         },
         {
           "id": "First Touch URL",
-          "label": "First Touch URL"
+          "label": "First Touch URL",
+          "requirementKey": null
         },
         {
           "id": "Account Engagement Score",
-          "label": "Account Engagement Score"
+          "label": "Account Engagement Score",
+          "requirementKey": null
         },
         {
           "id": "First Search Term",
-          "label": "First Search Term"
+          "label": "First Search Term",
+          "requirementKey": null
         },
         {
           "id": "URL",
-          "label": "URL"
+          "label": "URL",
+          "requirementKey": null
         },
         {
           "id": "Form Name",
-          "label": "Form Name"
+          "label": "Form Name",
+          "requirementKey": null
         },
         {
           "id": "Form Page",
-          "label": "Form Page"
+          "label": "Form Page",
+          "requirementKey": null
         },
         {
           "id": "Form Position",
-          "label": "Form Position"
+          "label": "Form Position",
+          "requirementKey": null
         },
         {
           "id": "Form SubPage",
-          "label": "Form SubPage"
+          "label": "Form SubPage",
+          "requirementKey": null
         },
         {
           "id": "Form Type",
-          "label": "Form Type"
+          "label": "Form Type",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -602,27 +737,33 @@
       "fields": [
         {
           "id": "Product Interest",
-          "label": "Product Interest"
+          "label": "Product Interest",
+          "requirementKey": null
         },
         {
           "id": "Current Generators",
-          "label": "Current Generators"
+          "label": "Current Generators",
+          "requirementKey": null
         },
         {
           "id": "SIC Code",
-          "label": "SIC Code"
+          "label": "SIC Code",
+          "requirementKey": null
         },
         {
           "id": "Number of Locations",
-          "label": "Number of Locations"
+          "label": "Number of Locations",
+          "requirementKey": null
         },
         {
           "id": "Created By",
-          "label": "Created By"
+          "label": "Created By",
+          "requirementKey": null
         },
         {
           "id": "Last Modified By",
-          "label": "Last Modified By"
+          "label": "Last Modified By",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -633,11 +774,13 @@
       "fields": [
         {
           "id": "Description",
-          "label": "Description"
+          "label": "Description",
+          "requirementKey": null
         },
         {
           "id": "Lenders",
-          "label": "Lenders"
+          "label": "Lenders",
+          "requirementKey": null
         }
       ],
       "columns": 1
@@ -648,55 +791,68 @@
       "fields": [
         {
           "id": "UTM Source",
-          "label": "UTM Source"
+          "label": "UTM Source",
+          "requirementKey": "utmSource"
         },
         {
           "id": "UTM Medium",
-          "label": "UTM Medium"
+          "label": "UTM Medium",
+          "requirementKey": "utmMedium"
         },
         {
           "id": "UTM Campaign",
-          "label": "UTM Campaign"
+          "label": "UTM Campaign",
+          "requirementKey": "utmCampaign"
         },
         {
           "id": "UTM Term",
-          "label": "UTM Term"
+          "label": "UTM Term",
+          "requirementKey": "utmTerm"
         },
         {
           "id": "UTM Content",
-          "label": "UTM Content"
+          "label": "UTM Content",
+          "requirementKey": "utmContent"
         },
         {
           "id": "Google Click ID",
-          "label": "Google Click ID"
+          "label": "Google Click ID",
+          "requirementKey": "gclid"
         },
         {
           "id": "Facebook Click ID",
-          "label": "Facebook Click ID"
+          "label": "Facebook Click ID",
+          "requirementKey": "fbclid"
         },
         {
           "id": "Eli Click ID",
-          "label": "Eli Click ID"
+          "label": "Eli Click ID",
+          "requirementKey": "eliClickId"
         },
         {
           "id": "Redtrack ID",
-          "label": "Redtrack ID"
+          "label": "Redtrack ID",
+          "requirementKey": "redtrackClickId"
         },
         {
           "id": "Ad Click Id",
-          "label": "Ad Click Id"
+          "label": "Ad Click Id",
+          "requirementKey": null
         },
         {
           "id": "Ad Id",
-          "label": "Ad Id"
+          "label": "Ad Id",
+          "requirementKey": null
         },
         {
           "id": "Ad Set",
-          "label": "Ad Set"
+          "label": "Ad Set",
+          "requirementKey": null
         },
         {
           "id": "Hubspot Id",
-          "label": "Hubspot Id"
+          "label": "Hubspot Id",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -709,35 +865,43 @@
       "fields": [
         {
           "id": "Client Name",
-          "label": "Client Name"
+          "label": "Client Name",
+          "requirementKey": "individualName"
         },
         {
           "id": "Business Name",
-          "label": "Business Name"
+          "label": "Business Name",
+          "requirementKey": "name"
         },
         {
           "id": "Account Owner (CS Rep)",
-          "label": "Account Owner (CS Rep)"
+          "label": "Account Owner (CS Rep)",
+          "requirementKey": "ownerId"
         },
         {
           "id": "Opportunity Owner (Closer)",
-          "label": "Opportunity Owner (Closer)"
+          "label": "Opportunity Owner (Closer)",
+          "requirementKey": null
         },
         {
           "id": "Industry",
-          "label": "Industry"
+          "label": "Industry",
+          "requirementKey": "industry"
         },
         {
           "id": "Phone #",
-          "label": "Phone #"
+          "label": "Phone #",
+          "requirementKey": "phone"
         },
         {
           "id": "Alternate Name",
-          "label": "Alternate Name"
+          "label": "Alternate Name",
+          "requirementKey": "sfDataJson.Alternate_Name__c"
         },
         {
           "id": "Alternative #",
-          "label": "Alternative #"
+          "label": "Alternative #",
+          "requirementKey": "alternatePhone"
         }
       ],
       "columns": 2
@@ -748,15 +912,18 @@
       "fields": [
         {
           "id": "SSN",
-          "label": "SSN"
+          "label": "SSN",
+          "requirementKey": null
         },
         {
           "id": "EIN #",
-          "label": "EIN #"
+          "label": "EIN #",
+          "requirementKey": "ein"
         },
         {
           "id": "Lead #",
-          "label": "Lead #"
+          "label": "Lead #",
+          "requirementKey": "sfDataJson.Lead_Number__c"
         }
       ],
       "columns": 2
@@ -767,59 +934,73 @@
       "fields": [
         {
           "id": "Last Contact Date/Time",
-          "label": "Last Contact Date/Time"
+          "label": "Last Contact Date/Time",
+          "requirementKey": null
         },
         {
           "id": "Last Called Time",
-          "label": "Last Called Time"
+          "label": "Last Called Time",
+          "requirementKey": null
         },
         {
           "id": "Last Emailed Time",
-          "label": "Last Emailed Time"
+          "label": "Last Emailed Time",
+          "requirementKey": null
         },
         {
           "id": "Last SMS",
-          "label": "Last SMS"
+          "label": "Last SMS",
+          "requirementKey": null
         },
         {
           "id": "Legal Network",
-          "label": "Legal Network"
+          "label": "Legal Network",
+          "requirementKey": "sfDataJson.Legal_Network__c"
         },
         {
           "id": "Processor Status",
-          "label": "Processor Status"
+          "label": "Processor Status",
+          "requirementKey": null
         },
         {
           "id": "Total Debt",
-          "label": "Total Debt"
+          "label": "Total Debt",
+          "requirementKey": null
         },
         {
           "id": "Sync Status",
-          "label": "Sync Status"
+          "label": "Sync Status",
+          "requirementKey": null
         },
         {
           "id": "Legal Network Sync",
-          "label": "Legal Network Sync"
+          "label": "Legal Network Sync",
+          "requirementKey": null
         },
         {
           "id": "Sync Date/Time",
-          "label": "Sync Date/Time"
+          "label": "Sync Date/Time",
+          "requirementKey": null
         },
         {
           "id": "Bank Sync",
-          "label": "Bank Sync"
+          "label": "Bank Sync",
+          "requirementKey": null
         },
         {
           "id": "First Sign Date",
-          "label": "First Sign Date"
+          "label": "First Sign Date",
+          "requirementKey": null
         },
         {
           "id": "First Draft Date",
-          "label": "First Draft Date"
+          "label": "First Draft Date",
+          "requirementKey": "sfDataJson.First_Draft_Date__c"
         },
         {
           "id": "First Payment Completed",
-          "label": "First Payment Completed"
+          "label": "First Payment Completed",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -830,15 +1011,18 @@
       "fields": [
         {
           "id": "Negotiator",
-          "label": "Negotiator"
+          "label": "Negotiator",
+          "requirementKey": null
         },
         {
           "id": "Negotiation Status",
-          "label": "Negotiation Status"
+          "label": "Negotiation Status",
+          "requirementKey": "sfDataJson.NegotiationStatus__c"
         },
         {
           "id": "Legal Status",
-          "label": "Legal Status"
+          "label": "Legal Status",
+          "requirementKey": "legalStatus"
         }
       ],
       "columns": 2
@@ -849,231 +1033,288 @@
       "fields": [
         {
           "id": "Account Name",
-          "label": "Account Name"
+          "label": "Account Name",
+          "requirementKey": "name"
         },
         {
           "id": "Individual",
-          "label": "Individual"
+          "label": "Individual",
+          "requirementKey": "individualName"
         },
         {
           "id": "Alternative #",
-          "label": "Alternative #"
+          "label": "Alternative #",
+          "requirementKey": "alternatePhone"
         },
         {
           "id": "Date of Birth",
-          "label": "Date of Birth"
+          "label": "Date of Birth",
+          "requirementKey": "dateOfBirth"
         },
         {
           "id": "Account Owner",
-          "label": "Account Owner"
+          "label": "Account Owner",
+          "requirementKey": "ownerId"
         },
         {
           "id": "Opportunity Owner",
-          "label": "Opportunity Owner"
+          "label": "Opportunity Owner",
+          "requirementKey": null
         },
         {
           "id": "Parent Account",
-          "label": "Parent Account"
+          "label": "Parent Account",
+          "requirementKey": null
         },
         {
           "id": "Processor Status",
-          "label": "Processor Status"
+          "label": "Processor Status",
+          "requirementKey": null
         },
         {
           "id": "Phone",
-          "label": "Phone"
+          "label": "Phone",
+          "requirementKey": "phone"
         },
         {
           "id": "Fax",
-          "label": "Fax"
+          "label": "Fax",
+          "requirementKey": "Fax"
         },
         {
           "id": "Website",
-          "label": "Website"
+          "label": "Website",
+          "requirementKey": "website"
         },
         {
           "id": "Industry",
-          "label": "Industry"
+          "label": "Industry",
+          "requirementKey": "industry"
         },
         {
           "id": "Annual Revenue",
-          "label": "Annual Revenue"
+          "label": "Annual Revenue",
+          "requirementKey": "annualRevenue"
         },
         {
           "id": "SSN",
-          "label": "SSN"
+          "label": "SSN",
+          "requirementKey": null
         },
         {
           "id": "EIN Number / Tax Id",
-          "label": "EIN Number / Tax Id"
+          "label": "EIN Number / Tax Id",
+          "requirementKey": "ein"
         },
         {
           "id": "SIC Code",
-          "label": "SIC Code"
+          "label": "SIC Code",
+          "requirementKey": "Sic"
         },
         {
           "id": "Lead Number",
-          "label": "Lead Number"
+          "label": "Lead Number",
+          "requirementKey": "sfDataJson.Lead_Number__c"
         },
         {
           "id": "Total Debt",
-          "label": "Total Debt"
+          "label": "Total Debt",
+          "requirementKey": null
         },
         {
           "id": "Program Start Date",
-          "label": "Program Start Date"
+          "label": "Program Start Date",
+          "requirementKey": "programStartDate"
         },
         {
           "id": "Current Balance",
-          "label": "Current Balance"
+          "label": "Current Balance",
+          "requirementKey": null
         },
         {
           "id": "Program End Date",
-          "label": "Program End Date"
+          "label": "Program End Date",
+          "requirementKey": "programEndDate"
         },
         {
           "id": "Creditor Type",
-          "label": "Creditor Type"
+          "label": "Creditor Type",
+          "requirementKey": "sfDataJson.Creditor_Type__c"
         },
         {
           "id": "External SAS Id",
-          "label": "External SAS Id"
+          "label": "External SAS Id",
+          "requirementKey": "externalSasId"
         },
         {
           "id": "Account Record Type",
-          "label": "Account Record Type"
+          "label": "Account Record Type",
+          "requirementKey": null
         },
         {
           "id": "Brand",
-          "label": "Brand"
+          "label": "Brand",
+          "requirementKey": "brand"
         },
         {
           "id": "External RAM Id",
-          "label": "External RAM Id"
+          "label": "External RAM Id",
+          "requirementKey": "externalRamId"
         },
         {
           "id": "Primary Contact",
-          "label": "Primary Contact"
+          "label": "Primary Contact",
+          "requirementKey": null
         },
         {
           "id": "External Citadel Id",
-          "label": "External Citadel Id"
+          "label": "External Citadel Id",
+          "requirementKey": "sfDataJson.External_Citadel_Id__c"
         },
         {
           "id": "Synced DateTime",
-          "label": "Synced DateTime"
+          "label": "Synced DateTime",
+          "requirementKey": null
         },
         {
           "id": "Sync Status",
-          "label": "Sync Status"
+          "label": "Sync Status",
+          "requirementKey": null
         },
         {
           "id": "Closer",
-          "label": "Closer"
+          "label": "Closer",
+          "requirementKey": "sfDataJson.Closer__c"
         },
         {
           "id": "Bank Account Sync",
-          "label": "Bank Account Sync"
+          "label": "Bank Account Sync",
+          "requirementKey": null
         },
         {
           "id": "First Draft Date",
-          "label": "First Draft Date"
+          "label": "First Draft Date",
+          "requirementKey": "sfDataJson.First_Draft_Date__c"
         },
         {
           "id": "Client Number",
-          "label": "Client Number"
+          "label": "Client Number",
+          "requirementKey": null
         },
         {
           "id": "First Contract Signed Date",
-          "label": "First Contract Signed Date"
+          "label": "First Contract Signed Date",
+          "requirementKey": "sfDataJson.First_Contract_Signed_Date__c"
         },
         {
           "id": "Last Contacted DateTime",
-          "label": "Last Contacted DateTime"
+          "label": "Last Contacted DateTime",
+          "requirementKey": null
         },
         {
           "id": "First Payment Completed Date",
-          "label": "First Payment Completed Date"
+          "label": "First Payment Completed Date",
+          "requirementKey": null
         },
         {
           "id": "Week Days Between Last Activity Date",
-          "label": "Week Days Between Last Activity Date"
+          "label": "Week Days Between Last Activity Date",
+          "requirementKey": null
         },
         {
           "id": "Last Called Time",
-          "label": "Last Called Time"
+          "label": "Last Called Time",
+          "requirementKey": null
         },
         {
           "id": "Legal Status",
-          "label": "Legal Status"
+          "label": "Legal Status",
+          "requirementKey": "legalStatus"
         },
         {
           "id": "Last Emailed Time",
-          "label": "Last Emailed Time"
+          "label": "Last Emailed Time",
+          "requirementKey": null
         },
         {
           "id": "Negotiation Status",
-          "label": "Negotiation Status"
+          "label": "Negotiation Status",
+          "requirementKey": "sfDataJson.NegotiationStatus__c"
         },
         {
           "id": "Last SMS Time",
-          "label": "Last SMS Time"
+          "label": "Last SMS Time",
+          "requirementKey": null
         },
         {
           "id": "HIGH UCC RISK",
-          "label": "HIGH UCC RISK"
+          "label": "HIGH UCC RISK",
+          "requirementKey": "highUccRisk"
         },
         {
           "id": "Last Synced By",
-          "label": "Last Synced By"
+          "label": "Last Synced By",
+          "requirementKey": null
         },
         {
           "id": "Qualified Financial",
-          "label": "Qualified Financial"
+          "label": "Qualified Financial",
+          "requirementKey": "sfDataJson.Qualified_Financial__c"
         },
         {
           "id": "Last Synced Date Time",
-          "label": "Last Synced Date Time"
+          "label": "Last Synced Date Time",
+          "requirementKey": null
         },
         {
           "id": "Creditor Lien Risk",
-          "label": "Creditor Lien Risk"
+          "label": "Creditor Lien Risk",
+          "requirementKey": "sfDataJson.Creditor_Lien_Risk__c"
         },
         {
           "id": "Collection Agency",
-          "label": "Collection Agency"
+          "label": "Collection Agency",
+          "requirementKey": "collectionAgency"
         },
         {
           "id": "Debt Negotiator",
-          "label": "Debt Negotiator"
+          "label": "Debt Negotiator",
+          "requirementKey": null
         },
         {
           "id": "Program Completion Stage",
-          "label": "Program Completion Stage"
+          "label": "Program Completion Stage",
+          "requirementKey": null
         },
         {
           "id": "Cancellation Reason",
-          "label": "Cancellation Reason"
+          "label": "Cancellation Reason",
+          "requirementKey": "cancellationReason"
         },
         {
           "id": "Legal Network",
-          "label": "Legal Network"
+          "label": "Legal Network",
+          "requirementKey": "sfDataJson.Legal_Network__c"
         },
         {
           "id": "Work Phone",
-          "label": "Work Phone"
+          "label": "Work Phone",
+          "requirementKey": "sfDataJson.Work_Phone__c"
         },
         {
           "id": "Legal Network Sync Status",
-          "label": "Legal Network Sync Status"
+          "label": "Legal Network Sync Status",
+          "requirementKey": null
         },
         {
           "id": "Billing Address",
-          "label": "Billing Address"
+          "label": "Billing Address",
+          "requirementKey": null
         },
         {
           "id": "Billing County",
-          "label": "Billing County"
+          "label": "Billing County",
+          "requirementKey": "sfDataJson.BillingCounty__c"
         }
       ],
       "columns": 2
@@ -1084,103 +1325,128 @@
       "fields": [
         {
           "id": "Total Debt",
-          "label": "Total Debt"
+          "label": "Total Debt",
+          "requirementKey": null
         },
         {
           "id": "Current Total Debt",
-          "label": "Current Total Debt"
+          "label": "Current Total Debt",
+          "requirementKey": null
         },
         {
           "id": "Settled Total",
-          "label": "Settled Total"
+          "label": "Settled Total",
+          "requirementKey": null
         },
         {
           "id": "Total Paid to Date",
-          "label": "Total Paid to Date"
+          "label": "Total Paid to Date",
+          "requirementKey": null
         },
         {
           "id": "Active Settlements",
-          "label": "Active Settlements"
+          "label": "Active Settlements",
+          "requirementKey": null
         },
         {
           "id": "Escrow Balance",
-          "label": "Escrow Balance"
+          "label": "Escrow Balance",
+          "requirementKey": null
         },
         {
           "id": "Escrow Balance Pulled Date Time",
-          "label": "Escrow Balance Pulled Date Time"
+          "label": "Escrow Balance Pulled Date Time",
+          "requirementKey": null
         },
         {
           "id": "Total Fees Collected",
-          "label": "Total Fees Collected"
+          "label": "Total Fees Collected",
+          "requirementKey": null
         },
         {
           "id": "Fee Paid In Full",
-          "label": "Fee Paid In Full"
+          "label": "Fee Paid In Full",
+          "requirementKey": null
         },
         {
           "id": "Number of Drafts",
-          "label": "Number of Drafts"
+          "label": "Number of Drafts",
+          "requirementKey": null
         },
         {
           "id": "Completed Draft Count",
-          "label": "Completed Draft Count"
+          "label": "Completed Draft Count",
+          "requirementKey": null
         },
         {
           "id": "Missed Drafts",
-          "label": "Missed Drafts"
+          "label": "Missed Drafts",
+          "requirementKey": null
         },
         {
           "id": "First Draft Date",
-          "label": "First Draft Date"
+          "label": "First Draft Date",
+          "requirementKey": null
         },
         {
           "id": "Last Draft Date",
-          "label": "Last Draft Date"
+          "label": "Last Draft Date",
+          "requirementKey": null
         },
         {
           "id": "Welcome Call Completed",
-          "label": "Welcome Call Completed"
+          "label": "Welcome Call Completed",
+          "requirementKey": null
         },
         {
           "id": "Bank Verification Status",
-          "label": "Bank Verification Status"
+          "label": "Bank Verification Status",
+          "requirementKey": null
         },
         {
           "id": "Routing Number",
-          "label": "Routing Number"
+          "label": "Routing Number",
+          "requirementKey": null
         },
         {
           "id": "Account Number (masked)",
-          "label": "Account Number (masked)"
+          "label": "Account Number (masked)",
+          "requirementKey": null
         },
         {
           "id": "Processor",
-          "label": "Processor"
+          "label": "Processor",
+          "requirementKey": null
         },
         {
           "id": "RAM/SAS Status",
-          "label": "RAM/SAS Status"
+          "label": "RAM/SAS Status",
+          "requirementKey": null
         },
         {
           "id": "Program Completion Stage",
-          "label": "Program Completion Stage"
+          "label": "Program Completion Stage",
+          "requirementKey": null
         },
         {
           "id": "Qualified Financial",
-          "label": "Qualified Financial"
+          "label": "Qualified Financial",
+          "requirementKey": null
         },
         {
           "id": "Actual Program Term",
-          "label": "Actual Program Term"
+          "label": "Actual Program Term",
+          "requirementKey": null
         },
         {
           "id": "Actual Weekly Payment",
-          "label": "Actual Weekly Payment"
+          "label": "Actual Weekly Payment",
+          "requirementKey": null
         },
         {
           "id": "Buyout Program Weeks",
-          "label": "Buyout Program Weeks"
+          "label": "Buyout Program Weeks",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -1191,27 +1457,33 @@
       "fields": [
         {
           "id": "Bank Name",
-          "label": "Bank Name"
+          "label": "Bank Name",
+          "requirementKey": null
         },
         {
           "id": "Bank Routing Number",
-          "label": "Bank Routing Number"
+          "label": "Bank Routing Number",
+          "requirementKey": null
         },
         {
           "id": "Bank Account Number",
-          "label": "Bank Account Number"
+          "label": "Bank Account Number",
+          "requirementKey": null
         },
         {
           "id": "Bank Account Type",
-          "label": "Bank Account Type"
+          "label": "Bank Account Type",
+          "requirementKey": null
         },
         {
           "id": "Bank Account Sync Status",
-          "label": "Bank Account Sync Status"
+          "label": "Bank Account Sync Status",
+          "requirementKey": null
         },
         {
           "id": "IsChecking",
-          "label": "IsChecking"
+          "label": "IsChecking",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -1222,23 +1494,28 @@
       "fields": [
         {
           "id": "Last Called Time",
-          "label": "Last Called Time"
+          "label": "Last Called Time",
+          "requirementKey": null
         },
         {
           "id": "Last Contacted DateTime",
-          "label": "Last Contacted DateTime"
+          "label": "Last Contacted DateTime",
+          "requirementKey": null
         },
         {
           "id": "Last Emailed Time",
-          "label": "Last Emailed Time"
+          "label": "Last Emailed Time",
+          "requirementKey": null
         },
         {
           "id": "Last SMS Time",
-          "label": "Last SMS Time"
+          "label": "Last SMS Time",
+          "requirementKey": null
         },
         {
           "id": "Week Days Between Last Activity Date",
-          "label": "Week Days Between Last Activity Date"
+          "label": "Week Days Between Last Activity Date",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -1249,27 +1526,33 @@
       "fields": [
         {
           "id": "Client Status",
-          "label": "Client Status"
+          "label": "Client Status",
+          "requirementKey": "clientStatus"
         },
         {
           "id": "Bank Account Status",
-          "label": "Bank Account Status"
+          "label": "Bank Account Status",
+          "requirementKey": null
         },
         {
           "id": "Payment Status",
-          "label": "Payment Status"
+          "label": "Payment Status",
+          "requirementKey": "paymentStatus"
         },
         {
           "id": "Graduation Status",
-          "label": "Graduation Status"
+          "label": "Graduation Status",
+          "requirementKey": null
         },
         {
           "id": "Created By",
-          "label": "Created By"
+          "label": "Created By",
+          "requirementKey": null
         },
         {
           "id": "Last Modified By",
-          "label": "Last Modified By"
+          "label": "Last Modified By",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -1280,51 +1563,63 @@
       "fields": [
         {
           "id": "Account Source",
-          "label": "Account Source"
+          "label": "Account Source",
+          "requirementKey": null
         },
         {
           "id": "Lead Source",
-          "label": "Lead Source"
+          "label": "Lead Source",
+          "requirementKey": null
         },
         {
           "id": "Lead Source Category",
-          "label": "Lead Source Category"
+          "label": "Lead Source Category",
+          "requirementKey": null
         },
         {
           "id": "Campaign",
-          "label": "Campaign"
+          "label": "Campaign",
+          "requirementKey": null
         },
         {
           "id": "UTM Source",
-          "label": "UTM Source"
+          "label": "UTM Source",
+          "requirementKey": null
         },
         {
           "id": "UTM Medium",
-          "label": "UTM Medium"
+          "label": "UTM Medium",
+          "requirementKey": null
         },
         {
           "id": "UTM Campaign",
-          "label": "UTM Campaign"
+          "label": "UTM Campaign",
+          "requirementKey": null
         },
         {
           "id": "UTM Term",
-          "label": "UTM Term"
+          "label": "UTM Term",
+          "requirementKey": null
         },
         {
           "id": "UTM Content",
-          "label": "UTM Content"
+          "label": "UTM Content",
+          "requirementKey": null
         },
         {
           "id": "Account Engagement Score",
-          "label": "Account Engagement Score"
+          "label": "Account Engagement Score",
+          "requirementKey": null
         },
         {
           "id": "Account Engagement Hard Bounced",
-          "label": "Account Engagement Hard Bounced"
+          "label": "Account Engagement Hard Bounced",
+          "requirementKey": null
         },
         {
           "id": "Needs Score Synced",
-          "label": "Needs Score Synced"
+          "label": "Needs Score Synced",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -1335,11 +1630,13 @@
       "fields": [
         {
           "id": "Owner",
-          "label": "Owner"
+          "label": "Owner",
+          "requirementKey": null
         },
         {
           "id": "Owner Email",
-          "label": "Owner Email"
+          "label": "Owner Email",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -1352,283 +1649,353 @@
       "fields": [
         {
           "id": "Opportunity Name",
-          "label": "Opportunity Name"
+          "label": "Opportunity Name",
+          "requirementKey": "name"
         },
         {
           "id": "Opportunity Owner",
-          "label": "Opportunity Owner"
+          "label": "Opportunity Owner",
+          "requirementKey": "assignedToId"
         },
         {
           "id": "Account Name",
-          "label": "Account Name"
+          "label": "Account Name",
+          "requirementKey": "accountId"
         },
         {
           "id": "Lead Id",
-          "label": "Lead Id"
+          "label": "Lead Id",
+          "requirementKey": null
         },
         {
           "id": "Stage",
-          "label": "Stage"
+          "label": "Stage",
+          "requirementKey": "stage"
         },
         {
           "id": "Lead Source",
-          "label": "Lead Source"
+          "label": "Lead Source",
+          "requirementKey": "leadSource"
         },
         {
           "id": "Version Status",
-          "label": "Version Status"
+          "label": "Version Status",
+          "requirementKey": null
         },
         {
           "id": "Lead Source Category",
-          "label": "Lead Source Category"
+          "label": "Lead Source Category",
+          "requirementKey": "leadSourceCategory"
         },
         {
           "id": "Brand",
-          "label": "Brand"
+          "label": "Brand",
+          "requirementKey": "brand"
         },
         {
           "id": "Last Disposition",
-          "label": "Last Disposition"
+          "label": "Last Disposition",
+          "requirementKey": "sfDataJson.Last_Disposition__c"
         },
         {
           "id": "Probability (%)",
-          "label": "Probability (%)"
+          "label": "Probability (%)",
+          "requirementKey": "probability"
         },
         {
           "id": "Phone",
-          "label": "Phone"
+          "label": "Phone",
+          "requirementKey": "oppPhone"
         },
         {
           "id": "Total Debt Included",
-          "label": "Total Debt Included"
+          "label": "Total Debt Included",
+          "requirementKey": null
         },
         {
           "id": "Email",
-          "label": "Email"
+          "label": "Email",
+          "requirementKey": "oppEmail"
         },
         {
           "id": "Current Total Debt",
-          "label": "Current Total Debt"
+          "label": "Current Total Debt",
+          "requirementKey": "currentTotalDebt"
         },
         {
           "id": "Individual",
-          "label": "Individual"
+          "label": "Individual",
+          "requirementKey": "individualName"
         },
         {
           "id": "Alternative #",
-          "label": "Alternative #"
+          "label": "Alternative #",
+          "requirementKey": "alternatePhone"
         },
         {
           "id": "Date of Birth",
-          "label": "Date of Birth"
+          "label": "Date of Birth",
+          "requirementKey": "dateOfBirth"
         },
         {
           "id": "SSN",
-          "label": "SSN"
+          "label": "SSN",
+          "requirementKey": null
         },
         {
           "id": "Mailing Street",
-          "label": "Mailing Street"
+          "label": "Mailing Street",
+          "requirementKey": "mailingStreet"
         },
         {
           "id": "Mailing City",
-          "label": "Mailing City"
+          "label": "Mailing City",
+          "requirementKey": "mailingCity"
         },
         {
           "id": "Mailing State",
-          "label": "Mailing State"
+          "label": "Mailing State",
+          "requirementKey": "mailingState"
         },
         {
           "id": "Mailing Zip",
-          "label": "Mailing Zip"
+          "label": "Mailing Zip",
+          "requirementKey": "mailingZip"
         },
         {
           "id": "Preferred method of Contact",
-          "label": "Preferred method of Contact"
+          "label": "Preferred method of Contact",
+          "requirementKey": "preferredMethodOfContact"
         },
         {
           "id": "Secured Party",
-          "label": "Secured Party"
+          "label": "Secured Party",
+          "requirementKey": "securedParty"
         },
         {
           "id": "Legal Plan Required",
-          "label": "Legal Plan Required"
+          "label": "Legal Plan Required",
+          "requirementKey": "legalPlanRequired"
         },
         {
           "id": "Lead Vendor ID Text",
-          "label": "Lead Vendor ID Text"
+          "label": "Lead Vendor ID Text",
+          "requirementKey": null
         },
         {
           "id": "Addendum Required",
-          "label": "Addendum Required"
+          "label": "Addendum Required",
+          "requirementKey": "addendumRequired"
         },
         {
           "id": "Call ASAP",
-          "label": "Call ASAP"
+          "label": "Call ASAP",
+          "requirementKey": "sfDataJson.Call_ASAP__c"
         },
         {
           "id": "Addendum Required Reason",
-          "label": "Addendum Required Reason"
+          "label": "Addendum Required Reason",
+          "requirementKey": "sfDataJson.Addendum_Required_Reason__c"
         },
         {
           "id": "Business Start Date",
-          "label": "Business Start Date"
+          "label": "Business Start Date",
+          "requirementKey": "businessStartDate"
         },
         {
           "id": "Timezone",
-          "label": "Timezone"
+          "label": "Timezone",
+          "requirementKey": "timezone"
         },
         {
           "id": "Hopper Priority",
-          "label": "Hopper Priority"
+          "label": "Hopper Priority",
+          "requirementKey": null
         },
         {
           "id": "Current Weekly Payment",
-          "label": "Current Weekly Payment"
+          "label": "Current Weekly Payment",
+          "requirementKey": "currentWeeklyPayment"
         },
         {
           "id": "Outbound ANI Date",
-          "label": "Outbound ANI Date"
+          "label": "Outbound ANI Date",
+          "requirementKey": null
         },
         {
           "id": "Current Monthly Payment",
-          "label": "Current Monthly Payment"
+          "label": "Current Monthly Payment",
+          "requirementKey": "currentMonthlyPayment"
         },
         {
           "id": "Outbound ANI From",
-          "label": "Outbound ANI From"
+          "label": "Outbound ANI From",
+          "requirementKey": null
         },
         {
           "id": "Weekly Payment to Debt Ratio",
-          "label": "Weekly Payment to Debt Ratio"
+          "label": "Weekly Payment to Debt Ratio",
+          "requirementKey": "weeklyPaymentToDebtRatio"
         },
         {
           "id": "Outbound ANI Identifier",
-          "label": "Outbound ANI Identifier"
+          "label": "Outbound ANI Identifier",
+          "requirementKey": null
         },
         {
           "id": "Dialer Group",
-          "label": "Dialer Group"
+          "label": "Dialer Group",
+          "requirementKey": "dialerGroup"
         },
         {
           "id": "First Payment Completed",
-          "label": "First Payment Completed"
+          "label": "First Payment Completed",
+          "requirementKey": null
         },
         {
           "id": "Re-shuffle Opportunity",
-          "label": "Re-shuffle Opportunity"
+          "label": "Re-shuffle Opportunity",
+          "requirementKey": null
         },
         {
           "id": "First Draft Date",
-          "label": "First Draft Date"
+          "label": "First Draft Date",
+          "requirementKey": "firstDraftDate"
         },
         {
           "id": "Re-shuffle count",
-          "label": "Re-shuffle count"
+          "label": "Re-shuffle count",
+          "requirementKey": null
         },
         {
           "id": "First Contract Signed Date",
-          "label": "First Contract Signed Date"
+          "label": "First Contract Signed Date",
+          "requirementKey": "firstContractSignedDateOpp"
         },
         {
           "id": "UTM Term",
-          "label": "UTM Term"
+          "label": "UTM Term",
+          "requirementKey": null
         },
         {
           "id": "Number Of Days From First ContractSigned",
-          "label": "Number Of Days From First ContractSigned"
+          "label": "Number Of Days From First ContractSigned",
+          "requirementKey": null
         },
         {
           "id": "Preferred Language",
-          "label": "Preferred Language"
+          "label": "Preferred Language",
+          "requirementKey": "preferredLanguage"
         },
         {
           "id": "Processor Contract Formula",
-          "label": "Processor Contract Formula"
+          "label": "Processor Contract Formula",
+          "requirementKey": null
         },
         {
           "id": "First Payment Completed Date",
-          "label": "First Payment Completed Date"
+          "label": "First Payment Completed Date",
+          "requirementKey": null
         },
         {
           "id": "Processor",
-          "label": "Processor"
+          "label": "Processor",
+          "requirementKey": "sfDataJson.Processor__c"
         },
         {
           "id": "Commission Payment Date",
-          "label": "Commission Payment Date"
+          "label": "Commission Payment Date",
+          "requirementKey": null
         },
         {
           "id": "Opportunity Amended DateTime",
-          "label": "Opportunity Amended DateTime"
+          "label": "Opportunity Amended DateTime",
+          "requirementKey": null
         },
         {
           "id": "Commission Payment Date Override",
-          "label": "Commission Payment Date Override"
+          "label": "Commission Payment Date Override",
+          "requirementKey": null
         },
         {
           "id": "Opportunity Reinstated DateTime",
-          "label": "Opportunity Reinstated DateTime"
+          "label": "Opportunity Reinstated DateTime",
+          "requirementKey": null
         },
         {
           "id": "Commission Payment Override Reason",
-          "label": "Commission Payment Override Reason"
+          "label": "Commission Payment Override Reason",
+          "requirementKey": null
         },
         {
           "id": "Opportunity Reactivated DateTime",
-          "label": "Opportunity Reactivated DateTime"
+          "label": "Opportunity Reactivated DateTime",
+          "requirementKey": null
         },
         {
           "id": "Opportunity Assignment Date",
-          "label": "Opportunity Assignment Date"
+          "label": "Opportunity Assignment Date",
+          "requirementKey": null
         },
         {
           "id": "Reactivate Reason",
-          "label": "Reactivate Reason"
+          "label": "Reactivate Reason",
+          "requirementKey": null
         },
         {
           "id": "HIGH UCC RISK",
-          "label": "HIGH UCC RISK"
+          "label": "HIGH UCC RISK",
+          "requirementKey": "highUccRisk"
         },
         {
           "id": "Legal Network",
-          "label": "Legal Network"
+          "label": "Legal Network",
+          "requirementKey": "sfDataJson.Legal_Network__c"
         },
         {
           "id": "Account Status",
-          "label": "Account Status"
+          "label": "Account Status",
+          "requirementKey": "sfDataJson.Account_Status__c"
         },
         {
           "id": "Ad Click Id",
-          "label": "Ad Click Id"
+          "label": "Ad Click Id",
+          "requirementKey": null
         },
         {
           "id": "Opportunity Record Type",
-          "label": "Opportunity Record Type"
+          "label": "Opportunity Record Type",
+          "requirementKey": null
         },
         {
           "id": "Active Opportunity",
-          "label": "Active Opportunity"
+          "label": "Active Opportunity",
+          "requirementKey": null
         },
         {
           "id": "Opportunity Reshuffled DateTime",
-          "label": "Opportunity Reshuffled DateTime"
+          "label": "Opportunity Reshuffled DateTime",
+          "requirementKey": null
         },
         {
           "id": "Affiliate",
-          "label": "Affiliate"
+          "label": "Affiliate",
+          "requirementKey": null
         },
         {
           "id": "Eli Ad click",
-          "label": "Eli Ad click"
+          "label": "Eli Ad click",
+          "requirementKey": null
         },
         {
           "id": "Has Closer Notes",
-          "label": "Has Closer Notes"
+          "label": "Has Closer Notes",
+          "requirementKey": null
         },
         {
           "id": "Latest Closer Notes",
-          "label": "Latest Closer Notes"
+          "label": "Latest Closer Notes",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -1639,27 +2006,33 @@
       "fields": [
         {
           "id": "EIN / Tax ID",
-          "label": "EIN / Tax ID"
+          "label": "EIN / Tax ID",
+          "requirementKey": "account.ein"
         },
         {
           "id": "Billing Street",
-          "label": "Billing Street"
+          "label": "Billing Street",
+          "requirementKey": "account.billingStreet"
         },
         {
           "id": "Billing City",
-          "label": "Billing City"
+          "label": "Billing City",
+          "requirementKey": "account.billingCity"
         },
         {
           "id": "Billing State / Province",
-          "label": "Billing State / Province"
+          "label": "Billing State / Province",
+          "requirementKey": "account.billingState"
         },
         {
           "id": "Billing ZIP / Postal Code",
-          "label": "Billing ZIP / Postal Code"
+          "label": "Billing ZIP / Postal Code",
+          "requirementKey": "account.billingZip"
         },
         {
           "id": "Billing Country",
-          "label": "Billing Country"
+          "label": "Billing Country",
+          "requirementKey": "account.billingCountry"
         }
       ],
       "columns": 2
@@ -1670,23 +2043,28 @@
       "fields": [
         {
           "id": "DS Buyout Total Program Cost",
-          "label": "DS Buyout Total Program Cost"
+          "label": "DS Buyout Total Program Cost",
+          "requirementKey": null
         },
         {
           "id": "DS Buyout Settlement to Creditors",
-          "label": "DS Buyout Settlement to Creditors"
+          "label": "DS Buyout Settlement to Creditors",
+          "requirementKey": null
         },
         {
           "id": "DS Buyout Fee",
-          "label": "DS Buyout Fee"
+          "label": "DS Buyout Fee",
+          "requirementKey": null
         },
         {
           "id": "DS Buyout Savings",
-          "label": "DS Buyout Savings"
+          "label": "DS Buyout Savings",
+          "requirementKey": null
         },
         {
           "id": "Qualified Financial",
-          "label": "Qualified Financial"
+          "label": "Qualified Financial",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -1697,79 +2075,98 @@
       "fields": [
         {
           "id": "Fronter",
-          "label": "Fronter"
+          "label": "Fronter",
+          "requirementKey": "fronter"
         },
         {
           "id": "Closer",
-          "label": "Closer"
+          "label": "Closer",
+          "requirementKey": "closer"
         },
         {
           "id": "Fronter Reference",
-          "label": "Fronter Reference"
+          "label": "Fronter Reference",
+          "requirementKey": null
         },
         {
           "id": "Closer Reference",
-          "label": "Closer Reference"
+          "label": "Closer Reference",
+          "requirementKey": null
         },
         {
           "id": "Call Transferred By",
-          "label": "Call Transferred By"
+          "label": "Call Transferred By",
+          "requirementKey": null
         },
         {
           "id": "Call Received By",
-          "label": "Call Received By"
+          "label": "Call Received By",
+          "requirementKey": null
         },
         {
           "id": "Call Transferred By Reference",
-          "label": "Call Transferred By Reference"
+          "label": "Call Transferred By Reference",
+          "requirementKey": null
         },
         {
           "id": "Call Received By Reference",
-          "label": "Call Received By Reference"
+          "label": "Call Received By Reference",
+          "requirementKey": null
         },
         {
           "id": "Call Tranferred DateTime",
-          "label": "Call Tranferred DateTime"
+          "label": "Call Tranferred DateTime",
+          "requirementKey": null
         },
         {
           "id": "Call Received Date",
-          "label": "Call Received Date"
+          "label": "Call Received Date",
+          "requirementKey": null
         },
         {
           "id": "Call Transfer Status",
-          "label": "Call Transfer Status"
+          "label": "Call Transfer Status",
+          "requirementKey": "callTransferStatus"
         },
         {
           "id": "Transfer Qualification",
-          "label": "Transfer Qualification"
+          "label": "Transfer Qualification",
+          "requirementKey": "transferQualification"
         },
         {
           "id": "Sub Disposition",
-          "label": "Sub Disposition"
+          "label": "Sub Disposition",
+          "requirementKey": "subDisposition"
         },
         {
           "id": "Last Sub Disposition",
-          "label": "Last Sub Disposition"
+          "label": "Last Sub Disposition",
+          "requirementKey": null
         },
         {
           "id": "Last Called Time",
-          "label": "Last Called Time"
+          "label": "Last Called Time",
+          "requirementKey": null
         },
         {
           "id": "Last Contacted DateTime",
-          "label": "Last Contacted DateTime"
+          "label": "Last Contacted DateTime",
+          "requirementKey": "lastContactedAt"
         },
         {
           "id": "Last Emailed Time",
-          "label": "Last Emailed Time"
+          "label": "Last Emailed Time",
+          "requirementKey": null
         },
         {
           "id": "Week Days Between Last Contacted Date",
-          "label": "Week Days Between Last Contacted Date"
+          "label": "Week Days Between Last Contacted Date",
+          "requirementKey": null
         },
         {
           "id": "Last SMS Time",
-          "label": "Last SMS Time"
+          "label": "Last SMS Time",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -1780,51 +2177,63 @@
       "fields": [
         {
           "id": "Type of Business",
-          "label": "Type of Business"
+          "label": "Type of Business",
+          "requirementKey": "typeOfBusiness"
         },
         {
           "id": "High Lien Risk",
-          "label": "High Lien Risk"
+          "label": "High Lien Risk",
+          "requirementKey": "highLienRisk"
         },
         {
           "id": "Receivables Collection Method",
-          "label": "Receivables Collection Method"
+          "label": "Receivables Collection Method",
+          "requirementKey": "receivablesCollectionMethod"
         },
         {
           "id": "What was explained to client?",
-          "label": "What was explained to client?"
+          "label": "What was explained to client?",
+          "requirementKey": "whatWasExplainedToClient"
         },
         {
           "id": "Processor Info",
-          "label": "Processor Info"
+          "label": "Processor Info",
+          "requirementKey": "processorInfo"
         },
         {
           "id": "Bank Change",
-          "label": "Bank Change"
+          "label": "Bank Change",
+          "requirementKey": "bankChange"
         },
         {
           "id": "Lender Agreements Collected",
-          "label": "Lender Agreements Collected"
+          "label": "Lender Agreements Collected",
+          "requirementKey": "lenderAgreementsCollected"
         },
         {
           "id": "COJ or TRO",
-          "label": "COJ or TRO"
+          "label": "COJ or TRO",
+          "requirementKey": "cojOrTro"
         },
         {
           "id": "Status with Lender/s",
-          "label": "Status with Lender/s"
+          "label": "Status with Lender/s",
+          "requirementKey": "statusWithLenders"
         },
         {
           "id": "First Payment to Legal",
-          "label": "First Payment to Legal"
+          "label": "First Payment to Legal",
+          "requirementKey": "firstPaymentToLegal"
         },
         {
           "id": "Summons or Judgment",
-          "label": "Summons or Judgment"
+          "label": "Summons or Judgment",
+          "requirementKey": "summonsOrJudgment"
         },
         {
           "id": "Welcome Call Scheduled",
-          "label": "Welcome Call Scheduled"
+          "label": "Welcome Call Scheduled",
+          "requirementKey": "welcomeCallScheduled"
         }
       ],
       "columns": 2
@@ -1835,15 +2244,18 @@
       "fields": [
         {
           "id": "Add to Five9 List",
-          "label": "Add to Five9 List"
+          "label": "Add to Five9 List",
+          "requirementKey": null
         },
         {
           "id": "Delete from Five9 List",
-          "label": "Delete from Five9 List"
+          "label": "Delete from Five9 List",
+          "requirementKey": null
         },
         {
           "id": "Five9 List Id",
-          "label": "Five9 List Id"
+          "label": "Five9 List Id",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -1854,19 +2266,23 @@
       "fields": [
         {
           "id": "Created By",
-          "label": "Created By"
+          "label": "Created By",
+          "requirementKey": null
         },
         {
           "id": "Lead Created Date",
-          "label": "Lead Created Date"
+          "label": "Lead Created Date",
+          "requirementKey": null
         },
         {
           "id": "Close Date",
-          "label": "Close Date"
+          "label": "Close Date",
+          "requirementKey": "expectedCloseDate"
         },
         {
           "id": "Last Modified By",
-          "label": "Last Modified By"
+          "label": "Last Modified By",
+          "requirementKey": null
         }
       ],
       "columns": 2
@@ -1879,39 +2295,48 @@
       "fields": [
         {
           "id": "Original balance",
-          "label": "Original balance"
+          "label": "Original balance",
+          "requirementKey": "originalBalance"
         },
         {
           "id": "Enrolled balance",
-          "label": "Enrolled balance"
+          "label": "Enrolled balance",
+          "requirementKey": "enrolledBalance"
         },
         {
           "id": "Debt type",
-          "label": "Debt type"
+          "label": "Debt type",
+          "requirementKey": "debtType"
         },
         {
           "id": "Scheduled payment",
-          "label": "Scheduled payment"
+          "label": "Scheduled payment",
+          "requirementKey": "paymentAmount"
         },
         {
           "id": "Creditor phone",
-          "label": "Creditor phone"
+          "label": "Creditor phone",
+          "requirementKey": "creditorPhone"
         },
         {
           "id": "Legal status",
-          "label": "Legal status"
+          "label": "Legal status",
+          "requirementKey": "legalStatus"
         },
         {
           "id": "Lien position",
-          "label": "Lien position"
+          "label": "Lien position",
+          "requirementKey": "lienPosition"
         },
         {
           "id": "Delinquent",
-          "label": "Delinquent"
+          "label": "Delinquent",
+          "requirementKey": "isDelinquent"
         },
         {
           "id": "Recorded settlement",
-          "label": "Recorded settlement"
+          "label": "Recorded settlement",
+          "requirementKey": "settledAmount"
         }
       ],
       "columns": 2
@@ -1922,19 +2347,23 @@
       "fields": [
         {
           "id": "Creditor",
-          "label": "Creditor"
+          "label": "Creditor",
+          "requirementKey": "creditorName"
         },
         {
           "id": "Debt status",
-          "label": "Debt status"
+          "label": "Debt status",
+          "requirementKey": "status"
         },
         {
           "id": "Current balance",
-          "label": "Current balance"
+          "label": "Current balance",
+          "requirementKey": "currentBalance"
         },
         {
           "id": "Recorded negotiation status",
-          "label": "Recorded negotiation status"
+          "label": "Recorded negotiation status",
+          "requirementKey": "negotiationStatus"
         }
       ],
       "columns": 2

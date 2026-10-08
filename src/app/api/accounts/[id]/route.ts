@@ -1,3 +1,5 @@
+import { withAutomationErrors } from "@/lib/automation/errors";
+import { assertStageRequirements } from "@/lib/stage-requirements-server";
 import { recordScope } from "@/lib/record-access";
 import { ssnSafeJson } from "@/lib/ssn-safe-json";
 import { NextRequest } from "next/server";
@@ -28,7 +30,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   return ssnSafeJson(account);
 }
 
-export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+async function PATCHHandler(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const r = await requireAuthOrRespond("Account.Edit");
   if ("response" in r) return r.response;
   const { id } = await ctx.params;
@@ -72,6 +74,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     const mirror = ACCOUNT_COLUMNS[key].mirrorSfKey;
     if (mirror && Object.hasOwn(d, key)) sfPatch[mirror] = d[key];
   }
+  await assertStageRequirements("Account", { ...before, ...parsed.data, sfDataJson: Object.keys(sfPatch).length ? mergeSfData(before.sfDataJson, sfPatch) : before.sfDataJson }, before);
   const account = await prisma.account.update({ where: { id, AND: [await recordScope("account", !Object.hasOwn(d, "ownerId"))] }, data: {
     ...parsed.data,
     ...(Object.keys(sfPatch).length ? { sfDataJson: mergeSfData(before.sfDataJson, sfPatch) } : {}),
@@ -108,3 +111,5 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
   }).catch(() => null);
   return ssnSafeJson({ ok: true });
 }
+
+export const PATCH = withAutomationErrors(PATCHHandler);
