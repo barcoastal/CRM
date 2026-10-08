@@ -1,3 +1,4 @@
+import { getRecordFieldLayout } from "@/lib/record-field-layout-server";
 import { recordBrand } from "@/lib/record-brand";
 import { OppActivities } from "@/components/opportunities/opp-activities";
 import { taskActivity } from "@/lib/activity-presentation";
@@ -94,6 +95,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   });
   if (!rawRecord) notFound();
   const account = redactSsn(rawRecord);
+  const fieldLayout = await getRecordFieldLayout("Account", account.clientStatus ?? account.stage);
 
   // Closers don't see archived opportunities in the account's opp panels.
   const acctSession = await auth();
@@ -330,7 +332,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const account2Panel = (
     <>
       <Section title="Client & Business">
-        <FieldGrid entityType="account" entityId={account.id} fields={[
+        <FieldGrid layout={fieldLayout["account-1"]} entityType="account" entityId={account.id} fields={[
           E("Client Name", account2ClientName, "individualName", "text", { rawValue: account.individualName ?? account2ClientName }),
           E("Business Name", account.name, "name", "text", { rawValue: account.name }),
           E("Account Owner (CS Rep)", account.ownerId ? <Link href={`/settings/users/${account.ownerId}`} style={{ color: "#0176d3" }}>{ownerName}</Link> : ownerName, "ownerId", "select", { rawValue: account.ownerId, options: ownerOptions }),
@@ -343,7 +345,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         {account2Opp && <div style={{ padding: "8px 16px", fontSize: 12 }}><Link href={`/opportunities/${account2Opp.id}`} style={{ color: "#0176d3" }}>View opportunity: {account2Opp.name ?? "Opportunity"}</Link></div>}
       </Section>
       <Section title="Identifiers">
-        <FieldGrid entityType="account" entityId={account.id} fields={[
+        <FieldGrid layout={fieldLayout["account-2"]} entityType="account" entityId={account.id} fields={[
           ["SSN", <SsnField key="account2-ssn" entity="account" id={id} masked={account.ssn ?? acctSf("SSN__c") ?? account.primaryContact?.ssn ?? null} />],
           E("EIN #", account.ein ?? acctSf("EIN_Number_Tax_Id__c"), "ein", "text", { rawValue: account.ein }),
           E("Lead #", acctSf("Lead_Number__c") ?? acctSf("Lead_Id__c") ?? acctSf("LeadId"), "Lead_Number__c"),
@@ -351,7 +353,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         ]} />
       </Section>
       <Section title="Contact, Payments & Sync">
-        <FieldGrid entityType="account" entityId={account.id} fields={[
+        <FieldGrid layout={fieldLayout["account-3"]} entityType="account" entityId={account.id} fields={[
           ["Last Contact Date/Time", lastContactedDateTimeDisplay],
           ["", null],
           ["Last Called Time", lastCalledTimeDisplay],
@@ -375,7 +377,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         ]} />
       </Section>
       <Section title="Negotiation & Legal">
-        <FieldGrid entityType="account" entityId={account.id} fields={[
+        <FieldGrid layout={fieldLayout["account-4"]} entityType="account" entityId={account.id} fields={[
           ["Negotiator", <NegotiatorAssignment key={`account2:${account.id}:${account.assignedNegotiatorId ?? ""}`} accountId={account.id} currentId={account.assignedNegotiatorId} currentName={account.assignedNegotiator?.name ?? null} importedName={acctSf("Debt_Negotiator__c")} options={canAssignNegotiator ? ownerOptions : []} canAssign={canAssignNegotiator} />],
           ["", null],
           E("Negotiation Status", acctSf("NegotiationStatus__c"), "NegotiationStatus__c"),
@@ -394,7 +396,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           odd index = right col. E(...) rows are inline-editable.
           SF marks Account Information + Address Information detailHeading=false,
           so Lightning renders these fields with NO section header. Bare grid. */}
-        <FieldGrid
+        <FieldGrid layout={fieldLayout["account-5"]}
           entityType="account"
           entityId={account.id}
           fields={[
@@ -521,7 +523,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       />
 
       <Section title="Program & Financial" defaultOpen={false}>
-        <FieldGrid
+        <FieldGrid layout={fieldLayout["account-6"]}
           fields={[
             ["Total Debt", acctSfDollar("Total_Debt__c")],
             ["Current Total Debt", acctSfDollar("Current_Total_Debt_Amount__c")],
@@ -553,7 +555,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       </Section>
 
       <Section title="Bank Information" defaultOpen={false}>
-        <FieldGrid
+        <FieldGrid layout={fieldLayout["account-7"]}
           fields={[
             ["Bank Name", acctSf("Bank_Name__c")],
             ["Bank Routing Number", acctSf("Bank_Routing_Number__c")],
@@ -566,7 +568,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       </Section>
 
       <Section title="Activity Tracking" defaultOpen={false}>
-        <FieldGrid
+        <FieldGrid layout={fieldLayout["account-8"]}
           fields={[
             ["Last Called Time", acctSfDateTime("Last_Call__c")],
             ["Last Contacted DateTime", acctSfDateTime("Last_Contacted_DateTime__c")],
@@ -579,7 +581,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
 
       <Section title="File Status">
         {/* SF File Status section — pair-by-pair from SF Dakota Enterprises. */}
-        <FieldGrid
+        <FieldGrid layout={fieldLayout["account-9"]}
           entityType="account"
           entityId={account.id}
           fields={[
@@ -939,7 +941,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
 
   const marketingPanel = (
     <Section title="Marketing Attribution">
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["account-10"]}
         fields={[
           ["Account Source", account.recordType.replace(/_/g, " ")],
           ["Lead Source", acctSf("LeadSource")],
@@ -961,7 +963,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const teamPanel = (
     <Section title="Account Team">
       <AccountTeamManager accountId={account.id}/>
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["account-11"]}
         fields={[
           ["Owner", account.owner?.name],
           ["Owner Email", account.owner?.email],

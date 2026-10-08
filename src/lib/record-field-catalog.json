@@ -1,0 +1,1943 @@
+{
+  "Lead": [
+    {
+      "id": "lead-1",
+      "title": "Lead information",
+      "fields": [
+        {
+          "id": "Name",
+          "label": "Name"
+        },
+        {
+          "id": "SSN",
+          "label": "SSN"
+        },
+        {
+          "id": "Email",
+          "label": "Email"
+        },
+        {
+          "id": "Date Of Birth",
+          "label": "Date Of Birth"
+        },
+        {
+          "id": "Alternate Email",
+          "label": "Alternate Email"
+        },
+        {
+          "id": "Gender",
+          "label": "Gender"
+        },
+        {
+          "id": "Phone",
+          "label": "Phone"
+        },
+        {
+          "id": "Title",
+          "label": "Title"
+        },
+        {
+          "id": "Mobile",
+          "label": "Mobile"
+        },
+        {
+          "id": "Address",
+          "label": "Address"
+        },
+        {
+          "id": "Work Phone",
+          "label": "Work Phone"
+        },
+        {
+          "id": "Timezone",
+          "label": "Timezone"
+        },
+        {
+          "id": "Fax",
+          "label": "Fax"
+        },
+        {
+          "id": "IP Address",
+          "label": "IP Address"
+        },
+        {
+          "id": "Preferred method of Contact",
+          "label": "Preferred method of Contact"
+        },
+        {
+          "id": "Keyword",
+          "label": "Keyword"
+        },
+        {
+          "id": "Legal Plan Required",
+          "label": "Legal Plan Required"
+        },
+        {
+          "id": "Secured Party",
+          "label": "Secured Party"
+        },
+        {
+          "id": "External ID 15 digit",
+          "label": "External ID 15 digit"
+        },
+        {
+          "id": "Call ASAP",
+          "label": "Call ASAP"
+        },
+        {
+          "id": "Outbound ANI Date",
+          "label": "Outbound ANI Date"
+        },
+        {
+          "id": "Hopper Priority",
+          "label": "Hopper Priority"
+        },
+        {
+          "id": "Outbound ANI Identifier",
+          "label": "Outbound ANI Identifier"
+        },
+        {
+          "id": "Outbound ANI From",
+          "label": "Outbound ANI From"
+        },
+        {
+          "id": "Hubspot Id",
+          "label": "Hubspot Id"
+        },
+        {
+          "id": "Preferred Language",
+          "label": "Preferred Language"
+        },
+        {
+          "id": "Append Leads Counter",
+          "label": "Append Leads Counter"
+        },
+        {
+          "id": "Lead Assignment Date",
+          "label": "Lead Assignment Date"
+        },
+        {
+          "id": "Has Calendly Event",
+          "label": "Has Calendly Event"
+        },
+        {
+          "id": "Verified Phone Number",
+          "label": "Verified Phone Number"
+        },
+        {
+          "id": "Call counter",
+          "label": "Call counter"
+        },
+        {
+          "id": "MCA Lender External Id",
+          "label": "MCA Lender External Id"
+        },
+        {
+          "id": "Is Archived",
+          "label": "Is Archived"
+        },
+        {
+          "id": "Five9 Final Stage",
+          "label": "Five9 Final Stage"
+        },
+        {
+          "id": "Archived Date",
+          "label": "Archived Date"
+        },
+        {
+          "id": "IPQS IsActive",
+          "label": "IPQS IsActive"
+        },
+        {
+          "id": "IPQS Active Status",
+          "label": "IPQS Active Status"
+        },
+        {
+          "id": "IPQS Carrier",
+          "label": "IPQS Carrier"
+        },
+        {
+          "id": "IPQS Email",
+          "label": "IPQS Email"
+        },
+        {
+          "id": "IPQS Fraud Score",
+          "label": "IPQS Fraud Score"
+        },
+        {
+          "id": "IPQS Is Prepaid",
+          "label": "IPQS Is Prepaid"
+        },
+        {
+          "id": "IPQS Line Type",
+          "label": "IPQS Line Type"
+        },
+        {
+          "id": "IPQS Is Risky",
+          "label": "IPQS Is Risky"
+        },
+        {
+          "id": "IPQS Is VOIP",
+          "label": "IPQS Is VOIP"
+        },
+        {
+          "id": "IPQS Is Valid",
+          "label": "IPQS Is Valid"
+        },
+        {
+          "id": "Lead Score",
+          "label": "Lead Score"
+        },
+        {
+          "id": "Ad Click Id",
+          "label": "Ad Click Id"
+        },
+        {
+          "id": "Sync To Account Engagement",
+          "label": "Sync To Account Engagement"
+        },
+        {
+          "id": "Facebook Lead Id",
+          "label": "Facebook Lead Id"
+        },
+        {
+          "id": "Total Dial Attempts",
+          "label": "Total Dial Attempts"
+        },
+        {
+          "id": "Eli Ad click",
+          "label": "Eli Ad click"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "lead-2",
+      "title": "Company Information",
+      "fields": [
+        {
+          "id": "Company",
+          "label": "Company"
+        },
+        {
+          "id": "EIN Number / Tax Id",
+          "label": "EIN Number / Tax Id"
+        },
+        {
+          "id": "Annual Revenue",
+          "label": "Annual Revenue"
+        },
+        {
+          "id": "Monthly Revenue",
+          "label": "Monthly Revenue"
+        },
+        {
+          "id": "Business Start Date",
+          "label": "Business Start Date"
+        },
+        {
+          "id": "UCC filing Date",
+          "label": "UCC filing Date"
+        },
+        {
+          "id": "Industry",
+          "label": "Industry"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "lead-3",
+      "title": "Current Debt Information",
+      "fields": [
+        {
+          "id": "MCA Amount",
+          "label": "MCA Amount"
+        },
+        {
+          "id": "Estimated Total Debt",
+          "label": "Estimated Total Debt"
+        },
+        {
+          "id": "Current Total Monthly Payment",
+          "label": "Current Total Monthly Payment"
+        },
+        {
+          "id": "Current Total Daily Payment",
+          "label": "Current Total Daily Payment"
+        },
+        {
+          "id": "Current Total Weekly Payment",
+          "label": "Current Total Weekly Payment"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "lead-4",
+      "title": "Debt Calculation",
+      "fields": [
+        {
+          "id": "Total Debt Amount",
+          "label": "Total Debt Amount"
+        },
+        {
+          "id": "Frequency",
+          "label": "Frequency"
+        },
+        {
+          "id": "Payment Amount",
+          "label": "Payment Amount"
+        },
+        {
+          "id": "Monthly Bank Fee",
+          "label": "Monthly Bank Fee"
+        },
+        {
+          "id": "Setup Fee",
+          "label": "Setup Fee"
+        },
+        {
+          "id": "Program Fee Percentage",
+          "label": "Program Fee Percentage"
+        },
+        {
+          "id": "Retainer Percentage",
+          "label": "Retainer Percentage"
+        },
+        {
+          "id": "Settlement Percentage",
+          "label": "Settlement Percentage"
+        },
+        {
+          "id": "Payment Term",
+          "label": "Payment Term"
+        },
+        {
+          "id": "Down Payment",
+          "label": "Down Payment"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "lead-5",
+      "title": "Call Disposition",
+      "fields": [
+        {
+          "id": "Fronter",
+          "label": "Fronter"
+        },
+        {
+          "id": "Closer",
+          "label": "Closer"
+        },
+        {
+          "id": "Call Transferred By",
+          "label": "Call Transferred By"
+        },
+        {
+          "id": "Call Received By",
+          "label": "Call Received By"
+        },
+        {
+          "id": "Call Transferred DateTime",
+          "label": "Call Transferred DateTime"
+        },
+        {
+          "id": "Call Received Date",
+          "label": "Call Received Date"
+        },
+        {
+          "id": "Call Transfer Status",
+          "label": "Call Transfer Status"
+        },
+        {
+          "id": "Transfer Qualification",
+          "label": "Transfer Qualification"
+        },
+        {
+          "id": "Outbound Call Priority",
+          "label": "Outbound Call Priority"
+        },
+        {
+          "id": "Reason for Disqualification",
+          "label": "Reason for Disqualification"
+        },
+        {
+          "id": "Agent Location",
+          "label": "Agent Location"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "lead-6",
+      "title": "Five9 Fields",
+      "fields": [
+        {
+          "id": "Dialer Group",
+          "label": "Dialer Group"
+        },
+        {
+          "id": "Add to f9list Id",
+          "label": "Add to f9list Id"
+        },
+        {
+          "id": "Five9 Disposition",
+          "label": "Five9 Disposition"
+        },
+        {
+          "id": "Delete from f9list id",
+          "label": "Delete from f9list id"
+        },
+        {
+          "id": "five9 Last Disposition",
+          "label": "five9 Last Disposition"
+        },
+        {
+          "id": "Five9 List Id",
+          "label": "Five9 List Id"
+        },
+        {
+          "id": "Five9 Time To Call",
+          "label": "Five9 Time To Call"
+        },
+        {
+          "id": "Five9 List Updated by Convoso Batch",
+          "label": "Five9 List Updated by Convoso Batch"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "lead-7",
+      "title": "Additional lead information",
+      "fields": [
+        {
+          "id": "Lead Vendor ID",
+          "label": "Lead Vendor ID"
+        },
+        {
+          "id": "Lead Vendor Id Text",
+          "label": "Lead Vendor Id Text"
+        },
+        {
+          "id": "Owner",
+          "label": "Owner"
+        },
+        {
+          "id": "Lead Id",
+          "label": "Lead Id"
+        },
+        {
+          "id": "Record Type",
+          "label": "Record Type"
+        },
+        {
+          "id": "List Id",
+          "label": "List Id"
+        },
+        {
+          "id": "Lead Source Category",
+          "label": "Lead Source Category"
+        },
+        {
+          "id": "Lead Source",
+          "label": "Lead Source"
+        },
+        {
+          "id": "Brand",
+          "label": "Brand"
+        },
+        {
+          "id": "Status",
+          "label": "Status"
+        },
+        {
+          "id": "Last Disposition",
+          "label": "Last Disposition"
+        },
+        {
+          "id": "Check Duplicate",
+          "label": "Check Duplicate"
+        },
+        {
+          "id": "Last Disposition DateTime",
+          "label": "Last Disposition DateTime"
+        },
+        {
+          "id": "Check Duplicate Archive",
+          "label": "Check Duplicate Archive"
+        },
+        {
+          "id": "Sub Disposition",
+          "label": "Sub Disposition"
+        },
+        {
+          "id": "Check DNC",
+          "label": "Check DNC"
+        },
+        {
+          "id": "Last Sub Disposition",
+          "label": "Last Sub Disposition"
+        },
+        {
+          "id": "Check Wireless",
+          "label": "Check Wireless"
+        },
+        {
+          "id": "Last Contacted DateTime",
+          "label": "Last Contacted DateTime"
+        },
+        {
+          "id": "UTM Term",
+          "label": "UTM Term"
+        },
+        {
+          "id": "Week Days Between Last Contacted Date",
+          "label": "Week Days Between Last Contacted Date"
+        },
+        {
+          "id": "Vendor Code",
+          "label": "Vendor Code"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "lead-8",
+      "title": "Account Engagement",
+      "fields": [
+        {
+          "id": "Email Opt Out",
+          "label": "Email Opt Out"
+        },
+        {
+          "id": "First Search Type",
+          "label": "First Search Type"
+        },
+        {
+          "id": "Campaign",
+          "label": "Campaign"
+        },
+        {
+          "id": "Grade",
+          "label": "Grade"
+        },
+        {
+          "id": "Comments",
+          "label": "Comments"
+        },
+        {
+          "id": "Hard Bounced",
+          "label": "Hard Bounced"
+        },
+        {
+          "id": "Conversion Date",
+          "label": "Conversion Date"
+        },
+        {
+          "id": "Last Activity",
+          "label": "Last Activity"
+        },
+        {
+          "id": "Created Date",
+          "label": "Created Date"
+        },
+        {
+          "id": "Last Scored At",
+          "label": "Last Scored At"
+        },
+        {
+          "id": "First Activity",
+          "label": "First Activity"
+        },
+        {
+          "id": "Notes",
+          "label": "Notes"
+        },
+        {
+          "id": "First Touch URL",
+          "label": "First Touch URL"
+        },
+        {
+          "id": "Account Engagement Score",
+          "label": "Account Engagement Score"
+        },
+        {
+          "id": "First Search Term",
+          "label": "First Search Term"
+        },
+        {
+          "id": "URL",
+          "label": "URL"
+        },
+        {
+          "id": "Form Name",
+          "label": "Form Name"
+        },
+        {
+          "id": "Form Page",
+          "label": "Form Page"
+        },
+        {
+          "id": "Form Position",
+          "label": "Form Position"
+        },
+        {
+          "id": "Form SubPage",
+          "label": "Form SubPage"
+        },
+        {
+          "id": "Form Type",
+          "label": "Form Type"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "lead-9",
+      "title": "System information",
+      "fields": [
+        {
+          "id": "Product Interest",
+          "label": "Product Interest"
+        },
+        {
+          "id": "Current Generators",
+          "label": "Current Generators"
+        },
+        {
+          "id": "SIC Code",
+          "label": "SIC Code"
+        },
+        {
+          "id": "Number of Locations",
+          "label": "Number of Locations"
+        },
+        {
+          "id": "Created By",
+          "label": "Created By"
+        },
+        {
+          "id": "Last Modified By",
+          "label": "Last Modified By"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "lead-10",
+      "title": "Description information",
+      "fields": [
+        {
+          "id": "Description",
+          "label": "Description"
+        },
+        {
+          "id": "Lenders",
+          "label": "Lenders"
+        }
+      ],
+      "columns": 1
+    },
+    {
+      "id": "lead-11",
+      "title": "Marketing Attribution",
+      "fields": [
+        {
+          "id": "UTM Source",
+          "label": "UTM Source"
+        },
+        {
+          "id": "UTM Medium",
+          "label": "UTM Medium"
+        },
+        {
+          "id": "UTM Campaign",
+          "label": "UTM Campaign"
+        },
+        {
+          "id": "UTM Term",
+          "label": "UTM Term"
+        },
+        {
+          "id": "UTM Content",
+          "label": "UTM Content"
+        },
+        {
+          "id": "Google Click ID",
+          "label": "Google Click ID"
+        },
+        {
+          "id": "Facebook Click ID",
+          "label": "Facebook Click ID"
+        },
+        {
+          "id": "Eli Click ID",
+          "label": "Eli Click ID"
+        },
+        {
+          "id": "Redtrack ID",
+          "label": "Redtrack ID"
+        },
+        {
+          "id": "Ad Click Id",
+          "label": "Ad Click Id"
+        },
+        {
+          "id": "Ad Id",
+          "label": "Ad Id"
+        },
+        {
+          "id": "Ad Set",
+          "label": "Ad Set"
+        },
+        {
+          "id": "Hubspot Id",
+          "label": "Hubspot Id"
+        }
+      ],
+      "columns": 2
+    }
+  ],
+  "Account": [
+    {
+      "id": "account-1",
+      "title": "Client & Business",
+      "fields": [
+        {
+          "id": "Client Name",
+          "label": "Client Name"
+        },
+        {
+          "id": "Business Name",
+          "label": "Business Name"
+        },
+        {
+          "id": "Account Owner (CS Rep)",
+          "label": "Account Owner (CS Rep)"
+        },
+        {
+          "id": "Opportunity Owner (Closer)",
+          "label": "Opportunity Owner (Closer)"
+        },
+        {
+          "id": "Industry",
+          "label": "Industry"
+        },
+        {
+          "id": "Phone #",
+          "label": "Phone #"
+        },
+        {
+          "id": "Alternate Name",
+          "label": "Alternate Name"
+        },
+        {
+          "id": "Alternative #",
+          "label": "Alternative #"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "account-2",
+      "title": "Identifiers",
+      "fields": [
+        {
+          "id": "SSN",
+          "label": "SSN"
+        },
+        {
+          "id": "EIN #",
+          "label": "EIN #"
+        },
+        {
+          "id": "Lead #",
+          "label": "Lead #"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "account-3",
+      "title": "Contact, Payments & Sync",
+      "fields": [
+        {
+          "id": "Last Contact Date/Time",
+          "label": "Last Contact Date/Time"
+        },
+        {
+          "id": "Last Called Time",
+          "label": "Last Called Time"
+        },
+        {
+          "id": "Last Emailed Time",
+          "label": "Last Emailed Time"
+        },
+        {
+          "id": "Last SMS",
+          "label": "Last SMS"
+        },
+        {
+          "id": "Legal Network",
+          "label": "Legal Network"
+        },
+        {
+          "id": "Processor Status",
+          "label": "Processor Status"
+        },
+        {
+          "id": "Total Debt",
+          "label": "Total Debt"
+        },
+        {
+          "id": "Sync Status",
+          "label": "Sync Status"
+        },
+        {
+          "id": "Legal Network Sync",
+          "label": "Legal Network Sync"
+        },
+        {
+          "id": "Sync Date/Time",
+          "label": "Sync Date/Time"
+        },
+        {
+          "id": "Bank Sync",
+          "label": "Bank Sync"
+        },
+        {
+          "id": "First Sign Date",
+          "label": "First Sign Date"
+        },
+        {
+          "id": "First Draft Date",
+          "label": "First Draft Date"
+        },
+        {
+          "id": "First Payment Completed",
+          "label": "First Payment Completed"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "account-4",
+      "title": "Negotiation & Legal",
+      "fields": [
+        {
+          "id": "Negotiator",
+          "label": "Negotiator"
+        },
+        {
+          "id": "Negotiation Status",
+          "label": "Negotiation Status"
+        },
+        {
+          "id": "Legal Status",
+          "label": "Legal Status"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "account-5",
+      "title": "Account information",
+      "fields": [
+        {
+          "id": "Account Name",
+          "label": "Account Name"
+        },
+        {
+          "id": "Individual",
+          "label": "Individual"
+        },
+        {
+          "id": "Alternative #",
+          "label": "Alternative #"
+        },
+        {
+          "id": "Date of Birth",
+          "label": "Date of Birth"
+        },
+        {
+          "id": "Account Owner",
+          "label": "Account Owner"
+        },
+        {
+          "id": "Opportunity Owner",
+          "label": "Opportunity Owner"
+        },
+        {
+          "id": "Parent Account",
+          "label": "Parent Account"
+        },
+        {
+          "id": "Processor Status",
+          "label": "Processor Status"
+        },
+        {
+          "id": "Phone",
+          "label": "Phone"
+        },
+        {
+          "id": "Fax",
+          "label": "Fax"
+        },
+        {
+          "id": "Website",
+          "label": "Website"
+        },
+        {
+          "id": "Industry",
+          "label": "Industry"
+        },
+        {
+          "id": "Annual Revenue",
+          "label": "Annual Revenue"
+        },
+        {
+          "id": "SSN",
+          "label": "SSN"
+        },
+        {
+          "id": "EIN Number / Tax Id",
+          "label": "EIN Number / Tax Id"
+        },
+        {
+          "id": "SIC Code",
+          "label": "SIC Code"
+        },
+        {
+          "id": "Lead Number",
+          "label": "Lead Number"
+        },
+        {
+          "id": "Total Debt",
+          "label": "Total Debt"
+        },
+        {
+          "id": "Program Start Date",
+          "label": "Program Start Date"
+        },
+        {
+          "id": "Current Balance",
+          "label": "Current Balance"
+        },
+        {
+          "id": "Program End Date",
+          "label": "Program End Date"
+        },
+        {
+          "id": "Creditor Type",
+          "label": "Creditor Type"
+        },
+        {
+          "id": "External SAS Id",
+          "label": "External SAS Id"
+        },
+        {
+          "id": "Account Record Type",
+          "label": "Account Record Type"
+        },
+        {
+          "id": "Brand",
+          "label": "Brand"
+        },
+        {
+          "id": "External RAM Id",
+          "label": "External RAM Id"
+        },
+        {
+          "id": "Primary Contact",
+          "label": "Primary Contact"
+        },
+        {
+          "id": "External Citadel Id",
+          "label": "External Citadel Id"
+        },
+        {
+          "id": "Synced DateTime",
+          "label": "Synced DateTime"
+        },
+        {
+          "id": "Sync Status",
+          "label": "Sync Status"
+        },
+        {
+          "id": "Closer",
+          "label": "Closer"
+        },
+        {
+          "id": "Bank Account Sync",
+          "label": "Bank Account Sync"
+        },
+        {
+          "id": "First Draft Date",
+          "label": "First Draft Date"
+        },
+        {
+          "id": "Client Number",
+          "label": "Client Number"
+        },
+        {
+          "id": "First Contract Signed Date",
+          "label": "First Contract Signed Date"
+        },
+        {
+          "id": "Last Contacted DateTime",
+          "label": "Last Contacted DateTime"
+        },
+        {
+          "id": "First Payment Completed Date",
+          "label": "First Payment Completed Date"
+        },
+        {
+          "id": "Week Days Between Last Activity Date",
+          "label": "Week Days Between Last Activity Date"
+        },
+        {
+          "id": "Last Called Time",
+          "label": "Last Called Time"
+        },
+        {
+          "id": "Legal Status",
+          "label": "Legal Status"
+        },
+        {
+          "id": "Last Emailed Time",
+          "label": "Last Emailed Time"
+        },
+        {
+          "id": "Negotiation Status",
+          "label": "Negotiation Status"
+        },
+        {
+          "id": "Last SMS Time",
+          "label": "Last SMS Time"
+        },
+        {
+          "id": "HIGH UCC RISK",
+          "label": "HIGH UCC RISK"
+        },
+        {
+          "id": "Last Synced By",
+          "label": "Last Synced By"
+        },
+        {
+          "id": "Qualified Financial",
+          "label": "Qualified Financial"
+        },
+        {
+          "id": "Last Synced Date Time",
+          "label": "Last Synced Date Time"
+        },
+        {
+          "id": "Creditor Lien Risk",
+          "label": "Creditor Lien Risk"
+        },
+        {
+          "id": "Collection Agency",
+          "label": "Collection Agency"
+        },
+        {
+          "id": "Debt Negotiator",
+          "label": "Debt Negotiator"
+        },
+        {
+          "id": "Program Completion Stage",
+          "label": "Program Completion Stage"
+        },
+        {
+          "id": "Cancellation Reason",
+          "label": "Cancellation Reason"
+        },
+        {
+          "id": "Legal Network",
+          "label": "Legal Network"
+        },
+        {
+          "id": "Work Phone",
+          "label": "Work Phone"
+        },
+        {
+          "id": "Legal Network Sync Status",
+          "label": "Legal Network Sync Status"
+        },
+        {
+          "id": "Billing Address",
+          "label": "Billing Address"
+        },
+        {
+          "id": "Billing County",
+          "label": "Billing County"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "account-6",
+      "title": "Program & Financial",
+      "fields": [
+        {
+          "id": "Total Debt",
+          "label": "Total Debt"
+        },
+        {
+          "id": "Current Total Debt",
+          "label": "Current Total Debt"
+        },
+        {
+          "id": "Settled Total",
+          "label": "Settled Total"
+        },
+        {
+          "id": "Total Paid to Date",
+          "label": "Total Paid to Date"
+        },
+        {
+          "id": "Active Settlements",
+          "label": "Active Settlements"
+        },
+        {
+          "id": "Escrow Balance",
+          "label": "Escrow Balance"
+        },
+        {
+          "id": "Escrow Balance Pulled Date Time",
+          "label": "Escrow Balance Pulled Date Time"
+        },
+        {
+          "id": "Total Fees Collected",
+          "label": "Total Fees Collected"
+        },
+        {
+          "id": "Fee Paid In Full",
+          "label": "Fee Paid In Full"
+        },
+        {
+          "id": "Number of Drafts",
+          "label": "Number of Drafts"
+        },
+        {
+          "id": "Completed Draft Count",
+          "label": "Completed Draft Count"
+        },
+        {
+          "id": "Missed Drafts",
+          "label": "Missed Drafts"
+        },
+        {
+          "id": "First Draft Date",
+          "label": "First Draft Date"
+        },
+        {
+          "id": "Last Draft Date",
+          "label": "Last Draft Date"
+        },
+        {
+          "id": "Welcome Call Completed",
+          "label": "Welcome Call Completed"
+        },
+        {
+          "id": "Bank Verification Status",
+          "label": "Bank Verification Status"
+        },
+        {
+          "id": "Routing Number",
+          "label": "Routing Number"
+        },
+        {
+          "id": "Account Number (masked)",
+          "label": "Account Number (masked)"
+        },
+        {
+          "id": "Processor",
+          "label": "Processor"
+        },
+        {
+          "id": "RAM/SAS Status",
+          "label": "RAM/SAS Status"
+        },
+        {
+          "id": "Program Completion Stage",
+          "label": "Program Completion Stage"
+        },
+        {
+          "id": "Qualified Financial",
+          "label": "Qualified Financial"
+        },
+        {
+          "id": "Actual Program Term",
+          "label": "Actual Program Term"
+        },
+        {
+          "id": "Actual Weekly Payment",
+          "label": "Actual Weekly Payment"
+        },
+        {
+          "id": "Buyout Program Weeks",
+          "label": "Buyout Program Weeks"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "account-7",
+      "title": "Bank Information",
+      "fields": [
+        {
+          "id": "Bank Name",
+          "label": "Bank Name"
+        },
+        {
+          "id": "Bank Routing Number",
+          "label": "Bank Routing Number"
+        },
+        {
+          "id": "Bank Account Number",
+          "label": "Bank Account Number"
+        },
+        {
+          "id": "Bank Account Type",
+          "label": "Bank Account Type"
+        },
+        {
+          "id": "Bank Account Sync Status",
+          "label": "Bank Account Sync Status"
+        },
+        {
+          "id": "IsChecking",
+          "label": "IsChecking"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "account-8",
+      "title": "Activity Tracking",
+      "fields": [
+        {
+          "id": "Last Called Time",
+          "label": "Last Called Time"
+        },
+        {
+          "id": "Last Contacted DateTime",
+          "label": "Last Contacted DateTime"
+        },
+        {
+          "id": "Last Emailed Time",
+          "label": "Last Emailed Time"
+        },
+        {
+          "id": "Last SMS Time",
+          "label": "Last SMS Time"
+        },
+        {
+          "id": "Week Days Between Last Activity Date",
+          "label": "Week Days Between Last Activity Date"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "account-9",
+      "title": "File Status",
+      "fields": [
+        {
+          "id": "Client Status",
+          "label": "Client Status"
+        },
+        {
+          "id": "Bank Account Status",
+          "label": "Bank Account Status"
+        },
+        {
+          "id": "Payment Status",
+          "label": "Payment Status"
+        },
+        {
+          "id": "Graduation Status",
+          "label": "Graduation Status"
+        },
+        {
+          "id": "Created By",
+          "label": "Created By"
+        },
+        {
+          "id": "Last Modified By",
+          "label": "Last Modified By"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "account-10",
+      "title": "Marketing Attribution",
+      "fields": [
+        {
+          "id": "Account Source",
+          "label": "Account Source"
+        },
+        {
+          "id": "Lead Source",
+          "label": "Lead Source"
+        },
+        {
+          "id": "Lead Source Category",
+          "label": "Lead Source Category"
+        },
+        {
+          "id": "Campaign",
+          "label": "Campaign"
+        },
+        {
+          "id": "UTM Source",
+          "label": "UTM Source"
+        },
+        {
+          "id": "UTM Medium",
+          "label": "UTM Medium"
+        },
+        {
+          "id": "UTM Campaign",
+          "label": "UTM Campaign"
+        },
+        {
+          "id": "UTM Term",
+          "label": "UTM Term"
+        },
+        {
+          "id": "UTM Content",
+          "label": "UTM Content"
+        },
+        {
+          "id": "Account Engagement Score",
+          "label": "Account Engagement Score"
+        },
+        {
+          "id": "Account Engagement Hard Bounced",
+          "label": "Account Engagement Hard Bounced"
+        },
+        {
+          "id": "Needs Score Synced",
+          "label": "Needs Score Synced"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "account-11",
+      "title": "Account Team",
+      "fields": [
+        {
+          "id": "Owner",
+          "label": "Owner"
+        },
+        {
+          "id": "Owner Email",
+          "label": "Owner Email"
+        }
+      ],
+      "columns": 2
+    }
+  ],
+  "Opportunity": [
+    {
+      "id": "opportunity-information",
+      "title": "Opportunity information",
+      "fields": [
+        {
+          "id": "Opportunity Name",
+          "label": "Opportunity Name"
+        },
+        {
+          "id": "Opportunity Owner",
+          "label": "Opportunity Owner"
+        },
+        {
+          "id": "Account Name",
+          "label": "Account Name"
+        },
+        {
+          "id": "Lead Id",
+          "label": "Lead Id"
+        },
+        {
+          "id": "Stage",
+          "label": "Stage"
+        },
+        {
+          "id": "Lead Source",
+          "label": "Lead Source"
+        },
+        {
+          "id": "Version Status",
+          "label": "Version Status"
+        },
+        {
+          "id": "Lead Source Category",
+          "label": "Lead Source Category"
+        },
+        {
+          "id": "Brand",
+          "label": "Brand"
+        },
+        {
+          "id": "Last Disposition",
+          "label": "Last Disposition"
+        },
+        {
+          "id": "Probability (%)",
+          "label": "Probability (%)"
+        },
+        {
+          "id": "Phone",
+          "label": "Phone"
+        },
+        {
+          "id": "Total Debt Included",
+          "label": "Total Debt Included"
+        },
+        {
+          "id": "Email",
+          "label": "Email"
+        },
+        {
+          "id": "Current Total Debt",
+          "label": "Current Total Debt"
+        },
+        {
+          "id": "Individual",
+          "label": "Individual"
+        },
+        {
+          "id": "Alternative #",
+          "label": "Alternative #"
+        },
+        {
+          "id": "Date of Birth",
+          "label": "Date of Birth"
+        },
+        {
+          "id": "SSN",
+          "label": "SSN"
+        },
+        {
+          "id": "Mailing Street",
+          "label": "Mailing Street"
+        },
+        {
+          "id": "Mailing City",
+          "label": "Mailing City"
+        },
+        {
+          "id": "Mailing State",
+          "label": "Mailing State"
+        },
+        {
+          "id": "Mailing Zip",
+          "label": "Mailing Zip"
+        },
+        {
+          "id": "Preferred method of Contact",
+          "label": "Preferred method of Contact"
+        },
+        {
+          "id": "Secured Party",
+          "label": "Secured Party"
+        },
+        {
+          "id": "Legal Plan Required",
+          "label": "Legal Plan Required"
+        },
+        {
+          "id": "Lead Vendor ID Text",
+          "label": "Lead Vendor ID Text"
+        },
+        {
+          "id": "Addendum Required",
+          "label": "Addendum Required"
+        },
+        {
+          "id": "Call ASAP",
+          "label": "Call ASAP"
+        },
+        {
+          "id": "Addendum Required Reason",
+          "label": "Addendum Required Reason"
+        },
+        {
+          "id": "Business Start Date",
+          "label": "Business Start Date"
+        },
+        {
+          "id": "Timezone",
+          "label": "Timezone"
+        },
+        {
+          "id": "Hopper Priority",
+          "label": "Hopper Priority"
+        },
+        {
+          "id": "Current Weekly Payment",
+          "label": "Current Weekly Payment"
+        },
+        {
+          "id": "Outbound ANI Date",
+          "label": "Outbound ANI Date"
+        },
+        {
+          "id": "Current Monthly Payment",
+          "label": "Current Monthly Payment"
+        },
+        {
+          "id": "Outbound ANI From",
+          "label": "Outbound ANI From"
+        },
+        {
+          "id": "Weekly Payment to Debt Ratio",
+          "label": "Weekly Payment to Debt Ratio"
+        },
+        {
+          "id": "Outbound ANI Identifier",
+          "label": "Outbound ANI Identifier"
+        },
+        {
+          "id": "Dialer Group",
+          "label": "Dialer Group"
+        },
+        {
+          "id": "First Payment Completed",
+          "label": "First Payment Completed"
+        },
+        {
+          "id": "Re-shuffle Opportunity",
+          "label": "Re-shuffle Opportunity"
+        },
+        {
+          "id": "First Draft Date",
+          "label": "First Draft Date"
+        },
+        {
+          "id": "Re-shuffle count",
+          "label": "Re-shuffle count"
+        },
+        {
+          "id": "First Contract Signed Date",
+          "label": "First Contract Signed Date"
+        },
+        {
+          "id": "UTM Term",
+          "label": "UTM Term"
+        },
+        {
+          "id": "Number Of Days From First ContractSigned",
+          "label": "Number Of Days From First ContractSigned"
+        },
+        {
+          "id": "Preferred Language",
+          "label": "Preferred Language"
+        },
+        {
+          "id": "Processor Contract Formula",
+          "label": "Processor Contract Formula"
+        },
+        {
+          "id": "First Payment Completed Date",
+          "label": "First Payment Completed Date"
+        },
+        {
+          "id": "Processor",
+          "label": "Processor"
+        },
+        {
+          "id": "Commission Payment Date",
+          "label": "Commission Payment Date"
+        },
+        {
+          "id": "Opportunity Amended DateTime",
+          "label": "Opportunity Amended DateTime"
+        },
+        {
+          "id": "Commission Payment Date Override",
+          "label": "Commission Payment Date Override"
+        },
+        {
+          "id": "Opportunity Reinstated DateTime",
+          "label": "Opportunity Reinstated DateTime"
+        },
+        {
+          "id": "Commission Payment Override Reason",
+          "label": "Commission Payment Override Reason"
+        },
+        {
+          "id": "Opportunity Reactivated DateTime",
+          "label": "Opportunity Reactivated DateTime"
+        },
+        {
+          "id": "Opportunity Assignment Date",
+          "label": "Opportunity Assignment Date"
+        },
+        {
+          "id": "Reactivate Reason",
+          "label": "Reactivate Reason"
+        },
+        {
+          "id": "HIGH UCC RISK",
+          "label": "HIGH UCC RISK"
+        },
+        {
+          "id": "Legal Network",
+          "label": "Legal Network"
+        },
+        {
+          "id": "Account Status",
+          "label": "Account Status"
+        },
+        {
+          "id": "Ad Click Id",
+          "label": "Ad Click Id"
+        },
+        {
+          "id": "Opportunity Record Type",
+          "label": "Opportunity Record Type"
+        },
+        {
+          "id": "Active Opportunity",
+          "label": "Active Opportunity"
+        },
+        {
+          "id": "Opportunity Reshuffled DateTime",
+          "label": "Opportunity Reshuffled DateTime"
+        },
+        {
+          "id": "Affiliate",
+          "label": "Affiliate"
+        },
+        {
+          "id": "Eli Ad click",
+          "label": "Eli Ad click"
+        },
+        {
+          "id": "Has Closer Notes",
+          "label": "Has Closer Notes"
+        },
+        {
+          "id": "Latest Closer Notes",
+          "label": "Latest Closer Notes"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "opportunity-1",
+      "title": "Account Billing Address & EIN",
+      "fields": [
+        {
+          "id": "EIN / Tax ID",
+          "label": "EIN / Tax ID"
+        },
+        {
+          "id": "Billing Street",
+          "label": "Billing Street"
+        },
+        {
+          "id": "Billing City",
+          "label": "Billing City"
+        },
+        {
+          "id": "Billing State / Province",
+          "label": "Billing State / Province"
+        },
+        {
+          "id": "Billing ZIP / Postal Code",
+          "label": "Billing ZIP / Postal Code"
+        },
+        {
+          "id": "Billing Country",
+          "label": "Billing Country"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "opportunity-2",
+      "title": "Buyout Program",
+      "fields": [
+        {
+          "id": "DS Buyout Total Program Cost",
+          "label": "DS Buyout Total Program Cost"
+        },
+        {
+          "id": "DS Buyout Settlement to Creditors",
+          "label": "DS Buyout Settlement to Creditors"
+        },
+        {
+          "id": "DS Buyout Fee",
+          "label": "DS Buyout Fee"
+        },
+        {
+          "id": "DS Buyout Savings",
+          "label": "DS Buyout Savings"
+        },
+        {
+          "id": "Qualified Financial",
+          "label": "Qualified Financial"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "opportunity-3",
+      "title": "Call Disposition",
+      "fields": [
+        {
+          "id": "Fronter",
+          "label": "Fronter"
+        },
+        {
+          "id": "Closer",
+          "label": "Closer"
+        },
+        {
+          "id": "Fronter Reference",
+          "label": "Fronter Reference"
+        },
+        {
+          "id": "Closer Reference",
+          "label": "Closer Reference"
+        },
+        {
+          "id": "Call Transferred By",
+          "label": "Call Transferred By"
+        },
+        {
+          "id": "Call Received By",
+          "label": "Call Received By"
+        },
+        {
+          "id": "Call Transferred By Reference",
+          "label": "Call Transferred By Reference"
+        },
+        {
+          "id": "Call Received By Reference",
+          "label": "Call Received By Reference"
+        },
+        {
+          "id": "Call Tranferred DateTime",
+          "label": "Call Tranferred DateTime"
+        },
+        {
+          "id": "Call Received Date",
+          "label": "Call Received Date"
+        },
+        {
+          "id": "Call Transfer Status",
+          "label": "Call Transfer Status"
+        },
+        {
+          "id": "Transfer Qualification",
+          "label": "Transfer Qualification"
+        },
+        {
+          "id": "Sub Disposition",
+          "label": "Sub Disposition"
+        },
+        {
+          "id": "Last Sub Disposition",
+          "label": "Last Sub Disposition"
+        },
+        {
+          "id": "Last Called Time",
+          "label": "Last Called Time"
+        },
+        {
+          "id": "Last Contacted DateTime",
+          "label": "Last Contacted DateTime"
+        },
+        {
+          "id": "Last Emailed Time",
+          "label": "Last Emailed Time"
+        },
+        {
+          "id": "Week Days Between Last Contacted Date",
+          "label": "Week Days Between Last Contacted Date"
+        },
+        {
+          "id": "Last SMS Time",
+          "label": "Last SMS Time"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "opportunity-4",
+      "title": "Client Questionnaire",
+      "fields": [
+        {
+          "id": "Type of Business",
+          "label": "Type of Business"
+        },
+        {
+          "id": "High Lien Risk",
+          "label": "High Lien Risk"
+        },
+        {
+          "id": "Receivables Collection Method",
+          "label": "Receivables Collection Method"
+        },
+        {
+          "id": "What was explained to client?",
+          "label": "What was explained to client?"
+        },
+        {
+          "id": "Processor Info",
+          "label": "Processor Info"
+        },
+        {
+          "id": "Bank Change",
+          "label": "Bank Change"
+        },
+        {
+          "id": "Lender Agreements Collected",
+          "label": "Lender Agreements Collected"
+        },
+        {
+          "id": "COJ or TRO",
+          "label": "COJ or TRO"
+        },
+        {
+          "id": "Status with Lender/s",
+          "label": "Status with Lender/s"
+        },
+        {
+          "id": "First Payment to Legal",
+          "label": "First Payment to Legal"
+        },
+        {
+          "id": "Summons or Judgment",
+          "label": "Summons or Judgment"
+        },
+        {
+          "id": "Welcome Call Scheduled",
+          "label": "Welcome Call Scheduled"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "opportunity-5",
+      "title": "Five9 Fields",
+      "fields": [
+        {
+          "id": "Add to Five9 List",
+          "label": "Add to Five9 List"
+        },
+        {
+          "id": "Delete from Five9 List",
+          "label": "Delete from Five9 List"
+        },
+        {
+          "id": "Five9 List Id",
+          "label": "Five9 List Id"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "opportunity-6",
+      "title": "System information",
+      "fields": [
+        {
+          "id": "Created By",
+          "label": "Created By"
+        },
+        {
+          "id": "Lead Created Date",
+          "label": "Lead Created Date"
+        },
+        {
+          "id": "Close Date",
+          "label": "Close Date"
+        },
+        {
+          "id": "Last Modified By",
+          "label": "Last Modified By"
+        }
+      ],
+      "columns": 2
+    }
+  ],
+  "Negotiation": [
+    {
+      "id": "negotiation-snapshot",
+      "title": "Debt snapshot",
+      "fields": [
+        {
+          "id": "Original balance",
+          "label": "Original balance"
+        },
+        {
+          "id": "Enrolled balance",
+          "label": "Enrolled balance"
+        },
+        {
+          "id": "Debt type",
+          "label": "Debt type"
+        },
+        {
+          "id": "Scheduled payment",
+          "label": "Scheduled payment"
+        },
+        {
+          "id": "Creditor phone",
+          "label": "Creditor phone"
+        },
+        {
+          "id": "Legal status",
+          "label": "Legal status"
+        },
+        {
+          "id": "Lien position",
+          "label": "Lien position"
+        },
+        {
+          "id": "Delinquent",
+          "label": "Delinquent"
+        },
+        {
+          "id": "Recorded settlement",
+          "label": "Recorded settlement"
+        }
+      ],
+      "columns": 2
+    },
+    {
+      "id": "negotiation-details",
+      "title": "Debt information",
+      "fields": [
+        {
+          "id": "Creditor",
+          "label": "Creditor"
+        },
+        {
+          "id": "Debt status",
+          "label": "Debt status"
+        },
+        {
+          "id": "Current balance",
+          "label": "Current balance"
+        },
+        {
+          "id": "Recorded negotiation status",
+          "label": "Recorded negotiation status"
+        }
+      ],
+      "columns": 2
+    }
+  ]
+}

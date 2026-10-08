@@ -1,3 +1,4 @@
+import { getRecordFieldLayout } from "@/lib/record-field-layout-server";
 import { recordBrand } from "@/lib/record-brand";
 import { taskActivity } from "@/lib/activity-presentation";
 import { missingLeadCallDispositionFields } from "@/lib/lead-call-disposition";
@@ -126,6 +127,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   });
   if (!rawRecord) notFound();
   const lead = redactSsn(rawRecord);
+  const fieldLayout = await getRecordFieldLayout("Lead", leadStageLabel(lead.status));
   const linkedAccount = await resolveLeadAccount(lead);
   const companyLink = linkedAccount
     ? <Link href={`/accounts/${linkedAccount.id}`} style={{ color: "#0176d3" }}>{lead.businessName || linkedAccount.name}</Link>
@@ -270,7 +272,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // Lightning shows its fields with NO section header. Bare grid, like SF.
   const leadInformation = (
     <div>
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["lead-1"]}
         entityType="lead"
         entityId={lead.id}
         fields={[
@@ -383,7 +385,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // SF interleaves [col1[0], col2[0], col1[1], col2[1], ...].
   const companyInformation = (
     <Section title="Company Information">
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["lead-2"]}
         entityType="lead"
         entityId={lead.id}
         fields={[
@@ -407,7 +409,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // Section 3: Current Debt Information (TwoColumnsLeftToRight)
   const currentDebtInformation = (
     <Section title="Current Debt Information">
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["lead-3"]}
         entityType="lead"
         entityId={lead.id}
         fields={[
@@ -428,7 +430,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // Section 4: Debt Calculation (TwoColumnsLeftToRight)
   const debtCalculation = (
     <Section title="Debt Calculation" defaultOpen={false}>
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["lead-4"]}
         fields={[
           // Row 1: Total Debt Amount | Frequency
           ["Total Debt Amount", sfDollar("Total_Debt_Amount__c")],
@@ -453,7 +455,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // Section 5: Call Disposition (TwoColumnsLeftToRight)
   const callDisposition = (
     <Section title="Call Disposition" defaultOpen={false}>
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["lead-5"]}
         entityType="lead"
         entityId={lead.id}
         fields={[
@@ -483,7 +485,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // Section 6: Five9 Fields (TwoColumnsLeftToRight)
   const five9Fields = (
     <Section title="Five9 Fields" defaultOpen={false}>
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["lead-6"]}
         entityType="lead"
         entityId={lead.id}
         fields={[
@@ -510,7 +512,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   //   RecordTypeId (we already show recordType on the header subtitle).
   const leadInformationSecondary = (
     <Section title="Lead Information">
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["lead-7"]}
         entityType="lead"
         entityId={lead.id}
         fields={[
@@ -593,7 +595,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // Form Page/SubPage).
   const accountEngagement = (
     <Section title="Account Engagement" defaultOpen={false}>
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["lead-8"]}
         fields={[
           // Row 1: Email Opt Out | First Search Type
           ["Email Opt Out", yesNo(sf("HasOptedOutOfEmail"))],
@@ -637,7 +639,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // SF marks both detailHeading=false, so Lightning renders their fields with
   // NO section headers, flowing after the last headed section. Bare grids.
   const additionalInformation = (
-    <FieldGrid
+    <FieldGrid layout={fieldLayout["lead-9"]}
       fields={[
         // Row 1: Product Interest | Current Generators
         ["Product Interest", sf("ProductInterest__c")],
@@ -653,7 +655,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   );
 
   const descriptionInformation = (
-    <FieldGrid
+    <FieldGrid layout={fieldLayout["lead-10"]}
       columns={1}
       fields={[
         ["Description", sf("Description")],
@@ -885,7 +887,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   const marketing = (
     <Section title="Marketing Attribution">
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["lead-11"]}
         fields={[
           ["UTM Source", lead.utmSource],
           ["UTM Medium", lead.utmMedium],

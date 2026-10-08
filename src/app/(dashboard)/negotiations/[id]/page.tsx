@@ -1,3 +1,4 @@
+import { getRecordFieldLayouts } from "@/lib/record-field-layout-server";
 import { recordBrand } from "@/lib/record-brand";
 import { negotiationEligibilityWhere } from "@/lib/negotiation-eligibility";
 import "../negotiations.css";
@@ -27,6 +28,7 @@ export default async function NegotiationOpportunityPage({ params }: { params: P
     },
   });
   if (!opp) notFound();
+  const fieldLayouts = await getRecordFieldLayouts("Negotiation");
   const session = await auth();
   const canEmail = !!session?.user?.id && hasPermission(session.user.permissions ?? [], "Email.Send");
   const linkedEmails = canEmail ? await prisma.emailMessage.findMany({
@@ -53,7 +55,7 @@ export default async function NegotiationOpportunityPage({ params }: { params: P
       { label: "Debts", value: String(opp.debts.length) },
       { label: "Total Balance", value: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(opp.debts.reduce((sum, debt) => sum + debt.currentBalance, 0)) },
     ]} actions={<Link href={`/opportunities/${opp.id}`} className="ng-button">View opportunity</Link>} />
-      <OpportunityNegotiations canCreateOffer={hasPermission(session?.user?.permissions ?? [], "Offer.Create")} documents={documents.map((doc) => ({ ...doc, createdAt: doc.createdAt.toISOString() }))} canEmail={canEmail} senderEmail={session?.user?.email ?? ""} emails={emails.map((email) => ({ ...email, createdAt: email.createdAt.toISOString() }))} opportunityName={opp.name ?? "Opportunity"} opportunityId={opp.id} debts={opp.debts.map((debt) => ({
+      <OpportunityNegotiations fieldLayouts={fieldLayouts} canCreateOffer={hasPermission(session?.user?.permissions ?? [], "Offer.Create")} documents={documents.map((doc) => ({ ...doc, createdAt: doc.createdAt.toISOString() }))} canEmail={canEmail} senderEmail={session?.user?.email ?? ""} emails={emails.map((email) => ({ ...email, createdAt: email.createdAt.toISOString() }))} opportunityName={opp.name ?? "Opportunity"} opportunityId={opp.id} debts={opp.debts.map((debt) => ({
         creditorEmail: debt.creditorEmail || debt.creditor?.collectionsEmail || null, id: debt.id, creditorName: debt.creditor?.account?.name ?? debt.creditorName, paymentStatus: debtPaymentStatus(debt.sfDataJson), analysis: (debt.sourceDocument?.analysisJson as ContractAnalysisData | null) ?? null, analysisDocName: debt.sourceDocument?.name ?? null, accountNumber: debt.accountNumber,
         originalBalance: debt.originalBalance, enrolledBalance: debt.enrolledBalance, creditorPhone: debt.creditorPhone || debt.creditor?.collectionsPhone,
         debtType: debt.debtType, paymentAmount: debt.paymentAmount, paymentFrequency: debt.paymentFrequency, legalStatus: debt.legalStatus, lienPosition: debt.lienPosition, isDelinquent: debt.isDelinquent, notes: debt.notes, settledAmount: debt.settledAmount,

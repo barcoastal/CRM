@@ -55,6 +55,7 @@ export default async function SettingsPage() {
     {
       section: "Schema & Layouts",
       items: [
+        { href: "/settings/record-layouts", title: "Record Field Layouts", description: "Move fields, show or hide them, and set layouts for each stage", count: pageLayouts },
         { href: "/settings/object-manager", title: "Object Manager", description: "Browse every object, edit field labels, picklist values, and page layouts", count: fieldLabels + pageLayouts },
       ],
     },

@@ -1,5 +1,6 @@
 "use client";
 
+import { arrangeFields, type GridLayout } from "@/lib/record-field-layout";
 import { useState, type ReactNode } from "react";
 import { InlineEditableField, type EntityType, type FieldType } from "./inline-editable-field";
 
@@ -128,16 +129,19 @@ export function Section({
  * click swaps to an input with save / cancel buttons (SF Lightning parity).
  */
 export function FieldGrid({
+  layout,
   fields,
   columns = 2,
   entityType,
   entityId,
 }: {
+  layout?: GridLayout;
   fields: GridField[];
   columns?: 1 | 2;
   entityType?: EntityType;
   entityId?: string;
 }) {
+  columns = layout?.columns ?? columns;
   return (
     <div
       className={columns === 2 ? "sf-field-grid sf-field-grid--2col" : "sf-field-grid"}
@@ -149,13 +153,13 @@ export function FieldGrid({
         columnGap: 24,
       }}
     >
-      {fields.map((row, i) => {
+      {arrangeFields(fields, row => row[0], layout).map(({ field: row, span }, i) => {
         const [label, value, edit] = row;
         if (edit && entityType && entityId) {
           const raw = edit.rawValue instanceof Date ? edit.rawValue.toISOString() : edit.rawValue ?? null;
           return (
+            <div key={row[0] + i} style={{ minWidth: 0, gridColumn: span === 2 ? "1 / -1" : undefined }}>
             <InlineEditableField
-              key={i}
               label={label}
               value={raw}
               displayNode={value}
@@ -167,9 +171,10 @@ export function FieldGrid({
               lookupEndpoint={edit.lookupEndpoint}
               editable={edit.editable !== false}
             />
+            </div>
           );
         }
-        return <Field key={i} label={label} value={value} />;
+        return <div key={label + i} style={{ minWidth: 0, gridColumn: span === 2 ? "1 / -1" : undefined }}><Field label={label} value={value} /></div>;
       })}
     </div>
   );

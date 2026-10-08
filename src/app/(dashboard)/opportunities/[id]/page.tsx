@@ -1,3 +1,4 @@
+import { getRecordFieldLayout } from "@/lib/record-field-layout-server";
 import { recordBrand } from "@/lib/record-brand";
 import { taskActivity } from "@/lib/activity-presentation";
 import { RecordViewTracker } from "@/components/lists/record-view-tracker";
@@ -217,6 +218,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   });
   if (!rawRecord) notFound();
   const opp = redactSsn(rawRecord);
+  const fieldLayout = await getRecordFieldLayout("Opportunity", opp.stage);
 
   // Keep direct record navigation aligned with the scoped list and API.
   if (isArchivedOpportunity(opp.stage)) {
@@ -508,7 +510,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           the UI API layout (recordType 012VO0000026jhGYAQ, mode=View). Even
           index = left col, odd = right col. useHeading=false in SF, so no
           section header. E(...) rows are inline-editable. */}
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["opportunity-information"]}
           entityType="opportunity"
           entityId={opp.id}
           fields={closerOpportunityFields([
@@ -636,7 +638,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
       {opp.account && canViewBillingAccount && (
         <Section title="Account Billing Address & EIN">
-          <FieldGrid
+          <FieldGrid layout={fieldLayout["opportunity-1"]}
             entityType="account"
             entityId={opp.account.id}
             fields={[
@@ -653,7 +655,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
       <Section title="Buyout Program">
         {/* SF Buyout Program section (all formula fields, read-only). */}
-        <FieldGrid
+        <FieldGrid layout={fieldLayout["opportunity-2"]}
           entityType="opportunity"
           entityId={opp.id}
           fields={[
@@ -669,7 +671,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
       <Section title="Call Disposition">
         {/* SF Call Disposition — TwoColumnsLeftToRight. */}
-        <FieldGrid
+        <FieldGrid layout={fieldLayout["opportunity-3"]}
           entityType="opportunity"
           entityId={opp.id}
           fields={[
@@ -709,7 +711,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
       <Section title="Client Questionnaire">
         {/* SF Client Questionnaire — TwoColumnsLeftToRight. */}
-        <FieldGrid
+        <FieldGrid layout={fieldLayout["opportunity-4"]}
           entityType="opportunity"
           entityId={opp.id}
           fields={[
@@ -744,7 +746,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
       <Section title="Five9 Fields">
         {/* SF Five9 Fields section. */}
-        <FieldGrid
+        <FieldGrid layout={fieldLayout["opportunity-5"]}
           entityType="opportunity"
           entityId={opp.id}
           fields={[
@@ -758,7 +760,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
 
       {/* SF System Information section, useHeading=false: bare grid, no card.
           Created By / Last Modified By render as "Name, date, time" like SF. */}
-      <FieldGrid
+      <FieldGrid layout={fieldLayout["opportunity-6"]}
         entityType="opportunity"
         entityId={opp.id}
         fields={[

@@ -58,6 +58,7 @@ export async function PATCH(
 
   const existing = await prisma.pageLayout.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (id.startsWith("record-fields:")) return NextResponse.json({ error: "Use Record Field Layouts to manage this layout" }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
   const obj = getObject(existing.entityType);
@@ -119,6 +120,7 @@ export async function DELETE(
 
   const existing = await prisma.pageLayout.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (id.startsWith("record-fields:")) return NextResponse.json({ error: "Use Record Field Layouts to manage this layout" }, { status: 403 });
 
   await prisma.pageLayout.delete({ where: { id } });
   await auditWrite({
