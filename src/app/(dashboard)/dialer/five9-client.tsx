@@ -394,6 +394,7 @@ function QuickCreateLead({ phone, assignedToId, onCreated }: { phone: string; as
   const [businessName, setBusinessName] = useState("");
   const [phoneVal, setPhoneVal] = useState(phone);
   const [email, setEmail] = useState("");
+  const [brand, setBrand] = useState("");
   const [totalDebtEst, setTotalDebtEst] = useState("");
   const [numberOfLenders, setNumberOfLenders] = useState("");
   const [notes, setNotes] = useState("");
@@ -422,6 +423,7 @@ function QuickCreateLead({ phone, assignedToId, onCreated }: { phone: string; as
           businessName: businessName.trim() || contactName.trim(),
           phone: phoneVal.trim(),
           email: email.trim(),
+          brand,
           totalDebtEst: debtNum > 0 ? debtNum : "",
           numberOfLenders: numberOfLenders.trim() === "" || Number.isNaN(lendersNum) ? "" : lendersNum,
           notes: notes.trim(),
@@ -471,6 +473,13 @@ function QuickCreateLead({ phone, assignedToId, onCreated }: { phone: string; as
         <label style={labelStyle}>
           Email
           <input style={inputStyle} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
+        </label>
+        <label style={labelStyle}>
+          Brand
+          <select style={inputStyle} value={brand} onChange={(e) => setBrand(e.target.value)}>
+            <option value="">Select brand</option>
+            {BRANDS.map(value => <option key={value} value={value}>{value}</option>)}
+          </select>
         </label>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <label style={labelStyle}>
