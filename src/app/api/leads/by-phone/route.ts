@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
       phone: lead.phone,
       email: lead.email,
       status: lead.status,
+      brand: lead.brand ?? source("Brand__c"),
       source: source("LeadSource") ?? lead.source,
       debtRange: source("Estimated_Total_Debt__c"),
       createdAt: lead.createdAt.toISOString(),

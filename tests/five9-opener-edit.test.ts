@@ -35,15 +35,15 @@ beforeEach(() => {
 
 it("saves editable Five9 fields together and keeps unrelated Salesforce data", async () => {
   const response = await PATCH(request({
-    firstName: "Alexa", source: "Google", debtRange: "$50,000 - $100,000",
+    firstName: "Alexa", source: "Google", brand: "BDI", debtRange: "$50,000 - $100,000",
     mobilePhone: "3055551212", totalDebtEst: 75000,
   }), params);
   expect(response.status).toBe(200);
   const [, id, data] = mocks.update.mock.calls[0];
   expect(id).toBe("lead-1");
-  expect(data).toMatchObject({ contactName: "Alexa Smith", source: "Google", totalDebtEst: 75000 });
+  expect(data).toMatchObject({ contactName: "Alexa Smith", source: "Google", brand: "BDI", totalDebtEst: 75000 });
   expect(JSON.parse(data.sfDataJson)).toMatchObject({
-    FirstName: "Alexa", LastName: "Smith", LeadSource: "Google",
+    FirstName: "Alexa", LastName: "Smith", LeadSource: "Google", Brand__c: "BDI",
     Estimated_Total_Debt__c: "$50,000 - $100,000", MobilePhone: "3055551212",
     Existing_Field__c: "keep",
   });

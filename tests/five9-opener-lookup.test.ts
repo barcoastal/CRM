@@ -19,12 +19,13 @@ const row = (id: string, overrides: Record<string, unknown> = {}) => ({
     Street: "1 Main St", City: "Miami", PostalCode: "33101", MobilePhone: "3055551212",
     Work_Phone__c: "3055551313", pi__comments__c: "Imported comment", Has_Calendly_Event__c: true,
     LeadSource: "Phone Inquiry", Estimated_Total_Debt__c: "$50,000 - $100,000",
+    Brand__c: "Coastal Debt",
   }),
   contactName: `Alex ${id}`, businessName: `Company ${id}`, phone: "8882804331",
   email: `${id}@coastaldebt.com`, status: "Working Lead", totalDebtEst: 10000,
   numberOfLenders: 2, industry: "Retail", lastContactedAt: null, state: "FL",
   ein: "123456789", utmTerm: "referral", notes: null,
-  source: "OTHER", createdAt: new Date("2025-01-02T00:00:00.000Z"), calls: [], ...overrides,
+  source: "OTHER", brand: null, createdAt: new Date("2025-01-02T00:00:00.000Z"), calls: [], ...overrides,
 });
 
 beforeEach(() => {
@@ -48,7 +49,7 @@ it("returns every accessible lead matching a call number with its imported Sales
     street: "1 Main St", city: "Miami", state: "FL", postalCode: "33101",
     mobilePhone: "3055551212", workPhone: "3055551313", ein: "123456789",
     utmTerm: "referral", comments: "Imported comment", hasCalendlyEvent: true,
-    source: "Phone Inquiry", debtRange: "$50,000 - $100,000", createdAt: "2025-01-02T00:00:00.000Z",
+    source: "Phone Inquiry", brand: "Coastal Debt", debtRange: "$50,000 - $100,000", createdAt: "2025-01-02T00:00:00.000Z",
   });
   expect(mocks.findMany.mock.calls[0][0].where.AND).toEqual([{ assignedToId: "bar1" }]);
 });
