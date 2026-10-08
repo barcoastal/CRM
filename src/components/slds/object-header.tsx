@@ -63,6 +63,7 @@ export function ObjectHeader({
                 </svg>
               </span>
             </div>
+            {brand !== undefined && <RecordBrandLogo brand={brand} />}
             <div className="slds-media__body" style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span
@@ -106,7 +107,6 @@ export function ObjectHeader({
             </div>
           </div>
         </div>
-        {brand !== undefined && <RecordBrandLogo brand={brand} />}
         {actions && (
           <div className={styles.actions} style={{ flexShrink: 0 }}>
             <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
