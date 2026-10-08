@@ -11,6 +11,7 @@ const FIVE9_AGENT_URL = "https://app-atl.five9.com/clients/agent/main.html?role=
 
 interface LeadContext {
   id: string;
+  sfId: string | null;
   contactName: string;
   businessName: string;
   phone: string;
@@ -20,6 +21,19 @@ interface LeadContext {
   numberOfLenders: number | null;
   industry: string | null;
   lastContactedAt: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  alternateEmail: string | null;
+  street: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  mobilePhone: string | null;
+  workPhone: string | null;
+  ein: string | null;
+  utmTerm: string | null;
+  comments: string | null;
+  hasCalendlyEvent: boolean | null;
   recentCalls: Array<{ id: string; startedAt: string; disposition: string | null; duration: number | null }>;
 }
 
@@ -43,6 +57,7 @@ const last10 = (p: string | null | undefined) => (p ?? "").replace(/[^0-9]/g, ""
 
 export function Five9Client({ five9Domain, defaultStation: _defaultStation, frameOnly = false, initialPhone = null, userId, pilotEligible = false, toolkitMode = false, expectedFive9Login = "" }: Props) {
   const [lead, setLead] = useState<LeadContext | null>(null);
+  const [matches, setMatches] = useState<LeadContext[]>([]);
   const [loadingLead, setLoadingLead] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [currentPhone, setCurrentPhone] = useState<string | null>(null);
@@ -79,6 +94,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
     setWrapped(false);
     setLoadingLead(true);
     setLead(null);
+    setMatches([]);
     setLookupError(null);
     try {
       const res = await fetch(`/api/leads/by-phone?phone=${encodeURIComponent(last10(phone))}`);
@@ -87,7 +103,10 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
         return;
       }
       if (currentPhoneRef.current === phone && callSinceRef.current === since) {
-        setLead((await res.json()) ?? null);
+        const data = await res.json() as { leads: LeadContext[] };
+        const found = Array.isArray(data.leads) ? data.leads : [];
+        setMatches(found);
+        setLead(found[0] ?? null);
       }
     } catch {
       setLookupError("Could not reach the CRM. Please try again.");
@@ -101,6 +120,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
     callSinceRef.current = null;
     setCurrentPhone(null);
     setLead(null);
+    setMatches([]);
     setLookupError(null);
     if (opts?.wrapped) setWrapped(true);
   }
@@ -110,6 +130,11 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
   function handleDispositioned() {
     dispositionedSinceRef.current = callSinceRef.current;
     clearPane({ wrapped: true });
+  }
+
+  function handleLeadSaved(updated: LeadContext) {
+    setLead(updated);
+    setMatches(previous => previous.map(item => item.id === updated.id ? updated : item));
   }
 
   useEffect(() => {
@@ -194,11 +219,12 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
             </p>
           )}
           {lookupError && <p role="alert" style={{ color: "#ba1a1a", fontSize: 12 }}>{lookupError}</p>}
+          {matches.length > 1 && <MatchSelector matches={matches} selectedId={lead?.id ?? null} onSelect={setLead} />}
           {!loadingLead && !lookupError && !lead && currentPhone && (
             <QuickCreateLead phone={currentPhone} assignedToId={userId} onCreated={() => void popLead(currentPhone, callSinceRef.current)} />
           )}
           {lead && (
-            <LeadCard key={lead.id} lead={lead} onSaved={setLead} onDispositioned={handleDispositioned} />
+            <LeadCard key={lead.id} lead={lead} onSaved={handleLeadSaved} onDispositioned={handleDispositioned} />
           )}
         </section>
       </main>
@@ -238,6 +264,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
             </div>
           )}
           {lookupError && <p role="alert" style={{ color: "#ba1a1a", fontSize: 12 }}>{lookupError}</p>}
+          {matches.length > 1 && <MatchSelector matches={matches} selectedId={lead?.id ?? null} onSelect={setLead} />}
           {!loadingLead && !lookupError && !lead && currentPhone && (
             <QuickCreateLead phone={currentPhone} assignedToId={userId} onCreated={() => void popLead(currentPhone, callSinceRef.current)} />
           )}
@@ -245,7 +272,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
             <LeadCard
               key={lead.id}
               lead={lead}
-              onSaved={(updated) => setLead(updated)}
+              onSaved={handleLeadSaved}
               onDispositioned={handleDispositioned}
             />
           )}
@@ -317,6 +344,35 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
         )}
       </div>
 
+    </div>
+  );
+}
+
+function MatchSelector({ matches, selectedId, onSelect }: {
+  matches: LeadContext[];
+  selectedId: string | null;
+  onSelect: (lead: LeadContext) => void;
+}) {
+  return (
+    <div style={{ marginBottom: 14, border: "1px solid #b6c8dd", borderRadius: 6, overflow: "hidden" }}>
+      <div style={{ padding: "9px 12px", background: "#eef5fc", fontSize: 13, fontWeight: 700 }}>
+        {matches.length} leads match this phone number — select the person on this call
+      </div>
+      <div style={{ maxHeight: 240, overflowY: "auto" }}>
+        {matches.map(item => (
+          <button
+            key={item.id}
+            type="button"
+            aria-pressed={selectedId === item.id}
+            onClick={() => onSelect(item)}
+            style={{ display: "block", width: "100%", textAlign: "left", padding: "9px 12px", border: 0, borderTop: "1px solid #e1e8f0", background: selectedId === item.id ? "#dceeff" : "#fff", color: "#181818", cursor: "pointer" }}
+          >
+            <strong>{item.contactName || "Unnamed lead"}</strong>
+            <span style={{ color: "#555", marginLeft: 8 }}>{item.businessName} · {item.status}</span>
+            <span style={{ display: "block", color: "#64748b", fontSize: 11 }}>{item.email || item.phone} · {item.sfId || item.id}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -505,9 +561,13 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
         setError(b?.error ?? "Failed to save");
         return;
       }
+      const savedName = contactName.trim();
+      const nameParts = savedName.split(/\s+/);
       onSaved({
         ...lead,
-        contactName: contactName.trim(),
+        contactName: savedName,
+        firstName: nameParts.length > 1 ? nameParts[0] : null,
+        lastName: nameParts.length > 1 ? nameParts.slice(1).join(" ") : savedName,
         businessName: businessName.trim() || contactName.trim(),
         email: email.trim() || null,
         totalDebtEst: newDebt,
@@ -530,6 +590,30 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
           {lead.phone} · {lead.status}
         </div>
       </div>
+
+      <section style={{ border: "1px solid #d8dde6", borderRadius: 6, padding: 12, margin: "12px 0 16px" }}>
+        <h4 style={{ margin: "0 0 10px", fontSize: 13 }}>Lead details</h4>
+        <Grid cells={[
+          ["Lead Id", lead.sfId ?? lead.id],
+          ["Email", lead.email ?? "—"],
+          ["First Name", lead.firstName ?? "—"],
+          ["Alternate Email", lead.alternateEmail ?? "—"],
+          ["Last Name", lead.lastName ?? "—"],
+          ["Street", lead.street ?? "—"],
+          ["EIN Number / Tax Id", lead.ein ?? "—"],
+          ["City", lead.city ?? "—"],
+          ["Phone", lead.phone],
+          ["State", lead.state ?? "—"],
+          ["Mobile Phone", lead.mobilePhone ?? "—"],
+          ["Postal Code", lead.postalCode ?? "—"],
+          ["Work Phone", lead.workPhone ?? "—"],
+          ["Industry", lead.industry ?? "—"],
+          ["Company", lead.businessName],
+          ["UTM Term", lead.utmTerm ?? "—"],
+          ["Comments", lead.comments ?? "—"],
+          ["Has Calendly Event", lead.hasCalendlyEvent == null ? "—" : lead.hasCalendlyEvent ? "Yes" : "No"],
+        ]} />
+      </section>
 
       <div style={{ fontSize: 11, color: "#0176d3", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, margin: "8px 0 6px" }}>
         Verify with caller
