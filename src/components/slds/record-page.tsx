@@ -17,6 +17,7 @@ export function RecordPage({
   entityLabel,
   recordTitle,
   recordSubtitle,
+  brand,
   highlights = [],
   actions,
   pathStages,
@@ -32,6 +33,7 @@ export function RecordPage({
   entityLabel?: string;
   recordTitle: string;
   recordSubtitle?: ReactNode;
+  brand?: string | null;
   highlights?: ObjectHeaderField[];
   actions?: ReactNode;
   pathStages?: readonly PathStage[];
@@ -57,6 +59,7 @@ export function RecordPage({
           entityLabel={entityLabel}
           recordTitle={recordTitle}
           recordSubtitle={recordSubtitle}
+          brand={brand}
           highlights={highlights}
           actions={actions}
         />

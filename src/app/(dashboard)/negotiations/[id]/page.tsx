@@ -1,3 +1,4 @@
+import { recordBrand } from "@/lib/record-brand";
 import { negotiationEligibilityWhere } from "@/lib/negotiation-eligibility";
 import "../negotiations.css";
 import { ObjectHeader } from "@/components/slds/object-header";
@@ -16,7 +17,7 @@ export default async function NegotiationOpportunityPage({ params }: { params: P
   const scope = await recordScope("opportunity");
   const opp = await prisma.opportunity.findFirst({
     where: { id, AND: [scope, negotiationEligibilityWhere()] },
-    include: { account: { select: { name: true } }, documents: { orderBy: { createdAt: "desc" }, select: { id: true, name: true, type: true, fileSize: true, createdAt: true } }, assignedTo: { select: { name: true } },
+    include: { account: { select: { name: true, brand: true, sfDataJson: true } }, documents: { orderBy: { createdAt: "desc" }, select: { id: true, name: true, type: true, fileSize: true, createdAt: true } }, assignedTo: { select: { name: true } },
       debts: { orderBy: { creditorName: "asc" }, include: {
         creditor: { select: { collectionsEmail: true, collectionsPhone: true, account: { select: { name: true } } } },
         sourceDocument: { select: { analysisJson: true, id: true, name: true, type: true, fileSize: true, createdAt: true } },
@@ -46,7 +47,7 @@ export default async function NegotiationOpportunityPage({ params }: { params: P
   const documents = [...new Map([...(opp.documents ?? []).map(doc => ({ ...doc, origin: "Opportunity" })), ...relatedDocuments.map(doc => ({ ...doc, origin: doc.leadId && doc.leadId === opp.leadId ? "Lead" : "Account" }))].map(doc => [doc.id, doc])).values()];
   return <div className="ng-page">
     <Link href="/negotiations" className="ng-back">‹ Negotiations</Link>
-    <ObjectHeader entity="Opportunity" entityLabel="Negotiations" recordTitle={opp.name || "Opportunity negotiations"} highlights={[
+    <ObjectHeader brand={recordBrand(opp, opp.account)} entity="Opportunity" entityLabel="Negotiations" recordTitle={opp.name || "Opportunity negotiations"} highlights={[
       { label: "Account", value: opp.account?.name ?? "—" },
       { label: "Opportunity Owner", value: opp.assignedTo?.name ?? "Unassigned" },
       { label: "Debts", value: String(opp.debts.length) },

@@ -1,3 +1,4 @@
+import { recordBrand } from "@/lib/record-brand";
 import { OppActivities } from "@/components/opportunities/opp-activities";
 import { taskActivity } from "@/lib/activity-presentation";
 import { RecordViewTracker } from "@/components/lists/record-view-tracker";
@@ -978,6 +979,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     <>
     <RecordViewTracker entity="account" id={account.id}/>
     <RecordPage
+      brand={recordBrand(account)}
       entity="Account"
       entityLabel="Account"
       // The Account record title is the account NAME (this is also what the

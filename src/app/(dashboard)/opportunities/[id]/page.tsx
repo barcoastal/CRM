@@ -1,3 +1,4 @@
+import { recordBrand } from "@/lib/record-brand";
 import { taskActivity } from "@/lib/activity-presentation";
 import { RecordViewTracker } from "@/components/lists/record-view-tracker";
 import { usesCloserOpportunityView, closerOpportunityFields, closerOpportunitySnapshot } from "@/lib/opportunity-closer-view";
@@ -168,6 +169,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
           id: true,
           name: true,
           recordType: true,
+          brand: true,
           primaryContactId: true,
           ein: true,
           billingStreet: true,
@@ -1016,6 +1018,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     <div className="sf-record-page">
       <RecordViewTracker entity="opportunity" id={opp.id}/>
       <RecordPage
+      brand={recordBrand(opp, opp.account)}
         entity="Opportunity"
         entityLabel="Opportunity"
         recordTitle={oppName}

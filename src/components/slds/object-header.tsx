@@ -1,3 +1,4 @@
+import { RecordBrandLogo } from "./record-brand-logo";
 import type { ReactNode } from "react";
 import styles from "./record-layout.module.css";
 import { LIGHTNING_COLORS } from "@/lib/slds/lightning-colors";
@@ -16,6 +17,7 @@ export function ObjectHeader({
   entityLabel,
   recordTitle,
   recordSubtitle,
+  brand,
   highlights = [],
   actions,
 }: {
@@ -23,6 +25,7 @@ export function ObjectHeader({
   entityLabel?: string;
   recordTitle: string;
   recordSubtitle?: ReactNode;
+  brand?: string | null;
   highlights?: ObjectHeaderField[];
   actions?: ReactNode;
 }) {
@@ -103,6 +106,7 @@ export function ObjectHeader({
             </div>
           </div>
         </div>
+        {brand !== undefined && <RecordBrandLogo brand={brand} />}
         {actions && (
           <div className={styles.actions} style={{ flexShrink: 0 }}>
             <div style={{ display: "flex", gap: 4, alignItems: "center" }}>

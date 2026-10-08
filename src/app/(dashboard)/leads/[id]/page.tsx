@@ -1,3 +1,4 @@
+import { recordBrand } from "@/lib/record-brand";
 import { taskActivity } from "@/lib/activity-presentation";
 import { missingLeadCallDispositionFields } from "@/lib/lead-call-disposition";
 import { leadPaymentPopulated } from "@/lib/lead-payment-health";
@@ -908,6 +909,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     <>
     <LeadViewTracker id={lead.id} />
     <RecordPage
+      brand={recordBrand(lead)}
       entity="Lead"
       entityLabel="Lead"
       recordTitle={displayContactName !== "Unknown" ? displayContactName : (lead.businessName ?? "Unknown Lead")}
