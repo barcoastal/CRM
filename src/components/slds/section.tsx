@@ -155,7 +155,8 @@ export function FieldGrid({
     >
       {arrangeFields(fields, row => row[0], layout).map(({ field: row, span }, i) => {
         const [label, value, edit] = row;
-        const displayLabel = layout?.fields.find(field => field.id === label)?.required ? `${label} *` : label;
+        const fieldLabel = label === "Eli Ad click" ? "Trakit click id" : label;
+        const displayLabel = layout?.fields.find(field => field.id === label)?.required ? `${fieldLabel} *` : fieldLabel;
         if (edit && entityType && entityId) {
           const raw = edit.rawValue instanceof Date ? edit.rawValue.toISOString() : edit.rawValue ?? null;
           return (
