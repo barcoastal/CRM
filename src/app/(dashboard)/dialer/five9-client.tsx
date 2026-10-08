@@ -18,6 +18,7 @@ interface LeadContext {
   email: string | null;
   status: string;
   brand: string | null;
+  five9Disposition: string | null;
   source: string;
   debtRange: string | null;
   createdAt: string;
@@ -374,7 +375,7 @@ function MatchSelector({ matches, selectedId, onSelect }: {
             <strong>{item.contactName || "Unnamed lead"}</strong>
             <span style={{ color: "#555", marginLeft: 8 }}>{item.businessName} · {item.status}</span>
             <span style={{ display: "block", color: "#64748b", fontSize: 11 }}>
-              Brand: {item.brand || "—"} · Source: {item.source || "—"} · Self-reported debt: {item.debtRange || "—"} · Added {new Date(item.createdAt).toLocaleDateString()}
+              Brand: {item.brand || "—"} · Source: {item.source || "—"} · Self-reported debt: {item.debtRange || "—"} · Five9 disposition: {item.five9Disposition || "—"} · Added {new Date(item.createdAt).toLocaleDateString()}
             </span>
             <span style={{ display: "block", color: "#64748b", fontSize: 11 }}>{item.email || item.phone} · {item.sfId || item.id}</span>
           </button>
@@ -639,6 +640,7 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
         <h3 style={{ margin: "0 0 12px", fontSize: 15 }}>Lead details <span style={{ color: "#64748b", fontSize: 12, fontWeight: 400 }}>· {lead.status}</span></h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "12px 24px" }}>
           <DetailValue label="Lead Id" value={lead.sfId ?? lead.id} />
+          <DetailValue label="Five9 disposition" value={lead.five9Disposition} />
           {editableFields.map(([key, label]) => (
             <label key={key} style={{ ...labelStyle, gridColumn: key === "comments" ? "1 / -1" : undefined }}>
               {label}
