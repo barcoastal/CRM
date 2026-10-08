@@ -1,4 +1,5 @@
 import { WEB_LEAD_SOURCES } from "@/lib/automation/lead-routing";
+import { BRANDS } from "@/lib/sf-canonical";
 import { z } from "zod";
 
 export const LEAD_SOURCES = [
@@ -38,6 +39,7 @@ export const createLeadSchema = z.object({
   totalDebtEst: z.coerce.number().positive("Must be a positive number").optional().or(z.literal("")),
   numberOfLenders: z.coerce.number().int().min(0, "Cannot be negative").optional().or(z.literal("")),
   source: z.enum(LEAD_SOURCES).default("OTHER"),
+  brand: z.enum(BRANDS).optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
   assignedToId: z.string().optional().or(z.literal("")),
   // Marketing Attribution

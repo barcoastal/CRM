@@ -98,6 +98,8 @@ async function handlePOST(request: NextRequest) {
       totalDebtEst: typeof data.totalDebtEst === "number" ? data.totalDebtEst : null,
       numberOfLenders: typeof data.numberOfLenders === "number" ? data.numberOfLenders : null,
       source: data.source,
+      brand: data.brand || null,
+      ...(data.brand ? { sfDataJson: JSON.stringify({ Brand__c: data.brand }) } : {}),
       notes: data.notes || null,
       assignedToId: data.assignedToId || session.user.id,
       leadAssignmentDate: new Date(),
