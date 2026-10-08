@@ -17,6 +17,9 @@ interface LeadContext {
   phone: string;
   email: string | null;
   status: string;
+  source: string;
+  debtRange: string | null;
+  createdAt: string;
   totalDebtEst: number | null;
   numberOfLenders: number | null;
   industry: string | null;
@@ -219,7 +222,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
             </p>
           )}
           {lookupError && <p role="alert" style={{ color: "#ba1a1a", fontSize: 12 }}>{lookupError}</p>}
-          {matches.length > 1 && <MatchSelector matches={matches} selectedId={lead?.id ?? null} onSelect={setLead} />}
+          {matches.length > 0 && <MatchSelector matches={matches} selectedId={lead?.id ?? null} onSelect={setLead} />}
           {!loadingLead && !lookupError && !lead && currentPhone && (
             <QuickCreateLead phone={currentPhone} assignedToId={userId} onCreated={() => void popLead(currentPhone, callSinceRef.current)} />
           )}
@@ -264,7 +267,7 @@ export function Five9Client({ five9Domain, defaultStation: _defaultStation, fram
             </div>
           )}
           {lookupError && <p role="alert" style={{ color: "#ba1a1a", fontSize: 12 }}>{lookupError}</p>}
-          {matches.length > 1 && <MatchSelector matches={matches} selectedId={lead?.id ?? null} onSelect={setLead} />}
+          {matches.length > 0 && <MatchSelector matches={matches} selectedId={lead?.id ?? null} onSelect={setLead} />}
           {!loadingLead && !lookupError && !lead && currentPhone && (
             <QuickCreateLead phone={currentPhone} assignedToId={userId} onCreated={() => void popLead(currentPhone, callSinceRef.current)} />
           )}
@@ -356,7 +359,7 @@ function MatchSelector({ matches, selectedId, onSelect }: {
   return (
     <div style={{ marginBottom: 14, border: "1px solid #b6c8dd", borderRadius: 6, overflow: "hidden" }}>
       <div style={{ padding: "9px 12px", background: "#eef5fc", fontSize: 13, fontWeight: 700 }}>
-        {matches.length} leads match this phone number — select the person on this call
+        Existing leads for this phone ({matches.length}){matches.length > 1 ? " — select the person on this call" : ""}
       </div>
       <div style={{ maxHeight: 240, overflowY: "auto" }}>
         {matches.map(item => (
@@ -369,6 +372,9 @@ function MatchSelector({ matches, selectedId, onSelect }: {
           >
             <strong>{item.contactName || "Unnamed lead"}</strong>
             <span style={{ color: "#555", marginLeft: 8 }}>{item.businessName} · {item.status}</span>
+            <span style={{ display: "block", color: "#64748b", fontSize: 11 }}>
+              Source: {item.source || "—"} · Self-reported debt: {item.debtRange || "—"} · Added {new Date(item.createdAt).toLocaleDateString()}
+            </span>
             <span style={{ display: "block", color: "#64748b", fontSize: 11 }}>{item.email || item.phone} · {item.sfId || item.id}</span>
           </button>
         ))}
@@ -507,14 +513,29 @@ function QuickCreateLead({ phone, assignedToId, onCreated }: { phone: string; as
  * opener can correct during a call. Keyed by lead.id in the parent so it
  * reseeds for each new call.
  */
+const editableFields = [
+  ["firstName", "First Name"], ["lastName", "Last Name"],
+  ["email", "Email"], ["alternateEmail", "Alternate Email"],
+  ["phone", "Phone"], ["mobilePhone", "Mobile Phone"], ["workPhone", "Work Phone"],
+  ["businessName", "Company"], ["ein", "EIN Number / Tax Id"],
+  ["street", "Street"], ["city", "City"], ["state", "State"], ["postalCode", "Postal Code"],
+  ["industry", "Industry"], ["source", "Lead Source"], ["debtRange", "Self-reported debt range"],
+  ["totalDebtEst", "Real debt amount"], ["numberOfLenders", "# of lenders"],
+  ["utmTerm", "UTM Term"], ["comments", "Comments"],
+  ["hasCalendlyEvent", "Has Calendly Event"],
+] as const;
+type EditableKey = typeof editableFields[number][0];
+type LeadDraft = Record<EditableKey, string>;
+
+function editableDraft(lead: LeadContext): LeadDraft {
+  return Object.fromEntries(editableFields.map(([key]) => [key,
+    key === "hasCalendlyEvent" ? (lead.hasCalendlyEvent == null ? "" : String(lead.hasCalendlyEvent)) :
+    lead[key] == null ? "" : String(lead[key]),
+  ])) as LeadDraft;
+}
+
 function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSaved: (l: LeadContext) => void; onDispositioned: () => void }) {
-  const debtStr = (v: number | null) => (v != null ? String(v) : "");
-  const [firstName, setFirstName] = useState(lead.firstName ?? "");
-  const [lastName, setLastName] = useState(lead.lastName ?? "");
-  const [businessName, setBusinessName] = useState(lead.businessName);
-  const [email, setEmail] = useState(lead.email ?? "");
-  const [totalDebtEst, setTotalDebtEst] = useState(debtStr(lead.totalDebtEst));
-  const [numberOfLenders, setNumberOfLenders] = useState(debtStr(lead.numberOfLenders));
+  const [draft, setDraft] = useState<LeadDraft>(() => editableDraft(lead));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -526,37 +547,40 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
     ? (lead.status as LeadStatusV2)
     : "Working Lead";
 
-  const contactName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
-  const dirty =
-    contactName !== lead.contactName ||
-    businessName !== lead.businessName ||
-    email !== (lead.email ?? "") ||
-    totalDebtEst !== debtStr(lead.totalDebtEst) ||
-    numberOfLenders !== debtStr(lead.numberOfLenders);
+  const original = editableDraft(lead);
+  const changed = editableFields.map(([key]) => key).filter(key => draft[key] !== original[key]);
+  const dirty = changed.length > 0;
+
+  function setField(key: EditableKey, value: string) {
+    setDraft(previous => ({ ...previous, [key]: value }));
+    setSaved(false);
+  }
 
   async function save() {
     setError(null);
+    const contactName = [draft.firstName.trim(), draft.lastName.trim()].filter(Boolean).join(" ");
     if (!contactName) {
       setError("First or last name is required.");
       return;
     }
     setSaving(true);
     try {
-      const debtNum = Number(totalDebtEst.replace(/[^0-9.]/g, ""));
-      const lendersNum = Number(numberOfLenders.replace(/[^0-9]/g, ""));
-      const newDebt = debtNum > 0 ? debtNum : null;
-      const newLenders = numberOfLenders.trim() === "" || Number.isNaN(lendersNum) ? null : lendersNum;
-      const savedBusinessName = businessName.trim() || contactName;
-      const res = await fetch(`/api/leads/${lead.id}`, {
+      if (draft.totalDebtEst.trim() && (!Number.isFinite(Number(draft.totalDebtEst)) || Number(draft.totalDebtEst) < 0)) {
+        setError("Enter a valid real debt amount."); return;
+      }
+      if (draft.numberOfLenders.trim() && (!Number.isInteger(Number(draft.numberOfLenders)) || Number(draft.numberOfLenders) < 0)) {
+        setError("Enter a valid number of lenders."); return;
+      }
+      const payload: Record<string, string | number | boolean | null> = {};
+      for (const key of changed) {
+        if (key === "totalDebtEst" || key === "numberOfLenders") payload[key] = draft[key].trim() ? Number(draft[key]) : null;
+        else if (key === "hasCalendlyEvent") payload[key] = draft[key] === "" ? null : draft[key] === "true";
+        else payload[key] = draft[key];
+      }
+      const res = await fetch(`/api/leads/${lead.id}/five9-context`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contactName,
-          businessName: savedBusinessName,
-          email: email.trim(),
-          totalDebtEst: newDebt ?? "",
-          numberOfLenders: newLenders ?? "",
-        }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const b = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -565,22 +589,36 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
       }
       onSaved({
         ...lead,
-        contactName,
-        firstName: firstName.trim() || null,
-        lastName: lastName.trim() || null,
-        businessName: savedBusinessName,
-        email: email.trim() || null,
-        totalDebtEst: newDebt,
-        numberOfLenders: newLenders,
+        contactName: changed.includes("firstName") || changed.includes("lastName") ? contactName : lead.contactName,
+        firstName: draft.firstName.trim() || null,
+        lastName: draft.lastName.trim() || null,
+        businessName: draft.businessName.trim(),
+        email: draft.email.trim() || null,
+        phone: draft.phone.trim(),
+        source: draft.source.trim() || "OTHER",
+        debtRange: draft.debtRange.trim() || null,
+        alternateEmail: draft.alternateEmail.trim() || null,
+        street: draft.street.trim() || null,
+        city: draft.city.trim() || null,
+        state: draft.state.trim() || null,
+        postalCode: draft.postalCode.trim() || null,
+        mobilePhone: draft.mobilePhone.trim() || null,
+        workPhone: draft.workPhone.trim() || null,
+        ein: draft.ein.trim() || null,
+        industry: draft.industry.trim() || null,
+        utmTerm: draft.utmTerm.trim() || null,
+        comments: draft.comments.trim() || null,
+        hasCalendlyEvent: draft.hasCalendlyEvent === "" ? null : draft.hasCalendlyEvent === "true",
+        totalDebtEst: draft.totalDebtEst.trim() ? Number(draft.totalDebtEst) : null,
+        numberOfLenders: draft.numberOfLenders.trim() ? Number(draft.numberOfLenders) : null,
       });
-      setBusinessName(savedBusinessName);
       setSaved(true);
     } finally {
       setSaving(false);
     }
   }
 
-  const inputStyle: React.CSSProperties = { width: "100%", padding: "6px 8px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13, marginTop: 2 };
+  const inputStyle: React.CSSProperties = { width: "100%", padding: "6px 8px", border: "1px solid #c9c9c9", borderRadius: 4, fontSize: 13, marginTop: 2, boxSizing: "border-box" };
   const labelStyle: React.CSSProperties = { fontSize: 11, color: "#747474", fontWeight: 600 };
 
   return (
@@ -589,37 +627,26 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
         <h3 style={{ margin: "0 0 12px", fontSize: 15 }}>Lead details <span style={{ color: "#64748b", fontSize: 12, fontWeight: 400 }}>· {lead.status}</span></h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "12px 24px" }}>
           <DetailValue label="Lead Id" value={lead.sfId ?? lead.id} />
-          <label style={labelStyle}>Email
-            <input style={inputStyle} type="email" value={email} onChange={e => { setEmail(e.target.value); setSaved(false); }} />
-          </label>
-          <label style={labelStyle}>First Name
-            <input style={inputStyle} value={firstName} onChange={e => { setFirstName(e.target.value); setSaved(false); }} />
-          </label>
-          <DetailValue label="Alternate Email" value={lead.alternateEmail} />
-          <label style={labelStyle}>Last Name
-            <input style={inputStyle} value={lastName} onChange={e => { setLastName(e.target.value); setSaved(false); }} />
-          </label>
-          <DetailValue label="Street" value={lead.street} />
-          <DetailValue label="EIN Number / Tax Id" value={lead.ein} />
-          <DetailValue label="City" value={lead.city} />
-          <DetailValue label="Phone" value={lead.phone} />
-          <DetailValue label="State" value={lead.state} />
-          <DetailValue label="Mobile Phone" value={lead.mobilePhone} />
-          <DetailValue label="Postal Code" value={lead.postalCode} />
-          <DetailValue label="Work Phone" value={lead.workPhone} />
-          <DetailValue label="Industry" value={lead.industry} />
-          <label style={labelStyle}>Company
-            <input style={inputStyle} value={businessName} onChange={e => { setBusinessName(e.target.value); setSaved(false); }} />
-          </label>
-          <DetailValue label="UTM Term" value={lead.utmTerm} />
-          <DetailValue label="Comments" value={lead.comments} />
-          <DetailValue label="Has Calendly Event" value={lead.hasCalendlyEvent == null ? null : lead.hasCalendlyEvent ? "Yes" : "No"} />
-          <label style={labelStyle}>Real debt amount
-            <input style={inputStyle} value={totalDebtEst} onChange={e => { setTotalDebtEst(e.target.value); setSaved(false); }} placeholder="$" inputMode="decimal" />
-          </label>
-          <label style={labelStyle}># of lenders
-            <input style={inputStyle} value={numberOfLenders} onChange={e => { setNumberOfLenders(e.target.value); setSaved(false); }} placeholder="0" inputMode="numeric" />
-          </label>
+          {editableFields.map(([key, label]) => (
+            <label key={key} style={{ ...labelStyle, gridColumn: key === "comments" ? "1 / -1" : undefined }}>
+              {label}
+              {key === "hasCalendlyEvent" ? (
+                <select style={inputStyle} value={draft[key]} onChange={e => setField(key, e.target.value)}>
+                  <option value="">Unknown</option><option value="true">Yes</option><option value="false">No</option>
+                </select>
+              ) : key === "comments" ? (
+                <textarea style={{ ...inputStyle, minHeight: 68 }} value={draft[key]} onChange={e => setField(key, e.target.value)} />
+              ) : (
+                <input
+                  style={inputStyle}
+                  type={key === "email" || key === "alternateEmail" ? "email" : "text"}
+                  inputMode={key === "totalDebtEst" || key === "numberOfLenders" ? "decimal" : key === "phone" || key === "mobilePhone" || key === "workPhone" ? "tel" : undefined}
+                  value={draft[key]}
+                  onChange={e => setField(key, e.target.value)}
+                />
+              )}
+            </label>
+          ))}
           <DetailValue label="Last contact" value={lead.lastContactedAt ? new Date(lead.lastContactedAt).toLocaleString() : null} />
         </div>
         {error && <div style={{ color: "#c23934", fontSize: 12 }}>{error}</div>}
@@ -658,9 +685,6 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
             Disposition
           </button>
           {saved && !dirty && <span style={{ color: "#2e844a", fontSize: 12, fontWeight: 600 }}>Saved ✓</span>}
-          <Link href={`/leads/${lead.id}`} target="_blank" style={{ marginLeft: "auto", color: "#0176d3", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
-            Open full lead ↗
-          </Link>
         </div>
       </section>
 
