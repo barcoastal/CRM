@@ -503,14 +503,14 @@ function QuickCreateLead({ phone, assignedToId, onCreated }: { phone: string; as
 }
 
 /**
- * Live lead card — editable so the opener can verify/correct the lead on the
- * call: contact name, business name, email, the real debt amount, and the
- * number of lenders. Saves via PATCH /api/leads/[id]. Keyed by lead.id in the
- * parent so it reseeds for each new call.
+ * One lead form combines imported Salesforce context with the CRM fields the
+ * opener can correct during a call. Keyed by lead.id in the parent so it
+ * reseeds for each new call.
  */
 function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSaved: (l: LeadContext) => void; onDispositioned: () => void }) {
   const debtStr = (v: number | null) => (v != null ? String(v) : "");
-  const [contactName, setContactName] = useState(lead.contactName);
+  const [firstName, setFirstName] = useState(lead.firstName ?? "");
+  const [lastName, setLastName] = useState(lead.lastName ?? "");
   const [businessName, setBusinessName] = useState(lead.businessName);
   const [email, setEmail] = useState(lead.email ?? "");
   const [totalDebtEst, setTotalDebtEst] = useState(debtStr(lead.totalDebtEst));
@@ -526,6 +526,7 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
     ? (lead.status as LeadStatusV2)
     : "Working Lead";
 
+  const contactName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
   const dirty =
     contactName !== lead.contactName ||
     businessName !== lead.businessName ||
@@ -535,8 +536,8 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
 
   async function save() {
     setError(null);
-    if (!contactName.trim()) {
-      setError("Contact name is required.");
+    if (!contactName) {
+      setError("First or last name is required.");
       return;
     }
     setSaving(true);
@@ -545,12 +546,13 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
       const lendersNum = Number(numberOfLenders.replace(/[^0-9]/g, ""));
       const newDebt = debtNum > 0 ? debtNum : null;
       const newLenders = numberOfLenders.trim() === "" || Number.isNaN(lendersNum) ? null : lendersNum;
+      const savedBusinessName = businessName.trim() || contactName;
       const res = await fetch(`/api/leads/${lead.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contactName: contactName.trim(),
-          businessName: businessName.trim() || contactName.trim(),
+          contactName,
+          businessName: savedBusinessName,
           email: email.trim(),
           totalDebtEst: newDebt ?? "",
           numberOfLenders: newLenders ?? "",
@@ -561,18 +563,17 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
         setError(b?.error ?? "Failed to save");
         return;
       }
-      const savedName = contactName.trim();
-      const nameParts = savedName.split(/\s+/);
       onSaved({
         ...lead,
-        contactName: savedName,
-        firstName: nameParts.length > 1 ? nameParts[0] : null,
-        lastName: nameParts.length > 1 ? nameParts.slice(1).join(" ") : savedName,
-        businessName: businessName.trim() || contactName.trim(),
+        contactName,
+        firstName: firstName.trim() || null,
+        lastName: lastName.trim() || null,
+        businessName: savedBusinessName,
         email: email.trim() || null,
         totalDebtEst: newDebt,
         numberOfLenders: newLenders,
       });
+      setBusinessName(savedBusinessName);
       setSaved(true);
     } finally {
       setSaving(false);
@@ -584,65 +585,45 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
 
   return (
     <div>
-      <div style={{ marginBottom: 8 }}>
-        <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{lead.contactName || "New lead"}</h3>
-        <div style={{ color: "#747474", fontSize: 12 }}>
-          {lead.phone} · {lead.status}
-        </div>
-      </div>
-
-      <section style={{ border: "1px solid #d8dde6", borderRadius: 6, padding: 12, margin: "12px 0 16px" }}>
-        <h4 style={{ margin: "0 0 10px", fontSize: 13 }}>Lead details</h4>
-        <Grid cells={[
-          ["Lead Id", lead.sfId ?? lead.id],
-          ["Email", lead.email ?? "—"],
-          ["First Name", lead.firstName ?? "—"],
-          ["Alternate Email", lead.alternateEmail ?? "—"],
-          ["Last Name", lead.lastName ?? "—"],
-          ["Street", lead.street ?? "—"],
-          ["EIN Number / Tax Id", lead.ein ?? "—"],
-          ["City", lead.city ?? "—"],
-          ["Phone", lead.phone],
-          ["State", lead.state ?? "—"],
-          ["Mobile Phone", lead.mobilePhone ?? "—"],
-          ["Postal Code", lead.postalCode ?? "—"],
-          ["Work Phone", lead.workPhone ?? "—"],
-          ["Industry", lead.industry ?? "—"],
-          ["Company", lead.businessName],
-          ["UTM Term", lead.utmTerm ?? "—"],
-          ["Comments", lead.comments ?? "—"],
-          ["Has Calendly Event", lead.hasCalendlyEvent == null ? "—" : lead.hasCalendlyEvent ? "Yes" : "No"],
-        ]} />
-      </section>
-
-      <div style={{ fontSize: 11, color: "#0176d3", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, margin: "8px 0 6px" }}>
-        Verify with caller
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <label style={labelStyle}>
-          Contact name *
-          <input style={inputStyle} value={contactName} onChange={(e) => { setContactName(e.target.value); setSaved(false); }} />
-        </label>
-        <label style={labelStyle}>
-          Business name
-          <input style={inputStyle} value={businessName} onChange={(e) => { setBusinessName(e.target.value); setSaved(false); }} />
-        </label>
-        <label style={labelStyle}>
-          Email
-          <input style={inputStyle} value={email} onChange={(e) => { setEmail(e.target.value); setSaved(false); }} placeholder="name@company.com" />
-        </label>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          <label style={labelStyle}>
-            Real debt amount
-            <input style={inputStyle} value={totalDebtEst} onChange={(e) => { setTotalDebtEst(e.target.value); setSaved(false); }} placeholder="$" inputMode="numeric" />
+      <section style={{ border: "1px solid #d8dde6", borderRadius: 6, padding: 12, marginBottom: 16 }}>
+        <h3 style={{ margin: "0 0 12px", fontSize: 15 }}>Lead details <span style={{ color: "#64748b", fontSize: 12, fontWeight: 400 }}>· {lead.status}</span></h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "12px 24px" }}>
+          <DetailValue label="Lead Id" value={lead.sfId ?? lead.id} />
+          <label style={labelStyle}>Email
+            <input style={inputStyle} type="email" value={email} onChange={e => { setEmail(e.target.value); setSaved(false); }} />
           </label>
-          <label style={labelStyle}>
-            # of lenders
-            <input style={inputStyle} value={numberOfLenders} onChange={(e) => { setNumberOfLenders(e.target.value); setSaved(false); }} placeholder="0" inputMode="numeric" />
+          <label style={labelStyle}>First Name
+            <input style={inputStyle} value={firstName} onChange={e => { setFirstName(e.target.value); setSaved(false); }} />
           </label>
+          <DetailValue label="Alternate Email" value={lead.alternateEmail} />
+          <label style={labelStyle}>Last Name
+            <input style={inputStyle} value={lastName} onChange={e => { setLastName(e.target.value); setSaved(false); }} />
+          </label>
+          <DetailValue label="Street" value={lead.street} />
+          <DetailValue label="EIN Number / Tax Id" value={lead.ein} />
+          <DetailValue label="City" value={lead.city} />
+          <DetailValue label="Phone" value={lead.phone} />
+          <DetailValue label="State" value={lead.state} />
+          <DetailValue label="Mobile Phone" value={lead.mobilePhone} />
+          <DetailValue label="Postal Code" value={lead.postalCode} />
+          <DetailValue label="Work Phone" value={lead.workPhone} />
+          <DetailValue label="Industry" value={lead.industry} />
+          <label style={labelStyle}>Company
+            <input style={inputStyle} value={businessName} onChange={e => { setBusinessName(e.target.value); setSaved(false); }} />
+          </label>
+          <DetailValue label="UTM Term" value={lead.utmTerm} />
+          <DetailValue label="Comments" value={lead.comments} />
+          <DetailValue label="Has Calendly Event" value={lead.hasCalendlyEvent == null ? null : lead.hasCalendlyEvent ? "Yes" : "No"} />
+          <label style={labelStyle}>Real debt amount
+            <input style={inputStyle} value={totalDebtEst} onChange={e => { setTotalDebtEst(e.target.value); setSaved(false); }} placeholder="$" inputMode="decimal" />
+          </label>
+          <label style={labelStyle}># of lenders
+            <input style={inputStyle} value={numberOfLenders} onChange={e => { setNumberOfLenders(e.target.value); setSaved(false); }} placeholder="0" inputMode="numeric" />
+          </label>
+          <DetailValue label="Last contact" value={lead.lastContactedAt ? new Date(lead.lastContactedAt).toLocaleString() : null} />
         </div>
         {error && <div style={{ color: "#c23934", fontSize: 12 }}>{error}</div>}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: 2 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: 16 }}>
           <button
             type="button"
             onClick={save}
@@ -681,7 +662,7 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
             Open full lead ↗
           </Link>
         </div>
-      </div>
+      </section>
 
       <DispositionModal
         endpoint={`/api/leads/${lead.id}/disposition`}
@@ -692,17 +673,6 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
         onClose={() => setDispOpen(false)}
         onSaved={onDispositioned}
       />
-
-      {(lead.industry || lead.lastContactedAt) && (
-        <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #ecebea" }}>
-          <Grid
-            cells={[
-              ["Industry", lead.industry ?? "—"],
-              ["Last contact", lead.lastContactedAt ? new Date(lead.lastContactedAt).toLocaleString() : "—"],
-            ]}
-          />
-        </div>
-      )}
 
       {lead.recentCalls.length > 0 && (
         <div style={{ marginTop: 24 }}>
@@ -733,15 +703,11 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
   );
 }
 
-function Grid({ cells }: { cells: [string, string][] }) {
+function DetailValue({ label, value }: { label: string; value: string | null }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 24px", fontSize: 13 }}>
-      {cells.map(([k, v]) => (
-        <div key={k}>
-          <div style={{ color: "#747474", fontSize: 11, marginBottom: 2 }}>{k}</div>
-          <div style={{ color: "#181818", fontWeight: 600 }}>{v}</div>
-        </div>
-      ))}
+    <div style={{ minWidth: 0 }}>
+      <div style={{ color: "#747474", fontSize: 11, fontWeight: 600, marginBottom: 2 }}>{label}</div>
+      <div style={{ color: "#181818", fontSize: 13, fontWeight: 600, overflowWrap: "anywhere" }}>{value || "—"}</div>
     </div>
   );
 }
