@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { DispositionModal } from "@/components/leads/disposition-modal";
-import { LEAD_STATUSES, STAGE_TO_SUB_DISPOSITIONS, type LeadStatusV2 } from "@/lib/sf-canonical";
+import { BRANDS, LEAD_STATUSES, STAGE_TO_SUB_DISPOSITIONS, type LeadStatusV2 } from "@/lib/sf-canonical";
 import { CallTranscriber } from "./call-transcriber";
 import { Five9ToolkitBridge } from "@/components/dialer/five9-toolkit-bridge";
 
@@ -17,6 +17,7 @@ interface LeadContext {
   phone: string;
   email: string | null;
   status: string;
+  brand: string | null;
   source: string;
   debtRange: string | null;
   createdAt: string;
@@ -373,7 +374,7 @@ function MatchSelector({ matches, selectedId, onSelect }: {
             <strong>{item.contactName || "Unnamed lead"}</strong>
             <span style={{ color: "#555", marginLeft: 8 }}>{item.businessName} · {item.status}</span>
             <span style={{ display: "block", color: "#64748b", fontSize: 11 }}>
-              Source: {item.source || "—"} · Self-reported debt: {item.debtRange || "—"} · Added {new Date(item.createdAt).toLocaleDateString()}
+              Brand: {item.brand || "—"} · Source: {item.source || "—"} · Self-reported debt: {item.debtRange || "—"} · Added {new Date(item.createdAt).toLocaleDateString()}
             </span>
             <span style={{ display: "block", color: "#64748b", fontSize: 11 }}>{item.email || item.phone} · {item.sfId || item.id}</span>
           </button>
@@ -519,7 +520,7 @@ const editableFields = [
   ["phone", "Phone"], ["mobilePhone", "Mobile Phone"], ["workPhone", "Work Phone"],
   ["businessName", "Company"], ["ein", "EIN Number / Tax Id"],
   ["street", "Street"], ["city", "City"], ["state", "State"], ["postalCode", "Postal Code"],
-  ["industry", "Industry"], ["source", "Lead Source"], ["debtRange", "Self-reported debt range"],
+  ["industry", "Industry"], ["brand", "Brand"], ["source", "Lead Source"], ["debtRange", "Self-reported debt range"],
   ["totalDebtEst", "Real debt amount"], ["numberOfLenders", "# of lenders"],
   ["utmTerm", "UTM Term"], ["comments", "Comments"],
   ["hasCalendlyEvent", "Has Calendly Event"],
@@ -575,6 +576,7 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
       for (const key of changed) {
         if (key === "totalDebtEst" || key === "numberOfLenders") payload[key] = draft[key].trim() ? Number(draft[key]) : null;
         else if (key === "hasCalendlyEvent") payload[key] = draft[key] === "" ? null : draft[key] === "true";
+        else if (key === "brand") payload[key] = draft[key] || null;
         else payload[key] = draft[key];
       }
       const res = await fetch(`/api/leads/${lead.id}/five9-context`, {
@@ -596,6 +598,7 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
         email: draft.email.trim() || null,
         phone: draft.phone.trim(),
         source: draft.source.trim() || "OTHER",
+        brand: draft.brand || null,
         debtRange: draft.debtRange.trim() || null,
         alternateEmail: draft.alternateEmail.trim() || null,
         street: draft.street.trim() || null,
@@ -630,7 +633,13 @@ function LeadCard({ lead, onSaved, onDispositioned }: { lead: LeadContext; onSav
           {editableFields.map(([key, label]) => (
             <label key={key} style={{ ...labelStyle, gridColumn: key === "comments" ? "1 / -1" : undefined }}>
               {label}
-              {key === "hasCalendlyEvent" ? (
+              {key === "brand" ? (
+                <select style={inputStyle} value={draft[key]} onChange={e => setField(key, e.target.value)}>
+                  <option value="">No brand</option>
+                  {draft[key] && !(BRANDS as readonly string[]).includes(draft[key]) && <option value={draft[key]}>{draft[key]}</option>}
+                  {BRANDS.map(brand => <option key={brand} value={brand}>{brand}</option>)}
+                </select>
+              ) : key === "hasCalendlyEvent" ? (
                 <select style={inputStyle} value={draft[key]} onChange={e => setField(key, e.target.value)}>
                   <option value="">Unknown</option><option value="true">Yes</option><option value="false">No</option>
                 </select>

@@ -8,6 +8,7 @@ import { makeCtx, triggerUpdate } from "@/lib/triggers/runner";
 import { validateLeadPatch } from "@/lib/validation/lead-validation";
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { BRANDS } from "@/lib/sf-canonical";
 
 // The Five9 form sends only changed fields. Keep this whitelist separate from
 // arbitrary Salesforce snapshot keys so a caller cannot update hidden fields.
@@ -17,6 +18,7 @@ const patchSchema = z.object({
   alternateEmail: text, street: text, city: text, state: text,
   postalCode: text, phone: text, mobilePhone: text, workPhone: text,
   ein: text, industry: text, source: text, debtRange: text,
+  brand: z.enum(BRANDS).nullable(),
   utmTerm: text, comments: z.string().max(5000),
   hasCalendlyEvent: z.boolean().nullable(),
   totalDebtEst: z.number().nonnegative().nullable(),
@@ -32,6 +34,7 @@ const snapshotKeys: Record<string, string[]> = {
   mobilePhone: ["MobilePhone"], workPhone: ["Work_Phone__c"],
   ein: ["EIN_Number_Tax_Id__c"], industry: ["Industry"],
   source: ["LeadSource"], debtRange: ["Estimated_Total_Debt__c"],
+  brand: ["Brand__c"],
   utmTerm: ["UTM_Term__c"], comments: ["pi__comments__c"],
   hasCalendlyEvent: ["Has_Calendly_Event__c"],
 };
@@ -82,6 +85,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (patch.state !== undefined) data.state = patch.state.trim() || null;
   if (patch.utmTerm !== undefined) data.utmTerm = patch.utmTerm.trim() || null;
   if (patch.source !== undefined) data.source = patch.source.trim() || "OTHER";
+  if (patch.brand !== undefined) data.brand = patch.brand;
   if (patch.totalDebtEst !== undefined) data.totalDebtEst = patch.totalDebtEst;
   if (patch.numberOfLenders !== undefined) data.numberOfLenders = patch.numberOfLenders;
 
